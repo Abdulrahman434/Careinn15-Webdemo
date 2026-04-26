@@ -1,0 +1,238 @@
+:root {
+  --primary-color: #0b5cff;
+  --bg-color: #f0f4f8;
+  --card-bg: #ffffff;
+  --text-main: #2d3748;
+  --text-light: #718096;
+  --success: #38a169;
+  --error: #e53e3e;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.login-container, .home-container {
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  width: 100%;
+  max-width: 480px;
+  padding: 40px;
+  text-align: center;
+}
+
+h1 {
+  font-size: 24px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+p.subtitle {
+  color: var(--text-light);
+  margin-bottom: 30px;
+  font-size: 15px;
+}
+
+.nfc-zone {
+  border: 2px dashed #cbd5e0;
+  border-radius: 12px;
+  padding: 40px 20px;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.nfc-zone.ready {
+  border-color: var(--primary-color);
+  background-color: #ebf4ff;
+  animation: pulse-border 2s infinite;
+}
+
+.nfc-zone.success {
+  border-color: var(--success);
+  background-color: #f0fff4;
+}
+
+.nfc-zone.error {
+  border-color: var(--error);
+  background-color: #fff5f5;
+  animation: shake 0.5s;
+}
+
+@keyframes pulse-border {
+  0% { box-shadow: 0 0 0 0 rgba(11, 92, 255, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(11, 92, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(11, 92, 255, 0); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.nfc-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+.status {
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+  margin-top: 10px;
+}
+
+.btn:hover {
+  background-color: #094ccc;
+}
+
+.btn:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: #edf2f7;
+  color: var(--text-main);
+  margin-top: 15px;
+}
+
+.btn-secondary:hover {
+  background-color: #e2e8f0;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 25px 0;
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+.divider::before, .divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.divider::before { margin-right: 15px; }
+.divider::after { margin-left: 15px; }
+
+.input-group {
+  text-align: left;
+  margin-bottom: 15px;
+}
+
+.input-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--text-main);
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 16px;
+  outline: none;
+  transition: border 0.2s;
+}
+
+.input-group input:focus {
+  border-color: var(--primary-color);
+}
+
+.error-msg {
+  color: var(--error);
+  background-color: #fff5f5;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 15px;
+  display: none;
+}
+
+.demo-btn-wrapper {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+}
+
+.demo-btn {
+  background-color: var(--text-main);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.demo-btn:hover {
+  opacity: 1;
+}
+
+/* Home Page Specifics */
+.home-container {
+  max-width: 600px;
+}
+
+.patient-info {
+  background-color: #ebf4ff;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 25px;
+}
+
+.module-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.module-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.module-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  border-color: var(--primary-color);
+}

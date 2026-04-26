@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patient Portal - NFC Login</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="login-container">
+    <h1>Patient Portal</h1>
+    <p class="subtitle">Secure access to your medical records</p>
+    
+    <div id="error-msg" class="error-msg"></div>
+
+    <div id="tap-zone" class="nfc-zone">
+      <div class="nfc-icon">📱</div>
+      <div id="status-text" class="status">Disconnected</div>
+    </div>
+    
+    <button id="connect-nfc" class="btn">Connect NFC Reader</button>
+
+    <div class="divider">OR</div>
+
+    <div class="input-group">
+      <label for="password-input">Password</label>
+      <input type="password" id="password-input" placeholder="Enter password (dallah)">
+    </div>
+    
+    <button id="login-btn" class="btn">Login</button>
+  </div>
+
+  <!-- Demo Mode Toggle -->
+  <div class="demo-btn-wrapper">
+    <button id="demo-btn" class="demo-btn">Demo Mode: Simulate NFC Tap</button>
+  </div>
+
+  <script src="js/nfc-reader.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
