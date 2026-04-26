@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patient Dashboard - Home</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="home-container">
+    <h1>Welcome back, Sara Saleh</h1>
+    
+    <div class="patient-info">
+      <p id="card-uid-display">Card ending in: <strong>----</strong></p>
+    </div>
+
+    <div class="module-grid">
+      <div class="module-card">
+        <h3>📅 Appointments</h3>
+        <p class="subtitle" style="margin-top: 10px; margin-bottom: 0;">2 Upcoming</p>
+      </div>
+      <div class="module-card">
+        <h3>💊 Prescriptions</h3>
+        <p class="subtitle" style="margin-top: 10px; margin-bottom: 0;">1 Refill available</p>
+      </div>
+      <div class="module-card">
+        <h3>📁 Medical Records</h3>
+        <p class="subtitle" style="margin-top: 10px; margin-bottom: 0;">Updated today</p>
+      </div>
+      <div class="module-card">
+        <h3>✉️ Messages</h3>
+        <p class="subtitle" style="margin-top: 10px; margin-bottom: 0;">No new messages</p>
+      </div>
+    </div>
+
+    <button id="logout-btn" class="btn btn-secondary">Logout</button>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const patientId = sessionStorage.getItem('patient_id');
+      
+      if (!patientId) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      const uidDisplay = document.getElementById('card-uid-display');
+      if (patientId === 'MANUAL_LOGIN') {
+        uidDisplay.innerHTML = 'Logged in via: <strong>Password</strong>';
+      } else {
+        const last4 = patientId.slice(-4);
+        uidDisplay.innerHTML = `Card ending in: <strong>${last4}</strong>`;
+      }
+
+      document.getElementById('logout-btn').addEventListener('click', () => {
+        sessionStorage.removeItem('patient_id');
+        window.location.href = 'index.html';
+      });
+    });
+  </script>
+</body>
+</html>
