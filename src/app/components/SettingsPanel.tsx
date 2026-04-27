@@ -1,4 +1,13 @@
-﻿import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  isAndroidApp,
+  brightness as brightnessBridge,
+  volume as volumeBridge,
+  bluetooth as bluetoothBridge,
+  wifi as wifiBridge,
+  cast as castBridge,
+  useAndroidEvent,
+} from "../utils/androidBridge";
 import {
   X,
   Sun,
@@ -594,11 +603,20 @@ function ScanningState({ message }: { message: string }) {
 }
 
 /* ─── Wi-Fi Dialog ─── */
-const wifiNetworks = [
-  { id: "dsfh-patient", name: "DSFH-Patient", secured: true, strength: 3 },
-  { id: "dsfh-guest", name: "DSFH-Guest", secured: false, strength: 2 },
-  { id: "dsfh-staff", name: "DSFH-Staff", secured: true, strength: 3 },
-  { id: "eduroam", name: "eduroam", secured: true, strength: 1 },
+
+/** Map dBm signal level to 1/2/3 strength bars */
+function rssiToStrength(dbm: number): 1 | 2 | 3 {
+  if (dbm >= -60) return 3;
+  if (dbm >= -75) return 2;
+  return 1;
+}
+
+/** Mock networks shown in regular-browser fallback mode */
+const mockWifiNetworks = [
+  { id: "dsfh-patient", name: "DSFH-Patient", secured: true, strength: 3 as 1 | 2 | 3 },
+  { id: "dsfh-guest", name: "DSFH-Guest", secured: false, strength: 2 as 1 | 2 | 3 },
+  { id: "dsfh-staff", name: "DSFH-Staff", secured: true, strength: 3 as 1 | 2 | 3 },
+  { id: "eduroam", name: "eduroam", secured: true, strength: 1 as 1 | 2 | 3 },
 ];
 
 function WifiDialog({
@@ -614,11 +632,42 @@ function WifiDialog({
 }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLocale();
+  const isNative = isAndroidApp();
+
+  // Dynamic network list — mock for browser, live for kiosk
+  const [wifiNetworks, setWifiNetworks] = useState(
+    isNative ? [] as { id: string; name: string; secured: boolean; strength: 1 | 2 | 3 }[] : mockWifiNetworks
+  );
+
   const [scanning, setScanning] = useState(true);
+
   useEffect(() => {
+    if (isNative) {
+      wifiBridge.startScan();
+    }
     const timer = setTimeout(() => setScanning(false), 1200);
     return () => clearTimeout(timer);
-  }, []);
+  }, [isNative]);
+
+  // Accumulate networks from scan events (kiosk only)
+  useAndroidEvent<{ ssid: string; bssid: string; signalLevel: number; secured: boolean }>(
+    'wifi-network-found',
+    (d) => {
+      if (!isNative) return;
+      setWifiNetworks((prev) => {
+        const filtered = prev.filter((n) => n.id !== d.bssid);
+        return [
+          ...filtered,
+          {
+            id: d.bssid,
+            name: d.ssid || d.bssid,
+            secured: d.secured,
+            strength: rssiToStrength(d.signalLevel),
+          },
+        ];
+      });
+    }
+  );
 
   return (
     <CenteredDialog onClose={onClose}>
@@ -642,7 +691,18 @@ function WifiDialog({
                   name={net.name}
                   subtitle={isConnected ? tr("wifi.connected") : net.secured ? tr("wifi.secured") : tr("wifi.open")}
                   isConnected={isConnected}
-                  onClick={() => (isConnected ? onDisconnect() : onConnect(net.id))}
+                  onClick={() => {
+                    if (isConnected) {
+                      onDisconnect();
+                    } else if (isNative) {
+                      // TODO: add an inline password prompt for secured networks.
+                      // For now, delegate to Android's own Wi-Fi settings UI so
+                      // the user can enter the password there.
+                      wifiBridge.openSettings();
+                    } else {
+                      onConnect(net.id);
+                    }
+                  }}
                 />
               );
             })}
@@ -660,7 +720,9 @@ function WifiDialog({
 }
 
 /* ─── Bluetooth Dialog ─── */
-const btDevices = [
+
+/** Mock BT devices shown in regular-browser fallback mode */
+const mockBtDevices = [
   { id: "bt-speaker", name: "Room 412 Speaker", type: "Speaker", icon: Speaker, paired: true },
   { id: "bt-phone", name: "Nurse Call Button", type: "Medical Device", icon: Smartphone, paired: true },
   { id: "bt-headphones", name: "Patient Headphones", type: "Audio", icon: Headphones, paired: true },
@@ -682,12 +744,61 @@ function BluetoothDialog({
 }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLocale();
+  const isNative = isAndroidApp();
+
+  // Dynamic device list — mock for browser, live for kiosk
+  const [btDevices, setBtDevices] = useState(
+    isNative
+      ? [] as { id: string; name: string; type: string; icon: typeof Bluetooth; paired: boolean; rssi?: number }[]
+      : mockBtDevices
+  );
+
   const [scanning, setScanning] = useState(true);
   const [search, setSearch] = useState("");
+
   useEffect(() => {
+    if (isNative) {
+      bluetoothBridge.startScan();
+    }
     const timer = setTimeout(() => setScanning(false), 1400);
-    return () => clearTimeout(timer);
-  }, []);
+    return () => {
+      clearTimeout(timer);
+      if (isNative) {
+        bluetoothBridge.stopScan();
+      }
+    };
+  }, [isNative]);
+
+  // Accumulate discovered BT devices from scan events (kiosk only)
+  useAndroidEvent<{ name: string; address: string; rssi: number; paired: boolean }>(
+    'bluetooth-device-found',
+    (d) => {
+      if (!isNative) return;
+      setBtDevices((prev) => {
+        const filtered = prev.filter((x) => x.id !== d.address);
+        return [
+          ...filtered,
+          {
+            id: d.address,
+            name: d.name || 'Unknown device',
+            type: 'Bluetooth device',
+            icon: Bluetooth,
+            paired: d.paired,
+            rssi: d.rssi,
+          },
+        ].sort((a, b) => (b.rssi ?? -100) - (a.rssi ?? -100));
+      });
+    }
+  );
+
+  // Confirm connection from native event
+  useAndroidEvent<{ address: string }>(
+    'bluetooth-device-connected',
+    (d) => {
+      if (!isNative) return;
+      onConnect(d.address);
+    }
+  );
 
   const pairedDevices = btDevices.filter((d) => d.paired);
   const availableDevices = btDevices.filter((d) => !d.paired);
@@ -765,7 +876,15 @@ function BluetoothDialog({
                       name={device.name}
                       subtitle={isConnected ? tr("wifi.connected") : tr("bt.pairedStatus")}
                       isConnected={isConnected}
-                      onClick={() => (isConnected ? onDisconnect() : onConnect(device.id))}
+                      onClick={() => {
+                        if (isConnected) {
+                          if (isNative) bluetoothBridge.disconnect(device.id);
+                          onDisconnect();
+                        } else {
+                          if (isNative) bluetoothBridge.connect(device.id);
+                          else onConnect(device.id);
+                        }
+                      }}
                     />
                   );
                 })}
@@ -785,7 +904,10 @@ function BluetoothDialog({
                       name={device.name}
                       subtitle={device.type}
                       isConnected={false}
-                      onClick={() => onConnect(device.id)}
+                      onClick={() => {
+                        if (isNative) bluetoothBridge.connect(device.id);
+                        else onConnect(device.id);
+                      }}
                     />
                   );
                 })}
@@ -826,7 +948,9 @@ function BluetoothDialog({
 }
 
 /* ─── Cast Dialog ─── */
-const castDevices = [
+
+/** Mock cast devices shown in regular-browser fallback mode */
+const mockCastDevices = [
   { id: "tv-412", name: "Room 412 TV", type: "Smart TV", available: true },
   { id: "tv-lobby", name: "Lobby Display", type: "Digital Signage", available: false },
 ];
@@ -844,14 +968,59 @@ function CastDialog({
 }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLocale();
+  const isNative = isAndroidApp();
+
+  // Dynamic cast device list — mock for browser, live for kiosk
+  const [castDevices, setCastDevices] = useState(
+    isNative ? [] as { id: string; name: string; type: string; available: boolean }[] : mockCastDevices
+  );
+
   const [scanning, setScanning] = useState(false);
+
   useEffect(() => {
     if (!connectedId) {
       setScanning(true);
+      if (isNative) {
+        castBridge.startScan();
+      }
       const timer = setTimeout(() => setScanning(false), 1500);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        if (isNative) {
+          castBridge.stopScan();
+        }
+      };
     }
-  }, []);
+  }, [isNative]);
+
+  // Accumulate discovered cast devices from scan events (kiosk only)
+  useAndroidEvent<{ id: string; name: string; modelName: string }>(
+    'cast-device-found',
+    (d) => {
+      if (!isNative) return;
+      setCastDevices((prev) => {
+        const filtered = prev.filter((x) => x.id !== d.id);
+        return [
+          ...filtered,
+          {
+            id: d.id,
+            name: d.name,
+            type: d.modelName || 'Cast device',
+            available: true,
+          },
+        ];
+      });
+    }
+  );
+
+  // Confirm cast connection from native event
+  useAndroidEvent<{ id: string }>(
+    'cast-connected',
+    (d) => {
+      if (!isNative) return;
+      onConnect(d.id);
+    }
+  );
 
   return (
     <CenteredDialog onClose={onClose}>
@@ -878,7 +1047,13 @@ function CastDialog({
                   disabled={!device.available}
                   onClick={() => {
                     if (!device.available) return;
-                    isConnected ? onDisconnect() : onConnect(device.id);
+                    if (isConnected) {
+                      if (isNative) castBridge.stop();
+                      onDisconnect();
+                    } else {
+                      if (isNative) castBridge.connect(device.id);
+                      else onConnect(device.id);
+                    }
                   }}
                 />
               );
@@ -1514,12 +1689,65 @@ export function SettingsPanel({
   const { t: tr, isRTL, fontFamily, locale } = useLocale();
   const { logout } = useAuth();
 
-  const [brightness, setBrightness] = useState(80);
-  const [volume, setVolume] = useState(60);
-  const [wifi, setWifi] = useState(true);
-  const [wifiNetwork, setWifiNetwork] = useState<string | null>("dsfh-patient");
-  const [bluetooth, setBluetooth] = useState(true);
-  const [btDevice, setBtDevice] = useState<string | null>("bt-speaker");
+  const isNative = isAndroidApp();
+
+  // ── Brightness: init from bridge, sync via event ──
+  const [brightnessVal, setBrightnessState] = useState(() =>
+    Math.round(brightnessBridge.get() * 100)
+  );
+  const handleBrightnessChange = (v: number) => {
+    setBrightnessState(v);
+    brightnessBridge.set(v / 100);
+  };
+  useAndroidEvent<{ value: number }>('brightness-changed', (d) => {
+    setBrightnessState(Math.round(d.value * 100));
+  });
+
+  // ── Volume: init from bridge, sync via event ──
+  const [volumeVal, setVolumeState] = useState(() =>
+    Math.round(volumeBridge.get() * 100)
+  );
+  const handleVolumeChange = (v: number) => {
+    setVolumeState(v);
+    volumeBridge.set(v / 100);
+  };
+  useAndroidEvent<{ value: number }>('volume-changed', (d) => {
+    setVolumeState(Math.round(d.value * 100));
+  });
+
+  // ── Wi-Fi: read initial state from bridge, sync via events ──
+  const [wifiEnabled, setWifiEnabled] = useState(() =>
+    isNative ? wifiBridge.isEnabled() : true
+  );
+  const [wifiNetwork, setWifiNetwork] = useState<string | null>(
+    isNative ? null : "dsfh-patient"
+  );
+
+  useAndroidEvent<{ enabled: boolean }>('wifi-state-changed', (d) => {
+    setWifiEnabled(d.enabled);
+    if (!d.enabled) setWifiNetwork(null);
+  });
+  useAndroidEvent<{ ssid: string }>('wifi-connected', (d) => {
+    setWifiEnabled(true);
+    setWifiNetwork(d.ssid);
+  });
+
+  // ── Bluetooth: read initial state from bridge, sync via events ──
+  const [btEnabled, setBtEnabled] = useState(() =>
+    isNative ? bluetoothBridge.isEnabled() : true
+  );
+  const [btDevice, setBtDevice] = useState<string | null>(
+    isNative ? null : "bt-speaker"
+  );
+
+  useAndroidEvent<{ enabled: boolean }>('bluetooth-state-changed', (d) => {
+    setBtEnabled(d.enabled);
+    if (!d.enabled) setBtDevice(null);
+  });
+  useAndroidEvent<{ address: string }>('bluetooth-device-connected', (d) => {
+    setBtEnabled(true);
+    setBtDevice(d.address);
+  });
   const [dnd, setDnd] = useState(false);
   const [nightMode, setNightMode] = useState(false);
   const [selectedLang, setSelectedLang] = useState<"en" | "ar" | "ur">(currentLocale);
@@ -1549,7 +1777,7 @@ export function SettingsPanel({
 
   // Get connected names for subtitles
   const connectedCastName = castDevice
-    ? castDevices.find((d) => d.id === castDevice)?.name
+    ? mockCastDevices.find((d) => d.id === castDevice)?.name ?? castDevice
     : null;
 
   return (
@@ -1662,8 +1890,8 @@ export function SettingsPanel({
           <SettingsSlider
             icon={<Sun size={20} style={{ color: t.iconBrand }} />}
             label={tr("settings.brightness")}
-            value={brightness}
-            onChange={setBrightness}
+            value={brightnessVal}
+            onChange={handleBrightnessChange}
           />
 
           <div style={{ height: "1px", backgroundColor: t.borderDefault }} />
@@ -1672,8 +1900,8 @@ export function SettingsPanel({
           <SettingsSlider
             icon={<Volume2 size={20} style={{ color: t.iconBrand }} />}
             label={tr("settings.volume")}
-            value={volume}
-            onChange={setVolume}
+            value={volumeVal}
+            onChange={handleVolumeChange}
           />
 
           <div style={{ height: "1px", backgroundColor: t.borderDefault }} />
@@ -1683,30 +1911,40 @@ export function SettingsPanel({
             {/* Row 1: Connectivity */}
             <div className="flex items-center justify-center gap-2.5">
               <QuickTile
-                icon={<Wifi size={24} style={{ color: wifi ? t.tileActiveText : t.iconDefault }} />}
+                icon={<Wifi size={24} style={{ color: wifiEnabled ? t.tileActiveText : t.iconDefault }} />}
                 label={tr("settings.wifi")}
-                active={wifi}
+                active={wifiEnabled}
                 onTap={() => {
-                  if (wifi) {
-                    setWifi(false);
-                    setWifiNetwork(null);
+                  // Android 10+ restricts programmatic Wi-Fi toggling.
+                  // Delegate to the system Wi-Fi settings screen so the
+                  // user can toggle it there. The 'wifi-state-changed'
+                  // event will sync the local state back.
+                  if (isNative) {
+                    wifiBridge.openSettings();
                   } else {
-                    setWifi(true);
-                    setWifiNetwork("dsfh-patient");
+                    if (wifiEnabled) {
+                      setWifiEnabled(false);
+                      setWifiNetwork(null);
+                    } else {
+                      setWifiEnabled(true);
+                      setWifiNetwork("dsfh-patient");
+                    }
                   }
                 }}
                 onLongPress={() => setShowWifiDialog(true)}
               />
               <QuickTile
-                icon={<Bluetooth size={24} style={{ color: bluetooth ? t.tileActiveText : t.iconDefault }} />}
+                icon={<Bluetooth size={24} style={{ color: btEnabled ? t.tileActiveText : t.iconDefault }} />}
                 label={tr("settings.bluetooth")}
-                active={bluetooth}
+                active={btEnabled}
                 onTap={() => {
-                  if (bluetooth) {
-                    setBluetooth(false);
-                    setBtDevice(null);
+                  const next = !btEnabled;
+                  if (isNative) {
+                    bluetoothBridge.setEnabled(next);
+                    // State will update via 'bluetooth-state-changed' event
                   } else {
-                    setBluetooth(true);
+                    setBtEnabled(next);
+                    if (!next) setBtDevice(null);
                   }
                 }}
                 onLongPress={() => setShowBtDialog(true)}
@@ -1717,6 +1955,7 @@ export function SettingsPanel({
                 active={!!castDevice}
                 onTap={() => {
                   if (castDevice) {
+                    if (isNative) castBridge.stop();
                     setCastDevice(null);
                   } else {
                     setShowCastDialog(true);
@@ -1846,8 +2085,12 @@ export function SettingsPanel({
         <WifiDialog
           onClose={() => setShowWifiDialog(false)}
           connectedId={wifiNetwork}
-          onConnect={(id) => { setWifi(true); setWifiNetwork(id); }}
-          onDisconnect={() => { setWifiNetwork(null); setWifi(false); }}
+          onConnect={(id) => { setWifiEnabled(true); setWifiNetwork(id); }}
+          onDisconnect={() => {
+            if (isNative) wifiBridge.disconnect();
+            setWifiNetwork(null);
+            setWifiEnabled(false);
+          }}
         />
       )}
 
@@ -1855,8 +2098,11 @@ export function SettingsPanel({
         <BluetoothDialog
           onClose={() => setShowBtDialog(false)}
           connectedId={btDevice}
-          onConnect={(id) => { setBluetooth(true); setBtDevice(id); }}
-          onDisconnect={() => setBtDevice(null)}
+          onConnect={(id) => { setBtEnabled(true); setBtDevice(id); }}
+          onDisconnect={() => {
+            if (isNative && btDevice) bluetoothBridge.disconnect(btDevice);
+            setBtDevice(null);
+          }}
         />
       )}
 
