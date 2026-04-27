@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { ThemeProvider, useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "./components/ThemeContext";
 import { useLocale } from "./components/i18n";
 import { TopBar } from "./components/TopBar";
@@ -100,6 +100,7 @@ function BedsideScreen() {
   const [showCareMeExpanded, setShowCareMeExpanded] = useState(false);
   const [showCall, setShowCall] = useState(false);
   const [showFoodOrder, setShowFoodOrder] = useState(false);
+  const [activeCareRole, setActiveCareRole] = useState<"nurse" | "doctor" | null>(null);
   const [layoutVersion, setLayoutVersion] = useState<1 | 2 | 3>(1);
   const [activeBroadcast, setActiveBroadcast] = useState<BroadcastNotification | null>(null);
   const [acknowledgedBroadcasts, setAcknowledgedBroadcasts] = useState<BroadcastNotification[]>([]);
@@ -361,6 +362,19 @@ function BedsideScreen() {
     } else {
       if (document.exitFullscreen) document.exitFullscreen();
     }
+  }, []);
+
+  // Allow the Android kiosk app (or any external caller) to open the 
+  // Care Team interface directly, bypassing the PIN dialog.
+  useEffect(() => {
+    (window as any).__openCareTeam = (role: "nurse" | "doctor") => {
+      if (role !== "nurse" && role !== "doctor") return;
+      setActiveCareRole(role);
+      setShowSettings(true);
+    };
+    return () => {
+      delete (window as any).__openCareTeam;
+    };
   }, []);
 
   // ── Keyboard Navigation ──
@@ -699,9 +713,14 @@ function BedsideScreen() {
         {/* Settings Panel — slide-in from right */}
         {showSettings && (
           <SettingsPanel
-            onClose={() => setShowSettings(false)}
+            onClose={() => {
+              setShowSettings(false);
+              setActiveCareRole(null);
+            }}
             onFullscreenTap={handleFullscreenTap}
             isFullscreen={isFullscreen}
+            activeCareRole={activeCareRole}
+            setActiveCareRole={setActiveCareRole}
           />
         )}
 

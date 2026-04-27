@@ -1682,10 +1682,14 @@ export function SettingsPanel({
   onClose,
   onFullscreenTap,
   isFullscreen,
+  activeCareRole,
+  setActiveCareRole,
 }: {
   onClose: () => void;
   onFullscreenTap: () => void;
   isFullscreen: boolean;
+  activeCareRole: "nurse" | "doctor" | null;
+  setActiveCareRole: (role: "nurse" | "doctor" | null) => void;
 }) {
   const { theme: t, darkMode, setDarkMode, castDevice, setCastDevice, locale: currentLocale, setLocale, prayerAlarm, setPrayerAlarm } = useTheme();
   const { t: tr, isRTL, fontFamily, locale } = useLocale();
@@ -1786,7 +1790,6 @@ export function SettingsPanel({
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showLangDialog, setShowLangDialog] = useState(false);
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
-  const [activeCareRole, setActiveCareRole] = useState<"nurse" | "doctor" | null>(null);
 
   // Listen for CareMe "Nurse View" button event
   useEffect(() => {
@@ -1795,18 +1798,7 @@ export function SettingsPanel({
     return () => window.removeEventListener("open-nurse-view", handler);
   }, []);
 
-  // Allow the Android kiosk app (or any external caller) to open the 
-  // Care Team interface directly, bypassing the PIN dialog. The card UID 
-  // is verified on the Android side, so the PIN check is redundant there.
-  useEffect(() => {
-    (window as any).__openCareTeam = (role: "nurse" | "doctor") => {
-      if (role !== "nurse" && role !== "doctor") return;
-      setActiveCareRole(role);
-    };
-    return () => {
-      delete (window as any).__openCareTeam;
-    };
-  }, []);
+
 
   // Get connected names for subtitles
   const connectedCastName = castDevice
