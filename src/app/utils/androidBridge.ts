@@ -239,6 +239,64 @@ export const cast = {
       console.warn("[androidBridge] stopCasting failed:", e);
     }
   },
+
+  openSettings(): void {
+    try {
+      sys()?.openCastSettings();
+    } catch (e) {
+      console.warn("[androidBridge] openCastSettings failed:", e);
+    }
+  },
+};
+
+/* ─── DND ─── */
+
+export const dnd = {
+  isEnabled(): boolean {
+    try {
+      return sys()?.isDndEnabled() ?? false;
+    } catch (e) {
+      console.warn("[androidBridge] isDndEnabled failed:", e);
+      return false;
+    }
+  },
+
+  setEnabled(enabled: boolean): void {
+    try {
+      sys()?.setDndEnabled(enabled);
+    } catch (e) {
+      console.warn("[androidBridge] setDndEnabled failed:", e);
+    }
+  },
+};
+
+/* ─── Night Light ─── */
+
+export const nightLight = {
+  isEnabled(): boolean {
+    try {
+      return sys()?.isNightLightEnabled() ?? false;
+    } catch (e) {
+      console.warn("[androidBridge] isNightLightEnabled failed:", e);
+      return false;
+    }
+  },
+
+  setEnabled(enabled: boolean): void {
+    try {
+      sys()?.setNightLight(enabled);
+    } catch (e) {
+      console.warn("[androidBridge] setNightLight failed:", e);
+    }
+  },
+
+  openSettings(): void {
+    try {
+      sys()?.openNightLightSettings();
+    } catch (e) {
+      console.warn("[androidBridge] openNightLightSettings failed:", e);
+    }
+  },
 };
 
 /* ─── React Hook: useAndroidEvent ─── */

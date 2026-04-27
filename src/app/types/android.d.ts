@@ -33,6 +33,16 @@ interface AndroidSystemInterface {
   stopCastScan(): void;
   connectCastDevice(deviceId: string): void;
   stopCasting(): void;
+  openCastSettings(): void;
+
+  // DND
+  isDndEnabled(): boolean;
+  setDndEnabled(enabled: boolean): void;
+
+  // Night Light
+  setNightLight(enabled: boolean): void;
+  isNightLightEnabled(): boolean;
+  openNightLightSettings(): void;
 
   // Volume (system media volume, 0.0 – 1.0)
   setVolume(value: number): void;
@@ -104,7 +114,9 @@ export type AndroidEventName =
   | "wifi-connected"
   | "cast-device-found"
   | "cast-connected"
-  | "permission-denied";
+  | "permission-denied"
+  | "dnd-state-changed"
+  | "night-light-changed";
 
 /* ─── Augment the global Window type ─── */
 declare global {
