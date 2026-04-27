@@ -4,6 +4,7 @@ import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
 import { HelpCircle } from "lucide-react";
 import { AutoCarousel } from "./AutoCarousel";
+import { useNurseStore } from "./NurseDataStore";
 import svgPaths from "../../imports/svg-ca68x68c4i";
 
 function AboutUsIcon({ color }: { color?: string }) {
@@ -32,6 +33,7 @@ export function PatientGreeting({ onOpenAboutUs, onOpenTour, fillImage }: { onOp
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
   const { onPointerDown, rippleElements } = useRipple(theme.primarySubtle);
+  const nurseStore = useNurseStore();
 
   return (
     <div
@@ -87,7 +89,7 @@ export function PatientGreeting({ onOpenAboutUs, onOpenTour, fillImage }: { onOp
             color: theme.textHeading,
           }}
         >
-          {isRTL ? "سارة صالح" : "Sara Saleh"}
+          {nurseStore.patient.nameKey ? t(nurseStore.patient.nameKey) : nurseStore.patient.name}
         </p>
         <div style={{ paddingTop: SPACE[1] }}>
           <p
@@ -113,7 +115,7 @@ export function PatientGreeting({ onOpenAboutUs, onOpenTour, fillImage }: { onOp
                 color: theme.primary,
               }}
             >
-              {t("greeting.mrn")} 1611605
+              {t("greeting.mrn")} {nurseStore.patient.mrn}
             </span>
           </div>
           <div
@@ -127,7 +129,7 @@ export function PatientGreeting({ onOpenAboutUs, onOpenTour, fillImage }: { onOp
                 color: theme.primary,
               }}
             >
-              {t("greeting.room", "412")}
+              {t("greeting.room", nurseStore.patient.room)}
             </span>
           </div>
           <div
@@ -141,7 +143,7 @@ export function PatientGreeting({ onOpenAboutUs, onOpenTour, fillImage }: { onOp
                 color: theme.primary,
               }}
             >
-              {t("greeting.ext", "4217")}
+              {t("greeting.ext", nurseStore.patient.extension)}
             </span>
           </div>
         </div>

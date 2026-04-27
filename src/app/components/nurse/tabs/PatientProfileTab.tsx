@@ -24,7 +24,8 @@ export function PatientProfileTab({ role }: { role: "nurse" | "doctor" }) {
   };
 
   const fields = [
-    { key: "name", label: "Full Name", span: 2 },
+    { key: "name", label: "Full Name (English)", span: 1 },
+    { key: "nameAr", label: "Full Name (Arabic)", span: 1 },
     { key: "age", label: "Age" },
     { key: "mrn", label: "MRN" },
     { key: "room", label: "Room" },
@@ -101,6 +102,34 @@ export function PatientProfileTab({ role }: { role: "nurse" | "doctor" }) {
           >
             Cancel
           </button>
+        </div>
+      )}
+
+      {!editing && !isReadOnly && (
+        <div className="mt-8 pt-6" style={{ borderTop: `1px solid ${t.borderDefault}` }}>
+          <h4 style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading, marginBottom: 12 }}>
+            CareMe Integration
+          </h4>
+          <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: "#F9FAFB", border: `1px solid ${t.borderDefault}` }}>
+            <div className="flex flex-col gap-1">
+              <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading }}>
+                "Nurse View" Shortcut Button
+              </span>
+              <span style={{ fontSize: "12px", color: t.textMuted }}>
+                Show the stethoscope button on the patient's CareMe widget header
+              </span>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={store.nurseViewShortcutVisible}
+                onChange={(e) => nurseActions.setNurseViewShortcutVisible(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"
+                style={{ backgroundColor: store.nurseViewShortcutVisible ? t.primary : "#E5E7EB" }} />
+            </label>
+          </div>
         </div>
       )}
 

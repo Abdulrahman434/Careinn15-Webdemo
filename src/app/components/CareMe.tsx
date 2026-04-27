@@ -1,5 +1,6 @@
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, primaryRgba, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
+import { useNurseStore, type SectionKey } from "./NurseDataStore";
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -41,6 +42,10 @@ import {
   IdCard,
   User,
   ShieldCheck,
+  Stethoscope,
+  Droplet,
+  Thermometer,
+  Wind,
 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import svgPaths from "../../imports/svg-ca68x68c4i";
@@ -98,7 +103,7 @@ interface SlideConfig {
   icon: typeof Heart;
 }
 
-const slides: SlideConfig[] = [
+const ALL_SLIDES: SlideConfig[] = [
   { key: "profile", title: "Patient Profile", titleKey: "care.profile.title", icon: IdCard },
   { key: "overview", title: "Care Overview", titleKey: "care.overview.title", icon: Activity },
   { key: "plan", title: "My Care Plan", titleKey: "care.plan.title", icon: ClipboardList },
@@ -107,27 +112,25 @@ const slides: SlideConfig[] = [
   { key: "imaging", title: "Scans & Imaging", titleKey: "care.imaging.title", icon: ImageIcon },
   { key: "baby", title: "Baby Camera", titleKey: "care.baby.title", icon: Baby },
   { key: "discharge", title: "Discharge Plan", titleKey: "care.discharge.title", icon: LogOut },
+  { key: "observations", title: "Observations", titleKey: "care.observations.title", icon: Activity },
 ];
 
-const billingItems = [
-  { id: 1, labelKey: "bill.item.room", amount: 1200, unit: "SAR", category: "accommodation", qty: 2 },
-  { id: 2, labelKey: "bill.item.delivery", amount: 15000, unit: "SAR", category: "clinical", qty: 1 },
-  { id: 3, labelKey: "bill.item.labs", amount: 1250, unit: "SAR", category: "clinical", qty: 1 },
-  { id: 4, labelKey: "bill.item.pharmacy", amount: 840, unit: "SAR", category: "supplies", qty: 1 },
-];
+/** Map CareMe slide keys → NurseDataStore SectionKey */
+const SLIDE_TO_SECTION: Record<string, SectionKey> = {
+  profile: "profile",
+  overview: "careOverview",
+  plan: "carePlan",
+  billing: "financial",
+  labs: "labs",
+  imaging: "imaging",
+  baby: "baby",
+  discharge: "discharge",
+  observations: "observations",
+};
 
-const labResults = [
-  { labelKey: "care.labs.cbc", value: "Normal range", status: "normal", date: "10 Mar", summaryKey: "care.labs.cbcSummary", pdfUrl: "/reports/lab-report-cbc.html" },
-  { labelKey: "care.labs.hemoglobin", value: "11.2 g/dL", status: "low", date: "10 Mar", summaryKey: "care.labs.hgbSummary", pdfUrl: "/reports/lab-report-cbc.html" },
-  { labelKey: "care.labs.glucose", value: "98 mg/dL", status: "normal", date: "11 Mar", summaryKey: "care.labs.normalRange", pdfUrl: "/reports/lab-report-cbc.html" },
-  { labelKey: "care.labs.potassium", value: "4.1 mmol/L", status: "normal", date: "11 Mar", summaryKey: "care.labs.normalRange", pdfUrl: "/reports/lab-report-cbc.html" },
-];
 
-const imagingResults = [
-  { labelKey: "care.imaging.ultrasound", date: "09 Mar", summaryKey: "care.imaging.summary", type: "Obstetric", pdfUrl: "/reports/obstetric-ultrasound.html" },
-  { labelKey: "care.imaging.xray", date: "05 Mar", summaryKey: "care.imaging.xraySummary", type: "Chest", pdfUrl: "/reports/chest-xray.html" },
-  { labelKey: "care.imaging.doppler", date: "12 Mar", summaryKey: "care.imaging.dopplerSummary", type: "Ultrasound", pdfUrl: "/reports/venous-doppler.html" },
-];
+
+
 /* ─── Helper for Inner Containers ─── */
 function SectionContainer({ children, theme, isExpanded, padding, bg, className = "" }: any) {
   return (
@@ -207,6 +210,8 @@ function GendersIcon({ size = 14, style }: { size?: number, style?: any }) {
 
 function PatientProfileSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: boolean }) {
   const { t, localizeNumber } = useLocale();
+  const nurseStore = useNurseStore();
+  const p = nurseStore.patient;
 
   const infoRow = (icon: React.ComponentType<any>, label: string, val: string, customColor?: string) => {
     const Icon = icon;
@@ -249,8 +254,8 @@ function PatientProfileSlide({ theme, isExpanded = false }: { theme: any, isExpa
       <SectionContainer theme={theme} isExpanded={isExpanded} padding={isExpanded ? "16px 20px" : "12px 14px"}>
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-2 gap-x-6">
-            {infoRow(LogIn, t("care.admitted"), t("date.5mar2026"), "#EF4444")}
-            {infoRow(LogOut, t("care.discharge"), t("date.12mar2026"), "#22C55E")}
+            {infoRow(LogIn, t("care.admitted"), p.admissionDate, "#EF4444")}
+            {infoRow(LogOut, t("care.discharge"), p.dischargeDate, "#22C55E")}
           </div>
         </div>
       </SectionContainer>
@@ -264,17 +269,19 @@ function PatientProfileSlide({ theme, isExpanded = false }: { theme: any, isExpa
             </div>
             <div className="flex flex-col pt-0.5">
               <p style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "16px" : "13px", color: theme.textMuted, lineHeight: "1.2" }}>{t("care.fullName")}</p>
-              <p style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "18px" : "15.5px", fontWeight: WEIGHT.bold, color: theme.textHeading, lineHeight: "1.4", marginTop: "2px" }}>{t("care.patientName")}</p>
+              <p style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "18px" : "15.5px", fontWeight: WEIGHT.bold, color: theme.textHeading, lineHeight: "1.4", marginTop: "2px" }}>
+                {t("direction") === "rtl" && p.nameAr ? p.nameAr : (p.nameKey ? t(p.nameKey) : p.name)}
+              </p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-            {infoRow(Hash, t("greeting.mrn"), <span dir="ltr">1611605</span>)}
+            {infoRow(Hash, t("greeting.mrn"), <span dir="ltr">{p.mrn}</span>)}
             {infoRow(Shield, t("care.insurance"), t("care.insurance.tawuniya"))}
-            {infoRow(CalendarDays, t("care.age"), t("care.ageUnits", localizeNumber(33)))}
+            {infoRow(CalendarDays, t("care.age"), t("care.ageUnits", localizeNumber(Number(p.age) || 0)))}
             {infoRow(GendersIcon, t("care.gender"), t("care.gender.female"))}
             {infoRow(Clock, t("care.dob"), t("care.birthDateVal"))}
-            {infoRow(DoorOpen, t("care.room") + " / " + t("care.bed"), "412 / A")}
+            {infoRow(DoorOpen, t("care.room") + " / " + t("care.bed"), `${p.room} / A`)}
           </div>
         </div>
       </SectionContainer>
@@ -296,8 +303,8 @@ function PatientProfileSlide({ theme, isExpanded = false }: { theme: any, isExpa
           </div>
 
           <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-            {infoRow(Phone, t("care.mobile"), <span dir="ltr">050 123 4567</span>, "#EF4444")}
-            {infoRow(Heart, t("care.relative"), t("care.emergencyName").split('(')[1]?.replace(')', '') || "Mother", "#EF4444")}
+            {infoRow(Phone, t("care.mobile"), <span dir="ltr">{p.contact}</span>, "#EF4444")}
+            {infoRow(Heart, t("care.relative"), p.emergencyName.split('(')[1]?.replace(')', '') || "Mother", "#EF4444")}
           </div>
         </div>
       </SectionContainer>
@@ -308,8 +315,10 @@ function PatientProfileSlide({ theme, isExpanded = false }: { theme: any, isExpa
 /* ─── Care Overview Slide (Clinical Status) ─── */
 function CareOverviewSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: boolean }) {
   const { t } = useLocale();
-  const allergies = ["Penicillin", "Latex", "Shellfish"];
-  const dietCodes = ["NAS", "DM"];
+  const nurseStore = useNurseStore();
+  const storeAllergies = nurseStore.allergies;
+  const storeDietCodes = nurseStore.dietCodes.map(d => d.code);
+  const storePainScore = nurseStore.painScore;
   const labelSize = isExpanded ? "16px" : "13px";
 
   return (
@@ -317,8 +326,8 @@ function CareOverviewSlide({ theme, isExpanded = false }: { theme: any, isExpand
       {/* Module 1: Care Team */}
       <SectionContainer theme={theme} isExpanded={isExpanded}>
         <div className="flex flex-col gap-6">
-          {careTeam.map((m, i) => (
-            <div key={m.nameKey + i} className="flex items-center gap-4">
+          {nurseStore.careTeam.filter(m => m.visible).map((m, i) => (
+            <div key={m.id || i} className="flex items-center gap-4">
               <div
                 className="overflow-hidden shrink-0 border border-white shadow-sm"
                 style={{
@@ -363,7 +372,7 @@ function CareOverviewSlide({ theme, isExpanded = false }: { theme: any, isExpand
             <div className="flex flex-col gap-2">
               <p style={{ fontFamily: theme.fontFamily, fontSize: labelSize, color: theme.textMuted }}>{t("care.diet.title")}</p>
               <div className="flex flex-wrap gap-2.5">
-                {dietCodes.map(d => (
+                {storeDietCodes.map(d => (
                   <span key={d} className="px-3 py-1.5 rounded-md border font-bold" style={{
                     fontSize: isExpanded ? "15px" : "13px",
                     backgroundColor: theme.primarySubtle,
@@ -391,7 +400,7 @@ function CareOverviewSlide({ theme, isExpanded = false }: { theme: any, isExpand
             <div className="flex flex-col gap-2">
               <p style={{ fontFamily: theme.fontFamily, fontSize: labelSize, color: "#EF4444", fontWeight: WEIGHT.bold }}>{t("care.allergies")}</p>
               <div className="flex flex-wrap gap-2">
-                {allergies.map(a => (
+                {storeAllergies.map(a => (
                   <span key={a} className="px-3 py-1 rounded-md font-bold" style={{
                     fontSize: isExpanded ? "15px" : "13px",
                     backgroundColor: "#EF444415",
@@ -425,13 +434,13 @@ function CareOverviewSlide({ theme, isExpanded = false }: { theme: any, isExpand
                   color: theme.warning,
                   fontWeight: 900,
                   lineHeight: 1
-                }}>5 / 10</span>
+                }}>{storePainScore} / 10</span>
               </div>
               <div className="relative h-2.5 w-full rounded-full overflow-hidden" style={{ backgroundColor: theme.primarySubtle }}>
                 <div
                   className="h-full rounded-full transition-transform duration-500"
                   style={{
-                    width: '50%',
+                    width: `${storePainScore * 10}%`,
                     background: `linear-gradient(90deg, #4ADE80 0%, #FACC15 50%, #EF4444 100%)`,
                     backgroundSize: '200% 100%'
                   }}
@@ -498,7 +507,7 @@ function TimelineSlide({
           const hasConnector = i < items.length - 1;
           const hasPrev = i > 0;
           return (
-            <div key={step.labelKey} className="flex items-center gap-3 relative">
+            <div key={step.id || step.labelKey} className="flex items-center gap-3 relative">
               {/* Top half connector — color follows previous step */}
               {hasPrev && (
                 <div
@@ -544,11 +553,15 @@ function TimelineSlide({
               <div
                 className="flex-1 flex items-center justify-between px-3"
                 style={{
-                  borderRadius: theme.radiusLg,
-                  backgroundColor: step.active ? `${theme.primarySubtle}` : "transparent",
-                  border: step.active ? `1px solid ${theme.primarySubtle}` : "1px solid transparent",
-                  paddingTop: isExpanded ? "20px" : "18px",
-                  paddingBottom: isExpanded ? "20px" : "18px",
+                  borderRadius: step.active ? "24px" : theme.radiusLg,
+                  backgroundColor: step.active ? `${theme.primary}12` : "transparent",
+                  border: step.active ? `1px solid ${theme.primary}25` : "1px solid transparent",
+                  paddingTop: isExpanded ? "20px" : (step.active ? "16px" : "14px"),
+                  paddingBottom: isExpanded ? "20px" : (step.active ? "16px" : "14px"),
+                  paddingLeft: "20px",
+                  paddingRight: "20px",
+                  transition: "all 0.3s ease",
+                  boxShadow: step.active ? "0 4px 12px rgba(0,0,0,0.03)" : "none"
                 }}
               >
                 <span style={{
@@ -558,16 +571,17 @@ function TimelineSlide({
                   color: step.active ? theme.primary : step.done ? theme.textMuted : theme.textHeading,
                   textDecoration: "none",
                 }}>
-                  {t(step.labelKey)}
+                  {t("direction") === "rtl" && step.labelAr ? step.labelAr : (step.label || (step.labelKey ? t(step.labelKey) : ""))}
                 </span>
                 <span
                   className="flex items-center gap-1 shrink-0 ml-2 px-2 py-0.5"
                   style={{
-                    borderRadius: theme.radiusSm,
+                    borderRadius: "12px",
                     fontSize: labelSize,
-                    fontWeight: WEIGHT.bold,
+                    fontWeight: 700,
                     color: step.done ? theme.success : step.active ? theme.primary : theme.textMuted,
-                    backgroundColor: step.done ? theme.successSubtle : step.active ? theme.primarySubtle : "transparent",
+                    backgroundColor: step.done ? theme.successSubtle : step.active ? `${theme.primary}18` : "transparent",
+                    padding: "6px 12px",
                   }}
                 >
                   {step.done ? <Check size={isExpanded ? 12 : 10} /> : <Clock size={isExpanded ? 12 : 10} />}
@@ -628,6 +642,7 @@ function AllergySlide() {
 
 function LabResultsSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: boolean }) {
   const { t } = useLocale();
+  const nurseStore = useNurseStore();
   const [pdfModal, setPdfModal] = useState<{ url: string; title: string } | null>(null);
 
   const valueSize = isExpanded ? "16px" : "15.5px";
@@ -645,11 +660,18 @@ function LabResultsSlide({ theme, isExpanded = false }: { theme: any, isExpanded
     return theme.primarySubtle;
   };
 
+  const visibleResults = nurseStore.labResults.filter(l => l.visible);
+
   return (
     <>
       <div className="flex flex-col gap-4">
-        {labResults.map((lab, i) => (
-          <SectionContainer key={lab.labelKey + i} theme={theme} isExpanded={isExpanded}>
+        {visibleResults.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 opacity-40">
+            <FlaskConical size={40} />
+            <p className="mt-2 text-sm">No visible lab results</p>
+          </div>
+        ) : visibleResults.map((lab, i) => (
+          <SectionContainer key={lab.id || i} theme={theme} isExpanded={isExpanded}>
             <div
               className="flex flex-col gap-2 cursor-pointer"
               onClick={() => setPdfModal({ url: `${lab.pdfUrl}?h=${theme.id}`, title: t(lab.labelKey) })}
@@ -751,16 +773,24 @@ function PdfViewerModal({ url, title, onClose }: { url: string; title: string; o
 
 function ImagingSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: boolean }) {
   const { t } = useLocale();
+  const nurseStore = useNurseStore();
   const [pdfModal, setPdfModal] = useState<{ url: string; title: string } | null>(null);
 
   const valueSize = isExpanded ? "16px" : "15.5px";
   const labelSize = isExpanded ? "16px" : "13.5px";
 
+  const visibleResults = nurseStore.imagingResults.filter(i => i.visible);
+
   return (
     <>
       <div className="flex flex-col gap-4">
-        {imagingResults.map((img, i) => (
-          <SectionContainer key={img.labelKey + i} theme={theme} isExpanded={isExpanded}>
+        {visibleResults.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 opacity-40">
+            <ImageIcon size={40} />
+            <p className="mt-2 text-sm">No visible imaging results</p>
+          </div>
+        ) : visibleResults.map((img, i) => (
+          <SectionContainer key={img.id || i} theme={theme} isExpanded={isExpanded}>
             <div
               className="flex flex-col gap-2 cursor-pointer"
               onClick={() => setPdfModal({ url: `${img.pdfUrl}?h=${theme.id}`, title: t(img.labelKey) })}
@@ -808,6 +838,93 @@ function ImagingSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: 
       </div>
       {pdfModal && <PdfViewerModal url={pdfModal.url} title={pdfModal.title} onClose={() => setPdfModal(null)} />}
     </>
+  );
+}
+
+function ClinicalObservationsSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: boolean }) {
+  const { t } = useLocale();
+  const nurseStore = useNurseStore();
+  const obs = [...nurseStore.observations].reverse();
+
+  const labelSize = isExpanded ? "16px" : "13px";
+
+  if (obs.length === 0) {
+    return (
+      <SectionContainer theme={theme} isExpanded={isExpanded}>
+        <div className="flex flex-col items-center justify-center py-10 opacity-40">
+          <Activity size={40} />
+          <p className="mt-2 text-sm">No observations recorded</p>
+        </div>
+      </SectionContainer>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {obs.map((item, idx) => (
+        <SectionContainer key={item.id || idx} theme={theme} isExpanded={isExpanded} bg={idx === 0 ? "rgba(255,255,255,0.05)" : undefined}>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {idx === 0 && (
+                  <span style={{ fontSize: "10px", fontWeight: 800, backgroundColor: theme.primary, color: "#fff", padding: "2px 8px", borderRadius: 99, letterSpacing: "0.5px" }}>LATEST</span>
+                )}
+                <span style={{ fontFamily: theme.fontFamily, fontSize: labelSize, color: idx === 0 ? theme.primary : theme.textMuted, fontWeight: idx === 0 ? 700 : 500 }}>Vitals Update</span>
+              </div>
+              <span style={{ fontSize: "11px", color: theme.textDisabled, fontWeight: 700 }}>
+                {item.timestamp instanceof Date ? item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                {" • "}
+                {item.timestamp instanceof Date ? item.timestamp.toLocaleDateString([], { day: '2-digit', month: 'short' }) : ''}
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-xl bg-slate-50/50 border border-slate-100">
+                <div className="flex items-center gap-1.5 mb-1 opacity-60">
+                  <Droplet size={12} color="#EF4444" />
+                  <span style={{ fontSize: "10px", fontWeight: 700 }}>BP</span>
+                </div>
+                <span style={{ fontSize: "18px", fontWeight: 900, color: theme.textHeading }}>{item.vitals.bp || "—"}</span>
+                <span style={{ fontSize: "10px", color: theme.textMuted, marginLeft: 2 }}>mmHg</span>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50/50 border border-slate-100">
+                <div className="flex items-center gap-1.5 mb-1 opacity-60">
+                  <Activity size={12} color="#F43F5E" />
+                  <span style={{ fontSize: "10px", fontWeight: 700 }}>HR</span>
+                </div>
+                <span style={{ fontSize: "18px", fontWeight: 900, color: theme.textHeading }}>{item.vitals.hr || "—"}</span>
+                <span style={{ fontSize: "10px", color: theme.textMuted, marginLeft: 2 }}>BPM</span>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50/50 border border-slate-100">
+                <div className="flex items-center gap-1.5 mb-1 opacity-60">
+                  <Thermometer size={12} color="#F59E0B" />
+                  <span style={{ fontSize: "10px", fontWeight: 700 }}>TEMP</span>
+                </div>
+                <span style={{ fontSize: "18px", fontWeight: 900, color: theme.textHeading }}>{item.vitals.temp || "—"}</span>
+                <span style={{ fontSize: "10px", color: theme.textMuted, marginLeft: 2 }}>°C</span>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50/50 border border-slate-100">
+                <div className="flex items-center gap-1.5 mb-1 opacity-60">
+                  <Wind size={12} style={{ color: theme.primary }} />
+                  <span style={{ fontSize: "10px", fontWeight: 700 }}>SpO₂</span>
+                </div>
+                <span style={{ fontSize: "18px", fontWeight: 900, color: theme.textHeading }}>{item.vitals.spo2 || "—"}</span>
+                <span style={{ fontSize: "10px", color: theme.textMuted, marginLeft: 2 }}>%</span>
+              </div>
+            </div>
+
+            {item.nurseNotes && (
+              <div className="mt-1 pt-3 border-t border-dashed border-slate-200">
+                <p style={{ fontSize: "13px", color: theme.textHeading, lineHeight: 1.5, fontStyle: "italic", opacity: 0.8 }}>
+                  <ClipboardList size={12} className="inline mr-1 opacity-40" />
+                  {item.nurseNotes}
+                </p>
+              </div>
+            )}
+          </div>
+        </SectionContainer>
+      ))}
+    </div>
   );
 }
 
@@ -974,13 +1091,14 @@ function BabyCameraFullscreen({ onClose, cameraImage }: { onClose: () => void, c
 
 function FinanceSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: boolean }) {
   const { t } = useLocale();
+  const nurseStore = useNurseStore();
   const [showPdf, setShowPdf] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
 
   const valueSize = isExpanded ? "16px" : "14px";
   const labelSize = isExpanded ? "16px" : "13px";
 
-  const Row = ({ label, value, qty, isTotal = false, isHighlight = false, color }: any) => (
+  const Row = ({ label, value, description, isTotal = false, isHighlight = false, color }: any) => (
     <div className="flex items-center justify-between py-2" style={{ borderColor: theme.borderSubtle }}>
       <div className="flex flex-col" style={{ gap: "2px" }}>
         <span style={{
@@ -990,9 +1108,9 @@ function FinanceSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: 
           fontWeight: isTotal ? WEIGHT.bold : WEIGHT.medium,
           lineHeight: 1.2
         }}>{label}</span>
-        {qty !== undefined && (
+        {description && (
           <span style={{ fontSize: "11px", color: theme.textDisabled, fontWeight: 700 }}>
-            {t("bill.item.qty")} × {qty}
+            {description}
           </span>
         )}
       </div>
@@ -1005,14 +1123,25 @@ function FinanceSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: 
     </div>
   );
 
+  const subtotal = nurseStore.financial.reduce((acc, item) => acc + item.amount, 0);
+  const covered = nurseStore.financial.reduce((acc, item) => acc + item.covered, 0);
+  const vat = subtotal * 0.15;
+  const total = subtotal + vat;
+  const payable = total - covered;
+
   return (
     <div className="flex flex-col gap-4">
       {/* Module 1: Itemized breakdown */}
       <SectionContainer theme={theme} isExpanded={isExpanded}>
         <div className="flex flex-col gap-0">
-          {billingItems.map((item, i) => (
-            <Row key={item.id} label={t(item.labelKey)} value={`${(item.amount * item.qty).toLocaleString()} ${t("care.currency")}`} qty={item.qty} />
+          {nurseStore.financial.map((item, i) => (
+            <Row key={item.id} label={item.category} value={`${item.amount.toLocaleString()} ${t("care.currency")}`} description={item.description} />
           ))}
+          <div style={{ height: "1px", backgroundColor: "rgba(0,0,0,0.06)", margin: "8px 0" }} />
+          <Row label={t("care.billing.subtotal")} value={`${subtotal.toLocaleString()} ${t("care.currency")}`} />
+          <Row label={t("care.billing.vat")} value={`${vat.toLocaleString()} ${t("care.currency")}`} />
+          <Row label={t("care.billing.totalInclVat")} value={`${total.toLocaleString()} ${t("care.currency")}`} />
+          <Row label={t("care.billing.insuranceCredit").replace("Deduction", "").trim()} value={`- ${covered.toLocaleString()} ${t("care.currency")}`} color={theme.success} isHighlight />
           <div style={{ height: "1px", backgroundColor: "rgba(0,0,0,0.06)", margin: "8px 0" }} />
           <Row label={t("care.billing.subtotal")} value={`19,490 ${t("care.currency")}`} />
           <Row label={t("care.billing.vat")} value={`2,923.5 ${t("care.currency")}`} />
@@ -1040,7 +1169,7 @@ function FinanceSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: 
         <div className="flex flex-col gap-5">
           <div className="flex items-center justify-between px-1">
             <span style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "16px" : "13.5px", color: theme.textMuted, fontWeight: WEIGHT.bold }}>{t("care.billing.patientPayable")}</span>
-            <span style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "26px" : "20px", color: theme.primary, fontWeight: 900 }}>3,898 <span style={{ fontSize: "0.6em" }}>{t("care.currency")}</span></span>
+            <span style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "26px" : "20px", color: theme.primary, fontWeight: 900 }}>{payable.toLocaleString()} <span style={{ fontSize: "0.6em" }}>{t("care.currency")}</span></span>
           </div>
 
           <button
@@ -1301,6 +1430,7 @@ function SlideIcon({ slideKey }: { slideKey: string }) {
     case "imaging": return <ImageIcon {...iconProps} style={{ color }} />;
     case "baby": return <Baby {...iconProps} style={{ color }} />;
     case "discharge": return <LogOut {...iconProps} style={{ color }} />;
+    case "observations": return <Activity {...iconProps} style={{ color }} />;
     default: return <Heart {...iconProps} style={{ color }} />;
   }
 }
@@ -1387,6 +1517,7 @@ function DateStrip() {
 export function CareMe({ onExpand }: { onExpand?: () => void }) {
   const { theme } = useTheme();
   const { t, isRTL, dir } = useLocale();
+  const nurseStore = useNurseStore();
   const [activeIndex, setActiveIndex] = useState(1); // Start at index 1 because of clones
   const [isBlurred, setIsBlurred] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
@@ -1402,12 +1533,26 @@ export function CareMe({ onExpand }: { onExpand?: () => void }) {
   const isNavigating = useRef(false);
   const navLockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Filter slides based on nurse store section visibility
+  const slides = useMemo(() =>
+    ALL_SLIDES.filter((s) => {
+      const sectionKey = SLIDE_TO_SECTION[s.key];
+      return sectionKey ? nurseStore.sectionVisibility[sectionKey] !== false : true;
+    }),
+    [nurseStore.sectionVisibility]
+  );
+
+  // Reset activeIndex when slides change (sections toggled)
+  useEffect(() => {
+    setActiveIndex(1);
+  }, [slides.length]);
+
   // Extended slides for circular carousel: [Last, S0, S1, S2, S3, S4, S5, S6, First]
   const extendedSlides = useMemo(() => [
     slides[slides.length - 1],
     ...slides,
     slides[0]
-  ], []);
+  ], [slides]);
 
   const goTo = useCallback(
     (idx: number) => {
@@ -1560,12 +1705,13 @@ export function CareMe({ onExpand }: { onExpand?: () => void }) {
     switch (key) {
       case "profile": return <PatientProfileSlide theme={theme} />;
       case "overview": return <CareOverviewSlide theme={theme} />;
-      case "plan": return <TimelineSlide items={carePlan} theme={theme} />;
+      case "plan": return <TimelineSlide items={nurseStore.carePlan} theme={theme} />;
       case "labs": return <LabResultsSlide theme={theme} />;
       case "imaging": return <ImagingSlide theme={theme} />;
       case "billing": return <FinanceSlide theme={theme} />;
       case "baby": return <BabyCameraSlide />;
-      case "discharge": return <TimelineSlide items={dischargePlan} theme={theme} completedLabel="2 of 6 Completed" />;
+      case "discharge": return <TimelineSlide items={nurseStore.dischargePlan} theme={theme} completedLabel="2 of 6 Completed" />;
+      case "observations": return <ClinicalObservationsSlide theme={theme} />;
       default: return null;
     }
   };
@@ -1593,6 +1739,25 @@ export function CareMe({ onExpand }: { onExpand?: () => void }) {
           <span style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.sectionTitle, color: theme.textHeading }}>CareMe</span>
         </div>
         <div className="flex items-center gap-1">
+          {nurseStore.nurseViewShortcutVisible && (
+            <button
+              data-nav="true"
+              onClick={() => window.dispatchEvent(new CustomEvent("open-nurse-view"))}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 cursor-pointer active:scale-95 transition-all"
+              style={{
+                borderRadius: theme.radiusMd,
+                outline: "none",
+                backgroundColor: theme.primarySubtle,
+                border: `1px solid ${theme.primary}25`,
+              }}
+              aria-label="Update in Nurse View"
+            >
+              <Stethoscope size={13} style={{ color: theme.primary }} />
+              <span style={{ fontFamily: theme.fontFamily, fontSize: "11px", fontWeight: 700, color: theme.primary }}>
+                Nurse View
+              </span>
+            </button>
+          )}
           <button
             data-nav="true"
             onClick={() => setIsBlurred(prev => !prev)}
@@ -1766,20 +1931,22 @@ function ExpandedSlideIcon({ slideKey, size = 20 }: { slideKey: string; size?: n
     case "baby": return <Baby {...iconProps} />;
     case "billing": return <Wallet {...iconProps} />;
     case "discharge": return <LogOut {...iconProps} />;
+    case "observations": return <Activity {...iconProps} />;
     default: return <Heart {...iconProps} />;
   }
 }
 
-function renderExpandedSlideContent(key: string, theme: any, t: (k: string) => string) {
+function renderExpandedSlideContent(key: string, theme: any, t: (k: string) => string, nurseStore: any) {
   switch (key) {
     case "profile": return <PatientProfileSlide theme={theme} isExpanded />;
     case "overview": return <CareOverviewSlide theme={theme} isExpanded />;
-    case "plan": return <TimelineSlide items={carePlan} theme={theme} isExpanded />;
+    case "plan": return <TimelineSlide items={nurseStore?.carePlan || []} theme={theme} isExpanded />;
     case "labs": return <LabResultsSlide theme={theme} isExpanded />;
     case "imaging": return <ImagingSlide theme={theme} isExpanded />;
     case "billing": return <FinanceSlide theme={theme} isExpanded />;
     case "baby": return <BabyCameraSlide isExpanded />;
-    case "discharge": return <TimelineSlide items={dischargePlan} theme={theme} completedLabel="2 of 6 Completed" isExpanded />;
+    case "discharge": return <TimelineSlide items={nurseStore?.dischargePlan || []} theme={theme} completedLabel="2 of 6 Completed" isExpanded />;
+    case "observations": return <ClinicalObservationsSlide theme={theme} isExpanded />;
     default: return null;
   }
 }
@@ -1787,7 +1954,17 @@ function renderExpandedSlideContent(key: string, theme: any, t: (k: string) => s
 export function CareMeExpanded({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
   const { t, isRTL } = useLocale();
+  const nurseStore = useNurseStore();
   const primary = theme.primary;
+
+  // Filter slides by nurse visibility
+  const slides = useMemo(() =>
+    ALL_SLIDES.filter((s) => {
+      const sectionKey = SLIDE_TO_SECTION[s.key];
+      return sectionKey ? nurseStore.sectionVisibility[sectionKey] !== false : true;
+    }),
+    [nurseStore.sectionVisibility]
+  );
 
   return (
     <div
@@ -1919,7 +2096,7 @@ export function CareMeExpanded({ onClose }: { onClose: () => void }) {
               >
                 {/* Column content */}
                 <div className="flex-1 min-h-0 overflow-y-auto careme-scroll" style={{ padding: "20px 12px 22px 12px" }}>
-                  {renderExpandedSlideContent(slide.key, theme, t)}
+                  {renderExpandedSlideContent(slide.key, theme, t, nurseStore)}
                 </div>
               </div>
             </div>

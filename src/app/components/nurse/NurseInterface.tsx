@@ -168,17 +168,6 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
                 <Icon size={16} />
                 {tab.label}
               </button>
-              {tab.hasVisibility && role === "nurse" && (
-                <label className="flex items-center gap-1 cursor-pointer ml-1 shrink-0" title="Show to patient">
-                  <input
-                    type="checkbox"
-                    checked={isVisible}
-                    onChange={(e) => nurseActions.setSectionVisible(tab.key, e.target.checked)}
-                    className="cursor-pointer"
-                    style={{ accentColor: t.primary, width: 14, height: 14 }}
-                  />
-                </label>
-              )}
             </div>
           );
         })}

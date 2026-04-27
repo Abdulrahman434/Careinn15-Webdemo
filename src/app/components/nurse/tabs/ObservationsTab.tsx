@@ -1,9 +1,10 @@
 import { useState } from "react";
 import {
   Activity, Droplet, Thermometer, Wind, Save, CheckCircle2,
-  Clock, Trash2, Stethoscope, AlertTriangle, ClipboardList,
+  Clock, Trash2, Stethoscope, AlertTriangle, ClipboardList, Eye
 } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
+import { useLocale } from "../../i18n";
 import { useNurseStore, nurseActions, type ClinicalObservation, type DoctorNote } from "../../NurseDataStore";
 
 function fmtFull(d: Date) {
@@ -18,6 +19,7 @@ function painColor(n: number) {
 
 export function ObservationsTab({ role }: { role: "nurse" | "doctor" }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLocale();
   const store = useNurseStore();
   const isNurse = role === "nurse";
 
@@ -63,7 +65,32 @@ export function ObservationsTab({ role }: { role: "nurse" | "doctor" }) {
   };
 
   return (
-    <div className="flex gap-5" style={{ minHeight: 500 }}>
+    <div className="flex flex-col gap-5">
+      {isNurse && (
+        <div className="nurse-card flex items-center justify-between" style={{ marginBottom: 0 }}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: t.primarySubtle }}>
+              <Eye size={18} style={{ color: t.primary }} />
+            </div>
+            <div>
+              <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading, display: "block" }}>Show Section to Patient</span>
+              <span style={{ fontSize: "12px", color: t.textMuted }}>Toggle visibility for "Observations" on the bedside screen</span>
+            </div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={store.sectionVisibility.observations}
+              onChange={(e) => nurseActions.setSectionVisible("observations", e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"
+              style={{ backgroundColor: store.sectionVisibility.observations ? t.primary : "#E5E7EB" }} />
+          </label>
+        </div>
+      )}
+
+      <div className="flex gap-5" style={{ minHeight: 500 }}>
       {/* Main content */}
       <div className="flex-1">
         {isAdding ? (
@@ -74,17 +101,44 @@ export function ObservationsTab({ role }: { role: "nurse" | "doctor" }) {
             {/* Vitals */}
             <div className="grid grid-cols-4 gap-3 mb-5">
               {[
-                { key: "bp", label: "Blood Pressure", unit: "mmHg", icon: <Droplet size={14} color="#EF4444" /> },
-                { key: "hr", label: "Heart Rate", unit: "BPM", icon: <Activity size={14} color="#F43F5E" /> },
-                { key: "temp", label: "Temperature", unit: "°C", icon: <Thermometer size={14} color="#F59E0B" /> },
-                { key: "spo2", label: "O₂ Saturation", unit: "%", icon: <Wind size={14} style={{ color: t.primary }} /> },
+                { key: "bp", label: "Blood Pressure", unit: "mmHg", icon: <Droplet size={14} color="#EF4444" />, placeholder: "120/80" },
+                { key: "hr", label: "Heart Rate", unit: "BPM", icon: <Activity size={14} color="#F43F5E" />, placeholder: "72" },
+                { key: "temp", label: "Temperature", unit: "°C", icon: <Thermometer size={14} color="#F59E0B" />, placeholder: "37.0" },
+                { key: "spo2", label: "O₂ Saturation", unit: "%", icon: <Wind size={14} style={{ color: t.primary }} />, placeholder: "98" },
               ].map((v) => (
                 <div key={v.key} className="p-3 rounded-xl" style={{ backgroundColor: "#F9FAFB", border: `1px solid ${t.borderDefault}` }}>
                   <div className="flex items-center gap-1.5 mb-2">{v.icon}<span style={{ fontSize: "10px", fontWeight: 700, color: t.textMuted }}>{v.label}</span></div>
                   <div className="flex items-baseline gap-1">
-                    <input value={(form.vitals as any)[v.key]} onChange={(e) => setForm({ ...form, vitals: { ...form.vitals, [v.key]: e.target.value } })}
-                      placeholder="—" className="bg-transparent border-none outline-none w-full"
-                      style={{ fontSize: "20px", fontWeight: 900, color: t.textHeading }} />
+                    <input
+                      value={(form.vitals as any)[v.key]}
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        
+                        if (v.key === "hr") {
+                          val = val.replace(/\D/g, "").slice(0, 3);
+                        } else if (v.key === "spo2") {
+                          val = val.replace(/\D/g, "");
+                          if (Number(val) > 100) val = "100";
+                        } else if (v.key === "temp") {
+                          val = val.replace(/[^0-9.]/g, "");
+                          if ((val.match(/\./g) || []).length > 1) val = val.slice(0, -1);
+                        } else if (v.key === "bp") {
+                          // Allow numbers and one slash, max 3 digits per side
+                          val = val.replace(/[^0-9/]/g, "");
+                          const parts = val.split("/");
+                          if (parts.length > 2) val = parts[0] + "/" + parts[1];
+                          const p0 = parts[0]?.slice(0, 3) || "";
+                          const p1 = parts[1]?.slice(0, 3) || "";
+                          val = parts.length > 1 ? `${p0}/${p1}` : p0;
+                        }
+
+                        setForm({ ...form, vitals: { ...form.vitals, [v.key]: val } });
+                      }}
+                      placeholder={v.placeholder}
+                      inputMode={v.key === "temp" ? "decimal" : "numeric"}
+                      className="bg-transparent border-none outline-none w-full"
+                      style={{ fontSize: "20px", fontWeight: 900, color: t.textHeading }}
+                    />
                     <span style={{ fontSize: "11px", color: t.textMuted }}>{v.unit}</span>
                   </div>
                 </div>
@@ -134,7 +188,7 @@ export function ObservationsTab({ role }: { role: "nurse" | "doctor" }) {
             <div className="mb-4">
               <span style={{ fontSize: "12px", fontWeight: 700, color: t.primary }}>Observation Review</span>
               <div className="flex items-center gap-2 mt-1">
-                <span style={{ fontSize: "16px", fontWeight: 800, color: t.textHeading }}>{activeObs.nurseName}</span>
+                <span style={{ fontSize: "16px", fontWeight: 800, color: t.textHeading }}>{tr(activeObs.nurseName)}</span>
                 <span style={{ color: t.textMuted, opacity: 0.3 }}>|</span>
                 <span style={{ fontSize: "13px", color: t.textMuted }}>{fmtFull(activeObs.timestamp)}</span>
               </div>
@@ -233,7 +287,7 @@ export function ObservationsTab({ role }: { role: "nurse" | "doctor" }) {
                 <div className="flex items-start justify-between mb-1.5">
                   <div>
                     <span style={{ fontSize: "10px", fontWeight: 800, color: t.primary, backgroundColor: t.primarySubtle, padding: "2px 8px", borderRadius: 99 }}>NURSE</span>
-                    <p style={{ fontSize: "12px", fontWeight: 700, color: t.textHeading, marginTop: 4 }}>{obs.nurseName}</p>
+                    <p style={{ fontSize: "12px", fontWeight: 700, color: t.textHeading, marginTop: 4 }}>{tr(obs.nurseName)}</p>
                     <p className="flex items-center gap-1 mt-0.5" style={{ fontSize: "11px", color: t.textMuted }}><Clock size={10} /> {fmtFull(obs.timestamp)}</p>
                   </div>
                   {isNurse && (
@@ -252,6 +306,7 @@ export function ObservationsTab({ role }: { role: "nurse" | "doctor" }) {
             ))}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

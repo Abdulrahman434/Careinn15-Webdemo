@@ -15,19 +15,25 @@ export function FinancialTab({ role }: { role: "nurse" | "doctor" }) {
     <div className="space-y-5">
       {isNurse && (
         <div className="nurse-card flex items-center justify-between" style={{ marginBottom: 0 }}>
-          <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading }}>Show Financial Summary to Patient</span>
-          <button
-            onClick={() => nurseActions.setFinancialShowToPatient(!store.financialShowToPatient)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl cursor-pointer transition-all"
-            style={{
-              fontSize: "13px", fontWeight: 700, border: "none",
-              backgroundColor: store.financialShowToPatient ? t.primarySubtle : t.errorSubtle,
-              color: store.financialShowToPatient ? t.primary : t.error,
-            }}
-          >
-            {store.financialShowToPatient ? <Eye size={14} /> : <EyeOff size={14} />}
-            {store.financialShowToPatient ? "Visible" : "Hidden"}
-          </button>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: t.primarySubtle }}>
+              <Eye size={18} style={{ color: t.primary }} />
+            </div>
+            <div>
+              <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading, display: "block" }}>Show Section to Patient</span>
+              <span style={{ fontSize: "12px", color: t.textMuted }}>Toggle visibility for "Financial" on the bedside screen</span>
+            </div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={store.sectionVisibility.financial}
+              onChange={(e) => nurseActions.setSectionVisible("financial", e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"
+              style={{ backgroundColor: store.sectionVisibility.financial ? t.primary : "#E5E7EB" }} />
+          </label>
         </div>
       )}
 

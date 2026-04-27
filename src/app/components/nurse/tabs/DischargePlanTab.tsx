@@ -1,16 +1,20 @@
 import { useState } from "react";
-import { LogOut, Plus, Trash2, Check, Clock, GripVertical, Edit2, Save } from "lucide-react";
+import { LogOut, Plus, Trash2, Check, Clock, GripVertical, Edit2, Save, Eye } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
+import { useLocale } from "../../i18n";
 import { useNurseStore, nurseActions } from "../../NurseDataStore";
 
 export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLocale();
   const store = useNurseStore();
   const isNurse = role === "nurse";
   const [newLabel, setNewLabel] = useState("");
+  const [newLabelAr, setNewLabelAr] = useState("");
   const [newMinutes, setNewMinutes] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
+  const [editLabelAr, setEditLabelAr] = useState("");
   const [dragIdx, setDragIdx] = useState<number | null>(null);
 
   const handleAdd = () => {
@@ -19,10 +23,12 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
       id: `dp-${Date.now().toString(36)}`,
       labelKey: "",
       label: newLabel.trim(),
+      labelAr: newLabelAr.trim(),
       done: false,
       minutes: Number(newMinutes) || 30,
     });
     setNewLabel("");
+    setNewLabelAr("");
     setNewMinutes("");
   };
 
@@ -39,7 +45,32 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
   const handleDragEnd = () => setDragIdx(null);
 
   return (
-    <div className="nurse-card">
+    <div className="space-y-5">
+      {isNurse && (
+        <div className="nurse-card flex items-center justify-between" style={{ marginBottom: 0 }}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: t.primarySubtle }}>
+              <Eye size={18} style={{ color: t.primary }} />
+            </div>
+            <div>
+              <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading, display: "block" }}>Show Section to Patient</span>
+              <span style={{ fontSize: "12px", color: t.textMuted }}>Toggle visibility for "Discharge Plan" on the bedside screen</span>
+            </div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={store.sectionVisibility.discharge}
+              onChange={(e) => nurseActions.setSectionVisible("discharge", e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"
+              style={{ backgroundColor: store.sectionVisibility.discharge ? t.primary : "#E5E7EB" }} />
+          </label>
+        </div>
+      )}
+
+      <div className="nurse-card">
       <h3 style={{ color: t.textHeading }}><LogOut size={18} style={{ color: t.primary }} /> Discharge Plan</h3>
       <div className="space-y-2">
         {store.dischargePlan.map((item, idx) => (
@@ -52,7 +83,7 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
               opacity: dragIdx === idx ? 0.5 : 1,
             }}>
             {isNurse && <GripVertical size={14} style={{ color: t.textMuted, cursor: "grab" }} />}
-            <button onClick={() => isNurse && nurseActions.updateDischargePlanItem(item.id, { done: !item.done, active: false })}
+            <button onClick={() => isNurse && nurseActions.toggleDischargePlanItem(item.id)}
               className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
               style={{
                 backgroundColor: item.done ? t.success : item.active ? t.primary : "transparent",
@@ -64,11 +95,15 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
             </button>
             <div className="flex-1 min-w-0">
               {editingId === item.id ? (
-                <div className="flex items-center gap-2">
-                  <input value={editLabel} onChange={(e) => setEditLabel(e.target.value)}
-                    className="flex-1 outline-none" style={{ padding: "4px 8px", borderRadius: 8, fontSize: "14px", border: `1px solid ${t.borderDefault}` }} />
-                  <button onClick={() => { nurseActions.updateDischargePlanItem(item.id, { label: editLabel }); setEditingId(null); }}
-                    className="p-1 cursor-pointer" style={{ color: t.success, background: "none", border: "none" }}><Save size={14} /></button>
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex items-center gap-2">
+                    <input value={editLabel} onChange={(e) => setEditLabel(e.target.value)} placeholder="English Label"
+                      className="flex-1 outline-none" style={{ padding: "4px 8px", borderRadius: 8, fontSize: "14px", border: `1px solid ${t.borderDefault}` }} />
+                    <button onClick={() => { nurseActions.updateDischargePlanItem(item.id, { label: editLabel, labelAr: editLabelAr }); setEditingId(null); }}
+                      className="p-1 cursor-pointer" style={{ color: t.success, background: "none", border: "none" }}><Save size={14} /></button>
+                  </div>
+                  <input value={editLabelAr} onChange={(e) => setEditLabelAr(e.target.value)} placeholder="Arabic Label" dir="rtl"
+                    className="w-full outline-none" style={{ padding: "4px 8px", borderRadius: 8, fontSize: "14px", border: `1px solid ${t.borderDefault}` }} />
                 </div>
               ) : (
                 <span style={{
@@ -76,18 +111,22 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
                   color: item.active ? t.primary : item.done ? t.textMuted : t.textHeading,
                   textDecoration: item.done ? "line-through" : "none",
                 }}>
-                  {item.label || item.labelKey}
+                  {tr("direction") === "rtl" && item.labelAr ? item.labelAr : (item.label || (item.labelKey ? tr(item.labelKey) : ""))}
                 </span>
               )}
             </div>
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-md shrink-0"
               style={{ fontSize: "12px", fontWeight: 600, color: item.done ? t.success : item.active ? t.primary : t.textMuted }}>
               {item.done ? <Check size={10} /> : <Clock size={10} />}
-              {item.timeKey || `${item.minutes || 30} min`}
+              {item.timeKey ? tr(item.timeKey) : `${item.minutes || 30} min`}
             </span>
             {isNurse && editingId !== item.id && (
               <div className="flex items-center gap-1">
-                <button onClick={() => { setEditingId(item.id); setEditLabel(item.label || item.labelKey); }}
+                <button onClick={() => { 
+                  setEditingId(item.id); 
+                  setEditLabel(item.label || (item.labelKey ? tr(item.labelKey) : ""));
+                  setEditLabelAr(item.labelAr || "");
+                }}
                   className="p-1 cursor-pointer" style={{ color: t.textMuted, background: "none", border: "none" }}><Edit2 size={13} /></button>
                 <button onClick={() => nurseActions.deleteDischargePlanItem(item.id)}
                   className="p-1 cursor-pointer" style={{ color: t.error, background: "none", border: "none" }}><Trash2 size={13} /></button>
@@ -97,18 +136,24 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
         ))}
       </div>
       {isNurse && (
-        <div className="flex items-center gap-2 mt-4 pt-4" style={{ borderTop: `1px solid ${t.borderDefault}` }}>
-          <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="New discharge item..."
-            className="flex-1 outline-none" style={{ padding: "10px 14px", borderRadius: 12, fontSize: "14px", border: `1.5px solid ${t.borderDefault}` }}
+        <div className="flex flex-col gap-3 mt-4 pt-4" style={{ borderTop: `1px solid ${t.borderDefault}` }}>
+          <div className="flex items-center gap-2">
+            <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="New item (English)..."
+              className="flex-1 outline-none" style={{ padding: "10px 14px", borderRadius: 12, fontSize: "14px", border: `1.5px solid ${t.borderDefault}` }}
+              onKeyDown={(e) => e.key === "Enter" && handleAdd()} />
+            <input value={newMinutes} onChange={(e) => setNewMinutes(e.target.value)} placeholder="Min" type="number"
+              className="outline-none" style={{ width: 70, padding: "10px 12px", borderRadius: 12, fontSize: "14px", border: `1.5px solid ${t.borderDefault}` }} />
+            <button onClick={handleAdd} className="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all active:scale-95"
+              style={{ backgroundColor: t.primary, color: "#fff", fontSize: "13px", fontWeight: 700, border: "none" }}>
+              <Plus size={16} /> Add
+            </button>
+          </div>
+          <input value={newLabelAr} onChange={(e) => setNewLabelAr(e.target.value)} placeholder="الإضافة باللغة العربية..." dir="rtl"
+            className="w-full outline-none" style={{ padding: "10px 14px", borderRadius: 12, fontSize: "14px", border: `1.5px solid ${t.borderDefault}` }}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()} />
-          <input value={newMinutes} onChange={(e) => setNewMinutes(e.target.value)} placeholder="Min" type="number"
-            className="outline-none" style={{ width: 70, padding: "10px 12px", borderRadius: 12, fontSize: "14px", border: `1.5px solid ${t.borderDefault}` }} />
-          <button onClick={handleAdd} className="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all active:scale-95"
-            style={{ backgroundColor: t.primary, color: "#fff", fontSize: "13px", fontWeight: 700, border: "none" }}>
-            <Plus size={16} /> Add
-          </button>
         </div>
       )}
+      </div>
     </div>
   );
 }

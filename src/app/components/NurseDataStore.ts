@@ -19,6 +19,7 @@ import { useState, useEffect } from "react";
 
 export interface PatientProfile {
   name: string;
+  nameAr: string;
   nameKey: string;
   age: string;
   mrn: string;
@@ -37,12 +38,14 @@ export interface CareTeamMember {
   roleKey: string;
   specialtyKey: string;
   img: string;
+  visible: boolean;
 }
 
 export interface CarePlanItem {
   id: string;
   labelKey: string;
   label?: string; // custom label (used for nurse-added items)
+  labelAr?: string; // custom arabic label
   done: boolean;
   active?: boolean;
   minutes?: number;
@@ -146,7 +149,6 @@ export interface NurseStoreState {
 
   /** Financial items */
   financial: FinancialItem[];
-  financialShowToPatient: boolean;
 
   /** Lab results with per-item visibility */
   labResults: LabResult[];
@@ -162,6 +164,9 @@ export interface NurseStoreState {
 
   /** Clinical observations */
   observations: ClinicalObservation[];
+
+  /** Whether to show the "Nurse View" shortcut button on CareMe */
+  nurseViewShortcutVisible: boolean;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -189,6 +194,7 @@ function createDefaultState(): NurseStoreState {
 
     patient: {
       name: "Sara Saleh",
+      nameAr: "سارة صالح",
       nameKey: "clinical.patient.sara",
       age: "32",
       mrn: "00-284619",
@@ -202,8 +208,8 @@ function createDefaultState(): NurseStoreState {
     },
 
     careTeam: [
-      { id: "ct-1", nameKey: "care.team.name.nura", roleKey: "care.team.primaryNurse", specialtyKey: "care.team.specialty.icu", img: imgNura },
-      { id: "ct-2", nameKey: "care.team.name.omar", roleKey: "care.team.attendingDoctor", specialtyKey: "care.team.specialty.cardiology", img: imgOmar },
+      { id: "ct-1", nameKey: "care.team.name.nura", roleKey: "care.team.primaryNurse", specialtyKey: "care.team.specialty.icu", img: imgNura, visible: true },
+      { id: "ct-2", nameKey: "care.team.name.omar", roleKey: "care.team.attendingDoctor", specialtyKey: "care.team.specialty.cardiology", img: imgOmar, visible: true },
     ],
 
     allergies: ["Penicillin", "Latex", "Shellfish"],
@@ -232,7 +238,6 @@ function createDefaultState(): NurseStoreState {
       { id: "fin-5", category: "Procedures", description: "IV Insertion, Catheterization", amount: 3200, covered: 2880, date: "5 Mar" },
       { id: "fin-6", category: "Physician Fees", description: "Attending + Consulting physicians", amount: 12000, covered: 10800, date: "5–12 Mar" },
     ],
-    financialShowToPatient: true,
 
     labResults: [
       { id: "lab-1", labelKey: "care.labs.cbc", value: "Normal range", status: "normal", date: "10 Mar", summaryKey: "care.labs.cbcSummary", pdfUrl: "/reports/lab-report-cbc.html", visible: true },
@@ -276,6 +281,7 @@ function createDefaultState(): NurseStoreState {
         },
       },
     ],
+    nurseViewShortcutVisible: false,
   };
 }
 
@@ -309,7 +315,12 @@ const nurseStore = (() => {
 
     // ── Patient profile ──
     updatePatient: (updates: Partial<PatientProfile>) => {
-      state = { ...state, patient: { ...state.patient, ...updates } };
+      let nextPatient = { ...state.patient, ...updates };
+      // If name was updated manually, clear nameKey so the new name shows up
+      if (updates.name && updates.name !== state.patient.name) {
+        nextPatient.nameKey = "";
+      }
+      state = { ...state, patient: nextPatient };
       notify();
     },
 
@@ -320,6 +331,10 @@ const nurseStore = (() => {
     },
     removeCareTeamMember: (id: string) => {
       state = { ...state, careTeam: state.careTeam.filter((m) => m.id !== id) };
+      notify();
+    },
+    toggleCareTeamMemberVisibility: (id: string) => {
+      state = { ...state, careTeam: state.careTeam.map((m) => m.id === id ? { ...m, visible: !m.visible } : m) };
       notify();
     },
 
@@ -371,11 +386,70 @@ const nurseStore = (() => {
       notify();
     },
 
-    // ── Financial ──
-    setFinancialShowToPatient: (show: boolean) => {
-      state = { ...state, financialShowToPatient: show };
+    toggleCarePlanItem: (id: string) => {
+      const idx = state.carePlan.findIndex(i => i.id === id);
+      if (idx === -1) return;
+
+      const item = state.carePlan[idx];
+      const newDone = !item.done;
+      
+      let nextCarePlan = state.carePlan.map((i) => {
+        if (i.id === id) return { ...i, done: newDone, active: false };
+        return i;
+      });
+
+      if (newDone) {
+        let activated = false;
+        nextCarePlan = nextCarePlan.map((i) => {
+          if (!activated && !i.done) {
+            activated = true;
+            return { ...i, active: true };
+          }
+          return { ...i, active: false };
+        });
+      }
+
+      state = { ...state, carePlan: nextCarePlan };
       notify();
     },
+
+    toggleDischargePlanItem: (id: string) => {
+      const idx = state.dischargePlan.findIndex(i => i.id === id);
+      if (idx === -1) return;
+
+      const item = state.dischargePlan[idx];
+      const newDone = !item.done;
+
+      let nextPlan = state.dischargePlan.map((i) => {
+        if (i.id === id) return { ...i, done: newDone, active: false };
+        return i;
+      });
+
+      if (newDone) {
+        let activated = false;
+        nextPlan = nextPlan.map((i) => {
+          if (!activated && !i.done) {
+            activated = true;
+            return { ...i, active: true };
+          }
+          return { ...i, active: false };
+        });
+      }
+
+      state = { ...state, dischargePlan: nextPlan };
+      notify();
+    },
+
+    updateDischargePlanItem: (id: string, updates: Partial<CarePlanItem>) => {
+      state = { ...state, dischargePlan: state.dischargePlan.map((i) => i.id === id ? { ...i, ...updates } : i) };
+      notify();
+    },
+    deleteDischargePlanItem: (id: string) => {
+      state = { ...state, dischargePlan: state.dischargePlan.filter((i) => i.id !== id) };
+      notify();
+    },
+
+
 
     // ── Lab Results ──
     setLabResultVisible: (id: string, visible: boolean) => {
@@ -429,6 +503,11 @@ const nurseStore = (() => {
           o.id === obsId ? { ...o, doctorNote: note } : o
         ),
       };
+      notify();
+    },
+
+    setNurseViewShortcutVisible: (visible: boolean) => {
+      state = { ...state, nurseViewShortcutVisible: visible };
       notify();
     },
   };

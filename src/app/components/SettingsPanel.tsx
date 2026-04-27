@@ -1788,6 +1788,26 @@ export function SettingsPanel({
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
   const [activeCareRole, setActiveCareRole] = useState<"nurse" | "doctor" | null>(null);
 
+  // Listen for CareMe "Nurse View" button event
+  useEffect(() => {
+    const handler = () => setShowCareTeamDialog(true);
+    window.addEventListener("open-nurse-view", handler);
+    return () => window.removeEventListener("open-nurse-view", handler);
+  }, []);
+
+  // Allow the Android kiosk app (or any external caller) to open the 
+  // Care Team interface directly, bypassing the PIN dialog. The card UID 
+  // is verified on the Android side, so the PIN check is redundant there.
+  useEffect(() => {
+    (window as any).__openCareTeam = (role: "nurse" | "doctor") => {
+      if (role !== "nurse" && role !== "doctor") return;
+      setActiveCareRole(role);
+    };
+    return () => {
+      delete (window as any).__openCareTeam;
+    };
+  }, []);
+
   // Get connected names for subtitles
   const connectedCastName = castDevice
     ? mockCastDevices.find((d) => d.id === castDevice)?.name ?? castDevice

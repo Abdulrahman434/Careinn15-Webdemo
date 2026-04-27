@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Users, AlertTriangle, Apple, Plus, X, Activity } from "lucide-react";
+import { Users, AlertTriangle, Apple, Plus, X, Activity, Eye, EyeOff, Info } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
+import { useLocale } from "../../i18n";
 import { useNurseStore, nurseActions } from "../../NurseDataStore";
 
 function painColor(n: number) {
@@ -18,6 +19,7 @@ function painLabel(n: number) {
 
 export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
   const { theme: t } = useTheme();
+  const { t: tr } = useLocale();
   const store = useNurseStore();
   const isNurse = role === "nurse";
 
@@ -29,6 +31,30 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
 
   return (
     <div className="space-y-5">
+      {isNurse && (
+        <div className="nurse-card flex items-center justify-between" style={{ marginBottom: 0 }}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: t.primarySubtle }}>
+              <Eye size={18} style={{ color: t.primary }} />
+            </div>
+            <div>
+              <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading, display: "block" }}>Show Section to Patient</span>
+              <span style={{ fontSize: "12px", color: t.textMuted }}>Toggle visibility for "Care Overview" on the bedside screen</span>
+            </div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={store.sectionVisibility.careOverview}
+              onChange={(e) => nurseActions.setSectionVisible("careOverview", e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"
+              style={{ backgroundColor: store.sectionVisibility.careOverview ? t.primary : "#E5E7EB" }} />
+          </label>
+        </div>
+      )}
+
       {/* Care Team */}
       <div className="nurse-card">
         <h3 style={{ color: t.textHeading }}><Users size={18} style={{ color: t.primary }} /> Care Team</h3>
@@ -38,16 +64,24 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
               <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
                 <img src={m.img} alt="" className="w-full h-full object-cover" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading }}>{m.nameKey}</p>
-                <p style={{ fontSize: "12px", fontWeight: 600, color: t.primary }}>{m.roleKey}</p>
-              </div>
+              <div-1 min-w-0>
+                <p style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading }}>{tr(m.nameKey)}</p>
+                <p style={{ fontSize: "12px", fontWeight: 600, color: t.primary }}>{tr(m.roleKey)}</p>
+              </div-1>
               {isNurse && (
-                <button onClick={() => nurseActions.removeCareTeamMember(m.id)}
-                  className="p-1.5 rounded-lg cursor-pointer transition-all hover:bg-red-50"
-                  style={{ border: "none", background: "none" }}>
-                  <X size={14} style={{ color: t.error }} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <span style={{ fontSize: "11px", color: t.textMuted }}>{m.visible ? "Visible" : "Hidden"}</span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={m.visible}
+                      onChange={() => nurseActions.toggleCareTeamMemberVisibility(m.id)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-600"
+                      style={{ backgroundColor: m.visible ? t.primary : "#E5E7EB" }} />
+                  </label>
+                </div>
               )}
             </div>
           ))}
@@ -71,14 +105,28 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
           ))}
         </div>
         {isNurse && (
-          <div className="flex items-center gap-2">
-            <input value={newAllergy} onChange={(e) => setNewAllergy(e.target.value)} placeholder="Add allergy..."
-              className="flex-1 outline-none" style={{ padding: "8px 12px", borderRadius: 10, fontSize: "13px", border: `1.5px solid ${t.borderDefault}`, backgroundColor: "#fff" }}
-              onKeyDown={(e) => { if (e.key === "Enter" && newAllergy.trim()) { nurseActions.addAllergy(newAllergy.trim()); setNewAllergy(""); } }} />
-            <button onClick={() => { if (newAllergy.trim()) { nurseActions.addAllergy(newAllergy.trim()); setNewAllergy(""); } }}
-              className="p-2 rounded-lg cursor-pointer" style={{ backgroundColor: t.errorSubtle, border: "none", color: t.error }}>
-              <Plus size={16} />
-            </button>
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <p style={{ fontSize: "12px", fontWeight: 700, color: t.textMuted, marginBottom: 8 }}>Available Allergies (Tap to add/remove):</p>
+            <div className="flex flex-wrap gap-2">
+              {["Penicillin", "Latex", "Shellfish", "Aspirin", "Peanuts", "Sulfonamides", "Morphine", "Eggs", "Dairy"].map(allergy => {
+                const isActive = store.allergies.includes(allergy);
+                return (
+                  <button
+                    key={allergy}
+                    onClick={() => isActive ? nurseActions.removeAllergy(allergy) : nurseActions.addAllergy(allergy)}
+                    className="px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all"
+                    style={{
+                      backgroundColor: isActive ? t.errorSubtle : "#F3F4F6",
+                      color: isActive ? t.error : t.textMuted,
+                      border: `1px solid ${isActive ? t.error : "transparent"}`,
+                      cursor: "pointer"
+                    }}
+                  >
+                    {allergy}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
@@ -100,16 +148,36 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
           ))}
         </div>
         {isNurse && (
-          <div className="flex items-center gap-2">
-            <input value={newDietCode} onChange={(e) => setNewDietCode(e.target.value.toUpperCase())} placeholder="Code"
-              className="outline-none" style={{ width: 80, padding: "8px 12px", borderRadius: 10, fontSize: "13px", border: `1.5px solid ${t.borderDefault}` }} />
-            <input value={newDietLabel} onChange={(e) => setNewDietLabel(e.target.value)} placeholder="Label"
-              className="flex-1 outline-none" style={{ padding: "8px 12px", borderRadius: 10, fontSize: "13px", border: `1.5px solid ${t.borderDefault}` }}
-              onKeyDown={(e) => { if (e.key === "Enter" && newDietCode.trim() && newDietLabel.trim()) { nurseActions.addDietCode(newDietCode.trim(), newDietLabel.trim()); setNewDietCode(""); setNewDietLabel(""); } }} />
-            <button onClick={() => { if (newDietCode.trim() && newDietLabel.trim()) { nurseActions.addDietCode(newDietCode.trim(), newDietLabel.trim()); setNewDietCode(""); setNewDietLabel(""); } }}
-              className="p-2 rounded-lg cursor-pointer" style={{ backgroundColor: t.primarySubtle, border: "none", color: t.primary }}>
-              <Plus size={16} />
-            </button>
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <p style={{ fontSize: "12px", fontWeight: 700, color: t.textMuted, marginBottom: 8 }}>Predefined Diet Codes:</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { code: "NAS", label: "No Added Salt" },
+                { code: "DM", label: "Diabetic Diet" },
+                { code: "LD", label: "Low Diet" },
+                { code: "NPO", label: "Nothing by mouth" },
+                { code: "SOFT", label: "Soft Diet" },
+                { code: "LIQ", label: "Clear Liquid" },
+                { code: "RENAL", label: "Renal Diet" }
+              ].map(diet => {
+                const isActive = store.dietCodes.some(d => d.code === diet.code);
+                return (
+                  <button
+                    key={diet.code}
+                    onClick={() => isActive ? nurseActions.removeDietCode(diet.code) : nurseActions.addDietCode(diet.code, diet.label)}
+                    className="px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all text-left"
+                    style={{
+                      backgroundColor: isActive ? t.primarySubtle : "#F3F4F6",
+                      color: isActive ? t.primary : t.textMuted,
+                      border: `1px solid ${isActive ? t.primary : "transparent"}`,
+                      cursor: "pointer"
+                    }}
+                  >
+                    <span style={{ fontWeight: 800 }}>{diet.code}</span> — {diet.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
@@ -131,6 +199,18 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
             </div>
           </div>
         )}
+      </div>
+      {/* HIS Disclaimer Note */}
+      <div className="flex items-start gap-3 p-4 rounded-2xl" style={{ backgroundColor: `${t.primary}08`, border: `1px dashed ${t.primary}40` }}>
+        <Info size={20} style={{ color: t.primary, marginTop: 2 }} />
+        <div className="flex flex-col gap-1">
+          <p style={{ fontSize: "13px", fontWeight: 700, color: t.textHeading }}>Clinical Data Source Note</p>
+          <p style={{ fontSize: "12px", color: t.textMuted, lineHeight: "1.5" }}>
+            Information is synchronized from the Hospital Information System (HIS). Manual adjustments made here are for <strong>local bedside display only</strong> and will not update the patient's permanent Electronic Medical Record (EMR).
+            <br />
+            <em>Note: Any future updates from the HIS will automatically overwrite manual adjustments.</em>
+          </p>
+        </div>
       </div>
     </div>
   );
