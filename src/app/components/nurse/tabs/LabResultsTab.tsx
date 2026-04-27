@@ -1,0 +1,46 @@
+import { FlaskConical, Eye, EyeOff } from "lucide-react";
+import { useTheme } from "../../ThemeContext";
+import { useNurseStore, nurseActions } from "../../NurseDataStore";
+
+export function LabResultsTab({ role }: { role: "nurse" | "doctor" }) {
+  const { theme: t } = useTheme();
+  const store = useNurseStore();
+  const isNurse = role === "nurse";
+
+  const statusColor = (s: string) => s === "low" || s === "high" ? t.error : t.success;
+  const statusBg = (s: string) => s === "low" || s === "high" ? t.errorSubtle : t.successSubtle;
+
+  return (
+    <div className="nurse-card">
+      <h3 style={{ color: t.textHeading }}><FlaskConical size={18} style={{ color: t.primary }} /> Lab Results</h3>
+      <div className="space-y-3">
+        {store.labResults.map((lab) => (
+          <div key={lab.id} className="flex items-center gap-4 px-4 py-3 rounded-xl transition-all"
+            style={{ backgroundColor: lab.visible ? "#F9FAFB" : "rgba(0,0,0,0.02)", border: `1px solid ${t.borderDefault}`, opacity: lab.visible ? 1 : 0.5 }}>
+            <div className="w-9 h-9 flex items-center justify-center rounded-lg shrink-0" style={{ backgroundColor: t.primarySubtle }}>
+              <FlaskConical size={16} style={{ color: t.primary }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading }}>{lab.labelKey}</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span style={{ fontSize: "13px", fontWeight: 700, color: statusColor(lab.status) }}>{lab.value}</span>
+                <span style={{ fontSize: "11px", color: t.textMuted }}>{lab.date}</span>
+              </div>
+            </div>
+            <div className="px-2 py-0.5 rounded-md" style={{ backgroundColor: statusBg(lab.status) }}>
+              <span style={{ fontSize: "10px", fontWeight: 800, color: statusColor(lab.status), letterSpacing: "0.5px" }}>
+                {lab.status.toUpperCase()}
+              </span>
+            </div>
+            {isNurse && (
+              <button onClick={() => nurseActions.setLabResultVisible(lab.id, !lab.visible)}
+                className="p-2 rounded-lg cursor-pointer transition-all" style={{ backgroundColor: lab.visible ? t.primarySubtle : t.errorSubtle, border: "none" }}>
+                {lab.visible ? <Eye size={14} style={{ color: t.primary }} /> : <EyeOff size={14} style={{ color: t.error }} />}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

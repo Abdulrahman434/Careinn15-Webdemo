@@ -46,7 +46,7 @@ import {
 import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useAuth } from "./AuthContext";
-import { CareTeamInterface } from "./CareTeamInterface";
+import { NurseInterface } from "./nurse/NurseInterface";
 import type { Locale } from "./i18n";
 import imgMosque from "../../assets/b51acb5e2ec4a2c930572c53103b020b12e76ee2.png";
 import { getPrayerStatus, getCountdown, formatPrayerTime, PRAYER_NAMES } from "../utils/prayerUtils";
@@ -2165,7 +2165,7 @@ export function SettingsPanel({
       )}
 
       {activeCareRole && (
-        <CareTeamInterface 
+        <NurseInterface 
           role={activeCareRole} 
           onClose={() => setActiveCareRole(null)} 
         />
