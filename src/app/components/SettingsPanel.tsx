@@ -6,6 +6,8 @@ import {
   bluetooth as bluetoothBridge,
   wifi as wifiBridge,
   cast as castBridge,
+  dnd as dndBridge,
+  nightLight as nightLightBridge,
   useAndroidEvent,
 } from "../utils/androidBridge";
 import {
@@ -1748,8 +1750,19 @@ export function SettingsPanel({
     setBtEnabled(true);
     setBtDevice(d.address);
   });
-  const [dnd, setDnd] = useState(false);
-  const [nightMode, setNightMode] = useState(false);
+
+  // ── DND: read initial state, sync via event ──
+  const [dnd, setDnd] = useState(() =>
+    isNative ? dndBridge.isEnabled() : false
+  );
+  useAndroidEvent<{ enabled: boolean }>('dnd-state-changed', (d) => setDnd(d.enabled));
+
+  // ── Night Light: read initial state, sync via event ──
+  const [nightMode, setNightMode] = useState(() =>
+    isNative ? nightLightBridge.isEnabled() : false
+  );
+  useAndroidEvent<{ enabled: boolean }>('night-light-changed', (d) => setNightMode(d.enabled));
+
   const [selectedLang, setSelectedLang] = useState<"en" | "ar" | "ur">(currentLocale);
 
   // Prayer countdown timer
@@ -1954,11 +1967,14 @@ export function SettingsPanel({
                 label={tr("settings.cast")}
                 active={!!castDevice}
                 onTap={() => {
-                  if (castDevice) {
-                    if (isNative) castBridge.stop();
-                    setCastDevice(null);
+                  if (isNative) {
+                    castBridge.openSettings();
                   } else {
-                    setShowCastDialog(true);
+                    if (castDevice) {
+                      setCastDevice(null);
+                    } else {
+                      setShowCastDialog(true);
+                    }
                   }
                 }}
                 onLongPress={() => setShowCastDialog(true)}
@@ -1970,13 +1986,21 @@ export function SettingsPanel({
                 icon={<BellOff size={24} style={{ color: dnd ? t.tileActiveText : t.iconDefault }} />}
                 label={tr("settings.dnd")}
                 active={dnd}
-                onTap={() => setDnd(!dnd)}
+                onTap={() => {
+                  const next = !dnd;
+                  setDnd(next);
+                  if (isNative) dndBridge.setEnabled(next);
+                }}
               />
               <QuickTile
                 icon={<Sun size={24} style={{ color: nightMode ? t.tileActiveText : t.iconDefault }} />}
                 label={tr("settings.nightLight")}
                 active={nightMode}
-                onTap={() => setNightMode(!nightMode)}
+                onTap={() => {
+                  const next = !nightMode;
+                  setNightMode(next);
+                  if (isNative) nightLightBridge.setEnabled(next);
+                }}
               />
               <QuickTile
                 icon={<Monitor size={24} style={{ color: darkMode ? t.tileActiveText : t.iconDefault }} />}
