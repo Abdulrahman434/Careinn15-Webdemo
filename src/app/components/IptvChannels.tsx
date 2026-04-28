@@ -236,11 +236,16 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
                       alt={channel.name} 
                       className="max-w-full max-h-full object-contain"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=TV';
+                        (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />
                   ) : (
-                    <Tv size={64} color="#cbd5e1" strokeWidth={1} />
+                    <div 
+                      className="w-full h-full flex items-center justify-center rounded-lg"
+                      style={{ backgroundColor: theme.surfaceElevated }}
+                    >
+                      <Tv size={64} color={theme.textMuted} strokeWidth={1} />
+                    </div>
                   )}
                 </div>
 
