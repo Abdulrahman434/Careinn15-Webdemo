@@ -299,6 +299,30 @@ export const nightLight = {
   },
 };
 
+/* ─── Apps ─── */
+
+export const apps = {
+  launch(componentName: string): void {
+    try {
+      window.AndroidSystem?.launchApp(componentName);
+    } catch (e) {
+      console.warn('apps.launch failed', e);
+    }
+  },
+  isInstalled(packageName: string): boolean {
+    try {
+      return window.AndroidSystem?.isAppInstalled(packageName) ?? false;
+    } catch {
+      return false;
+    }
+  },
+};
+
+// Pre-known component for the bedside IPTV app
+export const KNOWN_APPS = {
+  iptv: 'com.bitsarabia.bedsideterminalsolution/.careinn.iptvStreamActivity',
+} as const;
+
 /* ─── React Hook: useAndroidEvent ─── */
 
 /**

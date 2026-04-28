@@ -22,6 +22,7 @@ import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { PdfReaderModal } from "./PdfReaderModal";
+import { apps, isAndroidApp, KNOWN_APPS } from "../utils/androidBridge";
 import chromeIcon from "../../assets/272d9a4c809b16af18cfbe153fa4edc5816536b3.png";
 import saudiGazetteLogo from "../../assets/5a0099c6364ba06a603226f636904e61c8e17c07.png";
 import iptvIcon from "../../assets/e66dff686b2ee163965b5d28c8ab0d919a5e5307.png";
@@ -1436,8 +1437,11 @@ export function AppLauncher({
     }
 
     if (app.id === "iptv") {
-      setLaunchedApp("com.bitsarabia.bedsideterminalsolution/.careinn.iptvStreamActivity");
-      setTimeout(() => setLaunchedApp(null), 2000);
+      if (!isAndroidApp()) {
+        console.warn('IPTV is only available in the kiosk app');
+        return;
+      }
+      apps.launch(KNOWN_APPS.iptv);
       return;
     }
 
