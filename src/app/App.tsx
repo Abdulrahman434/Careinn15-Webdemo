@@ -23,6 +23,7 @@ import { TasbihScreenSaver } from "./components/TasbihScreenSaver";
 import { FoodOrdering } from "./components/FoodOrdering";
 import { OrderProvider } from "./components/OrderStore";
 import { AuthProvider, useAuth } from "./components/AuthContext";
+import { IptvChannels } from "./components/IptvChannels";
 import { PasswordGate } from "./components/PasswordGate";
 import { HospitalBroadcast, SAMPLE_BROADCAST } from "./components/HospitalBroadcast";
 import type { BroadcastNotification } from "./components/HospitalBroadcast";
@@ -114,6 +115,7 @@ function BedsideScreen() {
   const [activeGame, setActiveGame] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [showBlankPage, setShowBlankPage] = useState(false);
+  const [showIptv, setShowIptv] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
   const [reminders, setReminders] = useState<Reminder[]>(DEFAULT_REMINDERS);
 
@@ -709,6 +711,10 @@ function BedsideScreen() {
               setActiveTool(toolId);
               setOpenCategory(null);
             }}
+            onLaunchIptv={() => {
+              setShowIptv(true);
+              setOpenCategory(null);
+            }}
           />
         )}
 
@@ -792,6 +798,11 @@ function BedsideScreen() {
         {activeGame === "triviaquiz" && <TriviaQuizGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "picturepuzzle" && <ImageJigsawGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "wordchain" && <WordChainGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+
+        {/* IPTV Channels Overlay */}
+        {showIptv && (
+          <IptvChannels onClose={() => setShowIptv(false)} />
+        )}
 
         {/* Tools */}
         {activeTool === "calculator" && <CalculatorTool onClose={() => setActiveTool(null)} onBackToTools={() => { setActiveTool(null); setOpenCategory("Tools"); }} />}

@@ -1335,11 +1335,13 @@ export function AppLauncher({
   onClose,
   onLaunchGame,
   onLaunchTool,
+  onLaunchIptv,
 }: {
   categoryKey: string;
   onClose: () => void;
   onLaunchGame?: (gameId: string) => void;
   onLaunchTool?: (toolId: string) => void;
+  onLaunchIptv?: () => void;
 }) {
   const { theme } = useTheme();
   const { t, locale, isRTL } = useLocale();
@@ -1437,6 +1439,11 @@ export function AppLauncher({
     }
 
     if (app.id === "iptv") {
+      if (onLaunchIptv) {
+        onLaunchIptv();
+        return;
+      }
+      
       if (!isAndroidApp()) {
         console.warn('IPTV is only available in the kiosk app');
         return;

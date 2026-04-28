@@ -10,7 +10,7 @@
  * no-ops with a console.warn.
  */
 
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { AndroidEventName } from "../types/android";
 import { Bluetooth } from "lucide-react";
 
@@ -322,6 +322,88 @@ export const apps = {
 export const KNOWN_APPS = {
   iptv: 'com.bitsarabia.bedsideterminalsolution/.careinn.iptvStreamActivity',
 } as const;
+
+/* ─── IPTV ─── */
+
+export type IptvChannel = {
+  id: number;
+  name: string;
+  nameAr: string;
+  url: string;
+  logo: string;
+};
+
+export const iptv = {
+  /**
+   * Trigger an async channel fetch. Listen for 'iptv-channels-loaded' 
+   * (or use the React hook below). Resolves to [] if no bridge.
+   */
+  fetchChannels(): void {
+    try { sys()?.fetchIptvChannels(); } 
+    catch (e) { console.warn('[androidBridge] iptv.fetchChannels failed:', e); }
+  },
+  
+  play(channel: IptvChannel): void {
+    try { 
+      sys()?.playIptv(channel.url, channel.name); 
+    } catch (e) { console.warn('[androidBridge] iptv.play failed:', e); }
+  },
+  
+  stop(): void {
+    try { sys()?.stopIptv(); } 
+    catch (e) { console.warn('[androidBridge] iptv.stop failed:', e); }
+  },
+  
+  isPlaying(): boolean {
+    try { return sys()?.isIptvPlaying() ?? false; } 
+    catch { return false; }
+  },
+};
+
+/**
+ * React hook: triggers a channel fetch on mount, parses the result, 
+ * exposes loading / error state. Returns [] in regular browsers.
+ */
+export function useIptvChannels(): {
+  channels: IptvChannel[];
+  loading: boolean;
+  error: string | null;
+  reload: () => void;
+} {
+  const [channels, setChannels] = useState<IptvChannel[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const reload = useCallback(() => {
+    if (!isAndroidApp()) {
+      setError('TV is only available on the kiosk');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    iptv.fetchChannels();
+  }, []);
+  
+  useAndroidEvent<{ json: string }>('iptv-channels-loaded', (d) => {
+    try {
+      const arr = JSON.parse(d.json);
+      setChannels(Array.isArray(arr) ? arr : []);
+      setLoading(false);
+    } catch (e) {
+      setError('Failed to parse channel list');
+      setLoading(false);
+    }
+  });
+  
+  useAndroidEvent<{ message: string }>('iptv-channels-error', (d) => {
+    setError(d.message);
+    setLoading(false);
+  });
+  
+  useEffect(() => { reload(); }, [reload]);
+  
+  return { channels, loading, error, reload };
+}
 
 /* ─── React Hook: useAndroidEvent ─── */
 

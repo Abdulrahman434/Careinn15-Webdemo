@@ -99,6 +99,12 @@ const translations: Record<string, TranslationEntry> = {
   "hub.media.desc": { en: "TV, music & radio", ar: "تلفزيون، موسيقى وراديو", ur: "ٹی وی، موسیقی اور ریڈیو" },
   "hub.reading": { en: "Reading", ar: "القراءة", ur: "مطالعہ" },
   "hub.reading.desc": { en: "Books & magazines", ar: "كتب ومجلات", ur: "کتابیں اور رسائل" },
+
+  /* ─── IPTV ─── */
+  "tv.onlyOnKiosk": { en: "TV is only available on the kiosk", ar: "البث المباشر متاح فقط على الشاشة", ur: "ٹی وی صرف کیوسک پر دستیاب ہے" },
+  "tv.loading": { en: "Loading Channels...", ar: "جاري تحميل القنوات...", ur: "چینلز لوڈ ہو رہے ہیں..." },
+  "tv.noChannels": { en: "No channels available", ar: "لا توجد قنوات متاحة", ur: "کوئی چینل دستیاب نہیں ہے" },
+  "tv.stop": { en: "Stop TV", ar: "إيقاف البث", ur: "ٹی وی بند کریں" },
   "hub.social": { en: "Social", ar: "التواصل", ur: "سماجی" },
   "hub.social.desc": { en: "Stay connected", ar: "ابقَ على تواصل", ur: "رابطے میں رہیں" },
   "hub.games": { en: "Games", ar: "الألعاب", ur: "کھیل" },
