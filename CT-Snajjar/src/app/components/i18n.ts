@@ -45,6 +45,8 @@ const translations: Record<string, TranslationEntry> = {
   "idle.ready": { en: "This bedside terminal is ready for use.", ar: "هذه الشاشة جاهزة للاستخدام.", ur: "یہ بیڈ سائیڈ ٹرمینل استعمال کے لیے تیار ہے۔" },
   "idle.awaiting": { en: "Awaiting Patient", ar: "في انتظار المريض", ur: "مریض کا انتظار ہے" },
   "idle.awaitingDesc": { en: "This terminal will activate once\na patient is admitted to this room.", ar: "ستعمل هذه الشاشة بمجرد\nقبول مريض في هذه الغرفة.", ur: "اس کمرے میں مریض کے داخل ہونے\nکے بعد یہ ٹرمینل فعال ہو جائے گا۔" },
+  "idle.blankPage": { en: "Blank Page", ar: "شاشة سوداء", ur: "خالی صفحہ" },
+  "idle.tapToExit": { en: "Tap anywhere to wake screen", ar: "اضغط في أي مكان لتنبيه الشاشة", ur: "اسکرین جگانے کے لیے کہیں بھی تھپتھپائیں" },
 
   /* ─── Patient Greeting ─── */
   "greeting.mrn": { en: "MRN", ar: "رقم الملف", ur: "ایم آر این" },
@@ -83,6 +85,14 @@ const translations: Record<string, TranslationEntry> = {
   "news.dallah.1": { en: "Dallah Hospitals awarded 'Leading Provider of Integrated Healthcare Services' in Saudi Arabia.", ar: "مستشفيات دله تحصل على جائزة «المزود الرائد لخدمات الرعاية الصحية المتكاملة» في المملكة.", ur: "دلہ ہسپتالوں کو سعودی عرب میں 'انٹیگریٹڈ ہیلتھ کیئر سروسز کے معروف فراہم کنندہ' کا ایوارڈ دیا گیا۔" },
   "news.dallah.2": { en: "Dallah Healthcare announces the construction of the new state-of-the-art Al-Arid Hospital in Riyadh.", ar: "دله الصحية تعلن عن إنشاء مستشفى العارض الجديد والمتطور في الرياض.", ur: "دلہ ہیلتھ کیئر نے ریاض میں نئے اسٹیٹ آف دی آرٹ العارض ہسپتال کی تعمیر کا اعلان کیا۔" },
   "news.dallah.3": { en: "Dallah Healthcare completes 100% acquisition of Care Shield Holding, reinforcing Riyadh presence.", ar: "دله الصحية تكمل استحواذها بنسبة ١٠٠٪ على شركة درع الرعاية، مما يعزز تواجدها في الرياض.", ur: "دلہ ہیلتھ کیئر نے کیئر شیلڈ ہولڈنگ کا 100% حصول مکمل کر لیا، جس سے ریاض میں موجودگی مضبوط ہوئی۔" },
+  "news.dsfh.1": { en: "Dr. Soliman Fakeeh Hospital – Riyadh Welcomes High-Level German Delegation.", ar: "استقبال وفد ألماني رفيع المستوى في مستشفى الدكتور سليمان فقيه – الرياض.", ur: "ریاض میں ڈاکٹر سلیمان فقیہ ہسپتال میں ایک اعلیٰ سطحی جرمن وفد کا استقبال کیا گیا۔" },
+  "news.dsfh.2": { en: "Dr. Soliman Fakeeh Hospital Riyadh Receives Prestigious 5-Star Global Rating.", ar: "مستشفى الدكتور سليمان فقيه بالرياض يحصل على تصنيف 5 نجوم عالميًا.", ur: "ریاض میں ڈاکٹر سلیمان فقیہ ہسپتال نے باوقار 5 اسٹار گلوبل ریٹنگ حاصل کی۔" },
+  "news.dsfh.3": { en: "Dr. Soliman Fakeeh Hospital - Riyadh Receives Best Measurement in Customer Experience Award.", ar: "مستشفى د. سليمان فقيه بالرياض يحصد جائزة \"أفضل قياس لتجربة العميل\".", ur: "ریاض میں ڈاکٹر سلیمان فقیہ ہسپتال نے بہترین کسٹمر ایکسپیرینس ایوارڈ حاصل کیا۔" },
+  "news.dsfh.jeddah.1": { en: "Dr. Soliman Fakeeh Hospital Jeddah ranked among World's Top 250 Hospitals by Newsweek.", ar: "مستشفى الدكتور سليمان فقيه بجدة ضمن أفضل 250 مستشفى في العالم حسب تصنيف نيوزويك.", ur: "جدہ میں ڈاکٹر سلیمان فقیہ ہسپتال کو نیوز ویک نے دنیا کے ٹاپ 250 ہسپتالوں میں شامل کیا۔" },
+  "news.dsfh.jeddah.2": { en: "DSFH Jeddah named #1 Private Hospital in Saudi Arabia for the 5th consecutive year.", ar: "مستشفى فقيه بجدة يتصدر كأفضل مستشفى خاص في المملكة للسنة الخامسة على التوالي.", ur: "جدہ میں فقیہ ہسپتال مسلسل پانچویں سال سعودی عرب کا نمبر 1 نجی ہسپتال قرار پایا۔" },
+  "news.dsfh.jeddah.3": { en: "Fakeeh Care Group expands with new Surgical Tower and 300-bed South Obhur hospital.", ar: "مجموعة فقيه للرعاية تتوسع ببرج جراحي جديد ومستشفى بسعة 300 سرير في جنوب أبحر.", ur: "فقیہ کیئر گروپ نے نئے سرجیکل ٹاور اور جنوبی ابحر میں 300 بستروں کے ہسپتال کے ساتھ توسیع کی۔" },
+  "news.dsfh.jeddah.4": { en: "DSFH Jeddah recognized among World's Best Smart Hospitals 2026 for digital leadership.", ar: "مستشفى فقيه بجدة ضمن أفضل المستشفيات الذكية عالمياً لعام 2026 لريادته الرقمية.", ur: "جدہ میں فقیہ ہسپتال کو ڈیجیٹل قیادت کے لیے 2026 کے دنیا کے بہترین سمارٹ ہسپتالوں میں تسلیم کیا گیا۔" },
+  "news.dsfh.jeddah.5": { en: "DSFH Jeddah ranked #1 private hospital in Neurology, Pediatrics, Orthopedics, and Oncology.", ar: "مستشفى فقيه بجدة الأول خاصاً في تخصصات الأعصاب، الأطفال، العظام، وعلم الأورام.", ur: "جدہ میں فقیہ ہسپتال نیورولوجی، اطفال، آرتھوپیڈکس اور آنکولوجی میں نمبر 1 نجی ہسپتال قرار پایا۔" },
 
   /* ─── Hub Items ─── */
   "hub.media": { en: "Media", ar: "الوسائط", ur: "میڈیا" },
@@ -131,20 +141,46 @@ const translations: Record<string, TranslationEntry> = {
   /* ─── CareMe Slides ─── */
   "care.title": { en: "CareMe", ar: "رعايتي", ur: "میری دیکھ بھال" },
   "care.subtitle": { en: "Your health journey at a glance", ar: "رحلتك الصحية في لمحة", ur: "آپ کی صحت کا سفر ایک نظر میں" },
+  "care.profile.title": { en: "Patient Profile", ar: "ملف المريض", ur: "مریض کی پروفائل" },
+  "care.overview.title": { en: "Care Overview", ar: "ملخص الرعاية", ur: "دیکھ بھال کا جائزہ" },
   "care.team.title": { en: "My Care Team", ar: "فريق الرعاية", ur: "میری نگہداشت کی ٹیم" },
   "care.plan.title": { en: "My Care Plan", ar: "خطة الرعاية", ur: "میرا کیئر پلان" },
   "care.diet.title": { en: "Diet Codes", ar: "النظام الغذائي", ur: "خوراک کے قوانین" },
   "care.baby.title": { en: "Baby Camera", ar: "كاميرا الطفل", ur: "بیبی کیمرہ" },
   "care.labs.title": { en: "Lab Results", ar: "نتائج المختبر", ur: "لیب کے نتائج" },
   "care.imaging.title": { en: "Scans & Imaging", ar: "الأشعة والتصوير", ur: "کین اور امیجنگ" },
+  "care.observations.title": { en: "Observations", ar: "الملاحظات السريرية", ur: "مشاہدات" },
   "care.discharge.title": { en: "Discharge Plan", ar: "خطة الخروج", ur: "ڈسچارج پلان" },
   "care.extension": { en: "Extension", ar: "التحويلة", ur: "ایکسٹینشن" },
+  "care.age": { en: "Age", ar: "العمر", ur: "عمر" },
+  "care.ageUnits": { en: "{0} Yrs", ar: "{0} سنة", ur: "{0} سال" },
+  "care.fullName": { en: "Full Name", ar: "الاسم الكامل", ur: "مکمل نام" },
+  "care.dob": { en: "Date Of Birth", ar: "تاريخ الميلاد", ur: "تاریخ پیدائش" },
+  "care.birthDateVal": { en: "19 Jan 1993", ar: "١٩ يناير ١٩٩٣", ur: "19 جنوری 1993" },
+  "care.emergencyContact": { en: "Emergency Contact", ar: "جهة اتصال الطوارئ", ur: "ہنگامی رابطہ" },
+  "care.patientName": { en: "Sara Saleh", ar: "سارة صالح", ur: "سارہ صالح" },
+  "care.emergencyName": { en: "Layla Mansour (Mother)", ar: "ليلى منصور (الأم)", ur: "لیلیٰ منصور (والدہ)" },
+  "care.sex": { en: "Sex", ar: "الجنس", ur: "جنس" },
+  "care.gender": { en: "Gender", ar: "الجنس", ur: "جنس" },
+  "care.gender.male": { en: "Male", ar: "ذكر", ur: "مرد" },
+  "care.gender.female": { en: "Female", ar: "أنثى", ur: "عورت" },
+  "care.bed": { en: "Bed", ar: "السرير", ur: "بستر" },
+  "care.insurance": { en: "Insurance", ar: "التأمين", ur: "انشورنس" },
+  "care.insurance.tawuniya": { en: "Tawuniya", ar: "التعاونية", ur: "تاونیہ" },
   "care.diet.nas": { en: "No Added Salt", ar: "بدون ملح مضاف", ur: "نک کے بغیر" },
   "care.diet.dm": { en: "Diabetic Menu", ar: "قائمة السكري", ur: "ذیابیطس کا مینو" },
   "care.allergies": { en: "Allergies", ar: "معلومات الحساسية", ur: "الرجی" },
   "care.allergy.penicillin": { en: "Penicillin", ar: "البنسلين", ur: "پینسلیلن" },
   "care.allergy.latex": { en: "Latex", ar: "اللاتكس", ur: "لیٹیکس" },
   "care.allergy.shellfish": { en: "Shellfish", ar: "المحار", ur: "شیل فش" },
+  "care.relative": { en: "Relationship", ar: "صلة القرابة", ur: "رشتہ" },
+  "care.mobile": { en: "Mobile", ar: "رقم الجوال", ur: "موبائل نمبر" },
+  "care.pain.score": { en: "Pain Score", ar: "مقياس الألم", ur: "درد کا اسکور" },
+  "care.fallRisk": { en: "Fall Risk", ar: "خطر السقوط", ur: "گرنے کا خطرہ" },
+  "care.fallRisk.high": { en: "High", ar: "مرتفع", ur: "زیادہ" },
+  "care.mobility": { en: "Patient Mobility", ar: "حركة المريض", ur: "مریض کی نقل و حرکت" },
+  "care.mobility.bedRest": { en: "Complete Bed Rest", ar: "راحة تامة في السرير", ur: "مکمل بیڈ ریسٹ" },
+  "care.assistance.bed": { en: "Do not leave bed without nursing assistance", ar: "يرجى عدم مغادرة السرير بدون مساعدة التمريض", ur: "نرسنگ امداد کے بغیر بستر نہ چھوڑیں" },
 
   /* ─── Lab Results ─── */
   "care.labs.cbc": { en: "Complete Blood Count", ar: "تعداد الدم الكامل", ur: "خون کا مکمل ٹیسٹ" },
@@ -170,7 +206,7 @@ const translations: Record<string, TranslationEntry> = {
 
   /* ─── Care Team ─── */
   "care.team.name.nura": { en: "Nura Al-Rashid", ar: "نورا الرشيد", ur: "نورہ الرشید" },
-  "care.team.name.omar": { en: "Dr. Omar Abdulhalim", ar: "د. عمر عبدالحليم", ur: "ڈاکٹر عمر عبدالحلیم" },
+  "care.team.name.omar": { en: "Dr. Walt Disney", ar: "د. والت ديزني", ur: "ڈاکٹر عمر عبدالحلیم" },
   "care.team.primaryNurse": { en: "Primary Nurse", ar: "الممرضة الرئيسية", ur: "پرائمری نرس" },
   "care.team.attendingDoctor": { en: "Attending Doctor", ar: "الطبيب المعالج", ur: "علاج کرنے والا ڈاکٹر" },
   "care.team.specialty.icu": { en: "ICU", ar: "العناية المركزة", ur: "آئی سی یو" },
@@ -178,13 +214,32 @@ const translations: Record<string, TranslationEntry> = {
 
   /* ─── Care Plan Steps ─── */
   "care.plan.initialAssessment": { en: "Initial Assessment", ar: "التقييم الأولي", ur: "ابتدائی تشخیص" },
-  "care.plan.bloodWork": { en: "Blood Work & Labs", ar: "تحاليل الدم والمختبر", ur: "خون کے ٹیسٹ اور لیب" },
-  "care.plan.medicationRound": { en: "Medication Round", ar: "جولة الأدوية", ur: "ادویات کا چکر" },
-  "care.plan.checkup": { en: "Check-up by Nurse", ar: "فحص الممرضة", ur: "نرس کے ذریعے معائنہ" },
-  "care.plan.physicalTherapy": { en: "Physical Therapy", ar: "العلاج الطبيعي", ur: "فزیوتھراپی" },
+  "care.plan.labTests": { en: "Lab Tests", ar: "الفحوصات المخبرية", ur: "لیبارٹری ٹیسٹ" },
+  "care.plan.scansImaging": { en: "Scans & Imaging", ar: "الأشعة والتصوير الطبي", ur: "اسکین اور امیجنگ" },
+  "care.plan.medicationPrep": { en: "Medication Preparation", ar: "تجهيز الأدوية", ur: "ادویات کی تیاری" },
+  "care.plan.laborMonitoring": { en: "Labor Monitoring", ar: "متابعة المخاض", ur: "لیبر کی نگرانی" },
+  "care.plan.delivery": { en: "Delivery", ar: "الولادة", ur: "پیدائش" },
+  "care.plan.recoveryObservation": { en: "Recovery & Observation", ar: "التعافي والملاحظة", ur: "صحت یابی اور مشاہدہ" },
+  "care.plan.motherBabyCheck": { en: "Mother & Baby Check", ar: "فحص الأم والطفل", ur: "ماں اور بچے کا معائنہ" },
+  "care.plan.bloodWork": { en: "Blood Work", ar: "فحوصات الدم", ur: "خون کے ٹیسٹ" },
+  "care.plan.medicationRound": { en: "Medication Round", ar: "جولة الأدوية", ur: "ادویات کا دور" },
+  "care.plan.checkup": { en: "Checkup", ar: "فحص", ur: "چیک اپ" },
+  "care.plan.physicalTherapy": { en: "Physical Therapy", ar: "العلاج الطبيعي", ur: "فزیکل تھراپی" },
   "care.plan.doctorReview": { en: "Doctor Review", ar: "مراجعة الطبيب", ur: "ڈاکٹر کا جائزہ" },
   "care.plan.min": { en: "Min", ar: "دقيقة", ur: "منٹ" },
   "care.plan.done": { en: "Done", ar: "تم", ur: "ہو گیا" },
+  "careplan.toggle.daily": { en: "Daily", ar: "يومي", ur: "روزانہ" },
+  "careplan.toggle.overall": { en: "Overall", ar: "إجمالي", ur: "مجموعی" },
+  "careplan.dayLabel": { en: "Day", ar: "يوم", ur: "دن" },
+  "careplan.today": { en: "Today", ar: "اليوم", ur: "آج" },
+  "careplan.yesterday": { en: "Yesterday", ar: "أمس", ur: "کل" },
+  "careplan.tomorrow": { en: "Tomorrow", ar: "غداً", ur: "کل" },
+  "careplan.overallTitle": { en: "Overall Plan", ar: "خطة شاملة", ur: "مجموعی منصوبہ" },
+  "careplan.overallDesc": { en: "Here is our treatment plan, it will be updated regularly", ar: "هذه هي خطتنا العلاجية، وسيتم تحديثها بانتظام", ur: "یہ ہمارا علاج کا منصوبہ ہے، اسے باقاعدگی سے اپ ڈیٹ کیا جائے گا" },
+  "careplan.emptyHeader": { en: "No Care Plan available", ar: "لا توجد خطة رعاية متاحة", ur: "کوئی کیئر پلان دستیاب نہیں ہے۔" },
+  "careplan.emptyDesc": { en: "your Careplan will appear here once it is been allowed by your Care Team.", ar: "ستظهر خطة الرعاية الخاصة بك هنا بمجرد السماح بها من قبل فريق الرعاية الخاص بك.", ur: "آپ کا کیئر پلان یہاں ظاہر ہو جائے گا جب آپ کی کیئر ٹیم اسے اجازت دے دے گی۔" },
+  "discharge.emptyHeader": { en: "No discharge plan available", ar: "لا توجد خطة خروج متاحة", ur: "ڈسچارج کا کوئی منصوبہ دستیاب نہیں ہے۔" },
+  "discharge.emptyDesc": { en: "Your discharge plan will appear here once it is ready.", ar: "ستظهر خطة الخروج الخاصة بك هنا بمجرد جاهزيتها.", ur: "آپ کا ڈسچارج پلان تیار ہونے کے بعد یہاں ظاہر ہوگا۔" },
 
   /* ─── Admission / Discharge Labels ─── */
   "care.admitted": { en: "Admitted", ar: "تاريخ الدخول", ur: "داخلہ" },
@@ -193,17 +248,49 @@ const translations: Record<string, TranslationEntry> = {
   "care.room": { en: "Room", ar: "الغرفة", ur: "کمرہ" },
 
   /* ─── Discharge Plan ─── */
-  "care.discharge.order": { en: "Discharge Order by Doctor", ar: "أمر الخروج من الطبيب", ur: "ڈاکٹر کے ذریعہ ڈسچارج کا حکم" },
-  "care.discharge.insurance": { en: "Insurance & Billing Clearance", ar: "تسوية التأمين والفواتير", ur: "انشورنس اور بلنگ کی کلیئرنس" },
-  "care.discharge.medication": { en: "Medication Preparation", ar: "تحضير الأدوية", ur: "ادویات کی تیاری" },
-  "care.discharge.education": { en: "Patient Education & Instructions", ar: "تثقيف المريض والإرشادات", ur: "مریض کی تعلیم اور ہدایات" },
-  "care.discharge.finalCheckup": { en: "Final Check-up", ar: "الفحص النهائي", ur: "آخری معائنہ" },
+  "care.discharge.finalCheck": { en: "Final Mother & Baby Check", ar: "الفحص النهائي للأم والطفل", ur: "ماں اور بچے کا حتمی معائنہ" },
+  "care.discharge.medicationPrep": { en: "Medication Preparation", ar: "تجهيز الأدوية", ur: "ادویات کی تیاری" },
+  "care.discharge.education": { en: "Discharge Education", ar: "التثقيف قبل الخروج", ur: "ڈسچارج کی تعلیم" },
+  "care.discharge.homeCare": { en: "Home Care Guidance", ar: "إرشادات العناية المنزلية", ur: "ہوم کیئر گائیڈنس" },
+  "care.discharge.followup": { en: "Follow-up Arrangements", ar: "ترتيبات المتابعة", ur: "فالو اپ کے انتظامات" },
+  "care.discharge.billing": { en: "Billing & Insurance Clearance", ar: "إنهاء إجراءات الفاتورة والتأمين", ur: "بلنگ اور انشورنس کلیئرنس" },
+  "care.discharge.docsReady": { en: "Discharge Documents Ready", ar: "تجهيز مستندات الخروج", ur: "ڈسچارج دستاویزات تیار ہیں" },
   "care.discharge.confirm": { en: "Confirm Discharge", ar: "تأكيد الخروج", ur: "ڈسچارج کی تصدیق کریں" },
+  "care.discharge.order": { en: "Discharge Order", ar: "أمر الخروج", ur: "ڈسچارج آرڈر" },
+  "care.discharge.insurance": { en: "Insurance Approval", ar: "موافقة التأمين", ur: "انشورنس کی منظوری" },
+  "care.discharge.medication": { en: "Medication Dispensing", ar: "صرف الأدوية", ur: "ادویات کی فراہمی" },
+  "care.discharge.finalCheckup": { en: "Final Checkup", ar: "الفحص النهائي", ur: "حتمی چیک اپ" },
+  "care.nutritional.fasting": { en: "Fasting Status", ar: "حالة الصيام", ur: "روزے کی حالت" },
+  "care.dietary.regime": { en: "Dietary Regime", ar: "البرنامج الغذائي", ur: "خوراک کا نظام" },
+  "care.fasting.yes": { en: "Yes", ar: "نعم", ur: "ہاں" },
+  "care.fasting.no": { en: "No", ar: "لا", ur: "نہیں" },
+
 
   /* ─── Pain ─── */
-  "care.pain.score": { en: "Pain Score", ar: "مقياس الألم", ur: "درد کا اسکور" },
+
   "care.pain.lastUpdated": { en: "Last updated 2h ago", ar: "آخر تحديث منذ ساعتين", ur: "آخری بار 2 گھنٹے پہلے اپ ڈیٹ ہوا" },
   "care.pain.reported": { en: "Reported Pain", ar: "مؤشر الألم", ur: "رپورٹ کردہ درد" },
+
+  /* ─── Billing ─── */
+  "care.billing.title": { en: "Financial Summary", ar: "الملخص المالي", ur: "مالی خلاصہ" },
+  "care.billing.status": { en: "Billing Status", ar: "حالة الفاتورة", ur: "بلنگ کی حیثیت" },
+  "care.billing.pendingApproval": { en: "Awaiting Approval", ar: "بانتظار الموافقة", ur: "منظوری کا منتظر" },
+  "care.billing.totalDue": { en: "Net Amount Due", ar: "المبلغ الصافي المستحق", ur: "کل واجب الادا رقم" },
+  "care.billing.breakdown": { en: "Medical Services Breakdown", ar: "تفصيل الخدمات الطبية", ur: "طبی خدمات کی تفصیل" },
+  "care.billing.subtotal": { en: "Hospital Charges", ar: "رسوم المستشفى", ur: "ہسپتال کے اخراجات" },
+  "care.billing.vat": { en: "VAT (15%)", ar: "ضريبة القيمة المضافة (١٥%)", ur: "ویٹ (15%)" },
+  "care.billing.totalInclVat": { en: "Total (incl. VAT)", ar: "الإجمالي (شامل الضريبة)", ur: "کل (بشمول ویٹ)" },
+  "care.billing.insuranceCredit": { en: "Insurance Coverage Deduction", ar: "خصم التغطية التأمينية", ur: "انشورنس کوریج کٹوتی" },
+  "care.billing.patientPayable": { en: "Amount Due", ar: "المبلغ المستحق", ur: "واجب الادا رقم" },
+  "care.billing.viewDetailedInvoice": { en: "View Detailed Invoice", ar: "عرض الفاتورة التفصيلية", ur: "تفصیلی انوائس دیکھیں" },
+  "care.billing.invoiceTitle": { en: "Hospital Service Invoice", ar: "فاتورة خدمات المستشفى", ur: "ہسپتال سروس انوائس" },
+  "care.billing.payNow": { en: "Proceed to Payment", ar: "المتابعة لإتمام الدفع", ur: "ادائیگی کے لیے آگے بڑھیں" },
+  "care.currency": { en: "SAR", ar: "﷼", ur: "SAR" },
+  "bill.item.room": { en: "Premium Suite Room", ar: "غرفة تنويم متميزة", ur: "پریمیم سویٹ روم" },
+  "bill.item.delivery": { en: "Standard Delivery Package", ar: "باقة الولادة القياسية", ur: "معیاری ڈیلیوری پیکیج" },
+  "bill.item.labs": { en: "Post-Natal Lab Panel", ar: "تحاليل ما بعد الولادة", ur: "پوسٹ نیٹل لیب پینل" },
+  "bill.item.pharmacy": { en: "In-Patient Medications", ar: "أدوية التنويم", ur: "ان پیشنٹ ادویات" },
+  "bill.item.qty": { en: "Qty", ar: "العدد", ur: "تعداد" },
 
   /* ─── Baby Camera ─── */
   "care.baby.live": { en: "LIVE", ar: "مباشر", ur: "براہ راست" },
@@ -219,15 +306,36 @@ const translations: Record<string, TranslationEntry> = {
   "settings.wifi": { en: "Wi-Fi", ar: "واي فاي", ur: "وائی فائی" },
   "settings.bluetooth": { en: "Bluetooth", ar: "بلوتوث", ur: "بلوٹوتھ" },
   "settings.cast": { en: "Cast", ar: "عرض الشاشة", ur: "کاسٹ" },
+  "settings.castScreen": { en: "Cast Screen", ar: "مشاركة الشاشة", ur: "کاسٹ سکرین" },
   "settings.dnd": { en: "DND", ar: "عدم الإزعاج", ur: "پریشان نہ کریں" },
   "settings.nightLight": { en: "Night Light", ar: "ضوء ليلي", ur: "نائٹ لائٹ" },
   "settings.darkMode": { en: "Dark Mode", ar: "الوضع الداكن", ur: "ڈارک موڈ" },
   "settings.language": { en: "Language", ar: "اللغة", ur: "زبان" },
   "settings.language.select": { en: "Select your preferred display language", ar: "اختر لغة العرض المفضلة", ur: "اپنی پسندیدہ زبان منتخب کریں" },
+  "settings.disconnect": { en: "Disconnect", ar: "قطع الاتصال", ur: "منقطع کریں" },
+  "settings.stopCasting": { en: "Stop Casting", ar: "إيقاف العرض", ur: "کاسٹنگ بند کریں" },
+  "wifi.scanning": { en: "Scanning for networks...", ar: "جاري البحث عن شبكات...", ur: "نیٹ ورکس تلاش کر رہا ہے..." },
+  "wifi.available": { en: "Available Networks", ar: "الشبكات المتاحة", ur: "دستیاب نیٹ ورکس" },
+  "wifi.secured": { en: "Secured", ar: "مؤمنة", ur: "محفوظ" },
+  "wifi.open": { en: "Open", ar: "مفتوحة", ur: "کھلا ہے" },
+  "wifi.connected": { en: "Connected", ar: "متصل", ur: "منسلک" },
+  "bt.searchDevices": { en: "Search Devices", ar: "البحث عن أجهزة", ur: "آلات تلاش کریں" },
+  "bt.searching": { en: "Searching...", ar: "جاري البحث...", ur: "تلاش کر رہا ہے..." },
+  "bt.paired": { en: "Paired Devices", ar: "الأجهزة المقترنة", ur: "جوڑا بنائے گئے آلات" },
+  "bt.pairedStatus": { en: "Paired", ar: "مقترن", ur: "جوڑا بن گیا" },
+  "bt.available": { en: "Available Devices", ar: "الأجهزة المتاحة", ur: "دستیاب آلات" },
+  "cast.looking": { en: "Looking for devices...", ar: "جاري البحث عن أجهزة...", ur: "آلات تلاش کر رہا ہے..." },
+  "cast.unavailable": { en: "Unavailable", ar: "غير متاح", ur: "دستیاب نہیں है" },
   /* ─── Care Team Only (formerly Admin) ─── */
   "settings.careTeam": { en: "Care Team", ar: "فريق الرعاية", ur: "کیئر ٹیم" },
   "settings.careTeam.subtitle": { en: "PIN required", ar: "رمز الدخول مطلوب", ur: "پن درکار ہے" },
   "settings.clearData": { en: "Clear Data", ar: "مسح البيانات", ur: "ڈیٹا صاف کریں" },
+  "settings.clearData.signOut": { en: "Sign out of all apps", ar: "تسجيل الخروج من جميع التطبيقات", ur: "تمام ایپس سے سائن آؤٹ کریں" },
+  "settings.clearData.history": { en: "Clear browsing history & cache", ar: "مسح سجل التصفح والتخزين المؤقت", ur: "براؤزنگ ہسٹری اور کیشے کو صاف کریں" },
+  "settings.clearData.passwords": { en: "Remove saved passwords", ar: "إزالة كلمات المرور المحفوظة", ur: "محفوظ کردہ پاس ورڈز ہٹائیں" },
+  "settings.clearData.reset": { en: "Reset custom settings", ar: "إعادة تعيين الإعدادات", ur: "حسب ضرورت ترتیبات دوبارہ ترتیب دیں" },
+  "settings.clearData.question": { en: "Are you sure you want to clear all data?", ar: "هل أنت متأكد من مسح جميع البيانات؟", ur: "کیا آپ واقعی تمام ڈیٹا صاف کرنا چاہتے ہیں؟" },
+  "settings.clearData.desc": { en: "This action cannot be undone. It will prepare the terminal for the next patient.", ar: "لا يمكن التراجع عن هذا الإجراء. سيقوم بإعداد الشاشة للمريض التالي.", ur: "اس کارروائی کو واپس نہیں کیا جا سکتا۔ یہ اگلے مریض کے لیے ٹرمینل تیار کرے گا۔" },
 
   /* ─── Care Team Access Dialog ─── */
   "careteam.title": { en: "Care Team Access", ar: "دخول فريق الرعاية", ur: "کیئر ٹیم رسائی" },
@@ -299,7 +407,7 @@ const translations: Record<string, TranslationEntry> = {
   "survey.start": { en: "Start Survey", ar: "ابدأ الاستبيان", ur: "سروے شروع کریں" },
   "survey.next": { en: "Next", ar: "التالي", ur: "اگلا" },
   "survey.previous": { en: "Previous", ar: "السابق", ur: "پچھلا" },
-  "survey.submit": { en: "Submit", ar: "إرسال الملاحظات", ur: "رائے جمع کرائیں" },
+  "survey.submit": { en: "Submit", ar: "إرسال", ur: "جمع کرائیں" },
   "survey.thankYou": { en: "Thank You!", ar: "شكراً لك!", ur: "شکریہ!" },
   "survey.thankYouDesc": { en: "Your feedback has been recorded.", ar: "تم تسجيل ملاحظاتك.", ur: "آپ کی رائے درج کر لی گئی ہے۔" },
   "survey.close": { en: "Close", ar: "إغلاق", ur: "بند کریں" },
@@ -325,24 +433,48 @@ const translations: Record<string, TranslationEntry> = {
   "survey.opt.disagree": { en: "Disagree", ar: "أعارض", ur: "اختلاف" },
   "survey.opt.agree": { en: "Agree", ar: "أوافق", ur: "اتفاق" },
   "survey.opt.stronglyAgree": { en: "Strongly Agree", ar: "أوافق بشدة", ur: "سختی سے اتفاق" },
-  "survey.additionalFeedback": { en: "Any additional feedback? (optional)", ar: "ملاحظات إضافية", ur: "مزید رائے" },
-  "survey.feedbackShortMessage": { en: "(Optional)", ar: "يرجى إعلامنا كيف يمكننا التحسين. (اختياري)", ur: "براہ کرم ہمیں بتائیں کہ ہم کیسے بہتر کر سکتے ہیں۔ (اختیاری)" },
-  "survey.feedbackPlaceholder": { en: "Share your thoughts...", ar: "اكتب ملاحظاتك هنا (ثناء، شكر، اقتراحات، أو شكاوى)", ur: "اپنی رائے یہاں لکھیں (تعریف، شکریہ، تجاویز، یا شکایات)" },
-  "survey.wouldYouLikeFeedback": { en: "Would you like to share your feedback?", ar: "هل تود مشاركة رأيك؟", ur: "کیا آپ اپنی رائے بانٹنا چاہیں گے؟" },
-  "survey.opt.complaint": { en: "Complaint", ar: "شكوى", ur: "شکایت" },
-  "survey.opt.praise": { en: "Praise", ar: "إشادة", ur: "تعریف" },
-  "survey.opt.continueSurvey": { en: "Survey", ar: "متابعة الاستبيان", ur: "سروے جاری رکھیں" },
-  "survey.complaintTitle": { en: "We’re sorry to hear that. Please tell us what happened.", ar: "نأسف لسماع ذلك. يرجى إخبارنا بما حدث.", ur: "ہمیں یہ سن کر افسوس ہوا۔ براہ کرم ہمیں بتائیں کیا ہوا۔" },
-  "survey.complaintPlaceholder": { en: "Describe your issue or complaint", ar: "صف مشكلتك أو شكواك", ur: "اپنا مسئلہ یا شکایت بیان کریں" },
-  "survey.praiseTitle": { en: "We’re glad to hear that! Tell us more.", ar: "نسعد بسماع ذلك! أخبرنا المزيد.", ur: "ہمیں یہ سن کر خوشی ہوئی! ہمیں مزید بتائیں۔" },
-  "survey.praisePlaceholder": { en: "Share what you liked about your experience", ar: "شارك ما أعجبك في تجربتك", ur: "اپنے تجربے کے بارے میں جو آپ کو پسند آیا وہ شیئر کریں" },
-  "survey.dyn.dissatisfiedTitle": { en: "We're sorry to hear that", ar: "نأسف لسماع ذلك", ur: "ہمیں یہ سن کر افسوس ہوا" },
-  "survey.dyn.dissatisfiedPlaceholder": { en: "Please tell us what went wrong...", ar: "يرجى إخبارنا بما حدث من خطأ...", ur: "براہ کرم ہمیں بتائیں کیا غلط ہوا..." },
-  "survey.dyn.neutralTitle": { en: "Tell us more", ar: "أخبرنا المزيد", ur: "ہمیں مزید بتائیں" },
-  "survey.dyn.neutralPlaceholder": { en: "How can we improve your experience?", ar: "كيف يمكننا تحسين تجربتك؟", ur: "ہم آپ کے تجربے کو کیسے بہتر بنا سکتے ہیں؟" },
-  "survey.dyn.satisfiedTitle": { en: "We're glad you're happy!", ar: "نحن سعداء برضاك!", ur: "ہمیں خوشی ہے کہ آپ خوش ہیں!" },
-  "survey.dyn.satisfiedPlaceholder": { en: "What did you like the most?", ar: "ما أكثر شيء أعجبك؟", ur: "آپ کو سب سے زیادہ کیا پسند آیا؟" },
+  "survey.additionalFeedback": { en: "Any additional feedback? (optional)", ar: "هل لديك ملاحظات إضافية؟ (اختياري)", ur: "کوئی مزید رائے؟ (اختیاری)" },
+  "survey.feedbackPlaceholder": { en: "Share your thoughts...", ar: "شاركنا أفكارك...", ur: "خیالات شیئر کریں..." },
   "survey.questionOf": { en: "Question {0} of {1}", ar: "السؤال {0} من {1}", ur: "سوال {0} از {1}" },
+  /* ─── Feedback Hub ─── */
+  "feedback.quickSurvey": { en: "Quick Survey", ar: "استبيان سريع", ur: "فوری سروے" },
+  "feedback.quickSurveyDesc": { en: "Rate your experience in minutes", ar: "قيّم تجربتك في دقائق", ur: "چند منٹوں میں اپنے تجربے کی درجہ بندی کریں" },
+  "feedback.raiseConcern": { en: "Raise a Concern", ar: "تقديم شكوى", ur: "شکایت درج کریں" },
+  "feedback.raiseConcernDesc": { en: "We'll route this to the right team", ar: "سيتم توجيهها للقسم المختص", ur: "ہم اسے صحیح ٹیم کو بھیجیں گے" },
+  "feedback.sendAppreciation": { en: "Send Appreciation", ar: "شكر وتقدير", ur: "تعریف بھیجیں" },
+  "feedback.sendAppreciationDesc": { en: "We'll share this with the team", ar: "سيتم مشاركة رسالتك مع الفريق", ur: "ہم اسے ٹیم کے ساتھ شیئر کریں گے" },
+  "feedback.back": { en: "Back", ar: "رجوع", ur: "واپس" },
+  /* ─── Concern Path ─── */
+  "concern.title": { en: "Raise a concern", ar: "تقديم شكوى", ur: "شکایت درج کریں" },
+  "concern.subtitle": { en: "We'll route this to the right team", ar: "سيتم توجيهها للقسم المختص", ur: "ہم اسے صحیح ٹیم کو بھیجیں گے" },
+  "concern.areaQuestion": { en: "What area does this relate to?", ar: "أي مجال يتعلق به الموضوع؟", ur: "یہ کس شعبے سے متعلق ہے؟" },
+  "concern.area.nursing": { en: "Nursing care", ar: "الرعاية التمريضية", ur: "نرسنگ کیئر" },
+  "concern.area.food": { en: "Food service", ar: "خدمة الطعام", ur: "فوڈ سروس" },
+  "concern.area.room": { en: "Room & cleaning", ar: "الغرفة والنظافة", ur: "کمرا اور صفائی" },
+  "concern.area.medical": { en: "Medical staff", ar: "الكادر الطبي", ur: "طبی عملہ" },
+  "concern.area.wait": { en: "Wait time", ar: "وقت الانتظار", ur: "انتظار کا وقت" },
+  "concern.area.other": { en: "Other", ar: "أخرى", ur: "دیگر" },
+  "concern.tellUs": { en: "Tell us what happened", ar: "اكتب ما حدث", ur: "ہمیں بتائیں کیا ہوا" },
+  "concern.placeholder": { en: "Type here...", ar: "اكتب هنا...", ur: "یہاں لکھیں..." },
+  "concern.recordVoice": { en: "Record voice", ar: "تسجيل صوتي", ur: "آواز ریکارڈ کریں" },
+  "concern.received": { en: "We received your concern", ar: "تم استلام شكواك", ur: "ہمیں آپ کی شکایت موصول ہوئی" },
+  "concern.receivedDesc": { en: "A dedicated team member will review your message and contact you as soon as possible.", ar: "سيقوم الفريق المختص بمراجعة رسالتك والتواصل معك في أقرب وقت ممكن.", ur: "ایک مخصوص ٹیم ممبر آپ کے پیغام کا جائزہ لے کر جلد از جلد آپ سے رابطہ کرے گا۔" },
+  "concern.refNumber": { en: "Reference number", ar: "الرقم المرجعي", ur: "حوالہ نمبر" },
+  /* ─── Appreciation Path ─── */
+  "appreciation.title": { en: "Send appreciation", ar: "شكر وتقدير", ur: "تعریف بھیجیں" },
+  "appreciation.subtitle": { en: "We'll share this with the team", ar: "سيتم مشاركة رسالتك مع الفريق", ur: "ہم اسے ٹیم کے ساتھ شیئر کریں گے" },
+  "appreciation.whoQuestion": { en: "Who would you like to thank?", ar: "مين تحب تشكر؟", ur: "آپ کس کا شکریہ ادا کرنا چاہتے ہیں؟" },
+  "appreciation.who.specific": { en: "A specific person", ar: "شخص معين", ur: "ایک مخصوص فرد" },
+  "appreciation.who.nursing": { en: "Nursing team", ar: "فريق التمريض", ur: "نرسنگ ٹیم" },
+  "appreciation.who.doctor": { en: "My doctor", ar: "الطبيب المعالج", ur: "میرا ڈاکٹر" },
+  "appreciation.who.hospital": { en: "The whole hospital", ar: "المستشفى كله", ur: "پورا ہسپتال" },
+  "appreciation.yourMessage": { en: "Your message", ar: "رسالتك", ur: "آپ کا پیغام" },
+  "appreciation.placeholder": { en: "Share what made your stay better...", ar: "شاركنا وش اللي حسّن تجربتك...", ur: "بتائیں کس چیز نے آپ کا قیام بہتر بنایا..." },
+  "appreciation.recordVoice": { en: "Record voice", ar: "تسجيل صوتي", ur: "آواز ریکارڈ کریں" },
+  "appreciation.send": { en: "Send", ar: "إرسال", ur: "بھیجیں" },
+  "appreciation.delivered": { en: "Your message has been delivered", ar: "تم إيصال رسالتك", ur: "آپ کا پیغام پہنچا دیا گیا" },
+  "appreciation.deliveredDesc": { en: "Kind words make a real difference. Your appreciation will be shared with the team shortly.", ar: "الكلمات الطيبة تصنع فرقاً حقيقياً. سيتم مشاركة شكرك مع الفريق قريباً.", ur: "مہربان الفاظ واقعی فرق ڈالتے ہیں۔ آپ کی تعریف جلد ہی ٹیم کے ساتھ شیئر کی جائے گی۔" },
+  "appreciation.sendAnother": { en: "Send another", ar: "إرسال شكر آخر", ur: "مزید بھیجیں" },
 
   /* ─── About Us ─── */
   "about.title": { en: "About Us", ar: "عن المستشفى", ur: "ہمارے بارے میں" },
@@ -359,6 +491,15 @@ const translations: Record<string, TranslationEntry> = {
   "about.patientRights": { en: "Patient Rights", ar: "حقوق المريض", ur: "مریض کے حقوق" },
   "about.watchVideo": { en: "Watch Our Hospital Video", ar: "شاهد فيديو المستشفى", ur: "ہمارے ہسپتال کی ویڈیو دیکھیں" },
   "about.video": { en: "Video", ar: "فيديو", ur: "ویڈیو" },
+  "about.achievements": { en: "Achievements", ar: "الإنجازات والجوائز", ur: "کامیابیاں" },
+  "about.dsfh.achievement1.title": { en: "World's Top 250 Hospitals", ar: "ضمن أفضل 250 مستشفى عالمياً", ur: "دنیا کے ٹاپ 250 ہسپتالوں میں شامل" },
+  "about.dsfh.achievement1.desc": { en: "Dr. Soliman Fakeeh Hospital Jeddah is the first private hospital in Saudi Arabia to be included in Newsweek's World's Top 250 Hospitals list for 2026.", ar: "تصدر مستشفى الدكتور سليمان فقيه بجدة كأول مستشفى خاص في المملكة ينضم لقائمة نيوزويك لأفضل 250 مستشفى في العالم لعام 2026.", ur: "جدہ میں ڈاکٹر سلیمان فقیہ ہسپتال سعودی عرب کا پہلا نجی ہسپتال ہے جسے 2026 کے لیے نیوز ویک کے دنیا کے ٹاپ 250 ہسپتالوں کی فہرست میں شامل کیا گیا ہے۔" },
+  "about.dsfh.achievement2.title": { en: "Best Private Hospital in SA", ar: "أفضل مستشفى خاص في المملكة", ur: "سعودی عرب کا بہترین نجی ہسپتال" },
+  "about.dsfh.achievement2.desc": { en: "Ranked as the #1 Private Hospital in Saudi Arabia for the 5th consecutive year, ensuring unparalleled quality of care.", ar: "حصل المستشفى على المركز الأول كأفضل مستشفى خاص في المملكة العربية السعودية للسنة الخامسة على التوالي.", ur: "مسلسل پانچویں سال سعودی عرب میں نمبر 1 نجی ہسپتال کے طور پر درجہ بندی کی گئی، جو دیکھ بھال کے بے مثال معیار کو یقینی بناتی ہے۔" },
+  "about.dsfh.achievement3.title": { en: "World's Best Smart Hospitals", ar: "أفضل المستشفيات الذكية عالمياً", ur: "دنیا کے بہترین سمارٹ ہسپتال" },
+  "about.dsfh.achievement3.desc": { en: "Recognized among Newsweek's World's Best Smart Hospitals 2026 for leadership in digital health and AI-powered care.", ar: "تم اختياره ضمن قائمة نيوزويك لأفضل المستشفيات الذكية في العالم لعام 2026 لريادته في الصحة الرقمية والذكاء الاصطناعي.", ur: "ڈیجیٹل صحت اور AI سے چلنے والی دیکھ بھال میں قیادت کے لیے نیوز ویک کے 2026 کے دنیا کے بہترین سمارٹ ہسپتالوں میں تسلیم کیا گیا۔" },
+  "about.dsfh.achievement4.title": { en: "Specialty Leadership", ar: "الريادة في التخصصات الطبية", ur: "طبی خصوصیات میں قیادت" },
+  "about.dsfh.achievement4.desc": { en: "Ranked #1 among private hospitals in Neurology, Pediatrics, Orthopedics, and Oncology in the Middle East.", ar: "تصدر المستشفى كأفضل مستشفى خاص في الشرق الأوسط في تخصصات الأعصاب، الأطفال، العظام، وعلم الأورام.", ur: "مشرق وسطیٰ میں نیورولوجی، اطفال، آرتھوپیڈکس اور آنکولوجی میں نجی ہسپتالوں میں نمبر 1 قرار پایا۔" },
 
   /* ─── App Launcher ─── */
   "launcher.media": { en: "Media", ar: "الوسائط", ur: "میڈیا" },
@@ -420,8 +561,9 @@ const translations: Record<string, TranslationEntry> = {
 
   /* ─── Dates ─── */
   "date.mar": { en: "Mar", ar: "مارس", ur: "مارچ" },
-  "date.5mar2026": { en: "5 Mar 2026", ar: "5 مارس 2026", ur: "5 مارچ 2026" },
-  "date.12mar2026": { en: "~12 Mar 2026", ar: "~12 مارس 2026", ur: "~12 مارچ 2026" },
+  "date.marFull": { en: "March", ar: "مارس", ur: "مارچ" },
+  "date.5mar2026": { en: "05 Mar 2026", ar: "٥ مارس ٢٠٢٦", ur: "05 مارچ 2026" },
+  "date.12mar2026": { en: "12 Mar 2026", ar: "١٢ مارس ٢٠٢٦", ur: "12 مارچ 2026" },
 
   /* ─── Education Apps ─── */
   "edu.cesareanRecovery": { en: "5 Steps to Recovery\nAfter Cesarean", ar: "5 خطوات للتعافي\nبعد القيصرية", ur: "سیزرین کے بعد\nصحت یابی کے 5 اقدامات" },
@@ -504,6 +646,15 @@ const translations: Record<string, TranslationEntry> = {
   "call.noHistory": { en: "No call history", ar: "لا يوجد سجل مكالمات", ur: "کال کی کوئی تاریخ نہیں" },
 };
 
+/* ── Number Localization ── */
+export function localizeNumber(n: number | string, locale: Locale): string {
+  const s = String(n);
+  if (locale === "ar") {
+    return s.replace(/[0-9]/g, w => "٠١٢٣٤٥٦٧٨٩"[+w]);
+  }
+  return s;
+}
+
 /* ── Translator function factory ── */
 function createT(locale: Locale) {
   return function t(key: string, ...args: (string | number)[]): string {
@@ -525,5 +676,5 @@ export function useLocale() {
   const dir = isRTL ? "rtl" : "ltr";
   const fontFamily = isRTL ? theme.fontFamilyAr : theme.fontFamily;
   const t = createT(locale);
-  return { t, locale, isRTL, dir, fontFamily };
+  return { t, locale, isRTL, dir, fontFamily, localizeNumber: (n: number | string) => localizeNumber(n, locale) };
 }

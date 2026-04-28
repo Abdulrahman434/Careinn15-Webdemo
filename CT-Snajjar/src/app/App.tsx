@@ -109,9 +109,10 @@ function BedsideScreen() {
     }
   });
   const [showConfigurator, setShowConfigurator] = useState(false);
-  const [showCareMe, setShowCareMe] = useState(false);
+  const [showCareMeExpanded, setShowCareMeExpanded] = useState(false);
   const [showCall, setShowCall] = useState(false);
   const [showFoodOrder, setShowFoodOrder] = useState(false);
+  const [activeCareRole, setActiveCareRole] = useState<"nurse" | "doctor" | null>(null);
   const [layoutVersion, setLayoutVersion] = useState<1 | 2 | 3>(1);
   const [activeBroadcast, setActiveBroadcast] = useState<BroadcastNotification | null>(null);
   const [acknowledgedBroadcasts, setAcknowledgedBroadcasts] = useState<BroadcastNotification[]>([]);
@@ -308,6 +309,19 @@ function BedsideScreen() {
     } catch { }
   }, []);
 
+  // Allow the Android kiosk app (or any external caller) to open the 
+  // Care Team interface directly, bypassing the PIN dialog.
+  useEffect(() => {
+    (window as any).__openCareTeam = (role: "nurse" | "doctor") => {
+      if (role !== "nurse" && role !== "doctor") return;
+      setActiveCareRole(role);
+      setShowSettings(true);
+    };
+    return () => {
+      delete (window as any).__openCareTeam;
+    };
+  }, []);
+
   const handleFullscreenTap = useCallback(() => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch((err) => {
@@ -325,7 +339,7 @@ function BedsideScreen() {
     const anyOverlayOpen =
       openCategory || showSurvey || showAboutUs || showSettings ||
       showNotifications || showTour || showTasbih || showConfigurator ||
-      showCareMe || showCall || showFoodOrder || activeBroadcast ||
+      showCareMeExpanded || showCall || showFoodOrder || activeBroadcast ||
       activeGame || activeTool;
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -336,7 +350,7 @@ function BedsideScreen() {
         if (activeBroadcast) { setActiveBroadcast(null); return; }
         if (showFoodOrder) { setShowFoodOrder(false); return; }
         if (showCall) { setShowCall(false); return; }
-        if (showCareMe) { setShowCareMe(false); return; }
+        if (showCareMeExpanded) { setShowCareMeExpanded(false); return; }
         if (showConfigurator) { setShowConfigurator(false); return; }
         if (showTasbih) { setShowTasbih(false); return; }
         if (showTour) { setShowTour(false); setTourDismissed(true); return; }
@@ -529,7 +543,7 @@ function BedsideScreen() {
                       <PatientGreeting onOpenAboutUs={() => setShowAboutUs(true)} onOpenTour={() => setShowTour(true)} fillImage />
                     </div>
                     <div className="flex-1 min-w-0 min-h-0 flex flex-col">
-                      <CareMe onExpand={() => setShowCareMe(true)} />
+                      <CareMe onExpand={() => setShowCareMeExpanded(true)} />
                     </div>
                   </div>
                   {/* Bottom: Service cards row */}
@@ -546,7 +560,7 @@ function BedsideScreen() {
                 {/* Left Column — PatientGreeting + CareMe */}
                 <div className="flex flex-col gap-5 shrink-0 min-h-0" style={{ width: "400px" }}>
                   <PatientGreeting onOpenAboutUs={() => setShowAboutUs(true)} onOpenTour={() => setShowTour(true)} />
-                  <CareMe onExpand={() => setShowCareMe(true)} />
+                  <CareMe onExpand={() => setShowCareMeExpanded(true)} />
                 </div>
 
                 {/* Center + Right Column */}
@@ -568,7 +582,7 @@ function BedsideScreen() {
                 {/* Left Column — PatientGreeting + CareMe */}
                 <div className="flex flex-col gap-5 shrink-0 min-h-0" style={{ width: "400px" }}>
                   <PatientGreeting onOpenAboutUs={() => setShowAboutUs(true)} onOpenTour={() => setShowTour(true)} />
-                  <CareMe onExpand={() => setShowCareMe(true)} />
+                  <CareMe onExpand={() => setShowCareMeExpanded(true)} />
                 </div>
 
                 <div className="flex-1 flex gap-[40px] min-w-0 min-h-0">
@@ -652,9 +666,14 @@ function BedsideScreen() {
         {/* Settings Panel — slide-in from right */}
         {showSettings && (
           <SettingsPanel
-            onClose={() => setShowSettings(false)}
+            onClose={() => {
+              setShowSettings(false);
+              setActiveCareRole(null);
+            }}
             onFullscreenTap={handleFullscreenTap}
             isFullscreen={isFullscreen}
+            activeCareRole={activeCareRole}
+            setActiveCareRole={setActiveCareRole}
           />
         )}
 
@@ -678,8 +697,8 @@ function BedsideScreen() {
         )}
 
         {/* CareMe Expanded Overlay */}
-        {showCareMe && (
-          <CareMeExpanded onClose={() => setShowCareMe(false)} />
+        {showCareMeExpanded && (
+          <CareMeExpanded onClose={() => setShowCareMeExpanded(false)} />
         )}
 
         {/* Call Screen Overlay */}
