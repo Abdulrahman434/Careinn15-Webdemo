@@ -49,6 +49,8 @@ export interface CarePlanItem {
   done: boolean;
   active?: boolean;
   minutes?: number;
+  day?: number;
+  date?: string; // YYYY-MM-DD
   timeKey?: string;
 }
 
@@ -167,6 +169,10 @@ export interface NurseStoreState {
 
   /** Whether to show the "Nurse View" shortcut button on CareMe */
   nurseViewShortcutVisible: boolean;
+  
+  /** Care Plan Shared State */
+  carePlanMode: "daily" | "overall";
+  carePlanSelectedDate: string; // YYYY-MM-DD
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -222,13 +228,15 @@ function createDefaultState(): NurseStoreState {
     painScore: 5,
 
     carePlan: [
-      { id: "cp-1", labelKey: "care.plan.initialAssessment", done: true, timeKey: "care.plan.done" },
-      { id: "cp-2", labelKey: "care.plan.bloodWork", done: true, timeKey: "care.plan.done" },
-      { id: "cp-3", labelKey: "care.plan.medicationRound", done: false, active: true, minutes: 45 },
-      { id: "cp-4", labelKey: "care.plan.checkup", done: false, minutes: 15 },
-      { id: "cp-5", labelKey: "care.plan.physicalTherapy", done: false, minutes: 30 },
-      { id: "cp-6", labelKey: "care.plan.doctorReview", done: false, minutes: 10 },
+      { id: "cp-1", labelKey: "care.plan.initialAssessment", done: true, timeKey: "care.plan.done", day: 1, date: "2026-03-10" },
+      { id: "cp-2", labelKey: "care.plan.bloodWork", done: true, timeKey: "care.plan.done", day: 1, date: "2026-03-10" },
+      { id: "cp-3", labelKey: "care.plan.medicationRound", done: false, active: true, minutes: 45, day: 1, date: "2026-03-10" },
+      { id: "cp-4", labelKey: "care.plan.checkup", done: false, minutes: 15, day: 2, date: "2026-03-11" },
+      { id: "cp-5", labelKey: "care.plan.physicalTherapy", done: false, minutes: 30, day: 3, date: "2026-03-12" },
+      { id: "cp-6", labelKey: "care.plan.doctorReview", done: false, minutes: 10, day: 4, date: "2026-03-13" },
     ],
+    carePlanMode: "daily",
+    carePlanSelectedDate: "2026-03-10",
 
     financial: [
       { id: "fin-1", category: "Room & Board", description: "Private Room — 7 nights", amount: 35000, covered: 31500, date: "5–12 Mar" },
@@ -383,6 +391,14 @@ const nurseStore = (() => {
     },
     deleteCarePlanItem: (id: string) => {
       state = { ...state, carePlan: state.carePlan.filter((i) => i.id !== id) };
+      notify();
+    },
+    setCarePlanMode: (mode: "daily" | "overall") => {
+      state = { ...state, carePlanMode: mode };
+      notify();
+    },
+    setCarePlanSelectedDate: (date: string) => {
+      state = { ...state, carePlanSelectedDate: date };
       notify();
     },
 

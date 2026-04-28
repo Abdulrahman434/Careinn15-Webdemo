@@ -228,6 +228,18 @@ const translations: Record<string, TranslationEntry> = {
   "care.plan.doctorReview": { en: "Doctor Review", ar: "مراجعة الطبيب", ur: "ڈاکٹر کا جائزہ" },
   "care.plan.min": { en: "Min", ar: "دقيقة", ur: "منٹ" },
   "care.plan.done": { en: "Done", ar: "تم", ur: "ہو گیا" },
+  "careplan.toggle.daily": { en: "Daily", ar: "يومي", ur: "روزانہ" },
+  "careplan.toggle.overall": { en: "Overall", ar: "إجمالي", ur: "مجموعی" },
+  "careplan.dayLabel": { en: "Day", ar: "يوم", ur: "دن" },
+  "careplan.today": { en: "Today", ar: "اليوم", ur: "آج" },
+  "careplan.yesterday": { en: "Yesterday", ar: "أمس", ur: "کل" },
+  "careplan.tomorrow": { en: "Tomorrow", ar: "غداً", ur: "کل" },
+  "careplan.overallTitle": { en: "Overall Plan", ar: "خطة شاملة", ur: "مجموعی منصوبہ" },
+  "careplan.overallDesc": { en: "Here is our treatment plan, it will be updated regularly", ar: "هذه هي خطتنا العلاجية، وسيتم تحديثها بانتظام", ur: "یہ ہمارا علاج کا منصوبہ ہے، اسے باقاعدگی سے اپ ڈیٹ کیا جائے گا" },
+  "careplan.emptyHeader": { en: "No Care Plan available", ar: "لا توجد خطة رعاية متاحة", ur: "کوئی کیئر پلان دستیاب نہیں ہے۔" },
+  "careplan.emptyDesc": { en: "your Careplan will appear here once it is been allowed by your Care Team.", ar: "ستظهر خطة الرعاية الخاصة بك هنا بمجرد السماح بها من قبل فريق الرعاية الخاص بك.", ur: "آپ کا کیئر پلان یہاں ظاہر ہو جائے گا جب آپ کی کیئر ٹیم اسے اجازت دے دے گی۔" },
+  "discharge.emptyHeader": { en: "No discharge plan available", ar: "لا توجد خطة خروج متاحة", ur: "ڈسچارج کا کوئی منصوبہ دستیاب نہیں ہے۔" },
+  "discharge.emptyDesc": { en: "Your discharge plan will appear here once it is ready.", ar: "ستظهر خطة الخروج الخاصة بك هنا بمجرد جاهزيتها.", ur: "آپ کا ڈسچارج پلان تیار ہونے کے بعد یہاں ظاہر ہوگا۔" },
 
   /* ─── Admission / Discharge Labels ─── */
   "care.admitted": { en: "Admitted", ar: "تاريخ الدخول", ur: "داخلہ" },
