@@ -1,8 +1,21 @@
-import { useState } from "react";
-import { ClipboardList, Plus, Trash2, Check, Clock, GripVertical, Edit2, Save, Eye } from "lucide-react";
+import { useState, useRef } from "react";
+import { ClipboardList, Plus, Trash2, Check, Clock, GripVertical, Edit2, Save, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
 import { useLocale } from "../../i18n";
 import { useNurseStore, nurseActions, type CarePlanItem } from "../../NurseDataStore";
+
+type CarePlanMode = "daily" | "overall";
+
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+function shiftDay(d: Date, delta: number): Date {
+  const next = new Date(d);
+  next.setDate(d.getDate() + delta);
+  return next;
+}
+const toISO = (d: Date) => d.toISOString().split("T")[0];
+const fromISO = (s: string) => new Date(s);
 
 export function CarePlanTab({ role }: { role: "nurse" | "doctor" }) {
   const { theme: t } = useTheme();
@@ -12,10 +25,28 @@ export function CarePlanTab({ role }: { role: "nurse" | "doctor" }) {
   const [newLabel, setNewLabel] = useState("");
   const [newLabelAr, setNewLabelAr] = useState("");
   const [newMinutes, setNewMinutes] = useState("");
+  const [newDay, setNewDay] = useState("1");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editLabelAr, setEditLabelAr] = useState("");
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+
+  const mode = store.carePlanMode;
+  const selectedDate = fromISO(store.carePlanSelectedDate);
+
+  const handleModeChange = (newMode: "daily" | "overall") => {
+    nurseActions.setCarePlanMode(newMode);
+  };
+
+  const today = new Date();
+  const yesterday = shiftDay(today, -1);
+  const tomorrow = shiftDay(today, 1);
+
+  let dateLabel = "";
+  if (isSameDay(selectedDate, today)) dateLabel = tr("careplan.today") || "Today";
+  else if (isSameDay(selectedDate, yesterday)) dateLabel = tr("careplan.yesterday") || "Yesterday";
+  else if (isSameDay(selectedDate, tomorrow)) dateLabel = tr("careplan.tomorrow") || "Tomorrow";
+  else dateLabel = selectedDate.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
 
   const handleAdd = () => {
     if (!newLabel.trim()) return;
@@ -25,11 +56,14 @@ export function CarePlanTab({ role }: { role: "nurse" | "doctor" }) {
       label: newLabel.trim(),
       labelAr: newLabelAr.trim(),
       done: false,
-      minutes: Number(newMinutes) || 30,
+      minutes: mode === "daily" ? (Number(newMinutes) || 30) : undefined,
+      day: mode === "overall" ? (Number(newDay) || 1) : undefined,
+      date: mode === "daily" ? store.carePlanSelectedDate : undefined,
     });
     setNewLabel("");
     setNewLabelAr("");
     setNewMinutes("");
+    setNewDay("1");
   };
 
   const handleDragStart = (idx: number) => setDragIdx(idx);
@@ -43,6 +77,11 @@ export function CarePlanTab({ role }: { role: "nurse" | "doctor" }) {
     setDragIdx(idx);
   };
   const handleDragEnd = () => setDragIdx(null);
+
+  const filteredItems = store.carePlan.filter(item => {
+    if (mode === "overall") return item.day !== undefined;
+    return item.date === store.carePlanSelectedDate;
+  });
 
   return (
     <div className="space-y-5">
@@ -71,10 +110,84 @@ export function CarePlanTab({ role }: { role: "nurse" | "doctor" }) {
       )}
 
       <div className="nurse-card">
-      <h3 style={{ color: t.textHeading }}><ClipboardList size={18} style={{ color: t.primary }} /> My Care Plan</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 style={{ color: t.textHeading, margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+            <ClipboardList size={18} style={{ color: t.primary }} /> {tr("care.plan.title") || "My Care Plan"}
+          </h3>
+          
+          {/* Daily / Overall Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => handleModeChange("daily")}
+              className="px-4 py-1.5 rounded-md text-[13px] font-semibold transition-all"
+              style={{
+                backgroundColor: mode === "daily" ? t.primary : "transparent",
+                color: mode === "daily" ? "#fff" : t.textMuted,
+                border: "none",
+                cursor: "pointer"
+              }}
+            >
+              {tr("careplan.toggle.daily") || "Daily"}
+            </button>
+            <button
+              onClick={() => handleModeChange("overall")}
+              className="px-4 py-1.5 rounded-md text-[13px] font-semibold transition-all"
+              style={{
+                backgroundColor: mode === "overall" ? t.primary : "transparent",
+                color: mode === "overall" ? "#fff" : t.textMuted,
+                border: "none",
+                cursor: "pointer"
+              }}
+            >
+              {tr("careplan.toggle.overall") || "Overall"}
+            </button>
+          </div>
+        </div>
+
+        {/* Period Row */}
+        <div className="flex items-center justify-center mb-6 py-2" style={{ borderBottom: `1px solid ${t.borderDefault}` }}>
+          {mode === "daily" ? (
+            <div className="flex items-center gap-4">
+              <button onClick={() => nurseActions.setCarePlanSelectedDate(toISO(shiftDay(selectedDate, -1)))} className="p-1 rounded-full hover:bg-gray-100 cursor-pointer" style={{ border: "none", background: "none" }}>
+                <ChevronLeft size={20} style={{ color: t.textHeading }} />
+              </button>
+              <span style={{ fontSize: "16px", fontWeight: 700, color: t.textHeading, minWidth: "120px", textAlign: "center" }}>
+                {dateLabel}
+              </span>
+              <button onClick={() => nurseActions.setCarePlanSelectedDate(toISO(shiftDay(selectedDate, 1)))} className="p-1 rounded-full hover:bg-gray-100 cursor-pointer" style={{ border: "none", background: "none" }}>
+                <ChevronRight size={20} style={{ color: t.textHeading }} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-4">
+              <span style={{ fontSize: "16px", fontWeight: 700, color: t.textHeading, minWidth: "120px", textAlign: "center" }}>
+                {tr("careplan.overallTitle") || "Overall Plan"}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Today Card (Mocked) */}
+        {mode === "daily" && (
+          <div className="mb-6 p-4 rounded-xl" style={{ backgroundColor: "#F9FAFB", border: `1px solid ${t.borderDefault}` }}>
+            <h4 style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading, marginBottom: "12px" }}>
+              {dateLabel}
+            </h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span style={{ fontSize: "12px", color: t.textMuted, display: "block", marginBottom: "4px" }}>Vitals</span>
+                <p style={{ fontSize: "14px", fontWeight: 600, color: t.textHeading, margin: 0 }}>BP: 120/80, HR: 72</p>
+              </div>
+              <div>
+                <span style={{ fontSize: "12px", color: t.textMuted, display: "block", marginBottom: "4px" }}>Notes</span>
+                <p style={{ fontSize: "14px", fontWeight: 600, color: t.textHeading, margin: 0 }}>Resting comfortably.</p>
+              </div>
+            </div>
+          </div>
+        )}
 
       <div className="space-y-2">
-        {store.carePlan.map((item, idx) => (
+        {filteredItems.map((item, idx) => (
           <div
             key={item.id}
             draggable={isNurse}
@@ -125,7 +238,10 @@ export function CarePlanTab({ role }: { role: "nurse" | "doctor" }) {
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-md shrink-0"
               style={{ fontSize: "12px", fontWeight: 600, color: item.done ? t.success : item.active ? t.primary : t.textMuted, backgroundColor: item.done ? t.successSubtle : item.active ? t.primarySubtle : "transparent" }}>
               {item.done ? <Check size={10} /> : <Clock size={10} />}
-              {item.timeKey ? tr(item.timeKey) : `${item.minutes || 30} min`}
+              {mode === "overall" 
+                ? `${tr("careplan.dayLabel")} ${item.day || 1}`
+                : (item.timeKey ? tr(item.timeKey) : `${item.minutes || 30} min`)
+              }
             </span>
 
             {isNurse && editingId !== item.id && (
@@ -150,8 +266,15 @@ export function CarePlanTab({ role }: { role: "nurse" | "doctor" }) {
           <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="New care plan item..."
             className="flex-1 outline-none" style={{ padding: "10px 14px", borderRadius: 12, fontSize: "14px", border: `1.5px solid ${t.borderDefault}` }}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()} />
-          <input value={newMinutes} onChange={(e) => setNewMinutes(e.target.value)} placeholder="Min" type="number"
-            className="outline-none" style={{ width: 70, padding: "10px 12px", borderRadius: 12, fontSize: "14px", border: `1.5px solid ${t.borderDefault}` }} />
+          {mode === "daily" ? (
+            <input value={newMinutes} onChange={(e) => setNewMinutes(e.target.value)} placeholder="Min" type="number"
+              className="outline-none" style={{ width: 70, padding: "10px 12px", borderRadius: 12, fontSize: "14px", border: `1.5px solid ${t.borderDefault}` }} />
+          ) : (
+            <select value={newDay} onChange={(e) => setNewDay(e.target.value)}
+              className="outline-none appearance-none" style={{ width: 85, padding: "10px 12px", borderRadius: 12, fontSize: "14px", border: `1.5px solid ${t.borderDefault}`, backgroundColor: "#fff" }}>
+              {[1,2,3,4,5,6,7,8,9,10,11,12,13,14].map(d => <option key={d} value={d}>{tr("careplan.dayLabel")} {d}</option>)}
+            </select>
+          )}
           <button onClick={handleAdd} className="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all active:scale-95"
             style={{ backgroundColor: t.primary, color: "#fff", fontSize: "13px", fontWeight: 700, border: "none" }}>
             <Plus size={16} /> Add

@@ -46,6 +46,8 @@ import {
   Droplet,
   Thermometer,
   Wind,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import svgPaths from "../../imports/svg-ca68x68c4i";
@@ -63,14 +65,14 @@ const careTeam = [
 ];
 
 const carePlan = [
-  { labelKey: "care.plan.initialAssessment", time: "Done", timeKey: "care.plan.done", done: true },
-  { labelKey: "care.plan.labTests", time: "Done", timeKey: "care.plan.done", done: true },
-  { labelKey: "care.plan.scansImaging", time: "Done", timeKey: "care.plan.done", done: true },
-  { labelKey: "care.plan.medicationPrep", time: "Done", timeKey: "care.plan.done", done: true },
-  { labelKey: "care.plan.laborMonitoring", minutes: 45, done: false, active: true },
-  { labelKey: "care.plan.delivery", minutes: 120, done: false },
-  { labelKey: "care.plan.recoveryObservation", minutes: 60, done: false },
-  { labelKey: "care.plan.motherBabyCheck", minutes: 30, done: false },
+  { labelKey: "care.plan.initialAssessment", time: "Done", timeKey: "care.plan.done", done: true, day: 1 },
+  { labelKey: "care.plan.labTests", time: "Done", timeKey: "care.plan.done", done: true, day: 1 },
+  { labelKey: "care.plan.scansImaging", time: "Done", timeKey: "care.plan.done", done: true, day: 1 },
+  { labelKey: "care.plan.medicationPrep", time: "Done", timeKey: "care.plan.done", done: true, day: 1 },
+  { labelKey: "care.plan.laborMonitoring", minutes: 45, done: false, active: true, day: 1 },
+  { labelKey: "care.plan.delivery", minutes: 120, done: false, day: 2 },
+  { labelKey: "care.plan.recoveryObservation", minutes: 60, done: false, day: 3 },
+  { labelKey: "care.plan.motherBabyCheck", minutes: 30, done: false, day: 4 },
 ];
 
 const dietCodes = [
@@ -213,7 +215,7 @@ function PatientProfileSlide({ theme, isExpanded = false }: { theme: any, isExpa
   const nurseStore = useNurseStore();
   const p = nurseStore.patient;
 
-  const infoRow = (icon: React.ComponentType<any>, label: string, val: string, customColor?: string) => {
+  const infoRow = (icon: React.ComponentType<any>, label: string, val: React.ReactNode, customColor?: string) => {
     const Icon = icon;
     const baseColor = customColor || theme.primary;
     const bgColor = customColor ? `${customColor}15` : theme.primarySubtle;
@@ -481,34 +483,115 @@ function CareOverviewSlide({ theme, isExpanded = false }: { theme: any, isExpand
 
 /* ─── Slide Renders ─── */
 
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+function shiftDay(d: Date, delta: number): Date {
+  const next = new Date(d);
+  next.setDate(d.getDate() + delta);
+  return next;
+}
+
 function CareTeamSlide({ theme }: { theme: any }) {
   return <PatientProfileSlide theme={theme} />;
 }
 
 function TimelineSlide({
-  items,
+  items: rawItems,
   theme,
   completedLabel,
   isExpanded = false,
+  type = "care",
 }: {
-  items: typeof carePlan;
+  items: any[];
   theme: any;
   completedLabel?: string;
   isExpanded?: boolean;
+  type?: "care" | "discharge";
 }) {
   const { t } = useLocale();
+  const store = useNurseStore();
   const labelSize = isExpanded ? "16px" : "13px";
   const valueSize = isExpanded ? "16px" : "15.5px";
+
+  const toISO = (d: Date) => d.toISOString().split("T")[0];
+  const mode = store.carePlanMode;
+  
+  // Initialize from nurse view, otherwise use today as default
+  const [patientDate, setPatientDate] = useState<string>(store.carePlanSelectedDate || toISO(new Date()));
+  const selectedDate = new Date(patientDate);
+
+  // Sync with nurse view changes
+  useEffect(() => {
+    if (store.carePlanSelectedDate) {
+      setPatientDate(store.carePlanSelectedDate);
+    }
+  }, [store.carePlanSelectedDate]);
+
+  const today = new Date();
+  const yesterday = shiftDay(today, -1);
+  const tomorrow = shiftDay(today, 1);
+
+  let dateLabel = "";
+  if (isSameDay(selectedDate, today)) dateLabel = t("careplan.today") || "Today";
+  else if (isSameDay(selectedDate, yesterday)) dateLabel = t("careplan.yesterday") || "Yesterday";
+  else if (isSameDay(selectedDate, tomorrow)) dateLabel = t("careplan.tomorrow") || "Tomorrow";
+  else dateLabel = selectedDate.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+
+  const items = rawItems.filter(item => {
+    if (type === "discharge") return true; // Show all discharge items regardless of date
+    if (mode === "overall") return item.day !== undefined;
+    return item.date === patientDate;
+  });
 
   return (
     <SectionContainer theme={theme} isExpanded={isExpanded} padding={isExpanded ? "24px" : "16px"}>
       <div className="flex flex-col gap-0">
-        {items.map((step, i) => {
+        {/* Date Selector OR Overall Title (Only for Care Plan) */}
+        {type === "care" && (
+          mode === "daily" ? (
+            <div className="flex items-center justify-center gap-4 mb-5 py-1" style={{ borderBottom: `1px solid ${theme.borderDefault}30` }}>
+              <button onClick={() => setPatientDate(toISO(shiftDay(selectedDate, -1)))} style={{ background: "none", border: "none", color: theme.textHeading, cursor: "pointer" }}>
+                <ChevronLeft size={18} />
+              </button>
+              <span style={{ fontSize: "15px", fontWeight: 800, color: theme.textHeading, minWidth: "120px", textAlign: "center" }}>
+                {dateLabel}
+              </span>
+              <button onClick={() => setPatientDate(toISO(shiftDay(selectedDate, 1)))} style={{ background: "none", border: "none", color: theme.textHeading, cursor: "pointer" }}>
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          ) : (
+            <div className="mb-5 flex flex-col gap-1">
+              <span style={{ fontSize: "16px", fontWeight: 900, color: "#000" }}>{t("careplan.overallTitle")}</span>
+              <span style={{ fontSize: "13px", color: theme.textMuted, lineHeight: "1.4" }}>
+                {t("careplan.overallDesc")}
+              </span>
+            </div>
+          )
+        )}
+
+        {/* Timeline Items */}
+        {items.length === 0 ? (
+          <div className="py-12 flex flex-col items-center text-center gap-3">
+             <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-300">
+                <ClipboardList size={32} />
+             </div>
+             <div>
+                <h4 style={{ fontSize: "16px", fontWeight: 700, color: theme.textHeading }}>
+                  {type === "care" ? t("careplan.emptyHeader") : t("discharge.emptyHeader")}
+                </h4>
+                <p style={{ fontSize: "13px", color: theme.textMuted, maxWidth: "240px", margin: "8px auto 0", lineHeight: "1.5" }}>
+                  {type === "care" ? t("careplan.emptyDesc") : t("discharge.emptyDesc")}
+                </p>
+             </div>
+          </div>
+        ) : items.map((step, i) => {
           const hasConnector = i < items.length - 1;
           const hasPrev = i > 0;
           return (
-            <div key={step.id || step.labelKey} className="flex items-center gap-3 relative">
-              {/* Top half connector — color follows previous step */}
+            <div key={step.id || step.labelKey || i} className="flex items-center gap-3 relative">
+              {/* Top half connector */}
               {hasPrev && (
                 <div
                   className="absolute z-0"
@@ -521,7 +604,7 @@ function TimelineSlide({
                   }}
                 />
               )}
-              {/* Bottom half connector — color follows current step */}
+              {/* Bottom half connector */}
               {hasConnector && (
                 <div
                   className="absolute z-0"
@@ -534,7 +617,7 @@ function TimelineSlide({
                   }}
                 />
               )}
-              {/* Timeline icon — container background masks the connector line behind it */}
+              {/* Timeline icon */}
               <div
                 className="shrink-0 flex items-center justify-center relative z-[1]"
                 style={{ width: "24px", height: "24px", backgroundColor: theme.surface, borderRadius: theme.radiusFull }}
@@ -585,7 +668,11 @@ function TimelineSlide({
                   }}
                 >
                   {step.done ? <Check size={isExpanded ? 12 : 10} /> : <Clock size={isExpanded ? 12 : 10} />}
-                  {step.timeKey ? t(step.timeKey) : `${step.minutes} ${t("care.plan.min")}`}
+                    {type === "care" && (mode === "overall" 
+                      ? `${t("careplan.dayLabel")} ${step.day || 1}`
+                      : (step.timeKey ? t(step.timeKey) : `${step.minutes} ${t("care.plan.min")}`))
+                    }
+                    {type === "discharge" && (step.timeKey ? t(step.timeKey) : `${step.minutes} ${t("care.plan.min")}`)}
                 </span>
               </div>
             </div>
@@ -1705,12 +1792,12 @@ export function CareMe({ onExpand }: { onExpand?: () => void }) {
     switch (key) {
       case "profile": return <PatientProfileSlide theme={theme} />;
       case "overview": return <CareOverviewSlide theme={theme} />;
-      case "plan": return <TimelineSlide items={nurseStore.carePlan} theme={theme} />;
+      case "plan": return <TimelineSlide items={nurseStore.carePlan} theme={theme} type="care" />;
       case "labs": return <LabResultsSlide theme={theme} />;
       case "imaging": return <ImagingSlide theme={theme} />;
       case "billing": return <FinanceSlide theme={theme} />;
       case "baby": return <BabyCameraSlide />;
-      case "discharge": return <TimelineSlide items={nurseStore.dischargePlan} theme={theme} completedLabel="2 of 6 Completed" />;
+      case "discharge": return <TimelineSlide items={nurseStore.dischargePlan} theme={theme} completedLabel="2 of 6 Completed" type="discharge" />;
       case "observations": return <ClinicalObservationsSlide theme={theme} />;
       default: return null;
     }
@@ -1940,12 +2027,12 @@ function renderExpandedSlideContent(key: string, theme: any, t: (k: string) => s
   switch (key) {
     case "profile": return <PatientProfileSlide theme={theme} isExpanded />;
     case "overview": return <CareOverviewSlide theme={theme} isExpanded />;
-    case "plan": return <TimelineSlide items={nurseStore?.carePlan || []} theme={theme} isExpanded />;
+    case "plan": return <TimelineSlide items={nurseStore?.carePlan || []} theme={theme} isExpanded type="care" />;
     case "labs": return <LabResultsSlide theme={theme} isExpanded />;
     case "imaging": return <ImagingSlide theme={theme} isExpanded />;
     case "billing": return <FinanceSlide theme={theme} isExpanded />;
     case "baby": return <BabyCameraSlide isExpanded />;
-    case "discharge": return <TimelineSlide items={nurseStore?.dischargePlan || []} theme={theme} completedLabel="2 of 6 Completed" isExpanded />;
+    case "discharge": return <TimelineSlide items={nurseStore?.dischargePlan || []} theme={theme} completedLabel="2 of 6 Completed" isExpanded type="discharge" />;
     case "observations": return <ClinicalObservationsSlide theme={theme} isExpanded />;
     default: return null;
   }
