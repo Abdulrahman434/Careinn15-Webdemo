@@ -29,6 +29,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
   const [hintTileId, setHintTileId] = useState<number | null>(null);
   const [showStartScreen, setShowStartScreen] = useState(false);
   const [hasSavedGame, setHasSavedGame] = useState(false);
+  const [showResumeModal, setShowResumeModal] = useState(false);
   const [isBootstrapped, setIsBootstrapped] = useState(false);
 
   const gridSize = DIFFICULTY_CONFIG[difficulty];
@@ -108,6 +109,14 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
     setShowStartScreen(false);
     initializeGame();
   }, [clearGameState, initializeGame]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('sliding-puzzle-save');
+    console.log('CHECKING SAVE:', saved);
+    if (saved) {
+      setShowResumeModal(true);
+    }
+  }, []);
 
   const loadGameState = useCallback(() => {
     try {
@@ -205,6 +214,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
 
         setTiles(newTiles);
         setMoves(moves + 1);
+        localStorage.setItem('sliding-puzzle-save', JSON.stringify({tiles, moves, difficulty}))
         setHintTileId(null);
 
         // Save immediately on every move
@@ -533,7 +543,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
       </div>
 
       {/* Start Screen / Resume Modal */}
-      {showStartScreen && (
+      {(showStartScreen || showResumeModal) && (
         <div
           className="absolute inset-0 flex items-center justify-center"
           style={{
