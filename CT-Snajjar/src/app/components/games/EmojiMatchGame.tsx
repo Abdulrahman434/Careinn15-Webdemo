@@ -57,6 +57,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
       timestamp: Date.now()
     };
     localStorage.setItem('emoji-match-game-state', JSON.stringify(state));
+    console.log('=== SAVE GAME STATE ===', 'emoji-match-game-state', JSON.stringify(state));
   }, [category, leftEmojis, rightEmojis, score, streak, matches, timeLeft, isPlaying, isGameComplete]);
 
   const startGame = useCallback(() => {
@@ -100,6 +101,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
   const loadGameState = useCallback(() => {
     try {
       const saved = localStorage.getItem('emoji-match-game-state');
+    console.log('=== LOAD GAME STATE ===', 'emoji-match-game-state', saved);
       if (saved) {
         const state = JSON.parse(saved);
         if (state && state.leftEmojis) {
@@ -124,9 +126,11 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
 
   useEffect(() => {
     const saved = localStorage.getItem('emoji-match-high-score');
+    console.log('=== LOAD GAME STATE ===', 'emoji-match-high-score', saved);
     if (saved) setHighScore(parseInt(saved));
 
     const savedState = localStorage.getItem('emoji-match-game-state');
+    console.log('=== LOAD GAME STATE ===', 'emoji-match-game-state', savedState);
     if (savedState) {
       setHasSavedGame(true);
       setShowResumeModal(true);
@@ -188,6 +192,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
               if (score + 10 + (newStreak > 1 ? newStreak * 2 : 0) > highScore) {
                 setHighScore(score + 10 + (newStreak > 1 ? newStreak * 2 : 0));
                 localStorage.setItem('emoji-match-high-score', (score + 10 + (newStreak > 1 ? newStreak * 2 : 0)).toString());
+    console.log('=== SAVE GAME STATE ===', 'emoji-match-high-score', (score + 10 + (newStreak > 1 ? newStreak * 2 : 0)).toString());
               }
             }
           } else {
@@ -238,6 +243,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
               if (score + 10 + (newStreak > 1 ? newStreak * 2 : 0) > highScore) {
                 setHighScore(score + 10 + (newStreak > 1 ? newStreak * 2 : 0));
                 localStorage.setItem('emoji-match-high-score', (score + 10 + (newStreak > 1 ? newStreak * 2 : 0)).toString());
+    console.log('=== SAVE GAME STATE ===', 'emoji-match-high-score', (score + 10 + (newStreak > 1 ? newStreak * 2 : 0)).toString());
               }
             }
           } else {

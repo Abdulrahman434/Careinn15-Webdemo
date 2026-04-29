@@ -57,6 +57,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
       newScores[diff] = score;
       setBestScores(newScores);
       localStorage.setItem('memory-best-scores', JSON.stringify(newScores));
+    console.log('=== SAVE GAME STATE ===', 'memory-best-scores', JSON.stringify(newScores));
     }
   }, [bestScores]);
 
@@ -72,6 +73,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
       timestamp: Date.now()
     };
     localStorage.setItem('memory-game-state', JSON.stringify(state));
+    console.log('=== SAVE GAME STATE ===', 'memory-game-state', JSON.stringify(state));
   }, [difficulty, currentTheme, cards, moves, matches, timer, isActive, isComplete]);
 
   const initializeGame = useCallback(() => {
@@ -106,6 +108,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
   const loadGameState = useCallback(() => {
     try {
       const saved = localStorage.getItem('memory-game-state');
+    console.log('=== LOAD GAME STATE ===', 'memory-game-state', saved);
       if (saved) {
         const state = JSON.parse(saved);
         if (state && state.cards) {
@@ -130,6 +133,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
   useEffect(() => {
     try {
       const saved = localStorage.getItem('memory-best-scores');
+    console.log('=== LOAD GAME STATE ===', 'memory-best-scores', saved);
       if (saved) setBestScores(JSON.parse(saved));
     } catch (e) {
       console.error("Failed to load best scores:", e);
@@ -138,6 +142,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
 
   useEffect(() => {
     const saved = localStorage.getItem('memory-game-state');
+    console.log('=== LOAD GAME STATE ===', 'memory-game-state', saved);
     if (saved) {
       setHasSavedGame(true);
       setShowStartScreen(true);

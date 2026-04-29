@@ -61,6 +61,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
       timestamp: Date.now()
     };
     localStorage.setItem('word-search-game-state', JSON.stringify(state));
+    console.log('=== SAVE GAME STATE ===', 'word-search-game-state', JSON.stringify(state));
   }, [difficulty, grid, foundWords, currentCategory, foundCellsMap, targetWords, timer, isActive, isComplete]);
 
   const initializeGame = useCallback(() => {
@@ -133,6 +134,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
   const loadGameState = useCallback(() => {
     try {
       const saved = localStorage.getItem('word-search-game-state');
+    console.log('=== LOAD GAME STATE ===', 'word-search-game-state', saved);
       if (saved) {
         const state = JSON.parse(saved);
         if (state && state.grid) {
@@ -158,6 +160,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
 
   useEffect(() => {
     const saved = localStorage.getItem('word-search-game-state');
+    console.log('=== LOAD GAME STATE ===', 'word-search-game-state', saved);
     if (saved) {
       setHasSavedGame(true);
       setShowResumeModal(true);

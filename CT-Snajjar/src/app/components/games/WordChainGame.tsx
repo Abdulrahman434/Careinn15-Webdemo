@@ -28,9 +28,11 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
 
   useEffect(() => {
     const savedScore = localStorage.getItem('wordchain-highscore');
+    console.log('=== LOAD GAME STATE ===', 'wordchain-highscore', savedScore);
     if (savedScore) setHighScore(parseInt(savedScore, 10));
 
     const savedState = localStorage.getItem('wordchain-game-state');
+    console.log('=== LOAD GAME STATE ===', 'wordchain-game-state', savedState);
     if (savedState) {
       setHasSavedGame(true);
       setShowResumeModal(true);
@@ -44,10 +46,12 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
       timestamp: Date.now()
     };
     localStorage.setItem('wordchain-game-state', JSON.stringify(state));
+    console.log('=== SAVE GAME STATE ===', 'wordchain-game-state', JSON.stringify(state));
   };
 
   const loadGameState = () => {
     const saved = localStorage.getItem('wordchain-game-state');
+    console.log('=== LOAD GAME STATE ===', 'wordchain-game-state', saved);
     if (saved) {
       const state = JSON.parse(saved);
       setCategory(state.category);
@@ -98,6 +102,7 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
     if (chain.length > highScore) {
       setHighScore(chain.length);
       localStorage.setItem('wordchain-highscore', chain.length.toString());
+    console.log('=== SAVE GAME STATE ===', 'wordchain-highscore', chain.length.toString());
     }
     clearGameState();
   };

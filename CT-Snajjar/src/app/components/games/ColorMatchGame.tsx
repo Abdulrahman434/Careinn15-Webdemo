@@ -37,9 +37,11 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
 
   useEffect(() => {
     const saved = localStorage.getItem('color-match-high-score');
+    console.log('=== LOAD GAME STATE ===', 'color-match-high-score', saved);
     if (saved) setHighScore(parseInt(saved));
     
     const savedState = localStorage.getItem('color-match-game-state');
+    console.log('=== LOAD GAME STATE ===', 'color-match-game-state', savedState);
     if (savedState) {
       setHasSavedGame(true);
       setShowResumeModal(true);
@@ -58,10 +60,12 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
       timestamp: Date.now()
     };
     localStorage.setItem('color-match-game-state', JSON.stringify(state));
+    console.log('=== SAVE GAME STATE ===', 'color-match-game-state', JSON.stringify(state));
   }, [isPlaying, score, timeLeft, lives, combo, speedMultiplier, targetColor]);
 
   const loadGameState = () => {
     const saved = localStorage.getItem('color-match-game-state');
+    console.log('=== LOAD GAME STATE ===', 'color-match-game-state', saved);
     if (saved) {
       const state = JSON.parse(saved);
       setScore(state.score);
@@ -111,6 +115,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
       if (score > highScore) {
         setHighScore(score);
         localStorage.setItem('color-match-high-score', score.toString());
+    console.log('=== SAVE GAME STATE ===', 'color-match-high-score', score.toString());
       }
     }
   }, [isPlaying, timeLeft, lives, speedMultiplier, score, highScore]);

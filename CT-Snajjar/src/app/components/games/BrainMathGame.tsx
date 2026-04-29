@@ -30,9 +30,11 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
 
   useEffect(() => {
     const saved = localStorage.getItem('brain-math-high-score');
+    console.log('=== LOAD GAME STATE ===', 'brain-math-high-score', saved);
     if (saved) setHighScore(parseInt(saved));
 
     const savedState = localStorage.getItem('brain-math-game-state');
+    console.log('=== LOAD GAME STATE ===', 'brain-math-game-state', savedState);
     if (savedState) {
       setHasSavedGame(true);
       setShowResumeModal(true);
@@ -52,10 +54,12 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
       timestamp: Date.now()
     };
     localStorage.setItem('brain-math-game-state', JSON.stringify(state));
+    console.log('=== SAVE GAME STATE ===', 'brain-math-game-state', JSON.stringify(state));
   }, [gameState, level, score, questionsSolved, totalTimeTaken, averageSpeed, equation, timeLeft]);
 
   const loadGameState = () => {
     const saved = localStorage.getItem('brain-math-game-state');
+    console.log('=== LOAD GAME STATE ===', 'brain-math-game-state', saved);
     if (saved) {
       const state = JSON.parse(saved);
       setLevel(state.level);
@@ -151,6 +155,7 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
       if (newScore > highScore) {
         setHighScore(newScore);
         localStorage.setItem('brain-math-high-score', newScore.toString());
+    console.log('=== SAVE GAME STATE ===', 'brain-math-high-score', newScore.toString());
       }
 
       const nextLevel = Math.floor((questionsSolved + 1) / 3) + 1;

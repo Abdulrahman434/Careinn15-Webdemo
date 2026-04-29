@@ -80,10 +80,12 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
       timestamp: Date.now()
     };
     localStorage.setItem('image-jigsaw-game-state', JSON.stringify(state));
+    console.log('=== SAVE GAME STATE ===', 'image-jigsaw-game-state', JSON.stringify(state));
   }, [gameState, pieces, difficulty, category, selectedImageIndex, imageUrl, timer, moves]);
 
   const loadGameState = () => {
     const saved = localStorage.getItem('image-jigsaw-game-state');
+    console.log('=== LOAD GAME STATE ===', 'image-jigsaw-game-state', saved);
     if (saved) {
       const state = JSON.parse(saved);
       setDifficulty(state.difficulty);
@@ -111,6 +113,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
 
   useEffect(() => {
     const saved = localStorage.getItem('image-jigsaw-game-state');
+    console.log('=== LOAD GAME STATE ===', 'image-jigsaw-game-state', saved);
     if (saved) {
       setHasSavedGame(true);
       setShowResumeModal(true);

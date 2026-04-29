@@ -21,9 +21,11 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
 
   useEffect(() => {
     const saved = localStorage.getItem('reaction-leaderboard');
+    console.log('=== LOAD GAME STATE ===', 'reaction-leaderboard', saved);
     if (saved) setLeaderboard(JSON.parse(saved));
 
     const savedState = localStorage.getItem('reaction-speed-game-state');
+    console.log('=== LOAD GAME STATE ===', 'reaction-speed-game-state', savedState);
     if (savedState) {
       setHasSavedGame(true);
       setShowResumeModal(true);
@@ -40,10 +42,12 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
       timestamp: Date.now()
     };
     localStorage.setItem('reaction-speed-game-state', JSON.stringify(state));
+    console.log('=== SAVE GAME STATE ===', 'reaction-speed-game-state', JSON.stringify(state));
   }, [mode, history, gameState, reactionTime]);
 
   const loadGameState = () => {
     const saved = localStorage.getItem('reaction-speed-game-state');
+    console.log('=== LOAD GAME STATE ===', 'reaction-speed-game-state', saved);
     if (saved) {
       const state = JSON.parse(saved);
       setMode(state.mode);
@@ -116,6 +120,7 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
       const newLeaderboard = { ...leaderboard, [mode]: currentModeLeaderboard };
       setLeaderboard(newLeaderboard);
       localStorage.setItem('reaction-leaderboard', JSON.stringify(newLeaderboard));
+    console.log('=== SAVE GAME STATE ===', 'reaction-leaderboard', JSON.stringify(newLeaderboard));
       
       setGameState("result");
     }

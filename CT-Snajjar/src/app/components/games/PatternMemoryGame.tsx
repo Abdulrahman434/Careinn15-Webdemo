@@ -22,9 +22,11 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
 
   useEffect(() => {
     const saved = localStorage.getItem('pattern-high-score');
+    console.log('=== LOAD GAME STATE ===', 'pattern-high-score', saved);
     if (saved) setHighScore(parseInt(saved));
 
     const savedState = localStorage.getItem('pattern-memory-game-state');
+    console.log('=== LOAD GAME STATE ===', 'pattern-memory-game-state', savedState);
     if (savedState) {
       setHasSavedGame(true);
       setShowResumeModal(true);
@@ -42,10 +44,12 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
       timestamp: Date.now()
     };
     localStorage.setItem('pattern-memory-game-state', JSON.stringify(state));
+    console.log('=== SAVE GAME STATE ===', 'pattern-memory-game-state', JSON.stringify(state));
   }, [pattern, playerPattern, level, canWatchAgain, gameState]);
 
   const loadGameState = () => {
     const saved = localStorage.getItem('pattern-memory-game-state');
+    console.log('=== LOAD GAME STATE ===', 'pattern-memory-game-state', saved);
     if (saved) {
       const state = JSON.parse(saved);
       setPattern(state.pattern);
@@ -150,6 +154,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
           if (level > highScore) {
             setHighScore(level);
             localStorage.setItem('pattern-high-score', level.toString());
+    console.log('=== SAVE GAME STATE ===', 'pattern-high-score', level.toString());
           }
         }, 1000);
       } else if (newPlayerPattern.length === pattern.length) {
