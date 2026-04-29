@@ -18,6 +18,9 @@ import dallahAwardsEn from "../../assets/dallah-awards-en.png";
 import dallahAccredsAr from "../../assets/dallah-accreds-ar.png";
 import dallahAccredsEn from "../../assets/dallah-accreds-en.png";
 import dsfhAchievementBanner from "../../assets/dsfh_jeddah_achievement_banner.png";
+import imcVideo from "../../assets/IMC.mp4";
+import imcDna from "../../assets/about-imc.png";
+import imcAccreds from "../../assets/accredsimc.jpeg";
 
 interface AboutSection {
   id: string;
@@ -86,13 +89,13 @@ const getSections = (themeId: string, isRTL: boolean): AboutSection[] => [
     id: "hospital",
     title: themeId === "dallah" ? "About Dallah" : "Our Hospital",
     titleKey: themeId === "dallah" ? "about.aboutDallah" : "about.ourHospital",
-    video: themeId === "caremed" ? "HW7Od_8C3_I" : themeId === "dallah" ? "JPgxKaOQf3s" : "4VXy7_qn608",
+    video: themeId === "imc" ? imcVideo : themeId === "caremed" ? "HW7Od_8C3_I" : themeId === "dallah" ? "JPgxKaOQf3s" : "4VXy7_qn608",
   },
   {
     id: "dna",
     title: themeId === "caremed" ? "CareMed InBrief" : themeId === "dallah" ? "Dallah DNA" : "Fakeeh Care DNA",
     titleKey: themeId === "caremed" ? "about.caremedInBrief" : themeId === "dallah" ? "about.dallahDna" : "about.dna",
-    image: themeId === "dallah" ? dallahDna : themeId === "caremed" ? (isRTL ? careMedInBriefAr : careMedInBriefEn) : dnaImg,
+    image: themeId === "imc" ? imcDna : themeId === "dallah" ? dallahDna : themeId === "caremed" ? (isRTL ? careMedInBriefAr : careMedInBriefEn) : dnaImg,
   },
   {
     id: "numbers",
@@ -135,7 +138,7 @@ Support Services
     id: "accreditations",
     title: themeId === "dallah" ? "Awards" : "Accreditations",
     titleKey: themeId === "dallah" ? "about.awards" : "about.accreditations",
-    image: themeId === "dallah" ? (isRTL ? dallahAwardsAr : dallahAwardsEn) : themeId === "caremed" ? accredsImg : accreditationsImg,
+    image: themeId === "imc" ? imcAccreds : themeId === "dallah" ? (isRTL ? dallahAwardsAr : dallahAwardsEn) : themeId === "caremed" ? accredsImg : accreditationsImg,
   },
   {
     id: "digital",
@@ -454,15 +457,23 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                     </div>
                   </button>
                 ) : (
-                  /* YouTube embed */
-                  <iframe
-                    className="absolute inset-0 w-full h-full"
-                    src={`https://www.youtube.com/embed/${currentSection.video}?autoplay=1&rel=0`}
-                    title={currentSection.title}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
+                  currentSection.video?.includes("/") || currentSection.video?.includes(".") ? (
+                    <video
+                      className="absolute inset-0 w-full h-full object-contain bg-black"
+                      src={currentSection.video}
+                      controls
+                      autoPlay
+                    />
+                  ) : (
+                    <iframe
+                      className="absolute inset-0 w-full h-full"
+                      src={`https://www.youtube.com/embed/${currentSection.video}?autoplay=1&rel=0`}
+                      title={currentSection.title}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  )
                 )}
               </div>
             )}
