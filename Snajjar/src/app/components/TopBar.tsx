@@ -1,0 +1,319 @@
+import { useEffect, useState } from "react";
+import { Settings, Globe, Bell, Cast } from "lucide-react";
+import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
+import { useLocale } from "./i18n";
+import svgPaths from "../../imports/svg-ca68x68c4i";
+import { getPrayerTimes, PRAYER_KEYS, PRAYER_NAMES, formatPrayerTime, getPrayerStatus } from "../utils/prayerUtils";
+import { Prayer } from "adhan";
+
+// Removed hardcoded prayerTimes
+
+// Removed getNextPrayerIndex helper as we use prayerUtils now
+
+function SunIcon() {
+  return (
+    <div className="relative shrink-0 size-[22px]">
+      <svg className="block size-full" fill="none" viewBox="0 0 16 16">
+        <g clipPath="url(#clip_sun)">
+          <path d={svgPaths.p3adb3b00} stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+          <path d="M8 1.33333V2.66667" stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+          <path d="M8 13.3333V14.6667" stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+          <path d={svgPaths.p11bc9dc0} stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+          <path d={svgPaths.p191ca260} stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+          <path d="M1.33333 8H2.66667" stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+          <path d="M13.3333 8H14.6667" stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+          <path d={svgPaths.pe73b76f} stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+          <path d={svgPaths.p1df25380} stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+        </g>
+        <defs>
+          <clipPath id="clip_sun">
+            <rect fill="white" height="16" width="16" />
+          </clipPath>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onMaghribTap, onIshaTap, onWeatherTap, onSettingsTap, onBellTap, unreadCount = 3 }: { showPrayer?: boolean; onFajrTap?: () => void; onDhuhrTap?: () => void; onAsrTap?: () => void; onMaghribTap?: () => void; onIshaTap?: () => void; onWeatherTap?: () => void; onSettingsTap?: () => void; onBellTap?: () => void; unreadCount?: number }) {
+  const { theme, castDevice, setLocale, locale: currentLocale } = useTheme();
+  const { t, locale, isRTL, fontFamily } = useLocale();
+  const [time, setTime] = useState(new Date());
+  const [prayerData, setPrayerData] = useState(() => getPrayerStatus(new Date()));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date();
+      setTime(now);
+      setPrayerData(getPrayerStatus(now));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+
+
+  const hours = time.getHours();
+  const minutes = time.getMinutes().toString().padStart(2, "0");
+  const ampm = hours >= 12 ? t("topbar.pm") : t("topbar.am");
+  const displayHours = hours % 12 || 12;
+
+  const dateStr = time.toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
+
+  return (
+    <div
+      className="grid shrink-0 w-full items-center"
+      style={{
+        height: "104px",
+        backgroundColor: theme.surface,
+        padding: `${SPACE[2]} ${SPACE[4]}`,
+        boxShadow: SHADOW.lg,
+        borderBottom: theme.cardBorder !== "none" ? theme.cardBorder : undefined,
+        gridTemplateColumns: "1fr auto 1fr",
+      }}
+    >
+      {/* Left: Logo — always left-aligned within its column */}
+      <a 
+        href={theme.hospitalWebsiteUrl} 
+        target="_blank" 
+        rel="noopener noreferrer" 
+        className="flex items-center justify-start h-full transition-opacity hover:opacity-80 active:opacity-60"
+      >
+        <img
+          alt={theme.hospitalName}
+          src={theme.logoUrl}
+          style={{ height: SPACE[10], width: "auto", maxWidth: "300px", objectFit: "contain" }}
+        />
+      </a>
+
+      {/* Center: Prayer Times — always dead-center on screen */}
+      {showPrayer ? (
+        <div className="flex items-center justify-center gap-1">
+          {PRAYER_KEYS.map((pKey) => {
+            const isNext = pKey === prayerData.next;
+            const prayerName = t(PRAYER_NAMES[pKey]);
+            const prayerTime = formatPrayerTime(prayerData.times.timeForPrayer(pKey), locale);
+            
+            let onTap = undefined;
+            if (pKey === Prayer.Fajr) onTap = onFajrTap;
+            else if (pKey === Prayer.Dhuhr) onTap = onDhuhrTap;
+            else if (pKey === Prayer.Asr) onTap = onAsrTap;
+            else if (pKey === Prayer.Maghrib) onTap = onMaghribTap;
+            else if (pKey === Prayer.Isha) onTap = onIshaTap;
+
+            return (
+              <div key={pKey} className="flex items-center">
+                <div
+                  className={`flex flex-col items-center px-4 py-1.5 rounded-xl${onTap ? " cursor-pointer" : ""}`}
+                  style={{ backgroundColor: "transparent" }}
+                  onClick={onTap}
+                >
+                  <span
+                    style={{
+                      fontFamily: fontFamily,
+                      ...TEXT_STYLE.micro,
+                      letterSpacing: isRTL ? "0px" : "0.5px",
+                      color: isNext ? theme.accent : theme.textMuted,
+                      lineHeight: "15px",
+                    }}
+                  >
+                    {prayerName}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: fontFamily,
+                      ...TEXT_STYLE.bodyEmphasis,
+                      fontWeight: WEIGHT.bold,
+                      color: isNext ? theme.accent : theme.textHeading,
+                      lineHeight: "20px",
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
+                    {prayerTime}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div />
+      )}
+
+      {/* Right: Clock/Date + Weather + Lang + Settings — always right-aligned */}
+      <div className="flex items-center justify-end gap-4">
+        {/* Clock + Date stacked */}
+        <div className="flex flex-col items-end">
+          <span
+            style={{
+              fontFamily: fontFamily,
+              ...TEXT_STYLE.pageTitle,
+              color: theme.textHeading,
+              lineHeight: "25px",
+              textAlign: "end",
+            }}
+          >
+            {displayHours}:{minutes} {ampm}
+          </span>
+          <span
+            style={{
+              fontFamily: fontFamily,
+              ...TEXT_STYLE.caption,
+              fontWeight: WEIGHT.normal,
+              color: theme.textMuted,
+              lineHeight: "16px",
+              textAlign: "end",
+            }}
+          >
+            {dateStr}
+          </span>
+        </div>
+
+        {/* Weather */}
+        <div
+          data-nav="true"
+          tabIndex={0}
+          className="flex items-center gap-2 cursor-pointer rounded-full"
+          style={{
+            backgroundColor: "rgba(232,165,48,0.10)",
+            height: theme.touchTargetMin,
+            padding: `0 ${SPACE[2]}`,
+          }}
+          onClick={onWeatherTap}
+        >
+          <SunIcon />
+          <span
+            style={{
+              fontFamily: fontFamily,
+              ...TEXT_STYLE.bodyEmphasis,
+              color: theme.textHeading,
+            }}
+          >
+            38°C
+          </span>
+        </div>
+
+        {/* Lang */}
+        <div className="relative">
+          <button
+            data-nav="true"
+            onClick={() => {
+              if (currentLocale === "en") setLocale("ar");
+              else if (currentLocale === "ar") setLocale("ur");
+              else setLocale("en");
+            }}
+            className="rounded-full cursor-pointer flex items-center justify-center transition-all active:scale-90"
+            style={{ 
+              backgroundColor: theme.primarySubtle, 
+              width: theme.touchTargetMin, 
+              height: theme.touchTargetMin,
+              outline: 'none',
+              border: 'none',
+            }}
+            aria-label="Language"
+          >
+            <Globe size={20} style={{ color: theme.primary }} />
+          </button>
+        </div>
+
+        {/* Notifications Bell */}
+        <div className="relative">
+          <button
+            data-nav="true"
+            className="rounded-full cursor-pointer flex items-center justify-center transition-all active:scale-90"
+            style={{ 
+              backgroundColor: theme.primarySubtle, 
+              width: theme.touchTargetMin, 
+              height: theme.touchTargetMin,
+              outline: 'none',
+              border: 'none',
+            }}
+            aria-label="Notifications"
+            onClick={onBellTap}
+          >
+            <Bell size={20} style={{ color: theme.primary }} />
+            {unreadCount > 0 && (
+              <div
+                className="absolute flex items-center justify-center"
+                style={{
+                  top: "-2px",
+                  right: "-2px",
+                  minWidth: "18px",
+                  height: "18px",
+                  borderRadius: theme.radiusFull,
+                  backgroundColor: "#D10044",
+                  border: `2px solid ${theme.surface}`,
+                  padding: "0 4px",
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: theme.fontFamily,
+                    ...TEXT_STYLE.micro,
+                    fontWeight: WEIGHT.bold,
+                    color: theme.textInverse,
+                  }}
+                >
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              </div>
+            )}
+          </button>
+        </div>
+
+        {/* Cast indicator — pulsing when actively casting */}
+        {castDevice && (
+          <button
+            data-nav="true"
+            className="rounded-full cursor-pointer flex items-center justify-center relative"
+            style={{
+              backgroundColor: theme.primarySubtle,
+              width: theme.touchTargetMin,
+              height: theme.touchTargetMin,
+              animation: "castPulse 2s ease-in-out infinite",
+            }}
+            aria-label="Casting"
+            onClick={onSettingsTap}
+          >
+            <Cast size={20} style={{ color: theme.primary }} />
+            {/* Active dot */}
+            <div
+              className="absolute"
+              style={{
+                top: "6px",
+                right: "6px",
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                backgroundColor: theme.primary,
+                border: `2px solid ${theme.surface}`,
+              }}
+            />
+          </button>
+        )}
+
+        {/* Settings — always visible */}
+        <div className="relative">
+          <button
+            data-nav="true"
+            className="rounded-full cursor-pointer flex items-center justify-center transition-all active:scale-90"
+            style={{ 
+              backgroundColor: theme.primarySubtle, 
+              width: theme.touchTargetMin, 
+              height: theme.touchTargetMin,
+              outline: 'none',
+              border: 'none',
+            }}
+            aria-label="Settings"
+            onClick={onSettingsTap}
+          >
+            <Settings size={20} style={{ color: theme.primary }} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
