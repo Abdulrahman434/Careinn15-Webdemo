@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
+﻿import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
 import type { Locale } from "./i18n";
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -63,15 +63,15 @@ import type { Locale } from "./i18n";
  */
 export const TYPE_SCALE = {
   /** 14px — labels, captions, compact UI elements */
-  sm:   "14px",
+  sm: "14px",
   /** 18px — body text, descriptions, UI controls (primary reading size) */
   base: "18px",
   /** 22px — emphasized text, buttons, card titles */
-  md:   "22px",
+  md: "22px",
   /** 26px — section headers, page titles */
-  lg:   "26px",
+  lg: "26px",
   /** 30px — patient name, hero text */
-  xl:   "30px",
+  xl: "30px",
   /** 34px — survey questions, modal headings, splash content */
   "2xl": "34px",
 } as const;
@@ -83,13 +83,13 @@ export const TYPE_SCALE = {
  */
 export const WEIGHT = {
   /** 400 — body text, descriptions */
-  normal:    400,
+  normal: 400,
   /** 500 — medium emphasis, subtitles */
-  medium:    500,
+  medium: 500,
   /** 600 — labels, badges, nav items */
-  semibold:  600,
+  semibold: 600,
   /** 700 — titles, buttons, card names */
-  bold:      700,
+  bold: 700,
   /** 800 — hero headings, strong emphasis */
   extrabold: 800,
 } as const;
@@ -101,15 +101,15 @@ export const WEIGHT = {
  */
 export const LEADING = {
   /** 1.0 — single-line badges, icons */
-  none:    1,
+  none: 1,
   /** 1.2 — display / hero text */
-  tight:   1.2,
+  tight: 1.2,
   /** 1.3 — headings */
-  snug:    1.3,
+  snug: 1.3,
   /** 1.4 — subheadings, cards */
   compact: 1.4,
   /** 1.5 — body text (default) */
-  normal:  1.5,
+  normal: 1.5,
   /** 1.6 — relaxed reading, descriptions */
   relaxed: 1.6,
 } as const;
@@ -122,13 +122,13 @@ export const LEADING = {
  */
 export const SHADOW = {
   /** Minimal lift — pressed states, subtle elements */
-  sm:  "0px 1px 2px rgba(31,41,46,0.06)",
+  sm: "0px 1px 2px rgba(31,41,46,0.06)",
   /** Standard card / panel elevation — the workhorse */
-  md:  "0px 1px 3px rgba(31,41,46,0.04), 0px 4px 12px rgba(31,41,46,0.06)",
+  md: "0px 1px 3px rgba(31,41,46,0.04), 0px 4px 12px rgba(31,41,46,0.06)",
   /** Raised elements — top bars, sticky headers */
-  lg:  "0px 1px 7px rgba(31,41,46,0), 0px 4px 11px rgba(31,41,46,0.06)",
+  lg: "0px 1px 7px rgba(31,41,46,0), 0px 4px 11px rgba(31,41,46,0.06)",
   /** Modals, overlays, floating panels */
-  xl:  "0px 4px 16px rgba(31,41,46,0.08), 0px 12px 32px rgba(31,41,46,0.12)",
+  xl: "0px 4px 16px rgba(31,41,46,0.08), 0px 12px 32px rgba(31,41,46,0.12)",
   /** Dramatic lift — full-screen dialogs, configurator */
   "2xl": "0px 16px 48px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.5)",
 } as const;
@@ -141,14 +141,14 @@ export const SHADOW = {
  *        `gap: SPACE[3]`       → "24px"
  */
 export const SPACE = {
-  0:  "0px",
-  1:  "8px",
-  2:  "16px",
-  3:  "24px",
-  4:  "32px",
-  5:  "40px",
-  6:  "48px",
-  8:  "64px",
+  0: "0px",
+  1: "8px",
+  2: "16px",
+  3: "24px",
+  4: "32px",
+  5: "40px",
+  6: "48px",
+  8: "64px",
   10: "80px",
   12: "96px",
   16: "128px",
@@ -187,20 +187,20 @@ export const SPACE = {
  *   display      → 30 / 700 / 1.2  — hero greetings, patient names
  */
 export const TEXT_STYLE = {
-  pageTitle:    { fontSize: TYPE_SCALE.lg,   fontWeight: WEIGHT.bold,      lineHeight: LEADING.snug,    letterSpacing: "-0.3px"  },
-  sectionTitle: { fontSize: TYPE_SCALE.md,   fontWeight: WEIGHT.bold,      lineHeight: LEADING.snug,    letterSpacing: "-0.2px"  },
-  cardTitle:    { fontSize: TYPE_SCALE.md,   fontWeight: WEIGHT.bold,      lineHeight: LEADING.compact, letterSpacing: "0px"     },
-  subtitle:     { fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold,  lineHeight: LEADING.compact, letterSpacing: "0px"     },
-  body:         { fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.normal,    lineHeight: LEADING.normal,  letterSpacing: "0px"     },
-  bodyEmphasis: { fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold,  lineHeight: LEADING.normal,  letterSpacing: "0px"     },
-  label:        { fontSize: TYPE_SCALE.sm,   fontWeight: WEIGHT.semibold,  lineHeight: LEADING.snug,    letterSpacing: "0.2px"   },
-  caption:      { fontSize: TYPE_SCALE.sm,   fontWeight: WEIGHT.medium,    lineHeight: LEADING.compact, letterSpacing: "0px"     },
-  micro:        { fontSize: TYPE_SCALE.sm,   fontWeight: WEIGHT.semibold,  lineHeight: LEADING.none,    letterSpacing: "0.3px"   },
-  pill:         { fontSize: TYPE_SCALE.sm,   fontWeight: WEIGHT.semibold,  lineHeight: 1.2,             letterSpacing: "0px"     },
-  button:       { fontSize: TYPE_SCALE.md,   fontWeight: WEIGHT.bold,      lineHeight: LEADING.none,    letterSpacing: "0px"     },
-  buttonSm:     { fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold,  lineHeight: LEADING.none,    letterSpacing: "0px"     },
-  helper:       { fontSize: TYPE_SCALE.sm,   fontWeight: WEIGHT.normal,    lineHeight: LEADING.compact, letterSpacing: "0px"     },
-  display:      { fontSize: TYPE_SCALE.xl,   fontWeight: WEIGHT.bold,      lineHeight: LEADING.tight,   letterSpacing: "-0.5px"  },
+  pageTitle: { fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, lineHeight: LEADING.snug, letterSpacing: "-0.3px" },
+  sectionTitle: { fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.bold, lineHeight: LEADING.snug, letterSpacing: "-0.2px" },
+  cardTitle: { fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.bold, lineHeight: LEADING.compact, letterSpacing: "0px" },
+  subtitle: { fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold, lineHeight: LEADING.compact, letterSpacing: "0px" },
+  body: { fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.normal, lineHeight: LEADING.normal, letterSpacing: "0px" },
+  bodyEmphasis: { fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold, lineHeight: LEADING.normal, letterSpacing: "0px" },
+  label: { fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.semibold, lineHeight: LEADING.snug, letterSpacing: "0.2px" },
+  caption: { fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.medium, lineHeight: LEADING.compact, letterSpacing: "0px" },
+  micro: { fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.semibold, lineHeight: LEADING.none, letterSpacing: "0.3px" },
+  pill: { fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.semibold, lineHeight: 1.2, letterSpacing: "0px" },
+  button: { fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.bold, lineHeight: LEADING.none, letterSpacing: "0px" },
+  buttonSm: { fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold, lineHeight: LEADING.none, letterSpacing: "0px" },
+  helper: { fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.normal, lineHeight: LEADING.compact, letterSpacing: "0px" },
+  display: { fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, lineHeight: LEADING.tight, letterSpacing: "-0.5px" },
 } as const;
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -413,13 +413,13 @@ function buildTheme(core: {
   }
 
   /* ── DARK MODE ── */
-  const DARK_BG       = "#0F1419";
-  const DARK_SURFACE   = "#1A2027";
-  const DARK_ELEVATED  = "#222B34";
-  const DARK_TEXT      = "#E7EBED";
-  const DARK_TEXT_SEC  = "#8B99A4";
-  const DARK_MUTED     = "#5C6B77";
-  const DARK_DISABLED  = "#3D4A54";
+  const DARK_BG = "#0F1419";
+  const DARK_SURFACE = "#1A2027";
+  const DARK_ELEVATED = "#222B34";
+  const DARK_TEXT = "#E7EBED";
+  const DARK_TEXT_SEC = "#8B99A4";
+  const DARK_MUTED = "#5C6B77";
+  const DARK_DISABLED = "#3D4A54";
 
   return {
     ...shared,
@@ -645,7 +645,7 @@ export const IMC_CORE: HospitalCoreConfig = {
   logoUrl: imcLogo,
   hospitalWebsiteUrl: "https://www.imc.med.sa/",
   heroImageUrl: imcHero,
-  primary: "#082E4E",
+  primary: "#015a9c",
   primaryDark: "#041727",
   primaryLight: "#DCE5EC",
   accent: "#B68A35",
@@ -737,19 +737,19 @@ const ThemeContext = createContext<ThemeContextType>({
   theme: DSFH_THEME,
   allConfigs: [DSFH_CORE],
   activeConfigId: "dsfh",
-  switchConfig: () => {},
-  saveConfig: () => {},
-  deleteConfig: () => {},
+  switchConfig: () => { },
+  saveConfig: () => { },
+  deleteConfig: () => { },
   patientAdmitted: true,
-  setPatientAdmitted: () => {},
+  setPatientAdmitted: () => { },
   darkMode: false,
-  setDarkMode: () => {},
+  setDarkMode: () => { },
   castDevice: null,
-  setCastDevice: () => {},
+  setCastDevice: () => { },
   locale: "en",
-  setLocale: () => {},
+  setLocale: () => { },
   prayerAlarm: true,
-  setPrayerAlarm: () => {},
+  setPrayerAlarm: () => { },
 });
 
 /* ── Inject CSS Custom Properties ──
@@ -759,51 +759,51 @@ const ThemeContext = createContext<ThemeContextType>({
 function injectCSSVars(t: ThemeConfig) {
   const root = document.documentElement;
   const vars: Record<string, string> = {
-    "--hbs-font":              t.fontFamily,
-    "--hbs-font-ar":           t.fontFamilyAr,
-    "--hbs-font-mono":         t.fontFamilyMono,
-    "--hbs-primary":           t.primary,
-    "--hbs-primary-dark":      t.primaryDark,
-    "--hbs-primary-light":     t.primaryLight,
-    "--hbs-primary-subtle":    t.primarySubtle,
-    "--hbs-accent":            t.accent,
-    "--hbs-accent-dark":       t.accentDark,
-    "--hbs-accent-light":      t.accentLight,
-    "--hbs-accent-subtle":     t.accentSubtle,
-    "--hbs-bg":                t.background,
-    "--hbs-surface":           t.surface,
-    "--hbs-surface-elevated":  t.surfaceElevated,
-    "--hbs-overlay":           t.overlay,
-    "--hbs-panel-bg":          t.panelBg,
-    "--hbs-text-heading":      t.textHeading,
-    "--hbs-text-body":         t.textBody,
-    "--hbs-text-muted":        t.textMuted,
-    "--hbs-text-disabled":     t.textDisabled,
-    "--hbs-text-inverse":      t.textInverse,
-    "--hbs-icon-default":      t.iconDefault,
-    "--hbs-icon-brand":        t.iconBrand,
-    "--hbs-border":            t.borderDefault,
-    "--hbs-border-subtle":     t.borderSubtle,
-    "--hbs-border-active":     t.borderActive,
-    "--hbs-tile-active":       t.tileActiveBg,
-    "--hbs-tile-inactive":     t.tileInactiveBg,
-    "--hbs-slider-track":      t.sliderTrack,
-    "--hbs-slider-thumb":      t.sliderThumb,
-    "--hbs-gradient-canvas":   t.gradientCanvas,
-    "--hbs-radius-sm":         t.radiusSm,
-    "--hbs-radius-md":         t.radiusMd,
-    "--hbs-radius-lg":         t.radiusLg,
-    "--hbs-radius-xl":         t.radiusXl,
-    "--hbs-radius-card":       t.radiusCard,
-    "--hbs-touch-min":         t.touchTargetMin,
-    "--hbs-card-padding":      t.cardPadding,
-    "--hbs-icon-bg":           t.iconBg,
-    "--hbs-success":           t.success,
-    "--hbs-success-subtle":    t.successSubtle,
-    "--hbs-warning":           t.warning,
-    "--hbs-warning-subtle":    t.warningSubtle,
-    "--hbs-error":             t.error,
-    "--hbs-error-subtle":      t.errorSubtle,
+    "--hbs-font": t.fontFamily,
+    "--hbs-font-ar": t.fontFamilyAr,
+    "--hbs-font-mono": t.fontFamilyMono,
+    "--hbs-primary": t.primary,
+    "--hbs-primary-dark": t.primaryDark,
+    "--hbs-primary-light": t.primaryLight,
+    "--hbs-primary-subtle": t.primarySubtle,
+    "--hbs-accent": t.accent,
+    "--hbs-accent-dark": t.accentDark,
+    "--hbs-accent-light": t.accentLight,
+    "--hbs-accent-subtle": t.accentSubtle,
+    "--hbs-bg": t.background,
+    "--hbs-surface": t.surface,
+    "--hbs-surface-elevated": t.surfaceElevated,
+    "--hbs-overlay": t.overlay,
+    "--hbs-panel-bg": t.panelBg,
+    "--hbs-text-heading": t.textHeading,
+    "--hbs-text-body": t.textBody,
+    "--hbs-text-muted": t.textMuted,
+    "--hbs-text-disabled": t.textDisabled,
+    "--hbs-text-inverse": t.textInverse,
+    "--hbs-icon-default": t.iconDefault,
+    "--hbs-icon-brand": t.iconBrand,
+    "--hbs-border": t.borderDefault,
+    "--hbs-border-subtle": t.borderSubtle,
+    "--hbs-border-active": t.borderActive,
+    "--hbs-tile-active": t.tileActiveBg,
+    "--hbs-tile-inactive": t.tileInactiveBg,
+    "--hbs-slider-track": t.sliderTrack,
+    "--hbs-slider-thumb": t.sliderThumb,
+    "--hbs-gradient-canvas": t.gradientCanvas,
+    "--hbs-radius-sm": t.radiusSm,
+    "--hbs-radius-md": t.radiusMd,
+    "--hbs-radius-lg": t.radiusLg,
+    "--hbs-radius-xl": t.radiusXl,
+    "--hbs-radius-card": t.radiusCard,
+    "--hbs-touch-min": t.touchTargetMin,
+    "--hbs-card-padding": t.cardPadding,
+    "--hbs-icon-bg": t.iconBg,
+    "--hbs-success": t.success,
+    "--hbs-success-subtle": t.successSubtle,
+    "--hbs-warning": t.warning,
+    "--hbs-warning-subtle": t.warningSubtle,
+    "--hbs-error": t.error,
+    "--hbs-error-subtle": t.errorSubtle,
   };
   Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
 }
@@ -875,11 +875,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const hasBuiltinAssets = ["dsfh", "burjeel", "slh", "dallah", "caremed"].includes(config.id);
     const toSave = hasBuiltinAssets
       ? {
-          ...config,
-          logoUrl: isUserProvidedUrl(config.logoUrl) ? config.logoUrl : "",
-          heroImageUrl: isUserProvidedUrl(config.heroImageUrl) ? config.heroImageUrl : "",
-          heroImageUrls: config.heroImageUrls?.filter(isUserProvidedUrl),
-        }
+        ...config,
+        logoUrl: isUserProvidedUrl(config.logoUrl) ? config.logoUrl : "",
+        heroImageUrl: isUserProvidedUrl(config.heroImageUrl) ? config.heroImageUrl : "",
+        heroImageUrls: config.heroImageUrls?.filter(isUserProvidedUrl),
+      }
       : config;
 
     setSavedConfigs((prev) => {
