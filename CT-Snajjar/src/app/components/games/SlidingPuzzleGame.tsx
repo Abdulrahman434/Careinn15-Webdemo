@@ -17,7 +17,7 @@ const DIFFICULTY_CONFIG: Record<Difficulty, number> = {
   hard: 5
 };
 
-export function JigsawPuzzleGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
+export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
   const { fontFamily } = useLocale();
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
