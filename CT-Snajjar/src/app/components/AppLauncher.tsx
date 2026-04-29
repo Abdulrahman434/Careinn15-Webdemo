@@ -462,7 +462,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
         },
         {
           id: "puzzle",
-          name: locale === "ar" ? "بلاطات منزلقة" : "Sliding Tiles",
+          name: locale === "ar" ? "بلاطات منزلقة" : "Sliding Puzzle",
           bg: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
           mark: "",
           textColor: "#fff",
