@@ -10,7 +10,7 @@
  * no-ops with a console.warn.
  */
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import type { AndroidEventName } from "../types/android";
 import { Bluetooth } from "lucide-react";
 
@@ -364,67 +364,21 @@ export const iptv = {
  * React hook: triggers a channel fetch on mount, parses the result, 
  * exposes loading / error state. Returns [] in regular browsers.
  */
-export function useIptvChannels(): {
-  channels: IptvChannel[];
-  loading: boolean;
-  error: string | null;
-  reload: () => void;
-} {
-  const [channels, setChannels] = useState<IptvChannel[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const reload = useCallback(() => {
-    if (!isAndroidApp()) {
-      setError('TV is only available on the kiosk');
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    iptv.fetchChannels();
-  }, []);
-  
-  useAndroidEvent<{ json: string }>('iptv-channels-loaded', (d) => {
-    try {
-      const arr = JSON.parse(d.json);
-      setChannels(Array.isArray(arr) ? arr : []);
-      setLoading(false);
-    } catch (e) {
-      setError('Failed to parse channel list');
-      setLoading(false);
-    }
-  });
-  
-  useAndroidEvent<{ message: string }>('iptv-channels-error', (d) => {
-    setError(d.message);
-    setLoading(false);
-  });
-  
-  useEffect(() => { reload(); }, [reload]);
-  
-  return { channels, loading, error, reload };
-}
-
-/* ─── React Hook: useAndroidEvent ─── */
-
-/**
- * Subscribes to a CustomEvent dispatched by the Android kiosk on `window`.
- * Automatically cleans up the listener on unmount.
- *
- * @example
- * useAndroidEvent<{ value: number }>('brightness-changed', (d) => {
- *   setBrightnessState(Math.round(d.value * 100));
- * });
- */
 export function useAndroidEvent<T = unknown>(
   eventName: AndroidEventName,
   callback: (detail: T) => void
 ): void {
+  const savedCallback = useRef(callback);
+  
+  useEffect(() => {
+    savedCallback.current = callback;
+  }, [callback]);
+
   useEffect(() => {
     const handler = (e: Event) => {
       try {
         const detail = (e as CustomEvent<T>).detail;
-        callback(detail);
+        savedCallback.current(detail);
       } catch (err) {
         console.warn(`[androidBridge] Error handling event "${eventName}":`, err);
       }
@@ -434,6 +388,60 @@ export function useAndroidEvent<T = unknown>(
     return () => {
       window.removeEventListener(eventName, handler);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventName]);
+}
+
+/**
+ * React hook to manage IPTV channel list.
+ * Handles fetching, error states, and event listeners.
+ */
+export function useIptvChannels() {
+  const [channels, setChannels] = useState<IptvChannel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const reload = useCallback(() => {
+    if (!isAndroidApp()) {
+      setError('TV is only available on the kiosk');
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    iptv.fetchChannels();
+  }, []);
+
+  useAndroidEvent<any>('iptv-channels-loaded', (d) => {
+    try {
+      let arr: any;
+      if (typeof d.json === 'string') {
+        arr = JSON.parse(d.json);
+      } else if (d.json && typeof d.json === 'object') {
+        arr = d.json;
+      } else if (Array.isArray(d)) {
+        arr = d;
+      } else if (d.channels && Array.isArray(d.channels)) {
+        arr = d.channels;
+      }
+
+      setChannels(Array.isArray(arr) ? arr : []);
+      setLoading(false);
+      setError(null);
+    } catch (e) {
+      console.error('[androidBridge] Failed to parse IPTV channels:', e, d);
+      setError('Failed to parse channel list');
+      setLoading(false);
+    }
+  });
+
+  useAndroidEvent<{ message: string }>('iptv-channels-error', (d) => {
+    setError(d.message || 'Failed to load channels');
+    setLoading(false);
+  });
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
+
+  return { channels, loading, error, reload };
 }

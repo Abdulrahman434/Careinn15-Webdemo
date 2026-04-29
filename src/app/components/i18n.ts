@@ -105,6 +105,13 @@ const translations: Record<string, TranslationEntry> = {
   "tv.loading": { en: "Loading Channels...", ar: "جاري تحميل القنوات...", ur: "چینلز لوڈ ہو رہے ہیں..." },
   "tv.noChannels": { en: "No channels available", ar: "لا توجد قنوات متاحة", ur: "کوئی چینل دستیاب نہیں ہے" },
   "tv.stop": { en: "Stop TV", ar: "إيقاف البث", ur: "ٹی وی بند کریں" },
+
+  /* ─── Care Plan Empty States ─── */
+  "careplan.emptyHeader": { en: "No Care Plan available", ar: "لا توجد خطة رعاية متاحة", ur: "کوئی کیئر پلان دستیاب نہیں ہے" },
+  "careplan.emptyDesc": { en: "Your Careplan will appear here once it has been allowed by your Care Team.", ar: "ستظهر خطة الرعاية الخاصة بك هنا بمجرد السماح بها من قبل فريق الرعاية.", ur: "آپ کی کیئر پلان یہاں ظاہر ہوگی جب آپ کی کیئر ٹیم اس کی اجازت دے گی۔" },
+  "discharge.emptyHeader": { en: "No discharge plan available", ar: "لا توجد خطة خروج متاحة", ur: "ڈسچارج پلان دستیاب نہیں ہے" },
+  "discharge.emptyDesc": { en: "Information about your discharge will appear here as you near the end of your stay.", ar: "ستظهر معلومات خروجك هنا مع اقتراب نهاية إقامتك.", ur: "آپ کے ڈسچارج کے بارے میں معلومات آپ کے قیام کے اختتام کے قریب هنا ستظهر۔" },
+
   "hub.social": { en: "Social", ar: "التواصل", ur: "سماجی" },
   "hub.social.desc": { en: "Stay connected", ar: "ابقَ على تواصل", ur: "رابطے میں رہیں" },
   "hub.games": { en: "Games", ar: "الألعاب", ur: "کھیل" },

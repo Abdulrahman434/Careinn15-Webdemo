@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { ThemeProvider, useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "./components/ThemeContext";
+import { IptvChannels } from "./components/IptvChannels";
+import { isAndroidApp } from "./utils/androidBridge";
 import { useLocale } from "./components/i18n";
 import { TopBar } from "./components/TopBar";
 import { NewsTicker } from "./components/NewsTicker";
@@ -23,7 +25,6 @@ import { TasbihScreenSaver } from "./components/TasbihScreenSaver";
 import { FoodOrdering } from "./components/FoodOrdering";
 import { OrderProvider } from "./components/OrderStore";
 import { AuthProvider, useAuth } from "./components/AuthContext";
-import { IptvChannels } from "./components/IptvChannels";
 import { PasswordGate } from "./components/PasswordGate";
 import { HospitalBroadcast, SAMPLE_BROADCAST } from "./components/HospitalBroadcast";
 import type { BroadcastNotification } from "./components/HospitalBroadcast";
@@ -718,7 +719,13 @@ function BedsideScreen() {
           />
         )}
 
+        {/* IPTV Channels Overlay */}
+        {showIptv && (
+          <IptvChannels onClose={() => setShowIptv(false)} />
+        )}
+
         {/* About Us Modal — inside scaled container for consistent sizing */}
+
         {showAboutUs && (
           <AboutUs onClose={() => setShowAboutUs(false)} />
         )}
