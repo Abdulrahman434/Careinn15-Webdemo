@@ -65,6 +65,7 @@ export function JigsawPuzzleGame({ onClose, onBackToGames }: { onClose: () => vo
       timer,
       timestamp: Date.now()
     };
+    console.log('=== SAVE ===', state);
     localStorage.setItem('sliding-tiles-state', JSON.stringify(state));
     console.log('=== SAVE GAME STATE ===', 'sliding-tiles-state', JSON.stringify(state));
   }, [difficulty, tiles, moves, timer, isActive, isComplete]);
@@ -110,6 +111,7 @@ export function JigsawPuzzleGame({ onClose, onBackToGames }: { onClose: () => vo
   const loadGameState = useCallback(() => {
     try {
       const saved = localStorage.getItem('sliding-tiles-state');
+      console.log('=== LOAD ===', saved);
     console.log('=== LOAD GAME STATE ===', 'sliding-tiles-state', saved);
       if (saved) {
         const state = JSON.parse(saved);
@@ -132,6 +134,7 @@ export function JigsawPuzzleGame({ onClose, onBackToGames }: { onClose: () => vo
 
   useEffect(() => {
     const saved = localStorage.getItem('sliding-tiles-state');
+    console.log('=== LOAD ===', saved);
     console.log('=== LOAD GAME STATE ===', 'sliding-tiles-state', saved);
     if (saved) {
       setHasSavedGame(true);
@@ -216,6 +219,7 @@ export function JigsawPuzzleGame({ onClose, onBackToGames }: { onClose: () => vo
           timer,
           timestamp: Date.now()
         };
+        console.log('=== SAVE ===', stateToSave);
         localStorage.setItem('sliding-tiles-state', JSON.stringify(stateToSave));
         console.log('=== SAVE GAME STATE ===', 'sliding-tiles-state', JSON.stringify(stateToSave));
 
