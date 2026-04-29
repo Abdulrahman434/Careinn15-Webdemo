@@ -53,7 +53,7 @@ export function JigsawPuzzleGame({ onClose, onBackToGames }: { onClose: () => vo
   }, []);
 
   const clearGameState = useCallback(() => {
-    localStorage.removeItem('sliding-puzzle-game-state');
+    localStorage.removeItem('sliding-tiles-state');
   }, []);
 
   const saveGameState = useCallback(() => {
@@ -65,8 +65,8 @@ export function JigsawPuzzleGame({ onClose, onBackToGames }: { onClose: () => vo
       timer,
       timestamp: Date.now()
     };
-    localStorage.setItem('sliding-puzzle-game-state', JSON.stringify(state));
-    console.log('=== SAVE GAME STATE ===', 'sliding-puzzle-game-state', JSON.stringify(state));
+    localStorage.setItem('sliding-tiles-state', JSON.stringify(state));
+    console.log('=== SAVE GAME STATE ===', 'sliding-tiles-state', JSON.stringify(state));
   }, [difficulty, tiles, moves, timer, isActive, isComplete]);
 
   const initializeGame = useCallback(() => {
@@ -109,8 +109,8 @@ export function JigsawPuzzleGame({ onClose, onBackToGames }: { onClose: () => vo
 
   const loadGameState = useCallback(() => {
     try {
-      const saved = localStorage.getItem('sliding-puzzle-game-state');
-    console.log('=== LOAD GAME STATE ===', 'sliding-puzzle-game-state', saved);
+      const saved = localStorage.getItem('sliding-tiles-state');
+    console.log('=== LOAD GAME STATE ===', 'sliding-tiles-state', saved);
       if (saved) {
         const state = JSON.parse(saved);
         if (state && state.tiles) {
@@ -131,8 +131,8 @@ export function JigsawPuzzleGame({ onClose, onBackToGames }: { onClose: () => vo
   }, [clearGameState, handleNewGame]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('sliding-puzzle-game-state');
-    console.log('=== LOAD GAME STATE ===', 'sliding-puzzle-game-state', saved);
+    const saved = localStorage.getItem('sliding-tiles-state');
+    console.log('=== LOAD GAME STATE ===', 'sliding-tiles-state', saved);
     if (saved) {
       setHasSavedGame(true);
       setShowStartScreen(true);
@@ -207,6 +207,17 @@ export function JigsawPuzzleGame({ onClose, onBackToGames }: { onClose: () => vo
         setTiles(newTiles);
         setMoves(moves + 1);
         setHintTileId(null);
+        
+        // Save immediately on every move
+        const stateToSave = {
+          difficulty,
+          tiles: newTiles,
+          moves: moves + 1,
+          timer,
+          timestamp: Date.now()
+        };
+        localStorage.setItem('sliding-tiles-state', JSON.stringify(stateToSave));
+        console.log('=== SAVE GAME STATE ===', 'sliding-tiles-state', JSON.stringify(stateToSave));
 
         if (checkWin(newTiles)) {
           setIsComplete(true);
