@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
 import type { Locale } from "./i18n";
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -333,9 +333,9 @@ function buildTheme(core: {
     fontFamilyAr: c.fontFamilyAr,
     fontFamilyMono: `${c.fontFamily.split(",")[0]}, monospace`,
 
-    logoUrl: c.logoUrl || (c.id === "dsfh" ? DSFH_LOGO : c.id === "burjeel" ? burjeelLogo : c.id === "slh" ? slhLogo : c.id === "dallah" ? dallahLogo : c.id === "caremed" ? caremedLogo : ""),
-    heroImageUrl: c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : ""),
-    heroImageUrls: c.heroImageUrls && c.heroImageUrls.length > 0 ? c.heroImageUrls : [c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : "")],
+    logoUrl: c.logoUrl || (c.id === "dsfh" ? DSFH_LOGO : c.id === "burjeel" ? burjeelLogo : c.id === "slh" ? slhLogo : c.id === "dallah" ? dallahLogo : c.id === "caremed" ? caremedLogo : c.id === "imc" ? imcLogo : ""),
+    heroImageUrl: c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : ""),
+    heroImageUrls: c.heroImageUrls && c.heroImageUrls.length > 0 ? c.heroImageUrls : [c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : "")],
     heroCropPosition: c.heroCropPosition || "50% 15%",
     slideshowInterval: c.slideshowInterval || 5,
     location: (c as any).location || "Riyadh",
@@ -531,6 +531,9 @@ import dallahHero from "../../assets/dallah-hero-welcome.jpg";
 import caremedLogo from "../../assets/CareMedicalLogo.png";
 import caremedHero from "../../assets/CareMedicalHospital.jpeg";
 
+import imcLogo from "../../assets/imclogo.png";
+import imcHero from "../../assets/IMC-e1556123324461.jpg";
+
 /* Canonical built-in asset URLs — used as fallbacks for DSFH */
 export const DSFH_LOGO = logoImage;
 export const DSFH_HERO = hospitalImg;
@@ -633,6 +636,24 @@ export const CAREMED_CORE: HospitalCoreConfig = {
   location: "Riyadh",
 };
 
+export const IMC_CORE: HospitalCoreConfig = {
+  id: "imc",
+  hospitalName: "International Medical Center",
+  hospitalShortName: "IMC",
+  fontFamily: "'Mulish', sans-serif",
+  fontFamilyAr: "'Almarai', sans-serif",
+  logoUrl: imcLogo,
+  hospitalWebsiteUrl: "https://www.imc.med.sa/",
+  heroImageUrl: imcHero,
+  primary: "#082E4E",
+  primaryDark: "#041727",
+  primaryLight: "#DCE5EC",
+  accent: "#B68A35",
+  accentDark: "#7A5C23",
+  accentLight: "#F5EFE6",
+  location: "Jeddah",
+};
+
 /** All built-in hospital presets (always available, never deleted) */
 export const BUILTIN_PRESETS: HospitalCoreConfig[] = [
   DSFH_CORE,
@@ -640,7 +661,9 @@ export const BUILTIN_PRESETS: HospitalCoreConfig[] = [
   SLH_CORE,
   DALLAH_CORE,
   CAREMED_CORE,
+  IMC_CORE,
 ];
+
 
 const DSFH_THEME = buildTheme(DSFH_CORE);
 
