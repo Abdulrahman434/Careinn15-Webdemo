@@ -47,6 +47,16 @@ interface AndroidSystemInterface {
   // Volume (system media volume, 0.0 – 1.0)
   setVolume(value: number): void;
   getVolume(): number;
+
+  // Apps
+  launchApp(componentName: string): void;
+  isAppInstalled(packageName: string): boolean;
+
+  // IPTV
+  fetchIptvChannels(): void;
+  playIptv(url: string, channelName: string): void;
+  stopIptv(): void;
+  isIptvPlaying(): boolean;
 }
 
 /* ─── CustomEvent detail shapes dispatched by the Android side ─── */
@@ -116,7 +126,13 @@ export type AndroidEventName =
   | "cast-connected"
   | "permission-denied"
   | "dnd-state-changed"
-  | "night-light-changed";
+  | "night-light-changed"
+  | "app-launched"
+  | "app-launch-failed"
+  | "iptv-channels-loaded"
+  | "iptv-channels-error"
+  | "iptv-playing"
+  | "iptv-stopped";
 
 /* ─── Augment the global Window type ─── */
 declare global {

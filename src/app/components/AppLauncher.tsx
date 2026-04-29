@@ -22,6 +22,7 @@ import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { PdfReaderModal } from "./PdfReaderModal";
+import { apps, isAndroidApp, KNOWN_APPS } from "../utils/androidBridge";
 import chromeIcon from "../../assets/272d9a4c809b16af18cfbe153fa4edc5816536b3.png";
 import saudiGazetteLogo from "../../assets/5a0099c6364ba06a603226f636904e61c8e17c07.png";
 import iptvIcon from "../../assets/e66dff686b2ee163965b5d28c8ab0d919a5e5307.png";
@@ -576,6 +577,113 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
                   {emoji}
                 </div>
               ))}
+            </div>
+          ),
+          isInteractive: true,
+        },
+        {
+          id: "simonsays",
+          name: locale === "ar" ? "سيمون يقول" : "Simon Says",
+          bg: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
+          mark: "",
+          textColor: "#fff",
+          customRender: () => (
+            <div className="relative flex items-center justify-center" style={{ width: 150, height: 150 }}>
+              <div className="grid grid-cols-2 gap-1.5 w-20 h-20">
+                <div style={{ backgroundColor: "#ef4444", borderRadius: "4px 0 0 0" }} />
+                <div style={{ backgroundColor: "#3b82f6", borderRadius: "0 4px 0 0" }} />
+                <div style={{ backgroundColor: "#10b981", borderRadius: "0 0 0 4px" }} />
+                <div style={{ backgroundColor: "#f59e0b", borderRadius: "0 0 4px 0" }} />
+              </div>
+            </div>
+          ),
+          isInteractive: true,
+        },
+        {
+          id: "wordsearch",
+          name: locale === "ar" ? "البحث عن الكلمات" : "Word Search",
+          bg: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)",
+          mark: "ABC",
+          textColor: "#fff",
+          markSize: 40,
+          isInteractive: true,
+        },
+        {
+          id: "reactiontime",
+          name: locale === "ar" ? "سرعة الاستجابة" : "Reaction Time",
+          bg: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+          mark: "",
+          textColor: "#fff",
+          customRender: () => (
+            <div className="relative flex items-center justify-center" style={{ width: 150, height: 150 }}>
+              <div className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center">
+                <div className="w-12 h-12 bg-white rounded-full animate-pulse" />
+              </div>
+            </div>
+          ),
+          isInteractive: true,
+        },
+        {
+          id: "brainmath",
+          name: locale === "ar" ? "رياضيات العقل" : "Brain Math",
+          bg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          mark: "",
+          textColor: "#fff",
+          customRender: () => (
+            <div className="relative flex items-center justify-center" style={{ width: 150, height: 150 }}>
+              <div className="flex flex-col items-center">
+                <span style={{ fontSize: 40 }}>🧠</span>
+                <span className="font-black text-2xl" style={{ marginTop: -10 }}>7 + 5</span>
+              </div>
+            </div>
+          ),
+          isInteractive: true,
+        },
+        {
+          id: "triviaquiz",
+          name: locale === "ar" ? "مسابقة المعلومات" : "Trivia Quiz",
+          bg: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+          mark: "❓",
+          textColor: "#fff",
+          markSize: 60,
+          isInteractive: true,
+        },
+        {
+          id: "picturepuzzle",
+          name: locale === "ar" ? "لعبة الألغاز" : "Puzzle",
+          bg: "linear-gradient(135deg, #1A56DB 0%, #06B6D4 100%)",
+          mark: "",
+          textColor: "#fff",
+          customRender: () => (
+            <div className="relative flex items-center justify-center" style={{ width: 150, height: 150 }}>
+              <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <filter id="pieceShadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="3" floodOpacity="0.25"/>
+                  </filter>
+                </defs>
+                <path 
+                  d="M35 35 H65 V45 A7 7 0 1 1 65 55 V65 H55 A7 7 0 1 0 45 65 H35 V35 Z" 
+                  fill="white" 
+                  filter="url(#pieceShadow)"
+                />
+              </svg>
+            </div>
+          ),
+          isInteractive: true,
+        },
+        {
+          id: "wordchain",
+          name: locale === "ar" ? "سلسلة الكلمات" : "Word Chain",
+          bg: "#065F46",
+          mark: "",
+          textColor: "#fff",
+          customRender: () => (
+            <div className="relative flex items-center justify-center" style={{ width: 150, height: 150 }}>
+              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
             </div>
           ),
           isInteractive: true,
@@ -1227,11 +1335,13 @@ export function AppLauncher({
   onClose,
   onLaunchGame,
   onLaunchTool,
+  onLaunchIptv,
 }: {
   categoryKey: string;
   onClose: () => void;
   onLaunchGame?: (gameId: string) => void;
   onLaunchTool?: (toolId: string) => void;
+  onLaunchIptv?: () => void;
 }) {
   const { theme } = useTheme();
   const { t, locale, isRTL } = useLocale();
@@ -1329,8 +1439,16 @@ export function AppLauncher({
     }
 
     if (app.id === "iptv") {
-      setLaunchedApp("com.bitsarabia.bedsideterminalsolution/.careinn.iptvStreamActivity");
-      setTimeout(() => setLaunchedApp(null), 2000);
+      if (onLaunchIptv) {
+        onLaunchIptv();
+        return;
+      }
+      
+      if (!isAndroidApp()) {
+        console.warn('IPTV is only available in the kiosk app');
+        return;
+      }
+      apps.launch(KNOWN_APPS.iptv);
       return;
     }
 

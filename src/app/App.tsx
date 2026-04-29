@@ -23,6 +23,7 @@ import { TasbihScreenSaver } from "./components/TasbihScreenSaver";
 import { FoodOrdering } from "./components/FoodOrdering";
 import { OrderProvider } from "./components/OrderStore";
 import { AuthProvider, useAuth } from "./components/AuthContext";
+import { IptvChannels } from "./components/IptvChannels";
 import { PasswordGate } from "./components/PasswordGate";
 import { HospitalBroadcast, SAMPLE_BROADCAST } from "./components/HospitalBroadcast";
 import type { BroadcastNotification } from "./components/HospitalBroadcast";
@@ -32,6 +33,13 @@ import { JigsawPuzzleGame } from "./components/games/JigsawPuzzleGame";
 import { ColorMatchGame } from "./components/games/ColorMatchGame";
 import { PatternMemoryGame } from "./components/games/PatternMemoryGame";
 import { EmojiMatchGame } from "./components/games/EmojiMatchGame";
+import { SimonSaysGame } from "./components/games/SimonSaysGame";
+import { WordSearchGame } from "./components/games/WordSearchGame";
+import { ReactionTimeGame } from "./components/games/ReactionTimeGame";
+import { BrainMathGame } from "./components/games/BrainMathGame";
+import { TriviaQuizGame } from "./components/games/TriviaQuizGame";
+import { ImageJigsawGame } from "./components/games/ImageJigsawGame";
+import { WordChainGame } from "./components/games/WordChainGame";
 import { CalculatorTool } from "./components/tools/CalculatorTool";
 import { NotesTool } from "./components/tools/NotesTool";
 import { RemindersTool, DEFAULT_REMINDERS, parseReminderTime } from "./components/tools/RemindersTool";
@@ -107,6 +115,7 @@ function BedsideScreen() {
   const [activeGame, setActiveGame] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [showBlankPage, setShowBlankPage] = useState(false);
+  const [showIptv, setShowIptv] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
   const [reminders, setReminders] = useState<Reminder[]>(DEFAULT_REMINDERS);
 
@@ -702,6 +711,10 @@ function BedsideScreen() {
               setActiveTool(toolId);
               setOpenCategory(null);
             }}
+            onLaunchIptv={() => {
+              setShowIptv(true);
+              setOpenCategory(null);
+            }}
           />
         )}
 
@@ -778,6 +791,18 @@ function BedsideScreen() {
         {activeGame === "colormatch" && <ColorMatchGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "patternmemory" && <PatternMemoryGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "emojimatch" && <EmojiMatchGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "simonsays" && <SimonSaysGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "wordsearch" && <WordSearchGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "reactiontime" && <ReactionTimeGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "brainmath" && <BrainMathGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "triviaquiz" && <TriviaQuizGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "picturepuzzle" && <ImageJigsawGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "wordchain" && <WordChainGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+
+        {/* IPTV Channels Overlay */}
+        {showIptv && (
+          <IptvChannels onClose={() => setShowIptv(false)} />
+        )}
 
         {/* Tools */}
         {activeTool === "calculator" && <CalculatorTool onClose={() => setActiveTool(null)} onBackToTools={() => { setActiveTool(null); setOpenCategory("Tools"); }} />}

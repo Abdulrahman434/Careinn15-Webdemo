@@ -99,6 +99,12 @@ const translations: Record<string, TranslationEntry> = {
   "hub.media.desc": { en: "TV, music & radio", ar: "تلفزيون، موسيقى وراديو", ur: "ٹی وی، موسیقی اور ریڈیو" },
   "hub.reading": { en: "Reading", ar: "القراءة", ur: "مطالعہ" },
   "hub.reading.desc": { en: "Books & magazines", ar: "كتب ومجلات", ur: "کتابیں اور رسائل" },
+
+  /* ─── IPTV ─── */
+  "tv.onlyOnKiosk": { en: "TV is only available on the kiosk", ar: "البث المباشر متاح فقط على الشاشة", ur: "ٹی وی صرف کیوسک پر دستیاب ہے" },
+  "tv.loading": { en: "Loading Channels...", ar: "جاري تحميل القنوات...", ur: "چینلز لوڈ ہو رہے ہیں..." },
+  "tv.noChannels": { en: "No channels available", ar: "لا توجد قنوات متاحة", ur: "کوئی چینل دستیاب نہیں ہے" },
+  "tv.stop": { en: "Stop TV", ar: "إيقاف البث", ur: "ٹی وی بند کریں" },
   "hub.social": { en: "Social", ar: "التواصل", ur: "سماجی" },
   "hub.social.desc": { en: "Stay connected", ar: "ابقَ على تواصل", ur: "رابطے میں رہیں" },
   "hub.games": { en: "Games", ar: "الألعاب", ur: "کھیل" },
@@ -228,6 +234,18 @@ const translations: Record<string, TranslationEntry> = {
   "care.plan.doctorReview": { en: "Doctor Review", ar: "مراجعة الطبيب", ur: "ڈاکٹر کا جائزہ" },
   "care.plan.min": { en: "Min", ar: "دقيقة", ur: "منٹ" },
   "care.plan.done": { en: "Done", ar: "تم", ur: "ہو گیا" },
+  "careplan.toggle.daily": { en: "Daily", ar: "يومي", ur: "روزانہ" },
+  "careplan.toggle.overall": { en: "Overall", ar: "إجمالي", ur: "مجموعی" },
+  "careplan.dayLabel": { en: "Day", ar: "يوم", ur: "دن" },
+  "careplan.today": { en: "Today", ar: "اليوم", ur: "آج" },
+  "careplan.yesterday": { en: "Yesterday", ar: "أمس", ur: "کل" },
+  "careplan.tomorrow": { en: "Tomorrow", ar: "غداً", ur: "کل" },
+  "careplan.overallTitle": { en: "Overall Plan", ar: "خطة شاملة", ur: "مجموعی منصوبہ" },
+  "careplan.overallDesc": { en: "Here is our treatment plan, it will be updated regularly", ar: "هذه هي خطتنا العلاجية، وسيتم تحديثها بانتظام", ur: "یہ ہمارا علاج کا منصوبہ ہے، اسے باقاعدگی سے اپ ڈیٹ کیا جائے گا" },
+  "careplan.emptyHeader": { en: "No Care Plan available", ar: "لا توجد خطة رعاية متاحة", ur: "کوئی کیئر پلان دستیاب نہیں ہے۔" },
+  "careplan.emptyDesc": { en: "your Careplan will appear here once it is been allowed by your Care Team.", ar: "ستظهر خطة الرعاية الخاصة بك هنا بمجرد السماح بها من قبل فريق الرعاية الخاص بك.", ur: "آپ کا کیئر پلان یہاں ظاہر ہو جائے گا جب آپ کی کیئر ٹیم اسے اجازت دے دے گی۔" },
+  "discharge.emptyHeader": { en: "No discharge plan available", ar: "لا توجد خطة خروج متاحة", ur: "ڈسچارج کا کوئی منصوبہ دستیاب نہیں ہے۔" },
+  "discharge.emptyDesc": { en: "Your discharge plan will appear here once it is ready.", ar: "ستظهر خطة الخروج الخاصة بك هنا بمجرد جاهزيتها.", ur: "آپ کا ڈسچارج پلان تیار ہونے کے بعد یہاں ظاہر ہوگا۔" },
 
   /* ─── Admission / Discharge Labels ─── */
   "care.admitted": { en: "Admitted", ar: "تاريخ الدخول", ur: "داخلہ" },
