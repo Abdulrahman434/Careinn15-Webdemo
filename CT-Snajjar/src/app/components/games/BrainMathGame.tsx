@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, ArrowLeft, Timer, Zap, Brain } from "lucide-react";
-import { saveGameState as saveGameStateApi, loadGameState as loadGameStateApi, clearGameState as clearGameStateApi } from "../../utils/gameStorage";
 
 type Equation = {
   num1: number;
@@ -33,14 +32,11 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
     const saved = localStorage.getItem('brain-math-high-score');
     if (saved) setHighScore(parseInt(saved));
 
-    const init = async () => {
-      const savedState = await loadGameStateApi('brain-math-game-state');
-      if (savedState) {
-        setHasSavedGame(true);
-        setShowResumeModal(true);
-      }
-    };
-    init();
+    const savedState = localStorage.getItem('brain-math-game-state');
+    if (savedState) {
+      setHasSavedGame(true);
+      setShowResumeModal(true);
+    }
   }, []);
 
   const saveGameState = useCallback(() => {
@@ -55,12 +51,13 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
       timeLeft,
       timestamp: Date.now()
     };
-    saveGameStateApi('brain-math-game-state', state);
+    localStorage.setItem('brain-math-game-state', JSON.stringify(state));
   }, [gameState, level, score, questionsSolved, totalTimeTaken, averageSpeed, equation, timeLeft]);
 
-  const loadGameState = async () => {
-    const state = await loadGameStateApi('brain-math-game-state');
-    if (state) {
+  const loadGameState = () => {
+    const saved = localStorage.getItem('brain-math-game-state');
+    if (saved) {
+      const state = JSON.parse(saved);
       setLevel(state.level);
       setScore(state.score);
       setQuestionsSolved(state.questionsSolved);
@@ -74,7 +71,7 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
   };
 
   const clearGameState = () => {
-    clearGameStateApi('brain-math-game-state');
+    localStorage.removeItem('brain-math-game-state');
   };
 
   const handleNewGame = () => {

@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, ArrowLeft } from "lucide-react";
-import { saveGameState as saveGameStateApi, loadGameState as loadGameStateApi, clearGameState as clearGameStateApi } from "../../utils/gameStorage";
 
 const COLORS = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E2"];
 
@@ -25,14 +24,11 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
     const saved = localStorage.getItem('pattern-high-score');
     if (saved) setHighScore(parseInt(saved));
 
-    const init = async () => {
-      const savedState = await loadGameStateApi('pattern-memory-game-state');
-      if (savedState) {
-        setHasSavedGame(true);
-        setShowResumeModal(true);
-      }
-    };
-    init();
+    const savedState = localStorage.getItem('pattern-memory-game-state');
+    if (savedState) {
+      setHasSavedGame(true);
+      setShowResumeModal(true);
+    }
   }, []);
 
   const saveGameState = useCallback(() => {
@@ -45,12 +41,13 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
       gameState: gameState === "correct" ? "showing" : gameState, // Don't save transient "correct" state
       timestamp: Date.now()
     };
-    saveGameStateApi('pattern-memory-game-state', state);
+    localStorage.setItem('pattern-memory-game-state', JSON.stringify(state));
   }, [pattern, playerPattern, level, canWatchAgain, gameState]);
 
-  const loadGameState = async () => {
-    const state = await loadGameStateApi('pattern-memory-game-state');
-    if (state) {
+  const loadGameState = () => {
+    const saved = localStorage.getItem('pattern-memory-game-state');
+    if (saved) {
+      const state = JSON.parse(saved);
       setPattern(state.pattern);
       setPlayerPattern(state.playerPattern);
       setLevel(state.level);
@@ -61,7 +58,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
   };
 
   const clearGameState = () => {
-    clearGameStateApi('pattern-memory-game-state');
+    localStorage.removeItem('pattern-memory-game-state');
   };
 
   useEffect(() => {

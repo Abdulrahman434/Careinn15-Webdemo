@@ -456,15 +456,6 @@ const nurseStore = (() => {
       notify();
     },
 
-    updateDischargePlanItem: (id: string, updates: Partial<CarePlanItem>) => {
-      state = { ...state, dischargePlan: state.dischargePlan.map((i) => i.id === id ? { ...i, ...updates } : i) };
-      notify();
-    },
-    deleteDischargePlanItem: (id: string) => {
-      state = { ...state, dischargePlan: state.dischargePlan.filter((i) => i.id !== id) };
-      notify();
-    },
-
 
 
     // ── Lab Results ──

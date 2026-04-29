@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, User, Trophy, RotateCcw } from 'lucide-react';
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from '../ThemeContext';
-import { saveGameState as saveGameStateApi, loadGameState as loadGameStateApi, clearGameState as clearGameStateApi } from "../../utils/gameStorage";
 
 type Category = 'animals' | 'countries' | 'foods';
 
@@ -28,17 +27,14 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
   const [hasSavedGame, setHasSavedGame] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('wordchain-highscore');
-    if (saved) setHighScore(parseInt(saved, 10));
+    const savedScore = localStorage.getItem('wordchain-highscore');
+    if (savedScore) setHighScore(parseInt(savedScore, 10));
 
-    const init = async () => {
-      const savedState = await loadGameStateApi('wordchain-game-state');
-      if (savedState) {
-        setHasSavedGame(true);
-        setShowResumeModal(true);
-      }
-    };
-    init();
+    const savedState = localStorage.getItem('wordchain-game-state');
+    if (savedState) {
+      setHasSavedGame(true);
+      setShowResumeModal(true);
+    }
   }, []);
 
   const saveGameState = () => {
@@ -47,12 +43,13 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
       category, chain, currentPlayer, timeLeft,
       timestamp: Date.now()
     };
-    saveGameStateApi('wordchain-game-state', state);
+    localStorage.setItem('wordchain-game-state', JSON.stringify(state));
   };
 
-  const loadGameState = async () => {
-    const state = await loadGameStateApi('wordchain-game-state');
-    if (state) {
+  const loadGameState = () => {
+    const saved = localStorage.getItem('wordchain-game-state');
+    if (saved) {
+      const state = JSON.parse(saved);
       setCategory(state.category);
       setChain(state.chain);
       setCurrentPlayer(state.currentPlayer);
@@ -63,7 +60,7 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
   };
 
   const clearGameState = () => {
-    clearGameStateApi('wordchain-game-state');
+    localStorage.removeItem('wordchain-game-state');
   };
 
   const handleNewGameFromResume = () => {

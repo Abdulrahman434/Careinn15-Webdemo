@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, ArrowLeft } from "lucide-react";
-import { saveGameState as saveGameStateApi, loadGameState as loadGameStateApi, clearGameState as clearGameStateApi } from "../../utils/gameStorage";
 
 interface Card {
   id: number;
@@ -49,7 +48,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
   const [isBootstrapped, setIsBootstrapped] = useState(false);
 
   const clearGameState = useCallback(() => {
-    clearGameStateApi('memory-game-state');
+    localStorage.removeItem('memory-game-state');
   }, []);
 
   const saveBestScore = useCallback((diff: Difficulty, score: number) => {
@@ -72,7 +71,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
       timer,
       timestamp: Date.now()
     };
-    saveGameStateApi('memory-game-state', state);
+    localStorage.setItem('memory-game-state', JSON.stringify(state));
   }, [difficulty, currentTheme, cards, moves, matches, timer, isActive, isComplete]);
 
   const initializeGame = useCallback(() => {
@@ -104,10 +103,12 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
     initializeGame();
   }, [clearGameState, initializeGame]);
 
-  const loadGameState = useCallback(async () => {
+  const loadGameState = useCallback(() => {
     try {
-      const state = await loadGameStateApi('memory-game-state');
-      if (state && state.cards) {
+      const saved = localStorage.getItem('memory-game-state');
+      if (saved) {
+        const state = JSON.parse(saved);
+        if (state && state.cards) {
           setDifficulty(state.difficulty);
           setCurrentTheme(state.currentTheme);
           setCards(state.cards);
@@ -118,6 +119,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
           setHasSavedGame(false);
           setShowStartScreen(false);
         }
+      }
     } catch (e) {
       console.error("Failed to load game state:", e);
       clearGameState();
@@ -135,18 +137,15 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
   }, []);
 
   useEffect(() => {
-    const init = async () => {
-      const saved = await loadGameStateApi('memory-game-state');
-      if (saved) {
-        setHasSavedGame(true);
-        setShowStartScreen(true);
-      } else {
-        setShowStartScreen(false);
-        initializeGame();
-      }
-      setIsBootstrapped(true);
-    };
-    init();
+    const saved = localStorage.getItem('memory-game-state');
+    if (saved) {
+      setHasSavedGame(true);
+      setShowStartScreen(true);
+    } else {
+      setShowStartScreen(false);
+      initializeGame();
+    }
+    setIsBootstrapped(true);
   }, [initializeGame]); // Only on mount
 
   useEffect(() => {

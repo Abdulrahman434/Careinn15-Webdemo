@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, Circle, X, ArrowLeft } from "lucide-react";
-import { saveGameState as saveGameStateApi, loadGameState as loadGameStateApi, clearGameState as clearGameStateApi } from "../../utils/gameStorage";
 
 type Player = "X" | "O" | null;
 type GameMode = "friend" | "computer";
@@ -66,12 +65,13 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
       gameMode,
       timestamp: Date.now()
     };
-    saveGameStateApi('tictactoe-game-state', state);
+    localStorage.setItem('tictactoe-game-state', JSON.stringify(state));
   }, [squares, xIsNext, scores, gameMode]);
 
-  const loadGameState = async () => {
-    const state = await loadGameStateApi('tictactoe-game-state');
-    if (state) {
+  const loadGameState = () => {
+    const saved = localStorage.getItem('tictactoe-game-state');
+    if (saved) {
+      const state = JSON.parse(saved);
       setSquares(state.squares);
       setXIsNext(state.xIsNext);
       setScores(state.scores);
@@ -81,20 +81,17 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
   };
 
   const clearGameState = () => {
-    clearGameStateApi('tictactoe-game-state');
+    localStorage.removeItem('tictactoe-game-state');
   };
 
   useEffect(() => {
-    const init = async () => {
-      const saved = await loadGameStateApi('tictactoe-game-state');
-      if (saved) {
-        setHasSavedGame(true);
-        setShowStartScreen(true);
-      } else {
-        setShowStartScreen(false);
-      }
-    };
-    init();
+    const saved = localStorage.getItem('tictactoe-game-state');
+    if (saved) {
+      setHasSavedGame(true);
+      setShowStartScreen(true);
+    } else {
+      setShowStartScreen(false);
+    }
   }, []);
 
   useEffect(() => {
