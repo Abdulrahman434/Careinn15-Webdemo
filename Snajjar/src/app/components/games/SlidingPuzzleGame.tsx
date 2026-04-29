@@ -67,9 +67,8 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
       timestamp: Date.now()
     };
     console.log('=== SAVE ===', state);
-    localStorage.setItem('sliding-tiles-state', JSON.stringify(state));
-    console.log('=== SAVE ===', state);
-    console.log('=== SAVE GAME STATE ===', 'sliding-tiles-state', JSON.stringify(state));
+    localStorage.setItem('sliding-puzzle-save', JSON.stringify(state));
+    console.log('=== SAVE GAME STATE ===', 'sliding-puzzle-save', JSON.stringify(state));
   }, [difficulty, tiles, moves, timer, isActive, isComplete]);
 
   const initializeGame = useCallback(() => {
@@ -107,6 +106,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
     clearGameState();
     setHasSavedGame(false);
     setShowStartScreen(false);
+    setShowResumeModal(false);
     initializeGame();
   }, [clearGameState, initializeGame]);
 
@@ -116,23 +116,25 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
     if (saved) {
       setShowResumeModal(true);
     }
+    setIsBootstrapped(true);
   }, []);
 
   const loadGameState = useCallback(() => {
     try {
-      const saved = localStorage.getItem('sliding-tiles-state');
+      const saved = localStorage.getItem('sliding-puzzle-save');
       console.log('=== LOAD ===', saved);
-      console.log('=== LOAD GAME STATE ===', 'sliding-tiles-state', saved);
+      console.log('=== LOAD GAME STATE ===', 'sliding-puzzle-save', saved);
       if (saved) {
         const state = JSON.parse(saved);
         if (state && state.tiles) {
           setDifficulty(state.difficulty);
           setTiles(state.tiles);
           setMoves(state.moves);
-          setTimer(state.timer);
+          if (state.timer !== undefined) setTimer(state.timer);
           setIsActive(true);
           setHasSavedGame(false);
           setShowStartScreen(false);
+          setShowResumeModal(false);
         }
       }
     } catch (e) {
@@ -143,11 +145,10 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
   }, [clearGameState, handleNewGame]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('sliding-tiles-state');
-    console.log('=== LOAD ===', saved);
+    const saved = localStorage.getItem('sliding-puzzle-save');
     if (saved) {
       setHasSavedGame(true);
-      setShowStartScreen(true);
+      setShowResumeModal(true);
     }
   }, [initializeGame]); // Only on mount or when initializeGame changes (rare)
 
