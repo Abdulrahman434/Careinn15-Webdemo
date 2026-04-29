@@ -289,7 +289,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
         >
           {/* Hospital Logo */}
           <a
-            href={theme.hospitalWebsiteUrl}
+            href={theme.id === "imc" ? `https://www.imc.med.sa/${locale}` : theme.hospitalWebsiteUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-3xl overflow-hidden flex items-center justify-center transition-transform hover:scale-[1.02] active:scale-[0.98]"

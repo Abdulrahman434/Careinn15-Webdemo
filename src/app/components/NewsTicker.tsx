@@ -26,6 +26,14 @@ export function NewsTicker() {
         `⭐  ${t("news.dsfh.2")}`,
         `🏆  ${t("news.dsfh.3")}`,
       ]
+    : theme.id === "imc"
+    ? [
+        `🎓  ${t("news.imc.1")}`,
+        `🏥  ${t("news.imc.2")}`,
+        `🏗️  ${t("news.imc.3")}`,
+        `🤝  ${t("news.imc.4")}`,
+        `📱  ${t("news.imc.5")}`,
+      ]
     : [
         `🏆  ${t("news.wifi")}`,
         `🌍  ${t("news.carePlans")}`,

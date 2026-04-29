@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Settings, Globe, Bell, Cast } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
@@ -77,7 +77,7 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
     >
       {/* Left: Logo — always left-aligned within its column */}
       <a 
-        href={theme.hospitalWebsiteUrl} 
+        href={theme.id === "imc" ? `https://www.imc.med.sa/${locale}` : theme.hospitalWebsiteUrl} 
         target="_blank" 
         rel="noopener noreferrer" 
         className="flex items-center justify-start h-full transition-opacity hover:opacity-80 active:opacity-60"
