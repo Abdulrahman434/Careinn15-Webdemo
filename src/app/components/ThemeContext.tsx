@@ -722,6 +722,14 @@ function saveLocale(l: Locale) {
   localStorage.setItem(LOCALE_KEY, l);
 }
 
+function loadDarkMode(): boolean {
+  return localStorage.getItem("hbs-dark-mode") === "true";
+}
+
+function saveDarkMode(val: boolean) {
+  localStorage.setItem("hbs-dark-mode", val ? "true" : "false");
+}
+
 /* ── Context Type ── */
 interface ThemeContextType {
   theme: ThemeConfig;
@@ -822,7 +830,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [savedConfigs, setSavedConfigs] = useState<HospitalCoreConfig[]>(() => loadSavedConfigs());
   const [activeId, setActiveId] = useState(() => loadActiveId());
   const [patientAdmitted, setPatientAdmitted] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => loadDarkMode());
   const [castDevice, setCastDevice] = useState<string | null>(null);
   const [locale, setLocale] = useState<Locale>(() => loadLocale());
   const [prayerAlarm, setPrayerAlarm] = useState(() => {
@@ -926,7 +934,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       patientAdmitted,
       setPatientAdmitted,
       darkMode,
-      setDarkMode,
+      setDarkMode: (val: boolean) => {
+        setDarkMode(val);
+        saveDarkMode(val);
+      },
       castDevice,
       setCastDevice,
       locale,
