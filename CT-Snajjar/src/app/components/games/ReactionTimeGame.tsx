@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Timer, RotateCcw, ArrowLeft, Zap } from "lucide-react";
+import { saveGameState as saveGameStateApi, loadGameState as loadGameStateApi, clearGameState as clearGameStateApi } from "../../utils/gameStorage";
 
 type GameMode = 'click' | 'sound' | 'visual';
 type Rating = 'Excellent!' | 'Good' | 'Slow';
@@ -23,11 +24,14 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
     const saved = localStorage.getItem('reaction-leaderboard');
     if (saved) setLeaderboard(JSON.parse(saved));
 
-    const savedState = localStorage.getItem('reaction-speed-game-state');
-    if (savedState) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
-    }
+    const init = async () => {
+      const savedState = await loadGameStateApi('reaction-speed-game-state');
+      if (savedState) {
+        setHasSavedGame(true);
+        setShowResumeModal(true);
+      }
+    };
+    init();
   }, []);
 
   const saveGameState = useCallback(() => {
@@ -39,13 +43,12 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
       reactionTime,
       timestamp: Date.now()
     };
-    localStorage.setItem('reaction-speed-game-state', JSON.stringify(state));
+    saveGameStateApi('reaction-speed-game-state', state);
   }, [mode, history, gameState, reactionTime]);
 
-  const loadGameState = () => {
-    const saved = localStorage.getItem('reaction-speed-game-state');
-    if (saved) {
-      const state = JSON.parse(saved);
+  const loadGameState = async () => {
+    const state = await loadGameStateApi('reaction-speed-game-state');
+    if (state) {
       setMode(state.mode);
       setHistory(state.history);
       setGameState(state.gameState);
@@ -55,7 +58,7 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
   };
 
   const clearGameState = () => {
-    localStorage.removeItem('reaction-speed-game-state');
+    clearGameStateApi('reaction-speed-game-state');
   };
 
   const handleNewGame = () => {

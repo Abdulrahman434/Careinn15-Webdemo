@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, Timer, ArrowLeft } from "lucide-react";
+import { saveGameState as saveGameStateApi, loadGameState as loadGameStateApi, clearGameState as clearGameStateApi } from "../../utils/gameStorage";
 
 interface EmojiPair {
   id: number;
@@ -41,7 +42,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
   const isGameComplete = matches === leftEmojis.length && leftEmojis.length > 0;
 
   const clearGameState = useCallback(() => {
-    localStorage.removeItem('emoji-match-game-state');
+    clearGameStateApi('emoji-match-game-state');
   }, []);
 
   const saveGameState = useCallback(() => {
@@ -56,7 +57,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
       timeLeft,
       timestamp: Date.now()
     };
-    localStorage.setItem('emoji-match-game-state', JSON.stringify(state));
+    saveGameStateApi('emoji-match-game-state', state);
   }, [category, leftEmojis, rightEmojis, score, streak, matches, timeLeft, isPlaying, isGameComplete]);
 
   const startGame = useCallback(() => {
@@ -97,12 +98,10 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
     startGame();
   }, [clearGameState, startGame]);
 
-  const loadGameState = useCallback(() => {
+  const loadGameState = useCallback(async () => {
     try {
-      const saved = localStorage.getItem('emoji-match-game-state');
-      if (saved) {
-        const state = JSON.parse(saved);
-        if (state && state.leftEmojis) {
+      const state = await loadGameStateApi('emoji-match-game-state');
+      if (state && state.leftEmojis) {
           setCategory(state.category);
           setLeftEmojis(state.leftEmojis);
           setRightEmojis(state.rightEmojis);
@@ -114,7 +113,6 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
           setHasSavedGame(false);
           setShowResumeModal(false);
         }
-      }
     } catch (e) {
       console.error("Failed to load game state:", e);
       clearGameState();
@@ -126,12 +124,15 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
     const saved = localStorage.getItem('emoji-match-high-score');
     if (saved) setHighScore(parseInt(saved));
 
-    const savedState = localStorage.getItem('emoji-match-game-state');
-    if (savedState) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
-    }
-    setIsBootstrapped(true);
+    const init = async () => {
+      const savedState = await loadGameStateApi('emoji-match-game-state');
+      if (savedState) {
+        setHasSavedGame(true);
+        setShowResumeModal(true);
+      }
+      setIsBootstrapped(true);
+    };
+    init();
   }, []);
 
   useEffect(() => {

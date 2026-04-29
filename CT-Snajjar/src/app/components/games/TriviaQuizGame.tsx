@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, ArrowLeft, CheckCircle2, XCircle, ChevronRight, HelpCircle, RotateCcw } from "lucide-react";
+import { saveGameState as saveGameStateApi, loadGameState as loadGameStateApi, clearGameState as clearGameStateApi } from "../../utils/gameStorage";
 
 type Question = {
   id: number;
@@ -360,13 +361,12 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
       roundKey,
       timestamp: Date.now()
     };
-    localStorage.setItem('trivia-quiz-game-state', JSON.stringify(state));
+    saveGameStateApi('trivia-quiz-game-state', state);
   }, [gameState, selectedCategory, currentQuestionIdx, userAnswers, score, roundKey]);
 
-  const loadGameState = () => {
-    const saved = localStorage.getItem('trivia-quiz-game-state');
-    if (saved) {
-      const state = JSON.parse(saved);
+  const loadGameState = async () => {
+    const state = await loadGameStateApi('trivia-quiz-game-state');
+    if (state) {
       setSelectedCategory(state.selectedCategory);
       setCurrentQuestionIdx(state.currentQuestionIdx);
       setUserAnswers(state.userAnswers);
@@ -378,7 +378,7 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
   };
 
   const clearGameState = () => {
-    localStorage.removeItem('trivia-quiz-game-state');
+    clearGameStateApi('trivia-quiz-game-state');
   };
 
   const handleNewGame = () => {
@@ -393,11 +393,14 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
     if (savedLang === 'ar' || savedLang === 'en') {
       setLanguage(savedLang);
     }
-    const saved = localStorage.getItem('trivia-quiz-game-state');
-    if (saved) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
-    }
+    const init = async () => {
+      const saved = await loadGameStateApi('trivia-quiz-game-state');
+      if (saved) {
+        setHasSavedGame(true);
+        setShowResumeModal(true);
+      }
+    };
+    init();
   }, []);
 
   const handleLanguageChange = (lang: 'en' | 'ar') => {

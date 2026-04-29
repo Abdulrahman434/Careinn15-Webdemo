@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, ArrowLeft, Play } from "lucide-react";
+import { saveGameState as saveGameStateApi, loadGameState as loadGameStateApi, clearGameState as clearGameStateApi } from "../../utils/gameStorage";
 
 const CLASSIC_COLORS = ["#EF4444", "#3B82F6", "#10B981", "#F59E0B"];
 const HARD_COLORS = ["#EF4444", "#3B82F6", "#10B981", "#F59E0B", "#A855F7", "#EC4899"];
@@ -35,11 +36,14 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
     const saved = localStorage.getItem('simon-high-score');
     if (saved) setHighScore(parseInt(saved));
 
-    const savedState = localStorage.getItem('simon-game-state');
-    if (savedState) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
-    }
+    const init = async () => {
+      const savedState = await loadGameStateApi('simon-game-state');
+      if (savedState) {
+        setHasSavedGame(true);
+        setShowResumeModal(true);
+      }
+    };
+    init();
   }, []);
 
   const saveGameState = useCallback(() => {
@@ -51,13 +55,12 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
       mode,
       timestamp: Date.now()
     };
-    localStorage.setItem('simon-game-state', JSON.stringify(state));
+    saveGameStateApi('simon-game-state', state);
   }, [sequence, score, speed, mode, isComplete]);
 
-  const loadGameState = () => {
-    const saved = localStorage.getItem('simon-game-state');
-    if (saved) {
-      const state = JSON.parse(saved);
+  const loadGameState = async () => {
+    const state = await loadGameStateApi('simon-game-state');
+    if (state) {
       setSequence(state.sequence);
       setScore(state.score);
       setSpeed(state.speed);
@@ -69,7 +72,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
   };
 
   const clearGameState = () => {
-    localStorage.removeItem('simon-game-state');
+    clearGameStateApi('simon-game-state');
   };
 
   useEffect(() => {

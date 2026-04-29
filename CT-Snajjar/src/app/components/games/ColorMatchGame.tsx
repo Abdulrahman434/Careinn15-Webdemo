@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, Timer, ArrowLeft } from "lucide-react";
+import { saveGameState as saveGameStateApi, loadGameState as loadGameStateApi, clearGameState as clearGameStateApi } from "../../utils/gameStorage";
 
 interface ColorOption {
   color: string;
@@ -39,11 +40,14 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
     const saved = localStorage.getItem('color-match-high-score');
     if (saved) setHighScore(parseInt(saved));
     
-    const savedState = localStorage.getItem('color-match-game-state');
-    if (savedState) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
-    }
+    const init = async () => {
+      const savedState = await loadGameStateApi('color-match-game-state');
+      if (savedState) {
+        setHasSavedGame(true);
+        setShowResumeModal(true);
+      }
+    };
+    init();
   }, []);
 
   const saveGameState = useCallback(() => {
@@ -57,13 +61,12 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
       targetColor,
       timestamp: Date.now()
     };
-    localStorage.setItem('color-match-game-state', JSON.stringify(state));
+    saveGameStateApi('color-match-game-state', state);
   }, [isPlaying, score, timeLeft, lives, combo, speedMultiplier, targetColor]);
 
-  const loadGameState = () => {
-    const saved = localStorage.getItem('color-match-game-state');
-    if (saved) {
-      const state = JSON.parse(saved);
+  const loadGameState = async () => {
+    const state = await loadGameStateApi('color-match-game-state');
+    if (state) {
       setScore(state.score);
       setTimeLeft(state.timeLeft);
       setLives(state.lives);
@@ -76,7 +79,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
   };
 
   const clearGameState = () => {
-    localStorage.removeItem('color-match-game-state');
+    clearGameStateApi('color-match-game-state');
   };
 
   useEffect(() => {

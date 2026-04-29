@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, Shuffle, ArrowLeft } from "lucide-react";
+import { saveGameState as saveGameStateApi, loadGameState as loadGameStateApi, clearGameState as clearGameStateApi } from "../../utils/gameStorage";
 
 interface Tile {
   id: number;
@@ -53,7 +54,7 @@ export function JigsawPuzzleGame({ onClose, onBackToGames }: { onClose: () => vo
   }, []);
 
   const clearGameState = useCallback(() => {
-    localStorage.removeItem('sliding-puzzle-game-state');
+    clearGameStateApi('sliding-puzzle-game-state');
   }, []);
 
   const saveGameState = useCallback(() => {
@@ -65,7 +66,7 @@ export function JigsawPuzzleGame({ onClose, onBackToGames }: { onClose: () => vo
       timer,
       timestamp: Date.now()
     };
-    localStorage.setItem('sliding-puzzle-game-state', JSON.stringify(state));
+    saveGameStateApi('sliding-puzzle-game-state', state);
   }, [difficulty, tiles, moves, timer, isActive, isComplete]);
 
   const initializeGame = useCallback(() => {
@@ -106,12 +107,10 @@ export function JigsawPuzzleGame({ onClose, onBackToGames }: { onClose: () => vo
     initializeGame();
   }, [clearGameState, initializeGame]);
 
-  const loadGameState = useCallback(() => {
+  const loadGameState = useCallback(async () => {
     try {
-      const saved = localStorage.getItem('sliding-puzzle-game-state');
-      if (saved) {
-        const state = JSON.parse(saved);
-        if (state && state.tiles) {
+      const state = await loadGameStateApi('sliding-puzzle-game-state');
+      if (state && state.tiles) {
           setDifficulty(state.difficulty);
           setTiles(state.tiles);
           setMoves(state.moves);
@@ -120,7 +119,6 @@ export function JigsawPuzzleGame({ onClose, onBackToGames }: { onClose: () => vo
           setHasSavedGame(false);
           setShowStartScreen(false);
         }
-      }
     } catch (e) {
       console.error("Failed to load game state:", e);
       clearGameState();
@@ -129,15 +127,18 @@ export function JigsawPuzzleGame({ onClose, onBackToGames }: { onClose: () => vo
   }, [clearGameState, handleNewGame]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('sliding-puzzle-game-state');
-    if (saved) {
-      setHasSavedGame(true);
-      setShowStartScreen(true);
-    } else {
-      setShowStartScreen(false);
-      initializeGame();
-    }
-    setIsBootstrapped(true);
+    const init = async () => {
+      const saved = await loadGameStateApi('sliding-puzzle-game-state');
+      if (saved) {
+        setHasSavedGame(true);
+        setShowStartScreen(true);
+      } else {
+        setShowStartScreen(false);
+        initializeGame();
+      }
+      setIsBootstrapped(true);
+    };
+    init();
   }, [initializeGame]); // Only on mount or when initializeGame changes (rare)
 
   useEffect(() => {

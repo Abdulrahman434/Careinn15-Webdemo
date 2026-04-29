@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, ArrowLeft, Camera, Image as ImageIcon } from "lucide-react";
+import { saveGameState as saveGameStateApi, loadGameState as loadGameStateApi, clearGameState as clearGameStateApi } from "../../utils/gameStorage";
 
 type Difficulty = 3 | 4 | 5;
 type Category = 'Nature' | 'Animals';
@@ -79,13 +80,12 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
       moves,
       timestamp: Date.now()
     };
-    localStorage.setItem('image-jigsaw-game-state', JSON.stringify(state));
+    saveGameStateApi('image-jigsaw-game-state', state);
   }, [gameState, pieces, difficulty, category, selectedImageIndex, imageUrl, timer, moves]);
 
-  const loadGameState = () => {
-    const saved = localStorage.getItem('image-jigsaw-game-state');
-    if (saved) {
-      const state = JSON.parse(saved);
+  const loadGameState = async () => {
+    const state = await loadGameStateApi('image-jigsaw-game-state');
+    if (state) {
       setDifficulty(state.difficulty);
       setCategory(state.category);
       setSelectedImageIndex(state.selectedImageIndex);
@@ -99,7 +99,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
   };
 
   const clearGameState = () => {
-    localStorage.removeItem('image-jigsaw-game-state');
+    clearGameStateApi('image-jigsaw-game-state');
   };
 
   const handleNewGame = () => {
@@ -110,11 +110,14 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem('image-jigsaw-game-state');
-    if (saved) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
-    }
+    const init = async () => {
+      const saved = await loadGameStateApi('image-jigsaw-game-state');
+      if (saved) {
+        setHasSavedGame(true);
+        setShowResumeModal(true);
+      }
+    };
+    init();
   }, []);
 
   useEffect(() => {

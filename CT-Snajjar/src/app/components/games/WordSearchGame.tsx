@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, ArrowLeft, Search } from "lucide-react";
+import { saveGameState as saveGameStateApi, loadGameState as loadGameStateApi, clearGameState as clearGameStateApi } from "../../utils/gameStorage";
 
 const WORD_CATEGORIES = {
   Animals: ["LION", "TIGER", "BEAR", "WOLF", "ZEBRA", "GIRAFFE", "MONKEY", "PANDA", "ELEPHANT", "KANGAROO", "DOLPHIN", "SHARK", "PENGUIN", "EAGLE", "SNAKE"],
@@ -45,7 +46,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
   const wordCount = DIFFICULTY_CONFIG[difficulty].count;
 
   const clearGameState = useCallback(() => {
-    localStorage.removeItem('word-search-game-state');
+    clearGameStateApi('word-search-game-state');
   }, []);
 
   const saveGameState = useCallback(() => {
@@ -60,7 +61,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
       timer,
       timestamp: Date.now()
     };
-    localStorage.setItem('word-search-game-state', JSON.stringify(state));
+    saveGameStateApi('word-search-game-state', state);
   }, [difficulty, grid, foundWords, currentCategory, foundCellsMap, targetWords, timer, isActive, isComplete]);
 
   const initializeGame = useCallback(() => {
@@ -130,12 +131,10 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
     initializeGame();
   }, [clearGameState, initializeGame]);
 
-  const loadGameState = useCallback(() => {
+  const loadGameState = useCallback(async () => {
     try {
-      const saved = localStorage.getItem('word-search-game-state');
-      if (saved) {
-        const state = JSON.parse(saved);
-        if (state && state.grid) {
+      const state = await loadGameStateApi('word-search-game-state');
+      if (state && state.grid) {
           setDifficulty(state.difficulty);
           setGrid(state.grid);
           setFoundWords(state.foundWords);
@@ -147,7 +146,6 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
           setHasSavedGame(false);
           setShowResumeModal(false);
         }
-      }
     } catch (e) {
       console.error("Failed to load game state:", e);
       clearGameState();
@@ -157,15 +155,18 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
 
 
   useEffect(() => {
-    const saved = localStorage.getItem('word-search-game-state');
-    if (saved) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
-    } else {
-      setShowResumeModal(false);
-      initializeGame();
-    }
-    setIsBootstrapped(true);
+    const init = async () => {
+      const saved = await loadGameStateApi('word-search-game-state');
+      if (saved) {
+        setHasSavedGame(true);
+        setShowResumeModal(true);
+      } else {
+        setShowResumeModal(false);
+        initializeGame();
+      }
+      setIsBootstrapped(true);
+    };
+    init();
   }, [initializeGame]); // Only on mount
 
   useEffect(() => {
