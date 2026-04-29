@@ -113,9 +113,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
   useEffect(() => {
     const saved = localStorage.getItem('sliding-puzzle-save');
     console.log('CHECKING SAVE:', saved);
-    if (saved) {
-      setShowResumeModal(true);
-    }
+    if (saved) { setShowResumeModal(true); return; }
     setIsBootstrapped(true);
   }, []);
 
@@ -215,7 +213,8 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
 
         setTiles(newTiles);
         setMoves(moves + 1);
-        localStorage.setItem('sliding-puzzle-save', JSON.stringify({tiles, moves, difficulty}))
+        localStorage.setItem('sliding-puzzle-save', JSON.stringify({tiles, moves, difficulty}));
+        console.log('SAVED', {tiles, moves, difficulty});
         setHintTileId(null);
 
         // Save immediately on every move
