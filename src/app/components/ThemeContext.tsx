@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
 import type { Locale } from "./i18n";
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -691,6 +691,7 @@ export interface HospitalCoreConfig {
 
 const STORAGE_KEY = "hospital-configs";
 const ACTIVE_KEY = "active-hospital-id";
+const LOCALE_KEY = "active-locale";
 
 function loadSavedConfigs(): HospitalCoreConfig[] {
   try {
@@ -711,6 +712,14 @@ function loadActiveId(): string {
 
 function saveActiveId(id: string) {
   localStorage.setItem(ACTIVE_KEY, id);
+}
+
+function loadLocale(): Locale {
+  return (localStorage.getItem(LOCALE_KEY) as Locale) || "en";
+}
+
+function saveLocale(l: Locale) {
+  localStorage.setItem(LOCALE_KEY, l);
 }
 
 /* ── Context Type ── */
@@ -815,7 +824,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [patientAdmitted, setPatientAdmitted] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [castDevice, setCastDevice] = useState<string | null>(null);
-  const [locale, setLocale] = useState<Locale>("en");
+  const [locale, setLocale] = useState<Locale>(() => loadLocale());
   const [prayerAlarm, setPrayerAlarm] = useState(() => {
     const saved = localStorage.getItem("prayer-alarm");
     return saved === null ? true : saved === "true";
@@ -921,7 +930,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       castDevice,
       setCastDevice,
       locale,
-      setLocale,
+      setLocale: (l: Locale) => {
+        setLocale(l);
+        saveLocale(l);
+      },
       prayerAlarm,
       setPrayerAlarm: updatePrayerAlarm,
     }}>
