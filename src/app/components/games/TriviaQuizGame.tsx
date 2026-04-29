@@ -361,10 +361,13 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
       timestamp: Date.now()
     };
     localStorage.setItem('trivia-quiz-game-state', JSON.stringify(state));
+    console.log('=== SAVE ===', state);
+    console.log('=== SAVE GAME STATE ===', 'trivia-quiz-game-state', JSON.stringify(state));
   }, [gameState, selectedCategory, currentQuestionIdx, userAnswers, score, roundKey]);
 
   const loadGameState = () => {
     const saved = localStorage.getItem('trivia-quiz-game-state');
+    console.log('=== LOAD GAME STATE ===', 'trivia-quiz-game-state', saved);
     if (saved) {
       const state = JSON.parse(saved);
       setSelectedCategory(state.selectedCategory);
@@ -390,10 +393,12 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
 
   useEffect(() => {
     const savedLang = localStorage.getItem('trivia-language');
+    console.log('=== LOAD GAME STATE ===', 'trivia-language', savedLang);
     if (savedLang === 'ar' || savedLang === 'en') {
       setLanguage(savedLang);
     }
     const saved = localStorage.getItem('trivia-quiz-game-state');
+    console.log('=== LOAD GAME STATE ===', 'trivia-quiz-game-state', saved);
     if (saved) {
       setHasSavedGame(true);
       setShowResumeModal(true);
@@ -403,6 +408,7 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
   const handleLanguageChange = (lang: 'en' | 'ar') => {
     setLanguage(lang);
     localStorage.setItem('trivia-language', lang);
+    console.log('=== SAVE GAME STATE ===', 'trivia-language', lang);
   };
 
   useEffect(() => {

@@ -30,7 +30,7 @@ import { HospitalBroadcast, SAMPLE_BROADCAST } from "./components/HospitalBroadc
 import type { BroadcastNotification } from "./components/HospitalBroadcast";
 import { MemoryGame } from "./components/games/MemoryGame";
 import { TicTacToeGame } from "./components/games/TicTacToeGame";
-import { JigsawPuzzleGame } from "./components/games/JigsawPuzzleGame";
+import { SlidingPuzzleGame } from "./components/games/SlidingPuzzleGame";
 import { ColorMatchGame } from "./components/games/ColorMatchGame";
 import { PatternMemoryGame } from "./components/games/PatternMemoryGame";
 import { EmojiMatchGame } from "./components/games/EmojiMatchGame";
@@ -794,7 +794,7 @@ function BedsideScreen() {
         {/* Games */}
         {activeGame === "memory" && <MemoryGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "tictactoe" && <TicTacToeGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "puzzle" && <JigsawPuzzleGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "puzzle" && <SlidingPuzzleGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "colormatch" && <ColorMatchGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "patternmemory" && <PatternMemoryGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "emojimatch" && <EmojiMatchGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}

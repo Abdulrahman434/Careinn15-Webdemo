@@ -16,14 +16,99 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
   const [level, setLevel] = useState(1);
   const [activeCell, setActiveCell] = useState<number | null>(null);
   const [highScore, setHighScore] = useState(0);
+  const [canWatchAgain, setCanWatchAgain] = useState(true);
+  const [showResumeModal, setShowResumeModal] = useState(false);
+  const [hasSavedGame, setHasSavedGame] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('pattern-high-score');
+    console.log('=== LOAD GAME STATE ===', 'pattern-high-score', saved);
+    if (saved) setHighScore(parseInt(saved));
+
+    const savedState = localStorage.getItem('pattern-memory-game-state');
+    console.log('=== LOAD GAME STATE ===', 'pattern-memory-game-state', savedState);
+    if (savedState) {
+      setHasSavedGame(true);
+      setShowResumeModal(true);
+    }
+  }, []);
+
+  const saveGameState = useCallback(() => {
+    if (gameState === "idle" || gameState === "gameover" || gameState === "wrong") return;
+    const state = {
+      pattern,
+      playerPattern,
+      level,
+      canWatchAgain,
+      gameState: gameState === "correct" ? "showing" : gameState, // Don't save transient "correct" state
+      timestamp: Date.now()
+    };
+    localStorage.setItem('pattern-memory-game-state', JSON.stringify(state));
+    console.log('=== SAVE ===', state);
+    console.log('=== SAVE GAME STATE ===', 'pattern-memory-game-state', JSON.stringify(state));
+  }, [pattern, playerPattern, level, canWatchAgain, gameState]);
+
+  const loadGameState = () => {
+    const saved = localStorage.getItem('pattern-memory-game-state');
+    console.log('=== LOAD GAME STATE ===', 'pattern-memory-game-state', saved);
+    if (saved) {
+      const state = JSON.parse(saved);
+      setPattern(state.pattern);
+      setPlayerPattern(state.playerPattern);
+      setLevel(state.level);
+      setCanWatchAgain(state.canWatchAgain);
+      setGameState(state.gameState);
+      setShowResumeModal(false);
+    }
+  };
+
+  const clearGameState = () => {
+    localStorage.removeItem('pattern-memory-game-state');
+  };
+
+  useEffect(() => {
+    saveGameState();
+  }, [saveGameState]);
+
+  const playSound = (index: number) => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      const frequencies = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
+      oscillator.frequency.setValueAtTime(frequencies[index % 8], audioContext.currentTime);
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (e) {}
+  };
 
   const startGame = useCallback(() => {
     const newPattern = [Math.floor(Math.random() * 8)];
     setPattern(newPattern);
     setPlayerPattern([]);
     setLevel(1);
+    setCanWatchAgain(true);
     setGameState("showing");
+    clearGameState();
   }, []);
+
+  const handleNewGame = () => {
+    clearGameState();
+    setHasSavedGame(false);
+    setShowResumeModal(false);
+    startGame();
+  };
+
+  const watchAgain = () => {
+    if (canWatchAgain && gameState === "playing") {
+      setCanWatchAgain(false);
+      setGameState("showing");
+    }
+  };
 
   // Show pattern to player
   useEffect(() => {
@@ -32,6 +117,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
       const showNext = () => {
         if (index < pattern.length) {
           setActiveCell(pattern[index]);
+          playSound(pattern[index]);
           setTimeout(() => {
             setActiveCell(null);
             index++;
@@ -54,8 +140,9 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
       const newPlayerPattern = [...playerPattern, cellIndex];
       setPlayerPattern(newPlayerPattern);
 
-      // Flash the cell
+      // Flash the cell and play sound
       setActiveCell(cellIndex);
+      playSound(cellIndex);
       setTimeout(() => setActiveCell(null), 200);
 
       // Check if correct
@@ -64,8 +151,11 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
         setGameState("wrong");
         setTimeout(() => {
           setGameState("gameover");
+          clearGameState();
           if (level > highScore) {
             setHighScore(level);
+            localStorage.setItem('pattern-high-score', level.toString());
+    console.log('=== SAVE GAME STATE ===', 'pattern-high-score', level.toString());
           }
         }, 1000);
       } else if (newPlayerPattern.length === pattern.length) {
@@ -77,6 +167,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
           const newPattern = [...pattern, Math.floor(Math.random() * 8)];
           setPattern(newPattern);
           setPlayerPattern([]);
+          setCanWatchAgain(true); // Reset watch again for new level
           setGameState("showing");
         }, 1000);
       }
@@ -165,7 +256,30 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
             </span>
           </div>
           <button
-            onClick={startGame}
+            onClick={watchAgain}
+            disabled={!canWatchAgain || gameState !== "playing"}
+            className="flex items-center gap-2 px-6 py-3 cursor-pointer active:scale-95 transition-transform"
+            style={{
+              backgroundColor: canWatchAgain && gameState === "playing" ? theme.accent : theme.surfaceElevated,
+              borderRadius: theme.radiusMd,
+              border: theme.cardBorder,
+              outline: "none",
+              opacity: canWatchAgain && gameState === "playing" ? 1 : 0.5,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: fontFamily,
+                fontSize: TYPE_SCALE.base,
+                fontWeight: WEIGHT.semibold,
+                color: canWatchAgain && gameState === "playing" ? "#fff" : theme.textMuted,
+              }}
+            >
+              Watch Again {canWatchAgain ? "(1)" : "(0)"}
+            </span>
+          </button>
+          <button
+            onClick={handleNewGame}
             className="flex items-center gap-2 px-6 py-3 cursor-pointer active:scale-95 transition-transform"
             style={{
               backgroundColor: theme.primary,
@@ -353,7 +467,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
                   key={index}
                   onClick={() => handleCellClick(index)}
                   disabled={gameState !== "playing"}
-                  className="cursor-pointer transition-transform duration-200 active:scale-95"
+                  className="cursor-pointer transition-all duration-200 active:scale-95"
                   style={{
                     backgroundColor: activeCell === index ? color : `${color}80`,
                     borderRadius: theme.radiusLg,
@@ -406,6 +520,60 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
           >
             ✗
           </span>
+        </div>
+      )}
+
+      {/* Resume Modal */}
+      {showResumeModal && (
+        <div
+          className="absolute inset-0 flex items-center justify-center"
+          style={{
+            backgroundColor: "rgba(0,0,0,0.7)",
+            backdropFilter: "blur(8px)",
+            zIndex: 150,
+          }}
+        >
+          <div
+            className="flex flex-col items-center gap-8 px-16 py-12"
+            style={{
+              backgroundColor: theme.surface,
+              borderRadius: theme.radiusCard,
+              boxShadow: SHADOW["2xl"],
+              border: theme.cardBorder,
+              maxWidth: "500px",
+              width: "90%"
+            }}
+          >
+            <div className="w-24 h-24 rounded-full bg-primarySubtle flex items-center justify-center" style={{ backgroundColor: theme.primarySubtle }}>
+              <RotateCcw size={48} color={theme.primary} />
+            </div>
+            
+            <div className="text-center gap-2 flex flex-col">
+              <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
+                Resume Game?
+              </h2>
+              <p style={{ fontFamily, fontSize: TYPE_SCALE.md, color: theme.textMuted }}>
+                We found a saved session. Would you like to continue or start fresh?
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-4 w-full">
+              <button
+                onClick={loadGameState}
+                className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
+                style={{ backgroundColor: theme.primary, color: theme.textInverse, fontSize: TYPE_SCALE.md }}
+              >
+                Continue Playing
+              </button>
+              <button
+                onClick={handleNewGame}
+                className="w-full py-5 rounded-2xl font-bold transition-all hover:bg-black/5 active:scale-95"
+                style={{ backgroundColor: theme.surfaceElevated, color: theme.textHeading, border: theme.cardBorder, fontSize: TYPE_SCALE.md }}
+              >
+                Start New Game
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, User, Trophy } from 'lucide-react';
+import { ArrowLeft, User, Trophy, RotateCcw } from 'lucide-react';
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from '../ThemeContext';
 
 type Category = 'animals' | 'countries' | 'foods';
@@ -23,11 +23,63 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
 
   const timerRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [showResumeModal, setShowResumeModal] = useState(false);
+  const [hasSavedGame, setHasSavedGame] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('wordchain-highscore');
-    if (saved) setHighScore(parseInt(saved, 10));
+    const savedScore = localStorage.getItem('wordchain-highscore');
+    console.log('=== LOAD GAME STATE ===', 'wordchain-highscore', savedScore);
+    if (savedScore) setHighScore(parseInt(savedScore, 10));
+
+    const savedState = localStorage.getItem('wordchain-game-state');
+    console.log('=== LOAD GAME STATE ===', 'wordchain-game-state', savedState);
+    if (savedState) {
+      setHasSavedGame(true);
+      setShowResumeModal(true);
+    }
   }, []);
+
+  const saveGameState = () => {
+    if (gameState !== 'playing') return;
+    const state = {
+      category, chain, currentPlayer, timeLeft,
+      timestamp: Date.now()
+    };
+    localStorage.setItem('wordchain-game-state', JSON.stringify(state));
+    console.log('=== SAVE ===', state);
+    console.log('=== SAVE GAME STATE ===', 'wordchain-game-state', JSON.stringify(state));
+  };
+
+  const loadGameState = () => {
+    const saved = localStorage.getItem('wordchain-game-state');
+    console.log('=== LOAD GAME STATE ===', 'wordchain-game-state', saved);
+    if (saved) {
+      const state = JSON.parse(saved);
+      setCategory(state.category);
+      setChain(state.chain);
+      setCurrentPlayer(state.currentPlayer);
+      setTimeLeft(state.timeLeft);
+      setGameState('playing');
+      setShowResumeModal(false);
+    }
+  };
+
+  const clearGameState = () => {
+    localStorage.removeItem('wordchain-game-state');
+  };
+
+  const handleNewGameFromResume = () => {
+    clearGameState();
+    setHasSavedGame(false);
+    setShowResumeModal(false);
+    setGameState('menu');
+  };
+
+  useEffect(() => {
+    if (gameState === 'playing') {
+      saveGameState();
+    }
+  }, [gameState, category, chain, currentPlayer, timeLeft]);
 
   const startGame = (selectedCategory: Category) => {
     setCategory(selectedCategory);
@@ -42,6 +94,7 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
     setInputValue('');
     setWinner(null);
     setGameState('playing');
+    clearGameState();
   };
 
   const endGame = (losingPlayer: 1 | 2) => {
@@ -50,7 +103,9 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
     if (chain.length > highScore) {
       setHighScore(chain.length);
       localStorage.setItem('wordchain-highscore', chain.length.toString());
+    console.log('=== SAVE GAME STATE ===', 'wordchain-highscore', chain.length.toString());
     }
+    clearGameState();
   };
 
   useEffect(() => {
@@ -236,6 +291,60 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
           </div>
         )}
       </div>
+
+      {/* Resume Modal */}
+      {showResumeModal && (
+        <div
+          className="absolute inset-0 flex items-center justify-center"
+          style={{
+            backgroundColor: "rgba(0,0,0,0.7)",
+            backdropFilter: "blur(8px)",
+            zIndex: 150,
+          }}
+        >
+          <div
+            className="flex flex-col items-center gap-8 px-16 py-12"
+            style={{
+              backgroundColor: theme.surface,
+              borderRadius: theme.radiusCard,
+              boxShadow: SHADOW["2xl"],
+              border: theme.cardBorder,
+              maxWidth: "500px",
+              width: "90%"
+            }}
+          >
+            <div className="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center">
+              <RotateCcw size={48} className="text-green-600" />
+            </div>
+            
+            <div className="text-center gap-2 flex flex-col">
+              <h2 style={{ fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
+                Resume Game?
+              </h2>
+              <p style={{ fontSize: TYPE_SCALE.md, color: theme.textMuted }}>
+                We found a saved session. Would you like to continue or start fresh?
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-4 w-full">
+              <button
+                onClick={loadGameState}
+                className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95 bg-green-600 text-white shadow-md"
+                style={{ fontSize: TYPE_SCALE.md }}
+              >
+                Continue Playing
+              </button>
+              <button
+                onClick={handleNewGameFromResume}
+                className="w-full py-5 rounded-2xl font-bold transition-all hover:bg-gray-100 active:scale-95 border-2 border-gray-200"
+                style={{ backgroundColor: theme.surfaceElevated, color: theme.textHeading, fontSize: TYPE_SCALE.md }}
+              >
+                Start New Game
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

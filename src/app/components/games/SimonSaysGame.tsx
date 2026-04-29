@@ -33,9 +33,11 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
 
   useEffect(() => {
     const saved = localStorage.getItem('simon-high-score');
+    console.log('=== LOAD GAME STATE ===', 'simon-high-score', saved);
     if (saved) setHighScore(parseInt(saved));
 
     const savedState = localStorage.getItem('simon-game-state');
+    console.log('=== LOAD GAME STATE ===', 'simon-game-state', savedState);
     if (savedState) {
       setHasSavedGame(true);
       setShowResumeModal(true);
@@ -52,10 +54,13 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
       timestamp: Date.now()
     };
     localStorage.setItem('simon-game-state', JSON.stringify(state));
+    console.log('=== SAVE ===', state);
+    console.log('=== SAVE GAME STATE ===', 'simon-game-state', JSON.stringify(state));
   }, [sequence, score, speed, mode, isComplete]);
 
   const loadGameState = () => {
     const saved = localStorage.getItem('simon-game-state');
+    console.log('=== LOAD GAME STATE ===', 'simon-game-state', saved);
     if (saved) {
       const state = JSON.parse(saved);
       setSequence(state.sequence);
@@ -161,6 +166,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
       if (score > highScore) {
         setHighScore(score);
         localStorage.setItem('simon-high-score', score.toString());
+    console.log('=== SAVE GAME STATE ===', 'simon-high-score', score.toString());
       }
       clearGameState();
       return;

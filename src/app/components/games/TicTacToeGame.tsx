@@ -1,20 +1,16 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, Circle, X, ArrowLeft } from "lucide-react";
 
 type Player = "X" | "O" | null;
+type GameMode = "friend" | "computer";
 
 function calculateWinner(squares: Player[]): Player {
   const lines = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6],
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6],
   ];
   for (const [a, b, c] of lines) {
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
@@ -29,45 +25,151 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
   const { fontFamily } = useLocale();
   const [squares, setSquares] = useState<Player[]>(Array(9).fill(null));
   const [xIsNext, setXIsNext] = useState(true);
+  const [gameMode, setGameMode] = useState<GameMode>("friend");
   const [scores, setScores] = useState({ X: 0, O: 0, draws: 0 });
+  const [showStartScreen, setShowStartScreen] = useState(false);
+  const [hasSavedGame, setHasSavedGame] = useState(false);
 
   const winner = calculateWinner(squares);
   const isDraw = !winner && squares.every((square) => square !== null);
 
+  const getBestMove = useCallback((board: Player[]) => {
+    // 1. Try to win
+    for (let i = 0; i < 9; i++) {
+      if (!board[i]) {
+        const testBoard = [...board];
+        testBoard[i] = "O";
+        if (calculateWinner(testBoard) === "O") return i;
+      }
+    }
+    // 2. Block player
+    for (let i = 0; i < 9; i++) {
+      if (!board[i]) {
+        const testBoard = [...board];
+        testBoard[i] = "X";
+        if (calculateWinner(testBoard) === "X") return i;
+      }
+    }
+    // 3. Take center
+    if (!board[4]) return 4;
+    // 4. Random available
+    const available = board.map((v, i) => v === null ? i : null).filter(v => v !== null) as number[];
+    return available[Math.floor(Math.random() * available.length)];
+  }, []);
+
+  const saveGameState = useCallback(() => {
+    const state = {
+      squares,
+      xIsNext,
+      scores,
+      gameMode,
+      timestamp: Date.now()
+    };
+    localStorage.setItem('tictactoe-game-state', JSON.stringify(state));
+    console.log('=== SAVE ===', state);
+    console.log('=== SAVE GAME STATE ===', 'tictactoe-game-state', JSON.stringify(state));
+  }, [squares, xIsNext, scores, gameMode]);
+
+  const loadGameState = () => {
+    const saved = localStorage.getItem('tictactoe-game-state');
+    console.log('=== LOAD GAME STATE ===', 'tictactoe-game-state', saved);
+    if (saved) {
+      const state = JSON.parse(saved);
+      setSquares(state.squares);
+      setXIsNext(state.xIsNext);
+      setScores(state.scores);
+      setGameMode(state.gameMode);
+      setShowStartScreen(false);
+    }
+  };
+
+  const clearGameState = () => {
+    localStorage.removeItem('tictactoe-game-state');
+  };
+
+  useEffect(() => {
+    const saved = localStorage.getItem('tictactoe-game-state');
+    console.log('=== LOAD ===', saved);
+    if (saved) {
+      setHasSavedGame(true);
+      setShowStartScreen(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    saveGameState();
+  }, [saveGameState]);
+
   const handleClick = useCallback(
     (i: number) => {
-      if (squares[i] || winner) return;
+      if (squares[i] || winner || (gameMode === "computer" && !xIsNext)) return;
+      
       const newSquares = squares.slice();
-      newSquares[i] = xIsNext ? "X" : "O";
+      newSquares[i] = "X";
       setSquares(newSquares);
-      setXIsNext(!xIsNext);
+      setXIsNext(false);
 
-      // Check if this move wins
-      const newWinner = calculateWinner(newSquares);
-      if (newWinner) {
+      const checkGameOver = (currentSquares: Player[]) => {
+        const newWinner = calculateWinner(currentSquares);
+        if (newWinner) {
+          setScores((prev) => ({ ...prev, [newWinner]: prev[newWinner] + 1 }));
+          return true;
+        } else if (currentSquares.every((s) => s !== null)) {
+          setScores((prev) => ({ ...prev, draws: prev.draws + 1 }));
+          return true;
+        }
+        return false;
+      };
+
+      if (checkGameOver(newSquares)) return;
+
+      if (gameMode === "computer") {
         setTimeout(() => {
-          setScores((prev) => ({
-            ...prev,
-            [newWinner]: prev[newWinner] + 1,
-          }));
-        }, 500);
-      } else if (newSquares.every((square) => square !== null)) {
-        // Draw
-        setTimeout(() => {
-          setScores((prev) => ({
-            ...prev,
-            draws: prev.draws + 1,
-          }));
-        }, 500);
+          const aiMove = getBestMove(newSquares);
+          const aiSquares = newSquares.slice();
+          aiSquares[aiMove] = "O";
+          setSquares(aiSquares);
+          setXIsNext(true);
+          checkGameOver(aiSquares);
+        }, 600);
+      } else {
+        setXIsNext(false);
       }
     },
-    [squares, xIsNext, winner]
+    [squares, xIsNext, winner, gameMode, getBestMove]
   );
+
+  // Re-define handleClick for "Play with Friend" mode properly
+  const handleFriendClick = useCallback((i: number) => {
+    if (squares[i] || winner) return;
+    const newSquares = squares.slice();
+    newSquares[i] = xIsNext ? "X" : "O";
+    setSquares(newSquares);
+    setXIsNext(!xIsNext);
+
+    const newWinner = calculateWinner(newSquares);
+    if (newWinner) {
+      setScores((prev) => ({ ...prev, [newWinner]: prev[newWinner] + 1 }));
+    } else if (newSquares.every((s) => s !== null)) {
+      setScores((prev) => ({ ...prev, draws: prev.draws + 1 }));
+    }
+  }, [squares, xIsNext, winner]);
+
+  const onSquareClick = gameMode === "computer" ? handleClick : handleFriendClick;
 
   const resetGame = useCallback(() => {
     setSquares(Array(9).fill(null));
     setXIsNext(true);
+    clearGameState();
   }, []);
+
+  const handleNewGame = () => {
+    clearGameState();
+    setHasSavedGame(false);
+    setShowStartScreen(false);
+    resetGame();
+    setScores({ X: 0, O: 0, draws: 0 });
+  };
 
   const resetScores = useCallback(() => {
     setScores({ X: 0, O: 0, draws: 0 });
@@ -118,6 +220,21 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
           </h1>
         </div>
         <div className="flex items-center gap-4">
+          <select 
+            value={gameMode}
+            onChange={(e) => {
+              setGameMode(e.target.value as GameMode);
+              resetScores();
+            }}
+            style={{
+              fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.medium,
+              padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder,
+              backgroundColor: theme.surfaceElevated, color: theme.textHeading, outline: 'none'
+            }}
+          >
+            <option value="friend">Play with Friend</option>
+            <option value="computer">Play with Computer</option>
+          </select>
           <button
             onClick={resetGame}
             className="flex items-center gap-2 px-6 py-3 cursor-pointer active:scale-95 transition-transform"
@@ -210,9 +327,9 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
             {squares.map((square, i) => (
               <button
                 key={i}
-                onClick={() => handleClick(i)}
-                disabled={!!square || !!winner}
-                className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform duration-200"
+                onClick={() => onSquareClick(i)}
+                disabled={!!square || !!winner || (gameMode === "computer" && !xIsNext)}
+                className="flex items-center justify-center cursor-pointer active:scale-95 transition-all duration-200"
                 style={{
                   backgroundColor: theme.surface,
                   borderRadius: theme.radiusLg,
@@ -268,7 +385,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
                     color: theme.textHeading,
                   }}
                 >
-                  Player X
+                  {gameMode === "computer" ? "You (X)" : "Player X"}
                 </span>
               </div>
               <span
@@ -299,7 +416,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
                     color: theme.textHeading,
                   }}
                 >
-                  Player O
+                  {gameMode === "computer" ? "Computer (O)" : "Player O"}
                 </span>
               </div>
               <span
@@ -368,6 +485,60 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
           >
             {winner ? `🎉 Player ${winner} wins!` : "🤝 It's a draw!"}
           </span>
+        </div>
+      )}
+
+      {/* Start Screen / Resume Modal */}
+      {showStartScreen && (
+        <div
+          className="absolute inset-0 flex items-center justify-center"
+          style={{
+            backgroundColor: "rgba(0,0,0,0.7)",
+            backdropFilter: "blur(8px)",
+            zIndex: 150,
+          }}
+        >
+          <div
+            className="flex flex-col items-center gap-8 px-16 py-12"
+            style={{
+              backgroundColor: theme.surface,
+              borderRadius: theme.radiusCard,
+              boxShadow: SHADOW["2xl"],
+              border: theme.cardBorder,
+              maxWidth: "500px",
+              width: "90%"
+            }}
+          >
+            <div className="w-24 h-24 rounded-full bg-primarySubtle flex items-center justify-center" style={{ backgroundColor: theme.primarySubtle }}>
+              <RotateCcw size={48} color={theme.primary} />
+            </div>
+            
+            <div className="text-center gap-2 flex flex-col">
+              <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
+                Resume Game?
+              </h2>
+              <p style={{ fontFamily, fontSize: TYPE_SCALE.md, color: theme.textMuted }}>
+                We found a saved session. Would you like to continue or start fresh?
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-4 w-full">
+              <button
+                onClick={loadGameState}
+                className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
+                style={{ backgroundColor: theme.primary, color: theme.textInverse, fontSize: TYPE_SCALE.md }}
+              >
+                Continue Playing
+              </button>
+              <button
+                onClick={handleNewGame}
+                className="w-full py-5 rounded-2xl font-bold transition-all hover:bg-black/5 active:scale-95"
+                style={{ backgroundColor: theme.surfaceElevated, color: theme.textHeading, border: theme.cardBorder, fontSize: TYPE_SCALE.md }}
+              >
+                Start New Game
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
