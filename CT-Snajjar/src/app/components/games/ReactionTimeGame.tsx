@@ -42,6 +42,7 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
       timestamp: Date.now()
     };
     localStorage.setItem('reaction-speed-game-state', JSON.stringify(state));
+    console.log('=== SAVE ===', state);
     console.log('=== SAVE GAME STATE ===', 'reaction-speed-game-state', JSON.stringify(state));
   }, [mode, history, gameState, reactionTime]);
 

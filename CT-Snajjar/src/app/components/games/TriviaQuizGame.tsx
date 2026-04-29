@@ -361,6 +361,7 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
       timestamp: Date.now()
     };
     localStorage.setItem('trivia-quiz-game-state', JSON.stringify(state));
+    console.log('=== SAVE ===', state);
     console.log('=== SAVE GAME STATE ===', 'trivia-quiz-game-state', JSON.stringify(state));
   }, [gameState, selectedCategory, currentQuestionIdx, userAnswers, score, roundKey]);
 

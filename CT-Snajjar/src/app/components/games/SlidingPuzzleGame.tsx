@@ -67,6 +67,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
     };
     console.log('=== SAVE ===', state);
     localStorage.setItem('sliding-tiles-state', JSON.stringify(state));
+    console.log('=== SAVE ===', state);
     console.log('=== SAVE GAME STATE ===', 'sliding-tiles-state', JSON.stringify(state));
   }, [difficulty, tiles, moves, timer, isActive, isComplete]);
 
@@ -135,15 +136,10 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
   useEffect(() => {
     const saved = localStorage.getItem('sliding-tiles-state');
     console.log('=== LOAD ===', saved);
-    console.log('=== LOAD GAME STATE ===', 'sliding-tiles-state', saved);
     if (saved) {
       setHasSavedGame(true);
       setShowStartScreen(true);
-    } else {
-      setShowStartScreen(false);
-      initializeGame();
     }
-    setIsBootstrapped(true);
   }, [initializeGame]); // Only on mount or when initializeGame changes (rare)
 
   useEffect(() => {

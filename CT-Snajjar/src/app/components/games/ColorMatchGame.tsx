@@ -60,6 +60,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
       timestamp: Date.now()
     };
     localStorage.setItem('color-match-game-state', JSON.stringify(state));
+    console.log('=== SAVE ===', state);
     console.log('=== SAVE GAME STATE ===', 'color-match-game-state', JSON.stringify(state));
   }, [isPlaying, score, timeLeft, lives, combo, speedMultiplier, targetColor]);
 

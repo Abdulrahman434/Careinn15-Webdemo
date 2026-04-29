@@ -61,6 +61,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
       timestamp: Date.now()
     };
     localStorage.setItem('word-search-game-state', JSON.stringify(state));
+    console.log('=== SAVE ===', state);
     console.log('=== SAVE GAME STATE ===', 'word-search-game-state', JSON.stringify(state));
   }, [difficulty, grid, foundWords, currentCategory, foundCellsMap, targetWords, timer, isActive, isComplete]);
 

@@ -54,6 +54,7 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
       timestamp: Date.now()
     };
     localStorage.setItem('brain-math-game-state', JSON.stringify(state));
+    console.log('=== SAVE ===', state);
     console.log('=== SAVE GAME STATE ===', 'brain-math-game-state', JSON.stringify(state));
   }, [gameState, level, score, questionsSolved, totalTimeTaken, averageSpeed, equation, timeLeft]);
 

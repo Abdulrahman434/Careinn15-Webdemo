@@ -66,6 +66,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
       timestamp: Date.now()
     };
     localStorage.setItem('tictactoe-game-state', JSON.stringify(state));
+    console.log('=== SAVE ===', state);
     console.log('=== SAVE GAME STATE ===', 'tictactoe-game-state', JSON.stringify(state));
   }, [squares, xIsNext, scores, gameMode]);
 
@@ -88,12 +89,10 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
 
   useEffect(() => {
     const saved = localStorage.getItem('tictactoe-game-state');
-    console.log('=== LOAD GAME STATE ===', 'tictactoe-game-state', saved);
+    console.log('=== LOAD ===', saved);
     if (saved) {
       setHasSavedGame(true);
       setShowStartScreen(true);
-    } else {
-      setShowStartScreen(false);
     }
   }, []);
 

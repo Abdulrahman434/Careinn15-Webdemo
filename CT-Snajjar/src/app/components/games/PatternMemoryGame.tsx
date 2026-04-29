@@ -44,6 +44,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
       timestamp: Date.now()
     };
     localStorage.setItem('pattern-memory-game-state', JSON.stringify(state));
+    console.log('=== SAVE ===', state);
     console.log('=== SAVE GAME STATE ===', 'pattern-memory-game-state', JSON.stringify(state));
   }, [pattern, playerPattern, level, canWatchAgain, gameState]);
 

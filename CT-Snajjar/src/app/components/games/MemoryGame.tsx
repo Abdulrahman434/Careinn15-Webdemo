@@ -73,6 +73,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
       timestamp: Date.now()
     };
     localStorage.setItem('memory-game-state', JSON.stringify(state));
+    console.log('=== SAVE ===', state);
     console.log('=== SAVE GAME STATE ===', 'memory-game-state', JSON.stringify(state));
   }, [difficulty, currentTheme, cards, moves, matches, timer, isActive, isComplete]);
 
@@ -142,15 +143,11 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
 
   useEffect(() => {
     const saved = localStorage.getItem('memory-game-state');
-    console.log('=== LOAD GAME STATE ===', 'memory-game-state', saved);
+    console.log('=== LOAD ===', saved);
     if (saved) {
       setHasSavedGame(true);
       setShowStartScreen(true);
-    } else {
-      setShowStartScreen(false);
-      initializeGame();
     }
-    setIsBootstrapped(true);
   }, [initializeGame]); // Only on mount
 
   useEffect(() => {

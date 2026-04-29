@@ -57,6 +57,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
       timestamp: Date.now()
     };
     localStorage.setItem('emoji-match-game-state', JSON.stringify(state));
+    console.log('=== SAVE ===', state);
     console.log('=== SAVE GAME STATE ===', 'emoji-match-game-state', JSON.stringify(state));
   }, [category, leftEmojis, rightEmojis, score, streak, matches, timeLeft, isPlaying, isGameComplete]);
 

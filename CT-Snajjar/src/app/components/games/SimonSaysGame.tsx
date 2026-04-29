@@ -54,6 +54,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
       timestamp: Date.now()
     };
     localStorage.setItem('simon-game-state', JSON.stringify(state));
+    console.log('=== SAVE ===', state);
     console.log('=== SAVE GAME STATE ===', 'simon-game-state', JSON.stringify(state));
   }, [sequence, score, speed, mode, isComplete]);
 

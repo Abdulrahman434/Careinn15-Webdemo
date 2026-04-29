@@ -46,6 +46,7 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
       timestamp: Date.now()
     };
     localStorage.setItem('wordchain-game-state', JSON.stringify(state));
+    console.log('=== SAVE ===', state);
     console.log('=== SAVE GAME STATE ===', 'wordchain-game-state', JSON.stringify(state));
   };
 
