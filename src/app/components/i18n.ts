@@ -502,6 +502,7 @@ const translations: Record<string, TranslationEntry> = {
   "about.dallahDna": { en: "Dallah DNA", ar: "دله DNA", ur: "دلہ ڈی این اے" },
   "about.caremedInBrief": { en: "CareMed InBrief", ar: "نبذة عن رعاية الطبية", ur: "کیئر میڈ مختصر طور پر" },
   "about.numbers": { en: "{0} In Numbers", ar: "{0} في أرقام", ur: "{0} اعداد و شمار میں" },
+  "about.imcHistory": { en: "IMC History", ar: "تاريخ المركز الطبي الدولي", ur: "آئی ایم سی کی تاریخ" },
   "about.services": { en: "Services", ar: "الخدمات", ur: "خدمات" },
   "about.accreditations": { en: "Accreditations", ar: "الاعتمادات", ur: "اعتمادات" },
   "about.awards": { en: "Awards", ar: "الجوائز", ur: "ایوارڈز" },

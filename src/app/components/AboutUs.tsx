@@ -21,6 +21,7 @@ import dsfhAchievementBanner from "../../assets/dsfh_jeddah_achievement_banner.p
 import imcVideo from "../../assets/IMC.mp4";
 import imcDna from "../../assets/about-imc.png";
 import imcAccreds from "../../assets/accredsimc.jpeg";
+import imcHistory from "../../assets/imchistory.png";
 
 interface AboutSection {
   id: string;
@@ -99,9 +100,9 @@ const getSections = (themeId: string, isRTL: boolean): AboutSection[] => [
   },
   {
     id: "numbers",
-    title: themeId === "caremed" ? "CareMed In Numbers" : themeId === "dallah" ? "Accreditations" : "Fakeeh In Numbers",
-    titleKey: themeId === "dallah" ? "about.accreditations" : "about.numbers",
-    image: themeId === "dallah" ? (isRTL ? dallahAccredsAr : dallahAccredsEn) : themeId === "caremed" ? (isRTL ? numbersAr : numbersEn) : numbersImg,
+    title: themeId === "imc" ? "IMC History" : themeId === "caremed" ? "CareMed In Numbers" : themeId === "dallah" ? "Accreditations" : "Fakeeh In Numbers",
+    titleKey: themeId === "imc" ? "about.imcHistory" : themeId === "dallah" ? "about.accreditations" : "about.numbers",
+    image: themeId === "imc" ? imcHistory : themeId === "dallah" ? (isRTL ? dallahAccredsAr : dallahAccredsEn) : themeId === "caremed" ? (isRTL ? numbersAr : numbersEn) : numbersImg,
     content: themeId === "dallah" ? undefined : undefined,
   },
   {
@@ -183,7 +184,7 @@ Smart Hospital Features
 
 export function AboutUs({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
-  const { t, isRTL } = useLocale();
+  const { t, isRTL, locale } = useLocale();
   const sections = getSections(theme.id, isRTL);
   const [activeSection, setActiveSection] = useState(sections[0].id);
   const [videoPlaying, setVideoPlaying] = useState(false);
