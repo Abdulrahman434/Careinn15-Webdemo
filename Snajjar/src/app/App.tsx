@@ -450,7 +450,7 @@ function BedsideScreen() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [openCategory, showSurvey, showAboutUs, showSettings,
     showNotifications, showTour, showTasbih, showConfigurator,
-    showCareMe, showCall, showFoodOrder, activeBroadcast,
+    showCareMeExpanded, showCall, showFoodOrder, activeBroadcast,
     activeGame, activeTool]);
 
   return (
