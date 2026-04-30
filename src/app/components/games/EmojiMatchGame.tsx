@@ -61,9 +61,10 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
     console.log('=== SAVE GAME STATE ===', 'emoji-match-game-state', JSON.stringify(state));
   }, [category, leftEmojis, rightEmojis, score, streak, matches, timeLeft, isPlaying, isGameComplete]);
 
-  const startGame = useCallback(() => {
+  const startGame = useCallback((newCat?: Category) => {
+    const targetCategory = newCat || category;
     // Select random emojis from category
-    const selectedEmojis = CATEGORIES[category].sort(() => Math.random() - 0.5).slice(0, 6);
+    const selectedEmojis = CATEGORIES[targetCategory].sort(() => Math.random() - 0.5).slice(0, 6);
 
     // Create left column (shuffled)
     const left = selectedEmojis.map((emoji, index) => ({
@@ -87,8 +88,11 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
     setStreak(0);
     setMatches(0);
     setTimeLeft(60);
+    setCategory(targetCategory);
     setIsPlaying(true);
     setShowCelebration(false);
+    setShowResumeModal(false);
+    setHasSavedGame(false);
     clearGameState();
   }, [category, clearGameState]);
 
@@ -139,15 +143,24 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
     setIsBootstrapped(true);
   }, []);
 
+  // Initial mount: Check for saved game or auto-start
   useEffect(() => {
-    saveGameState();
-  }, [saveGameState]);
-
-  useEffect(() => {
-    if (isBootstrapped && !isPlaying && !showResumeModal && !hasSavedGame) {
+    const saved = localStorage.getItem('emoji-match-game-state');
+    if (saved) {
+      setHasSavedGame(true);
+      setShowResumeModal(true);
+    } else {
       startGame();
     }
-  }, [category, startGame, isPlaying, showResumeModal, hasSavedGame, isBootstrapped]);
+    setIsBootstrapped(true);
+  }, []);
+
+  // Save game state whenever relevant values change
+  useEffect(() => {
+    if (isPlaying && !isGameComplete && isBootstrapped) {
+      saveGameState();
+    }
+  }, [isPlaying, isGameComplete, leftEmojis, rightEmojis, score, streak, matches, timeLeft, saveGameState, isBootstrapped]);
 
 
   useEffect(() => {
@@ -310,7 +323,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
         <div className="flex items-center gap-4">
           <select
             value={category}
-            onChange={(e) => setCategory(e.target.value as Category)}
+            onChange={(e) => startGame(e.target.value as Category)}
             style={{
               fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.medium,
               padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder,
@@ -443,7 +456,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
               Click on matching emojis from the left and right columns to connect them. Match all pairs before time runs out!
             </p>
             <button
-              onClick={startGame}
+              onClick={() => startGame()}
               className="px-12 py-5 cursor-pointer active:scale-95 transition-transform"
               style={{
                 backgroundColor: theme.primary,
@@ -494,7 +507,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
               Time remaining: {timeLeft} seconds
             </p>
             <button
-              onClick={startGame}
+              onClick={() => startGame()}
               className="px-12 py-5 cursor-pointer active:scale-95 transition-transform"
               style={{
                 backgroundColor: theme.primary,
@@ -553,7 +566,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
               You matched {matches} out of {leftEmojis.length} pairs
             </p>
             <button
-              onClick={startGame}
+              onClick={() => startGame()}
               className="px-12 py-5 cursor-pointer active:scale-95 transition-transform"
               style={{
                 backgroundColor: theme.primary,

@@ -65,9 +65,11 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
     console.log('=== SAVE GAME STATE ===', 'word-search-game-state', JSON.stringify(state));
   }, [difficulty, grid, foundWords, currentCategory, foundCellsMap, targetWords, timer, isActive, isComplete]);
 
-  const initializeGame = useCallback(() => {
-    const config = DIFFICULTY_CONFIG[difficulty];
-    const allWords = WORD_CATEGORIES[currentCategory];
+  const initializeGame = useCallback((newDiff?: Difficulty, newCat?: keyof typeof WORD_CATEGORIES) => {
+    const targetDiff = newDiff || difficulty;
+    const targetCat = newCat || currentCategory;
+    const config = DIFFICULTY_CONFIG[targetDiff];
+    const allWords = WORD_CATEGORIES[targetCat];
     const words = [...allWords].sort(() => Math.random() - 0.5).slice(0, config.count);
     const newGrid = Array(config.size).fill(null).map(() => Array(config.size).fill(""));
     
@@ -122,6 +124,10 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
     setTimer(0);
     setIsActive(false);
     setHintCells(null);
+    setDifficulty(targetDiff);
+    setCurrentCategory(targetCat);
+    setShowResumeModal(false);
+    setHasSavedGame(false);
     clearGameState();
   }, [currentCategory, difficulty, clearGameState]);
 
@@ -159,29 +165,24 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
   }, [clearGameState, handleNewGame]);
 
 
+  // Initial mount: Check for saved game or auto-start
   useEffect(() => {
     const saved = localStorage.getItem('word-search-game-state');
-    console.log('=== LOAD GAME STATE ===', 'word-search-game-state', saved);
     if (saved) {
       setHasSavedGame(true);
       setShowResumeModal(true);
     } else {
-      setShowResumeModal(false);
       initializeGame();
     }
     setIsBootstrapped(true);
-  }, [initializeGame]); // Only on mount
+  }, []);
 
+  // Save game state whenever relevant values change
   useEffect(() => {
-    saveGameState();
-  }, [saveGameState]);
-
-  // Initialize on settings change only if not active and not showing resume modal
-  useEffect(() => {
-    if (isBootstrapped && !isActive && !showResumeModal && !hasSavedGame && !isComplete) {
-      initializeGame();
+    if (isActive && !isComplete && isBootstrapped) {
+      saveGameState();
     }
-  }, [currentCategory, difficulty, initializeGame, showResumeModal, hasSavedGame, isActive, isComplete, isBootstrapped]);
+  }, [isActive, isComplete, grid, foundWords, timer, saveGameState, isBootstrapped]);
 
   useEffect(() => {
     let interval: any = null;
@@ -264,7 +265,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
         <div className="flex items-center gap-4">
           <select 
             value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value as Difficulty)}
+            onChange={(e) => initializeGame(e.target.value as Difficulty, currentCategory)}
             style={{ padding: "8px 12px", borderRadius: theme.radiusMd, border: theme.cardBorder, outline: "none", fontFamily: fontFamily }}
           >
             <option value="easy">Easy (8x8)</option>
@@ -273,7 +274,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
           </select>
           <select 
             value={currentCategory} 
-            onChange={(e) => setCurrentCategory(e.target.value as any)}
+            onChange={(e) => initializeGame(difficulty, e.target.value as any)}
             style={{ padding: "8px 12px", borderRadius: theme.radiusMd, border: theme.cardBorder, outline: "none", fontFamily: fontFamily }}
           >
             {Object.keys(WORD_CATEGORIES).map(cat => <option key={cat} value={cat}>{cat}</option>)}
@@ -359,7 +360,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
             <h2 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>Congratulations! 🎉</h2>
             <p style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.medium, color: theme.textMuted }}>You found all the words!</p>
             <div className="flex gap-4 mt-4">
-              <button onClick={handleNewGame} className="px-8 py-4 cursor-pointer active:scale-95 transition-transform" style={{ backgroundColor: theme.primary, borderRadius: theme.radiusMd, border: "none", outline: "none", fontFamily: fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.semibold, color: theme.textInverse }}>Play Again</button>
+              <button onClick={() => initializeGame()} className="px-8 py-4 cursor-pointer active:scale-95 transition-transform" style={{ backgroundColor: theme.primary, borderRadius: theme.radiusMd, border: "none", outline: "none", fontFamily: fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.semibold, color: theme.textInverse }}>Play Again</button>
               <button 
                 onClick={onClose} 
                 className="px-8 py-4 cursor-pointer active:scale-95 transition-transform" 

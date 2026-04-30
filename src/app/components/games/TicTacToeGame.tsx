@@ -89,11 +89,13 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
 
   useEffect(() => {
     const saved = localStorage.getItem('tictactoe-game-state');
-    console.log('=== LOAD ===', saved);
     if (saved) {
-      setHasSavedGame(true);
-      setShowStartScreen(true);
+      const state = JSON.parse(saved);
+      // Keep scores but start a fresh grid
+      setScores(state.scores);
+      setGameMode(state.gameMode);
     }
+    setShowStartScreen(false);
   }, []);
 
   useEffect(() => {
@@ -220,21 +222,6 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
           </h1>
         </div>
         <div className="flex items-center gap-4">
-          <select 
-            value={gameMode}
-            onChange={(e) => {
-              setGameMode(e.target.value as GameMode);
-              resetScores();
-            }}
-            style={{
-              fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.medium,
-              padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder,
-              backgroundColor: theme.surfaceElevated, color: theme.textHeading, outline: 'none'
-            }}
-          >
-            <option value="friend">Play with Friend</option>
-            <option value="computer">Play with Computer</option>
-          </select>
           <button
             onClick={resetGame}
             className="flex items-center gap-2 px-6 py-3 cursor-pointer active:scale-95 transition-transform"
@@ -342,6 +329,32 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
                 {square === "O" && <Circle size={80} color={theme.accent} strokeWidth={3} />}
               </button>
             ))}
+          </div>
+
+          {/* Game Mode Selection - Under the board */}
+          <div className="flex gap-4 p-1 bg-gray-100 rounded-2xl" style={{ backgroundColor: theme.surfaceElevated, border: theme.cardBorder }}>
+            <button
+              onClick={() => { setGameMode("friend"); resetScores(); }}
+              className="px-6 py-3 rounded-xl font-bold transition-all"
+              style={{
+                backgroundColor: gameMode === "friend" ? theme.primary : "transparent",
+                color: gameMode === "friend" ? theme.textInverse : theme.textMuted,
+                fontSize: TYPE_SCALE.sm
+              }}
+            >
+              Play with Friend
+            </button>
+            <button
+              onClick={() => { setGameMode("computer"); resetScores(); }}
+              className="px-6 py-3 rounded-xl font-bold transition-all"
+              style={{
+                backgroundColor: gameMode === "computer" ? theme.primary : "transparent",
+                color: gameMode === "computer" ? theme.textInverse : theme.textMuted,
+                fontSize: TYPE_SCALE.sm
+              }}
+            >
+              Play with Computer
+            </button>
           </div>
         </div>
 

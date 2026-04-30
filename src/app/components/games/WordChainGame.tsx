@@ -5,9 +5,15 @@ import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from '../ThemeContext';
 type Category = 'animals' | 'countries' | 'foods';
 
 const DICTIONARIES: Record<Category, string[]> = {
-  animals: ['cat', 'tiger', 'elephant', 'turtle', 'eagle', 'emu', 'unicorn', 'narwhal', 'lion', 'newt', 'toad', 'dog', 'gorilla', 'alligator', 'rat', 'tarantula', 'ant', 'tapir', 'rabbit', 'trout', 'turkey', 'yak', 'kangaroo', 'ostrich', 'hippopotamus', 'snake', 'echidna', 'alpaca', 'armadillo', 'owl', 'leopard', 'deer', 'rhinoceros', 'seal', 'lemur', 'raccoon', 'numbat', 'termite', 'eel', 'lizard', 'dolphin', 'nematode', 'earwig', 'goat', 'donkey', 'iguana', 'aardvark', 'koala'],
-  countries: ['canada', 'australia', 'argentina', 'algeria', 'angola', 'afghanistan', 'albania', 'andorra', 'armenia', 'austria', 'azerbaijan', 'bahamas', 'bahrain', 'bangladesh', 'barbados', 'belarus', 'belgium', 'belize', 'benin', 'bhutan', 'bolivia', 'bosnia', 'botswana', 'brazil', 'brunei', 'bulgaria', 'burundi', 'cambodia', 'cameroon', 'chad', 'chile', 'china', 'colombia', 'comoros', 'congo', 'croatia', 'cuba', 'cyprus', 'czechia', 'denmark', 'djibouti', 'dominica', 'ecuador', 'egypt', 'eritrea', 'estonia', 'eswatini', 'ethiopia', 'fiji', 'finland', 'france', 'gabon', 'gambia', 'georgia', 'germany', 'ghana', 'greece', 'grenada', 'guatemala', 'guinea', 'guyana', 'haiti', 'honduras', 'hungary', 'iceland', 'india', 'indonesia', 'iran', 'iraq', 'ireland', 'israel', 'italy', 'jamaica', 'japan', 'jordan', 'kazakhstan', 'kenya', 'kiribati', 'kosovo', 'kuwait', 'kyrgyzstan', 'laos', 'latvia', 'lebanon', 'lesotho', 'liberia', 'libya', 'liechtenstein', 'lithuania', 'luxembourg', 'madagascar', 'malawi', 'malaysia', 'maldives', 'mali', 'malta', 'mauritania', 'mauritius', 'mexico', 'micronesia', 'moldova', 'monaco', 'mongolia', 'montenegro', 'morocco', 'mozambique', 'myanmar', 'namibia', 'nauru', 'nepal', 'netherlands', 'nicaragua', 'niger', 'nigeria', 'norway', 'oman', 'pakistan', 'palau', 'palestine', 'panama', 'paraguay', 'peru', 'philippines', 'poland', 'portugal', 'qatar', 'romania', 'russia', 'rwanda', 'samoa', 'san marino', 'saudi arabia', 'senegal', 'serbia', 'seychelles', 'singapore', 'slovakia', 'slovenia', 'somalia', 'south africa', 'spain', 'sri lanka', 'sudan', 'suriname', 'sweden', 'switzerland', 'syria', 'taiwan', 'tajikistan', 'tanzania', 'thailand', 'togo', 'tonga', 'trinidad', 'tunisia', 'turkey', 'turkmenistan', 'tuvalu', 'uganda', 'ukraine', 'united arab emirates', 'united kingdom', 'united states', 'uruguay', 'uzbekistan', 'vanuatu', 'vatican', 'venezuela', 'vietnam', 'yemen', 'zambia', 'zimbabwe'],
-  foods: ['apple', 'egg', 'grape', 'eggplant', 'tomato', 'orange', 'eclair', 'radish', 'hamburger', 'rice', 'enchilada', 'apricot', 'taco', 'onion', 'nectarine', 'endive', 'edamame', 'empanada', 'artichoke', 'einkorn', 'noodle', 'elderberry', 'yam', 'melon', 'nut', 'turnip', 'pasta', 'almond', 'date', 'elderflower', 'ravioli', 'ice cream', 'macaroni', 'igloo', 'olive', 'eel', 'lemon', 'nachos', 'soup', 'pear', 'raspberry', 'yogurt', 'tangerine', 'garlic', 'carrot', 'toast', 'tea', 'asparagus', 'strawberry', 'salmon', 'nougat', 'truffle', 'eclairs', 'sushi', 'iguana', 'anise']
+  animals: [
+    'cat', 'dog', 'tiger', 'lion', 'elephant', 'giraffe', 'zebra', 'panda', 'kangaroo', 'koala', 'hippo', 'rhino', 'monkey', 'gorilla', 'chimpanzee', 'baboon', 'lemur', 'sloth', 'bear', 'wolf', 'fox', 'coyote', 'hyena', 'leopard', 'cheetah', 'jaguar', 'panther', 'deer', 'moose', 'elk', 'reindeer', 'camel', 'llama', 'alpaca', 'horse', 'donkey', 'mule', 'zebra', 'pig', 'cow', 'sheep', 'goat', 'chicken', 'duck', 'goose', 'turkey', 'peacock', 'eagle', 'hawk', 'falcon', 'owl', 'parrot', 'penguin', 'ostrich', 'emu', 'flamingo', 'swan', 'stork', 'pelican', 'seagull', 'whale', 'dolphin', 'shark', 'octopus', 'squid', 'crab', 'lobster', 'shrimp', 'turtle', 'tortoise', 'snake', 'lizard', 'crocodile', 'alligator', 'frog', 'toad', 'salamander', 'newt', 'bee', 'wasp', 'ant', 'butterfly', 'moth', 'spider', 'scorpion', 'beetle', 'ladybug', 'mosquito', 'fly', 'dragonfly', 'bat', 'rabbit', 'hare', 'squirrel', 'chipmunk', 'beaver', 'otter', 'seal', 'walrus', 'penguin', 'polar bear', 'panda', 'koala', 'sloth', 'armadillo', 'hedgehog', 'mole', 'rat', 'mouse', 'hamster', 'guinea pig', 'gerbil'
+  ],
+  countries: [
+    'afghanistan', 'albania', 'algeria', 'andorra', 'angola', 'antigua', 'argentina', 'armenia', 'australia', 'austria', 'azerbaijan', 'bahamas', 'bahrain', 'bangladesh', 'barbados', 'belarus', 'belgium', 'belize', 'benin', 'bhutan', 'bolivia', 'bosnia', 'botswana', 'brazil', 'brunei', 'bulgaria', 'burkina faso', 'burundi', 'cambodia', 'cameroon', 'canada', 'cape verde', 'central african republic', 'chad', 'chile', 'china', 'colombia', 'comoros', 'congo', 'costa rica', 'croatia', 'cuba', 'cyprus', 'czech republic', 'denmark', 'djibouti', 'dominica', 'dominican republic', 'ecuador', 'egypt', 'el salvador', 'equatorial guinea', 'eritrea', 'estonia', 'eswatini', 'ethiopia', 'fiji', 'finland', 'france', 'gabon', 'gambia', 'georgia', 'germany', 'ghana', 'greece', 'grenada', 'guatemala', 'guinea', 'guyana', 'haiti', 'honduras', 'hungary', 'iceland', 'india', 'indonesia', 'iran', 'iraq', 'ireland', 'israel', 'italy', 'jamaica', 'japan', 'jordan', 'kazakhstan', 'kenya', 'kiribati', 'north korea', 'south korea', 'kuwait', 'kyrgyzstan', 'laos', 'latvia', 'lebanon', 'lesotho', 'liberia', 'libya', 'liechtenstein', 'lithuania', 'luxembourg', 'madagascar', 'malawi', 'malaysia', 'maldives', 'mali', 'malta', 'marshall islands', 'mauritania', 'mauritius', 'mexico', 'micronesia', 'moldova', 'monaco', 'mongolia', 'montenegro', 'morocco', 'mozambique', 'myanmar', 'namibia', 'nauru', 'nepal', 'netherlands', 'new zealand', 'nicaragua', 'niger', 'nigeria', 'north macedonia', 'norway', 'oman', 'pakistan', 'palau', 'palestine', 'panama', 'papua new guinea', 'paraguay', 'peru', 'philippines', 'poland', 'portugal', 'qatar', 'romania', 'russia', 'rwanda', 'saint kitts', 'saint lucia', 'saint vincent', 'samoa', 'san marino', 'sao tome', 'saudi arabia', 'senegal', 'serbia', 'seychelles', 'sierra leone', 'singapore', 'slovakia', 'slovenia', 'solomon islands', 'somalia', 'south africa', 'south sudan', 'spain', 'sri lanka', 'sudan', 'suriname', 'sweden', 'switzerland', 'syria', 'taiwan', 'tajikistan', 'tanzania', 'thailand', 'timor-leste', 'togo', 'tonga', 'trinidad and tobago', 'tunisia', 'turkey', 'turkmenistan', 'tuvalu', 'uganda', 'ukraine', 'united arab emirates', 'united kingdom', 'united states', 'usa', 'america', 'uruguay', 'uzbekistan', 'vanuatu', 'vatican city', 'venezuela', 'vietnam', 'yemen', 'zambia', 'zimbabwe'
+  ],
+  foods: [
+    'apple', 'banana', 'orange', 'strawberry', 'grape', 'watermelon', 'pineapple', 'mango', 'peach', 'pear', 'plum', 'cherry', 'blueberry', 'raspberry', 'blackberry', 'kiwi', 'lemon', 'lime', 'coconut', 'avocado', 'tomato', 'potato', 'onion', 'garlic', 'carrot', 'broccoli', 'cauliflower', 'spinach', 'lettuce', 'cucumber', 'pepper', 'corn', 'pea', 'bean', 'lentil', 'rice', 'bread', 'pasta', 'noodle', 'pizza', 'burger', 'sandwich', 'taco', 'sushi', 'steak', 'chicken', 'fish', 'shrimp', 'egg', 'milk', 'cheese', 'butter', 'yogurt', 'ice cream', 'cake', 'cookie', 'pie', 'candy', 'chocolate', 'honey', 'sugar', 'salt', 'pepper', 'olive', 'oil', 'vinegar', 'soup', 'salad', 'toast', 'cereal', 'pancake', 'waffle', 'coffee', 'tea', 'juice', 'soda', 'water', 'wine', 'beer', 'nut', 'almond', 'walnut', 'peanut', 'cashew', 'pistachio', 'ham', 'bacon', 'sausage', 'salami'
+  ]
 };
 
 export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
@@ -18,8 +24,12 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
   const [currentPlayer, setCurrentPlayer] = useState<1 | 2>(1);
   const [timeLeft, setTimeLeft] = useState(10);
   const [inputValue, setInputValue] = useState('');
-  const [winner, setWinner] = useState<1 | 2 | null>(null);
+  const [winner, setWinner] = useState<1 | 2 | 'draw' | null>(null);
   const [highScore, setHighScore] = useState(0);
+  const [scores, setScores] = useState({ 1: 0, 2: 0 });
+  const [turnsPlayed, setTurnsPlayed] = useState(0);
+  const [errorFeedback, setErrorFeedback] = useState<string | null>(null);
+  const [lastAction, setLastAction] = useState<string | null>(null);
 
   const timerRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -79,80 +89,118 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
     if (gameState === 'playing') {
       saveGameState();
     }
-  }, [gameState, category, chain, currentPlayer, timeLeft]);
+  }, [gameState, category, chain, currentPlayer, timeLeft, scores, turnsPlayed]);
 
   const startGame = (selectedCategory: Category) => {
     setCategory(selectedCategory);
-    
+
     // Pick a random starting word from the dictionary
     const dict = DICTIONARIES[selectedCategory];
     const startWord = dict[Math.floor(Math.random() * dict.length)];
-    
+
     setChain([startWord]);
     setCurrentPlayer(1);
+    setScores({ 1: 0, 2: 0 });
+    setTurnsPlayed(0);
     setTimeLeft(10);
     setInputValue('');
     setWinner(null);
+    setLastAction(null);
+    setErrorFeedback(null);
     setGameState('playing');
     clearGameState();
   };
 
-  const endGame = (losingPlayer: 1 | 2) => {
-    setWinner(losingPlayer === 1 ? 2 : 1);
+  const finishGame = (finalScores: { 1: number; 2: number }) => {
+    if (finalScores[1] > finalScores[2]) setWinner(1);
+    else if (finalScores[2] > finalScores[1]) setWinner(2);
+    else setWinner('draw');
+
     setGameState('gameover');
-    if (chain.length > highScore) {
-      setHighScore(chain.length);
-      localStorage.setItem('wordchain-highscore', chain.length.toString());
-    console.log('=== SAVE GAME STATE ===', 'wordchain-highscore', chain.length.toString());
+    const totalPoints = finalScores[1] + finalScores[2];
+    if (totalPoints > highScore) {
+      setHighScore(totalPoints);
+      localStorage.setItem('wordchain-highscore', totalPoints.toString());
     }
     clearGameState();
   };
 
   useEffect(() => {
-    if (gameState === 'playing') {
-      // Player's turn timer
-      timerRef.current = window.setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current!);
-            endGame(currentPlayer);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timerRef.current!);
+    if (gameState === 'playing' && timeLeft === 0 && !winner) {
+      handleTimeout();
     }
-  }, [gameState, currentPlayer, chain, category]);
+  }, [timeLeft, gameState, winner]);
+
+  useEffect(() => {
+    if (gameState === 'playing' && timeLeft > 0 && !winner) {
+      const timer = setInterval(() => {
+        setTimeLeft(prev => prev - 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [gameState, currentPlayer, turnsPlayed, winner]);
+
+  const handleTimeout = () => {
+    setLastAction(`Player ${currentPlayer} timed out!`);
+    nextTurn(false);
+  };
+
+  const nextTurn = (success: boolean) => {
+    const newTurns = turnsPlayed + 1;
+    const newScores = { ...scores };
+    if (success) newScores[currentPlayer]++;
+
+    setScores(newScores);
+    setTurnsPlayed(newTurns);
+
+    if (newTurns >= 10) {
+      finishGame(newScores);
+    } else {
+      setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
+      setTimeLeft(10);
+      setInputValue('');
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     const word = inputValue.trim().toLowerCase();
-    
-    // Check basic length and format
-    if (word.length < 2 || !/^[a-z\s]+$/.test(word)) {
-      endGame(currentPlayer);
-      return;
-    }
+    if (!word) return;
 
     const lastWord = chain[chain.length - 1];
-    const lastLetter = lastWord[lastWord.length - 1].toLowerCase();
+    const lastLetter = lastWord.charAt(lastWord.length - 1).toLowerCase();
+    const firstLetter = word.charAt(0).toLowerCase();
 
-    // Word must start with the correct letter and must not have been used
-    if (!word.startsWith(lastLetter) || chain.some(c => c.toLowerCase() === word)) {
-      endGame(currentPlayer);
+    setErrorFeedback(null);
+    let error = null;
+
+    if (word.length < 2) {
+      error = 'Word too short!';
+    } else if (!/^[a-z\s\-]+$/.test(word)) {
+      error = 'Only letters allowed!';
+    } else if (firstLetter !== lastLetter) {
+      error = `Must start with "${lastLetter.toUpperCase()}"!`;
+    } else if (chain.some(c => c.toLowerCase() === word)) {
+      error = 'Already used!';
+    } else {
+      const dictionary = category ? DICTIONARIES[category] : [];
+      if (!dictionary.some(d => d.toLowerCase() === word)) {
+        error = `Not in ${category} list!`;
+      }
+    }
+
+    if (error) {
+      setErrorFeedback(error);
+      setLastAction(`Player ${currentPlayer} missed: ${error}`);
+      nextTurn(false);
       return;
     }
 
-    // Valid word!
+    // Success!
+    setLastAction(`Player ${currentPlayer} got it!`);
     setChain(prev => [...prev, word]);
-    setInputValue('');
-    setCurrentPlayer(prev => prev === 1 ? 2 : 1);
-    setTimeLeft(10);
-    
-    // Auto focus input again
-    setTimeout(() => inputRef.current?.focus(), 100);
+    nextTurn(true);
   };
 
   return (
@@ -164,9 +212,9 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
           </button>
           <h1 style={{ fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>Word Chain</h1>
         </div>
-        
+
         <div className="flex items-center gap-4">
-          <div className="px-4 py-2 bg-green-50 text-green-700 font-bold rounded-full flex items-center gap-2">
+          <div className="px-4 py-2 font-bold rounded-full flex items-center gap-2" style={{ backgroundColor: theme.primarySubtle, color: theme.primary }}>
             <Trophy size={20} />
             Best Chain: {highScore}
           </div>
@@ -183,10 +231,11 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
         {gameState === 'menu' && (
           <div className="w-full max-w-2xl flex flex-col items-center gap-8 bg-white p-10 rounded-3xl shadow-xl">
             <div className="text-center">
-              <h2 className="text-4xl font-black mb-2 text-green-800">Word Chain</h2>
+              <h2 className="text-4xl font-black mb-2" style={{ color: theme.primary }}>Word Chain</h2>
               <p className="text-lg text-gray-600">Connect words by their first and last letters!</p>
+              <div className="mt-2 px-4 py-1 rounded-full text-sm font-bold inline-block" style={{ backgroundColor: theme.primarySubtle, color: theme.primary }}>2 Players Local</div>
             </div>
-            
+
             <div className="w-full animate-in fade-in slide-in-from-bottom-4">
               <h3 className="text-xl font-bold mb-4 text-gray-800 text-center">Select Category & Start</h3>
               <div className="grid grid-cols-3 gap-4">
@@ -194,7 +243,8 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
                   <button
                     key={cat}
                     onClick={() => startGame(cat)}
-                    className="p-4 rounded-xl font-bold capitalize text-white bg-green-600 hover:bg-green-700 active:scale-95 transition-all shadow-md"
+                    className="p-4 rounded-xl font-bold capitalize text-white active:scale-95 transition-all shadow-md"
+                    style={{ backgroundColor: theme.primary }}
                   >
                     {cat}
                   </button>
@@ -207,33 +257,60 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
         {gameState === 'playing' && (
           <div className="w-full max-w-4xl flex flex-col h-full gap-6 relative">
             <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm">
-              <div className={`flex items-center gap-3 ${currentPlayer === 1 ? 'text-green-600' : 'text-gray-400'}`}>
-                <User size={32} />
-                <span className="text-xl font-bold">Player 1</span>
-              </div>
-              
-              <div className="flex flex-col items-center justify-center">
-                <div className={`text-5xl font-black ${timeLeft <= 3 ? 'text-red-500 animate-pulse' : 'text-green-500'}`}>
-                  {timeLeft}s
-                </div>
-                <div className="text-sm font-bold text-gray-400 mt-1 uppercase tracking-wider">
-                  Chain: {chain.length}
+              <div className={`flex items-center gap-3 transition-all ${currentPlayer === 1 ? 'scale-110' : 'text-gray-400'}`} style={{ color: currentPlayer === 1 ? theme.primary : undefined }}>
+                <div className="flex flex-col items-center">
+                  <User size={32} />
+                  <span className="text-xs font-bold">Player 1</span>
+                  <span className="text-xl font-black">{scores[1]} pts</span>
+                  {currentPlayer === 1 && (
+                    <span className="text-sm font-black mt-2 uppercase animate-pulse" style={{ fontSize: '18px', color: theme.primary }}>
+                      Player 1's Turn
+                    </span>
+                  )}
                 </div>
               </div>
 
-              <div className={`flex items-center gap-3 ${currentPlayer === 2 ? 'text-green-600' : 'text-gray-400'}`}>
-                <span className="text-xl font-bold">Player 2</span>
-                <User size={32} />
+              <div className="flex flex-col items-center justify-center">
+                <div className={`text-5xl font-black ${timeLeft <= 3 ? 'text-red-500 animate-pulse' : ''}`} style={{ color: timeLeft > 3 ? theme.primary : undefined }}>
+                  {timeLeft}s
+                </div>
+                <div className="text-sm font-bold text-gray-400 mt-1 uppercase tracking-wider">
+                  Turn {turnsPlayed + 1} / 10
+                </div>
+              </div>
+
+              <div className={`flex items-center gap-3 transition-all ${currentPlayer === 2 ? 'scale-110' : 'text-gray-400'}`} style={{ color: currentPlayer === 2 ? theme.primary : undefined }}>
+                <div className="flex flex-col items-center">
+                  <User size={32} />
+                  <span className="text-xs font-bold">Player 2</span>
+                  <span className="text-xl font-black">{scores[2]} pts</span>
+                  {currentPlayer === 2 && (
+                    <span className="text-sm font-black mt-2 uppercase animate-pulse" style={{ fontSize: '18px', color: theme.primary }}>
+                      Player 2's Turn
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
+
+            {lastAction && (
+              <div className="text-center animate-in fade-in slide-in-from-top-2">
+                <span className="px-4 py-1 rounded-full text-sm font-bold" style={{
+                  backgroundColor: lastAction.includes('got it') ? theme.primarySubtle : '#FEE2E2',
+                  color: lastAction.includes('got it') ? theme.primary : '#B91C1C'
+                }}>
+                  {lastAction}
+                </span>
+              </div>
+            )}
 
             <div className="flex-1 overflow-auto flex flex-col justify-end gap-3 pb-4">
               <div className="flex flex-wrap gap-2 content-end">
                 {chain.map((word, i) => (
                   <div key={i} className="flex items-center">
-                    <div className="px-4 py-2 bg-green-100 text-green-800 font-bold rounded-lg text-lg capitalize border border-green-200 shadow-sm">
+                    <div className="px-4 py-2 font-bold rounded-lg text-lg capitalize border shadow-sm" style={{ backgroundColor: theme.primarySubtle, color: theme.textHeading, borderColor: theme.primary }}>
                       {word.slice(0, -1)}
-                      <span className="text-green-500 underline underline-offset-4 decoration-2">{word.slice(-1)}</span>
+                      <span className="underline underline-offset-4 decoration-2" style={{ color: theme.primary }}>{word.slice(-1)}</span>
                     </div>
                     {i < chain.length - 1 && (
                       <div className="mx-2 text-gray-400 font-black">→</div>
@@ -243,45 +320,69 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="bg-white p-4 rounded-2xl shadow-lg border border-gray-100 flex flex-col gap-2">
-              <div className="flex gap-4">
-                <div className="flex-1 relative flex items-center">
-                  <div className="absolute left-6 text-3xl font-black text-green-300 pointer-events-none select-none">
-                    {chain[chain.length - 1][chain[chain.length - 1].length - 1].toUpperCase()}
-                  </div>
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    autoFocus
-                    value={inputValue}
-                    onChange={e => setInputValue(e.target.value)}
-                    placeholder={`Player ${currentPlayer}, type a word...`}
-                    className="w-full h-16 pl-14 pr-4 text-2xl font-bold bg-gray-50 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors uppercase"
-                  />
-                </div>
-                <button type="submit" className="px-8 h-16 bg-green-600 hover:bg-green-700 text-white font-bold text-xl rounded-xl active:scale-95 transition-all shadow-md">
-                  Submit
-                </button>
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center px-4 h-6">
+                {errorFeedback ? (
+                  <span className="text-sm font-bold text-red-500 animate-bounce">
+                    ❌ {errorFeedback}
+                  </span>
+                ) : (
+                  <span className="text-sm font-bold text-gray-400 uppercase tracking-widest opacity-50">
+                    Round in Progress...
+                  </span>
+                )}
+                <span className="text-sm font-bold uppercase tracking-widest" style={{ color: theme.primary }}>
+                  Start with: <span className="text-xl underline">{chain[chain.length - 1][chain[chain.length - 1].length - 1].toUpperCase()}</span>
+                </span>
               </div>
-            </form>
+              <form onSubmit={handleSubmit} className="bg-white p-4 rounded-2xl shadow-lg border border-gray-100 flex flex-col gap-2">
+                <div className="flex gap-4">
+                  <div className="flex-1 relative flex items-center">
+                    <div className="absolute left-6 text-3xl font-black pointer-events-none select-none opacity-20" style={{ color: theme.primary }}>
+                      {chain[chain.length - 1][chain[chain.length - 1].length - 1].toUpperCase()}
+                    </div>
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      autoFocus
+                      value={inputValue}
+                      onChange={e => setInputValue(e.target.value)}
+                      placeholder={`Type word in ${category}...`}
+                      className="w-full h-16 pl-14 pr-4 text-2xl font-bold bg-gray-50 border-2 border-gray-200 rounded-xl focus:outline-none transition-colors uppercase"
+                      style={{ focusBorderColor: theme.primary } as any}
+                    />
+                  </div>
+                  <button type="submit" className="px-8 h-16 text-white font-bold text-xl rounded-xl active:scale-95 transition-all shadow-md" style={{ backgroundColor: theme.primary }}>
+                    Submit
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 
         {gameState === 'gameover' && (
           <div className="w-full max-w-2xl flex flex-col items-center gap-8 bg-white p-10 rounded-3xl shadow-xl animate-in zoom-in-95">
             <Trophy size={80} className="text-yellow-400" />
-            
+
             <div className="text-center">
               <h2 className="text-5xl font-black mb-2 text-gray-800">
-                Player {winner} Wins!
+                {winner === 'draw' ? "It's a Draw! 🤝" : `Player ${winner} Wins! 🏆`}
               </h2>
-              <p className="text-2xl text-gray-600 font-bold">
-                Chain Length: <span className="text-green-600">{chain.length}</span>
-              </p>
+              <div className="flex justify-center gap-8 mt-6">
+                <div className="text-center">
+                  <p className="text-sm font-bold text-gray-400 uppercase">Player 1</p>
+                  <p className="text-3xl font-black" style={{ color: theme.primary }}>{scores[1]}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-bold text-gray-400 uppercase">Player 2</p>
+                  <p className="text-3xl font-black" style={{ color: theme.primary }}>{scores[2]}</p>
+                </div>
+              </div>
             </div>
 
             <div className="flex flex-col w-full gap-4 mt-4">
-              <button onClick={() => setGameState('menu')} className="w-full py-5 bg-green-600 text-white font-bold text-xl rounded-2xl shadow-lg active:scale-95 transition-all hover:bg-green-700">
+              <button onClick={() => setGameState('menu')} className="w-full py-5 text-white font-bold text-xl rounded-2xl shadow-lg active:scale-95 transition-all hover:brightness-110" style={{ backgroundColor: theme.primary }}>
                 Play Again
               </button>
               <button onClick={onBackToGames} className="w-full py-5 bg-gray-100 text-gray-700 font-bold text-xl rounded-2xl active:scale-95 transition-all hover:bg-gray-200">
@@ -313,10 +414,10 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
               width: "90%"
             }}
           >
-            <div className="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center">
-              <RotateCcw size={48} className="text-green-600" />
+            <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ backgroundColor: theme.primarySubtle }}>
+              <RotateCcw size={48} style={{ color: theme.primary }} />
             </div>
-            
+
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
                 Resume Game?
@@ -329,8 +430,8 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
             <div className="flex flex-col gap-4 w-full">
               <button
                 onClick={loadGameState}
-                className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95 bg-green-600 text-white shadow-md"
-                style={{ fontSize: TYPE_SCALE.md }}
+                className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95 text-white shadow-md"
+                style={{ fontSize: TYPE_SCALE.md, backgroundColor: theme.primary }}
               >
                 Continue Playing
               </button>

@@ -54,7 +54,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
   }, []);
 
   const clearGameState = useCallback(() => {
-    localStorage.removeItem('sliding-tiles-state');
+    localStorage.removeItem('sliding-puzzle-save');
   }, []);
 
   const saveGameState = useCallback(() => {
@@ -71,8 +71,11 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
     console.log('=== SAVE GAME STATE ===', 'sliding-puzzle-save', JSON.stringify(state));
   }, [difficulty, tiles, moves, timer, isActive, isComplete]);
 
-  const initializeGame = useCallback(() => {
-    const count = DIFFICULTY_CONFIG[difficulty] * DIFFICULTY_CONFIG[difficulty];
+  const initializeGame = useCallback((newDiff?: Difficulty) => {
+    const targetDiff = newDiff || difficulty;
+    const size = DIFFICULTY_CONFIG[targetDiff];
+    const count = size * size;
+
     // Create tiles array
     const initialTiles: Tile[] = Array.from({ length: count }, (_, i) => ({
       id: i,
@@ -91,7 +94,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
       shuffled.forEach((tile, index) => {
         tile.currentPosition = index;
       });
-    } while (!isSolvable(shuffled, DIFFICULTY_CONFIG[difficulty]) || checkWin(shuffled));
+    } while (!isSolvable(shuffled, size) || checkWin(shuffled));
 
     setTiles(shuffled);
     setMoves(0);
@@ -99,6 +102,10 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
     setTimer(0);
     setIsActive(false);
     setHintTileId(null);
+    setDifficulty(targetDiff);
+    setShowStartScreen(false);
+    setShowResumeModal(false);
+    setHasSavedGame(false);
     clearGameState();
   }, [difficulty, isSolvable, checkWin, clearGameState]);
 
@@ -110,10 +117,15 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
     initializeGame();
   }, [clearGameState, initializeGame]);
 
+  // Initial mount: Check for saved game or auto-start
   useEffect(() => {
     const saved = localStorage.getItem('sliding-puzzle-save');
-    console.log('CHECKING SAVE:', saved);
-    if (saved) { setShowResumeModal(true); return; }
+    if (saved) {
+      setHasSavedGame(true);
+      setShowResumeModal(true);
+    } else {
+      initializeGame();
+    }
     setIsBootstrapped(true);
   }, []);
 
@@ -142,27 +154,12 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
     }
   }, [clearGameState, handleNewGame]);
 
+  // Save game state whenever relevant values change
   useEffect(() => {
-    const saved = localStorage.getItem('sliding-puzzle-save');
-    if (saved) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
-    }
-  }, [initializeGame]); // Only on mount or when initializeGame changes (rare)
-
-  useEffect(() => {
-    if (isActive && !isComplete) {
+    if (isActive && !isComplete && isBootstrapped) {
       saveGameState();
     }
-  }, [isActive, isComplete, tiles, moves, timer, saveGameState]);
-
-
-  // Initialize on difficulty change only if active and not showing start screen
-  useEffect(() => {
-    if (isBootstrapped && !isActive && !showStartScreen && !hasSavedGame && !isComplete) {
-      initializeGame();
-    }
-  }, [difficulty, initializeGame, showStartScreen, hasSavedGame, isActive, isComplete, isBootstrapped]);
+  }, [isActive, isComplete, tiles, moves, timer, saveGameState, isBootstrapped]);
 
   useEffect(() => {
     let interval: any = null;
@@ -213,22 +210,6 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
 
         setTiles(newTiles);
         setMoves(moves + 1);
-        localStorage.setItem('sliding-puzzle-save', JSON.stringify({tiles, moves, difficulty}));
-        console.log('SAVED', {tiles, moves, difficulty});
-        setHintTileId(null);
-
-        // Save immediately on every move
-        const stateToSave = {
-          difficulty,
-          tiles: newTiles,
-          moves: moves + 1,
-          timer,
-          timestamp: Date.now()
-        };
-        console.log('=== SAVE ===', stateToSave);
-        localStorage.setItem('sliding-tiles-state', JSON.stringify(stateToSave));
-        console.log('=== SAVE GAME STATE ===', 'sliding-tiles-state', JSON.stringify(stateToSave));
-
         if (checkWin(newTiles)) {
           setIsComplete(true);
           clearGameState();
@@ -334,7 +315,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
         <div className="flex items-center gap-4">
           <select
             value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value as Difficulty)}
+            onChange={(e) => initializeGame(e.target.value as Difficulty)}
             style={{
               fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.medium,
               padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder,
@@ -638,7 +619,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
             </p>
             <div className="flex gap-4 mt-4">
               <button
-                onClick={initializeGame}
+                onClick={() => initializeGame()}
                 className="px-8 py-4 cursor-pointer active:scale-95 transition-transform"
                 style={{
                   backgroundColor: theme.primary,

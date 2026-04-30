@@ -57,7 +57,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
       newScores[diff] = score;
       setBestScores(newScores);
       localStorage.setItem('memory-best-scores', JSON.stringify(newScores));
-    console.log('=== SAVE GAME STATE ===', 'memory-best-scores', JSON.stringify(newScores));
+      console.log('=== SAVE GAME STATE ===', 'memory-best-scores', JSON.stringify(newScores));
     }
   }, [bestScores]);
 
@@ -77,9 +77,12 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
     console.log('=== SAVE GAME STATE ===', 'memory-game-state', JSON.stringify(state));
   }, [difficulty, currentTheme, cards, moves, matches, timer, isActive, isComplete]);
 
-  const initializeGame = useCallback(() => {
-    const config = DIFFICULTY_CONFIG[difficulty];
-    const themeEmojis = THEMES[currentTheme].slice(0, config.pairs);
+  const initializeGame = useCallback((newDiff?: Difficulty, newTheme?: Theme) => {
+    const targetDiff = newDiff || difficulty;
+    const targetTheme = newTheme || currentTheme;
+    
+    const config = DIFFICULTY_CONFIG[targetDiff];
+    const themeEmojis = THEMES[targetTheme].slice(0, config.pairs);
     const emojis = [...themeEmojis, ...themeEmojis];
     const shuffled = emojis
       .sort(() => Math.random() - 0.5)
@@ -89,6 +92,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
         isFlipped: false,
         isMatched: false,
       }));
+
     setCards(shuffled);
     setFlippedCards([]);
     setMoves(0);
@@ -96,6 +100,10 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
     setIsComplete(false);
     setTimer(0);
     setIsActive(false);
+    setDifficulty(targetDiff);
+    setCurrentTheme(targetTheme);
+    setShowStartScreen(false);
+    setHasSavedGame(false);
     clearGameState();
   }, [difficulty, currentTheme, clearGameState]);
 
@@ -109,7 +117,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
   const loadGameState = useCallback(() => {
     try {
       const saved = localStorage.getItem('memory-game-state');
-    console.log('=== LOAD GAME STATE ===', 'memory-game-state', saved);
+      console.log('=== LOAD GAME STATE ===', 'memory-game-state', saved);
       if (saved) {
         const state = JSON.parse(saved);
         if (state && state.cards) {
@@ -134,36 +142,31 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
   useEffect(() => {
     try {
       const saved = localStorage.getItem('memory-best-scores');
-    console.log('=== LOAD GAME STATE ===', 'memory-best-scores', saved);
+      console.log('=== LOAD GAME STATE ===', 'memory-best-scores', saved);
       if (saved) setBestScores(JSON.parse(saved));
     } catch (e) {
       console.error("Failed to load best scores:", e);
     }
   }, []);
 
+  // Initial mount: Check for saved game or auto-start
   useEffect(() => {
     const saved = localStorage.getItem('memory-game-state');
-    console.log('=== LOAD ===', saved);
     if (saved) {
       setHasSavedGame(true);
       setShowStartScreen(true);
-    }
-  }, [initializeGame]); // Only on mount
-
-  useEffect(() => {
-    if (isActive && !isComplete) {
-      saveGameState();
-    }
-  }, [isActive, isComplete, moves, matches, timer, saveGameState]);
-
-
-
-  // Initialize on settings change only if not active and not showing start screen
-  useEffect(() => {
-    if (isBootstrapped && !isActive && !showStartScreen && !hasSavedGame && !isComplete) {
+    } else {
       initializeGame();
     }
-  }, [difficulty, currentTheme, initializeGame, showStartScreen, hasSavedGame, isActive, isComplete, isBootstrapped]);
+    setIsBootstrapped(true);
+  }, []);
+
+  // Save game state whenever relevant values change
+  useEffect(() => {
+    if (isActive && !isComplete && isBootstrapped) {
+      saveGameState();
+    }
+  }, [isActive, isComplete, moves, matches, timer, saveGameState, isBootstrapped]);
 
   useEffect(() => {
     let interval: any = null;
@@ -272,13 +275,13 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
             Memory Match
           </h1>
         </div>
-        
+
         <div className="flex items-center gap-6">
           {/* Controls */}
           <div className="flex items-center gap-3">
-            <select 
+            <select
               value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value as Difficulty)}
+              onChange={(e) => initializeGame(e.target.value as Difficulty, currentTheme)}
               style={{
                 fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.medium,
                 padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder,
@@ -289,9 +292,9 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
               <option value="medium">Medium (6x6)</option>
               <option value="hard">Hard (8x8)</option>
             </select>
-            <select 
+            <select
               value={currentTheme}
-              onChange={(e) => setCurrentTheme(e.target.value as Theme)}
+              onChange={(e) => initializeGame(difficulty, e.target.value as Theme)}
               style={{
                 fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.medium,
                 padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder,
@@ -446,7 +449,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
             <div className="w-24 h-24 rounded-full bg-primarySubtle flex items-center justify-center" style={{ backgroundColor: theme.primarySubtle }}>
               <RotateCcw size={48} color={theme.primary} />
             </div>
-            
+
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
                 Resume Game?
@@ -521,7 +524,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
             </p>
             <div className="flex gap-4 mt-4">
               <button
-                onClick={initializeGame}
+                onClick={() => initializeGame()}
                 className="px-8 py-4 cursor-pointer active:scale-95 transition-transform"
                 style={{
                   backgroundColor: theme.primary,
