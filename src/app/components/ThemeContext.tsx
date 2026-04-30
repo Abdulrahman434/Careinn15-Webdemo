@@ -248,6 +248,7 @@ export interface ThemeConfig {
   /* ── Text ── */
   textHeading: string;       // headings, primary text
   textBody: string;          // body paragraphs
+  textNormal: string;        // primary text (alias for textHeading)
   textMuted: string;         // secondary info, captions
   textDisabled: string;      // disabled / placeholder
   textInverse: string;       // text on dark/colored bg
@@ -373,6 +374,7 @@ function buildTheme(core: {
 
       textHeading: "#1B2A32",
       textBody: "#1B2A32",
+      textNormal: "#1B2A32",
       textMuted: "#95A3AD",
       textDisabled: "#C0CAD0",
       textInverse: "#FFFFFF",
@@ -434,6 +436,7 @@ function buildTheme(core: {
 
     textHeading: DARK_TEXT,
     textBody: DARK_TEXT_SEC,
+    textNormal: DARK_TEXT,
     textMuted: DARK_MUTED,
     textDisabled: DARK_DISABLED,
     textInverse: "#FFFFFF",
