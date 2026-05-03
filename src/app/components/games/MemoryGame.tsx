@@ -47,9 +47,10 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
   const [hasSavedGame, setHasSavedGame] = useState(false);
   const [isBootstrapped, setIsBootstrapped] = useState(false);
 
-  const clearGameState = useCallback(() => {
-    localStorage.removeItem('memory-game-state');
-  }, []);
+  const clearGameState = useCallback((diff?: Difficulty) => {
+    const targetDiff = diff || difficulty;
+    localStorage.removeItem(`memory-match-${targetDiff}-state`);
+  }, [difficulty]);
 
   const saveBestScore = useCallback((diff: Difficulty, score: number) => {
     const newScores = { ...bestScores };
@@ -72,15 +73,26 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
       timer,
       timestamp: Date.now()
     };
-    localStorage.setItem('memory-game-state', JSON.stringify(state));
-    console.log('=== SAVE ===', state);
-    console.log('=== SAVE GAME STATE ===', 'memory-game-state', JSON.stringify(state));
+    localStorage.setItem(`memory-match-${difficulty}-state`, JSON.stringify(state));
   }, [difficulty, currentTheme, cards, moves, matches, timer, isActive, isComplete]);
 
   const initializeGame = useCallback((newDiff?: Difficulty, newTheme?: Theme) => {
     const targetDiff = newDiff || difficulty;
     const targetTheme = newTheme || currentTheme;
     
+    // Check for saved game when switching difficulty
+    if (newDiff) {
+      const saved = localStorage.getItem(`memory-match-${targetDiff}-state`);
+      if (saved) {
+        setDifficulty(targetDiff);
+        setCurrentTheme(targetTheme);
+        setHasSavedGame(true);
+        setShowStartScreen(true);
+        setIsActive(false);
+        return;
+      }
+    }
+
     const config = DIFFICULTY_CONFIG[targetDiff];
     const themeEmojis = THEMES[targetTheme].slice(0, config.pairs);
     const emojis = [...themeEmojis, ...themeEmojis];
@@ -104,8 +116,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
     setCurrentTheme(targetTheme);
     setShowStartScreen(false);
     setHasSavedGame(false);
-    clearGameState();
-  }, [difficulty, currentTheme, clearGameState]);
+  }, [difficulty, currentTheme]);
 
   const handleNewGame = useCallback(() => {
     clearGameState();
@@ -116,8 +127,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
 
   const loadGameState = useCallback(() => {
     try {
-      const saved = localStorage.getItem('memory-game-state');
-      console.log('=== LOAD GAME STATE ===', 'memory-game-state', saved);
+      const saved = localStorage.getItem(`memory-match-${difficulty}-state`);
       if (saved) {
         const state = JSON.parse(saved);
         if (state && state.cards) {
@@ -137,7 +147,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
       clearGameState();
       handleNewGame();
     }
-  }, [clearGameState, handleNewGame]);
+  }, [difficulty, clearGameState, handleNewGame]);
 
   useEffect(() => {
     try {
@@ -151,7 +161,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
 
   // Initial mount: Check for saved game or auto-start
   useEffect(() => {
-    const saved = localStorage.getItem('memory-game-state');
+    const saved = localStorage.getItem(`memory-match-${difficulty}-state`);
     if (saved) {
       setHasSavedGame(true);
       setShowStartScreen(true);
