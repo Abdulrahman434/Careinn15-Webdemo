@@ -12,6 +12,26 @@ import caremedicalicon from "@/assets/caremedicalicon.png";
 import dallahPodcastIcon from "@/assets/dallah-podcast.png";
 import patientPortalIcon from "@/assets/patient-portal.png";
 
+export interface SectionVisibility {
+  show_iptv: boolean;
+  show_care_plan: boolean;
+  show_about_us: boolean;
+  show_prayer_times: boolean;
+  show_food_menu: boolean;
+  show_resources: boolean;
+  show_care_team: boolean;
+}
+
+const DEFAULT_VISIBILITY: SectionVisibility = {
+  show_iptv: true,
+  show_care_plan: true,
+  show_about_us: true,
+  show_prayer_times: true,
+  show_food_menu: true,
+  show_resources: true,
+  show_care_team: true,
+};
+
 interface ShortcutItem {
   labelKey: string;
   icon: string;
@@ -700,11 +720,39 @@ function AboutUsButton({ onTap }: { onTap: () => void }) {
 }
 
 /* ─── Engagement Grid: 4×2 hub + bottom row ─── */
-export function ServicesGrid({ onOpenCategory, onLaunchTool, contained, swapped, compact }: { onOpenCategory?: (key: string) => void; onLaunchTool?: (id: string) => void; contained?: boolean; swapped?: boolean; compact?: boolean }) {
+export function ServicesGrid({ 
+  onOpenCategory, 
+  onLaunchTool, 
+  contained, 
+  swapped, 
+  compact,
+  visibility = DEFAULT_VISIBILITY
+}: { 
+  onOpenCategory?: (key: string) => void; 
+  onLaunchTool?: (id: string) => void; 
+  contained?: boolean; 
+  swapped?: boolean; 
+  compact?: boolean;
+  visibility?: SectionVisibility;
+}) {
   const { theme } = useTheme();
   const shortcutItems = getShortcutItems(theme.id);
   const gridGap = compact ? "gap-3" : "gap-6";
   const bottomHeight = compact ? "140px" : "192px";
+
+  const isHubItemVisible = (label: string) => {
+    if (label === "Media") return visibility.show_iptv;
+    if (label === "Reading") return visibility.show_resources;
+    return true;
+  };
+
+  const isServiceVisible = (label: string) => {
+    if (label === "Consultation") return visibility.show_care_plan;
+    if (label === "Order Food") return visibility.show_food_menu;
+    if (label === "Call") return visibility.show_care_team;
+    return true;
+  };
+
   return (
     <div className={`flex flex-col flex-1 min-h-0`}>
       {/* 4×2 hub grid */}
@@ -718,20 +766,24 @@ export function ServicesGrid({ onOpenCategory, onLaunchTool, contained, swapped,
               className={`flex flex-col ${gridGap}`}
             >
               <div className="flex-1 min-h-0">
-                <HubCard
-                  item={top}
-                  onTap={() => onOpenCategory?.(top.label)}
-                  contained={contained}
-                  compact={compact}
-                />
+                {isHubItemVisible(top.label) ? (
+                  <HubCard
+                    item={top}
+                    onTap={() => onOpenCategory?.(top.label)}
+                    contained={contained}
+                    compact={compact}
+                  />
+                ) : <div className="w-full h-full" />}
               </div>
               <div className="flex-1 min-h-0">
-                <HubCard
-                  item={bottom}
-                  onTap={() => onOpenCategory?.(bottom.label)}
-                  contained={contained}
-                  compact={compact}
-                />
+                {isHubItemVisible(bottom.label) ? (
+                  <HubCard
+                    item={bottom}
+                    onTap={() => onOpenCategory?.(bottom.label)}
+                    contained={contained}
+                    compact={compact}
+                  />
+                ) : <div className="w-full h-full" />}
               </div>
             </div>
           );
@@ -764,13 +816,15 @@ export function ServicesGrid({ onOpenCategory, onLaunchTool, contained, swapped,
             </div>
           )
           : serviceItems.map((item) => (
-              <ServiceCard
-                key={item.label}
-                item={item}
-                contained={contained}
-                compact={compact}
-                onTap={() => onOpenCategory?.(item.label)}
-              />
+              isServiceVisible(item.label) ? (
+                <ServiceCard
+                  key={item.label}
+                  item={item}
+                  contained={contained}
+                  compact={compact}
+                  onTap={() => onOpenCategory?.(item.label)}
+                />
+              ) : <div key={item.label} className="w-full h-full" />
             ))
         }
       </div>
@@ -856,22 +910,51 @@ const v3HubOrder = [
   hubItems[4], hubItems[6],  // Meeting, Tools
 ];
 
-export function HubGridCompact({ onOpenCategory }: { onOpenCategory?: (key: string) => void }) {
+export function HubGridCompact({ 
+  onOpenCategory,
+  visibility = DEFAULT_VISIBILITY 
+}: { 
+  onOpenCategory?: (key: string) => void;
+  visibility?: SectionVisibility;
+}) {
+  const isHubItemVisible = (label: string) => {
+    if (label === "Media") return visibility.show_iptv;
+    if (label === "Reading") return visibility.show_resources;
+    return true;
+  };
+
   return (
     <div className="grid grid-cols-2 gap-3 flex-1 min-h-0">
       {v3HubOrder.map((item) => (
-        <HubCard key={item.label} item={item} onTap={() => onOpenCategory?.(item.label)} />
+        isHubItemVisible(item.label) ? (
+          <HubCard key={item.label} item={item} onTap={() => onOpenCategory?.(item.label)} />
+        ) : <div key={item.label} className="w-full h-full" />
       ))}
     </div>
   );
 }
 
 /* ─── V3 Service Cards Row: standalone bottom row ─── */
-export function ServiceCardsRow({ onOpenCategory }: { onOpenCategory?: (key: string) => void }) {
+export function ServiceCardsRow({ 
+  onOpenCategory,
+  visibility = DEFAULT_VISIBILITY
+}: { 
+  onOpenCategory?: (key: string) => void;
+  visibility?: SectionVisibility;
+}) {
+  const isServiceVisible = (label: string) => {
+    if (label === "Consultation") return visibility.show_care_plan;
+    if (label === "Order Food") return visibility.show_food_menu;
+    if (label === "Call") return visibility.show_care_team;
+    return true;
+  };
+
   return (
     <div className="grid grid-cols-4 gap-6 shrink-0 items-center" style={{ height: "192px" }}>
       {serviceItems.map((item) => (
-        <ServiceCard key={item.label} item={item} onTap={() => onOpenCategory?.(item.label)} />
+        isServiceVisible(item.label) ? (
+          <ServiceCard key={item.label} item={item} onTap={() => onOpenCategory?.(item.label)} />
+        ) : <div key={item.label} className="w-full h-full" />
       ))}
     </div>
   );

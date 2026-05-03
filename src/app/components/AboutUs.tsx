@@ -3,6 +3,8 @@ import { Info, FileText, Play, Film, Trophy, Star, Medal, Zap } from "lucide-rea
 import { useTheme, TYPE_SCALE, WEIGHT } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { InternalPageHeader } from "./InternalPageHeader";
+import { useCmsHospital, useCmsAboutUs } from '../../lib/useCmsContent';
+import { strapiMediaUrl } from '../../lib/strapi';
 import logoImg from "../../assets/496960c397c9050764df477822163c6970cb738d.png";
 import dnaImg from "../../assets/7d25bcb72cca7f6efa0a0c3b850e8605d6d73401.png";
 import numbersImg from "../../assets/f59e36074e912058a9f8c7099b196139f6e61a09.png";
@@ -197,6 +199,9 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
     setVideoPlaying(false);
   };
 
+  const cmsHospital = useCmsHospital();
+  const aboutUsCms = useCmsAboutUs(cmsHospital.data?.documentId, locale as any);
+
   return (
     <div
       className="absolute inset-0 z-50 flex flex-col"
@@ -354,7 +359,9 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                       lineHeight: "20px",
                     }}
                   >
-                    {t(section.titleKey, theme.hospitalShortName)}
+                    {section.id === "hospital" && aboutUsCms.data?.title 
+                      ? aboutUsCms.data.title 
+                      : t(section.titleKey, theme.hospitalShortName)}
                   </span>
                 </button>
               );
@@ -384,20 +391,22 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                   flexShrink: 0,
                 }}
               >
-                {t(currentSection.titleKey, theme.hospitalShortName)}
+                {currentSection.id === "hospital" && aboutUsCms.data?.title 
+                  ? aboutUsCms.data.title 
+                  : t(currentSection.titleKey, theme.hospitalShortName)}
               </h3>
             )}
 
             {/* Section Image (if exists) */}
-            {currentSection.image && (
               <div className="flex-1 rounded-2xl overflow-hidden flex items-center justify-center">
                 <img
-                  src={currentSection.image}
+                  src={currentSection.id === "hospital" && aboutUsCms.data?.featured_image 
+                    ? strapiMediaUrl(aboutUsCms.data.featured_image)! 
+                    : currentSection.image}
                   alt={currentSection.title}
                   className="w-full h-full object-contain"
                 />
               </div>
-            )}
 
             {/* Section Video (if exists) */}
             {currentSection.video && (
@@ -551,7 +560,9 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                   whiteSpace: "pre-line",
                 }}
               >
-                {currentSection.content}
+                {currentSection.id === "hospital" && aboutUsCms.data?.body 
+                  ? aboutUsCms.data.body 
+                  : currentSection.content}
               </div>
             ) : null}
           </div>

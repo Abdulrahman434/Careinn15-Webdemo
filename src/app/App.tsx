@@ -7,6 +7,7 @@ import { TopBar } from "./components/TopBar";
 import { NewsTicker } from "./components/NewsTicker";
 import { PatientGreeting } from "./components/PatientGreeting";
 import { ServicesGrid, ShortcutsColumn, HubGridCompact, ServiceCardsRow } from "./components/ServicesGrid";
+import { useCmsHospital, useCmsSectionVisibility } from '../lib/useCmsContent';
 import { CareMe, CareMeExpanded } from "./components/CareMe";
 import { IdleScreen } from "./components/IdleScreen";
 import { RippleStyles } from "./components/useRipple";
@@ -117,6 +118,20 @@ function BedsideScreen() {
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [showBlankPage, setShowBlankPage] = useState(false);
   const [showIptv, setShowIptv] = useState(false);
+
+  /* ── CMS Integration ── */
+  const cmsHospital = useCmsHospital();
+  const visibilityCms = useCmsSectionVisibility(cmsHospital.data?.documentId);
+  const v = visibilityCms.data ?? {
+    show_iptv: true,
+    show_care_plan: true,
+    show_about_us: true,
+    show_prayer_times: true,
+    show_food_menu: true,
+    show_resources: true,
+    show_care_team: true,
+  };
+
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
   const [reminders, setReminders] = useState<Reminder[]>(DEFAULT_REMINDERS);
 
@@ -585,7 +600,7 @@ function BedsideScreen() {
               <div className="flex-1 flex gap-[40px] min-w-0 min-h-0">
                 {/* Left — 2×4 Hub Grid */}
                 <div className="flex flex-col shrink-0 min-h-0" style={{ width: "400px" }}>
-                  <HubGridCompact onOpenCategory={handleOpenCategory} />
+                  <HubGridCompact onOpenCategory={handleOpenCategory} visibility={v} />
                 </div>
 
                 {/* Center — Greeting + CareMe side by side, Services below */}
@@ -593,14 +608,19 @@ function BedsideScreen() {
                   {/* Top: Greeting + CareMe horizontally */}
                   <div className="flex-1 flex gap-5 min-h-0">
                     <div className="flex-1 min-w-0 min-h-0 flex flex-col">
-                      <PatientGreeting onOpenAboutUs={() => setShowAboutUs(true)} onOpenTour={() => setShowTour(true)} fillImage />
+                      <PatientGreeting 
+                        onOpenAboutUs={() => setShowAboutUs(true)} 
+                        onOpenTour={() => setShowTour(true)} 
+                        fillImage 
+                        showAboutUs={v.show_about_us}
+                      />
                     </div>
                     <div className="flex-1 min-w-0 min-h-0 flex flex-col">
                       <CareMe onExpand={() => setShowCareMeExpanded(true)} />
                     </div>
                   </div>
                   {/* Bottom: Service cards row */}
-                  <ServiceCardsRow onOpenCategory={handleOpenCategory} />
+                  <ServiceCardsRow onOpenCategory={handleOpenCategory} visibility={v} />
                 </div>
 
                 {/* Right — Shortcuts */}
@@ -612,7 +632,11 @@ function BedsideScreen() {
               <>
                 {/* Left Column — PatientGreeting + CareMe */}
                 <div className="flex flex-col gap-5 shrink-0 min-h-0 h-full" style={{ width: "400px" }}>
-                  <PatientGreeting onOpenAboutUs={() => setShowAboutUs(true)} onOpenTour={() => setShowTour(true)} />
+                  <PatientGreeting 
+                    onOpenAboutUs={() => setShowAboutUs(true)} 
+                    onOpenTour={() => setShowTour(true)} 
+                    showAboutUs={v.show_about_us}
+                  />
                   <div className="flex-1 min-h-0 flex flex-col">
                     <CareMe onExpand={() => setShowCareMeExpanded(true)} />
                   </div>
@@ -622,7 +646,11 @@ function BedsideScreen() {
                 <div className="flex-1 flex gap-[40px] min-w-0 min-h-0">
                   {/* Center — Engagement Grid */}
                   <div className="flex-1 min-w-0 flex flex-col gap-5 min-h-0">
-                    <ServicesGrid onOpenCategory={handleOpenCategory} onLaunchTool={(id) => setActiveTool(id as any)} />
+                    <ServicesGrid 
+                      onOpenCategory={handleOpenCategory} 
+                      onLaunchTool={(id) => setActiveTool(id as any)} 
+                      visibility={v}
+                    />
                   </div>
 
                   {/* Right — Shortcuts */}
@@ -645,7 +673,12 @@ function BedsideScreen() {
                 <div className="flex-1 flex gap-[40px] min-w-0 min-h-0">
                   {/* Center — Hub grid with shortcuts at bottom */}
                   <div className="flex-1 min-w-0 flex flex-col gap-5 min-h-0">
-                    <ServicesGrid onOpenCategory={handleOpenCategory} swapped onLaunchTool={(id) => setActiveTool(id as any)} />
+                    <ServicesGrid 
+                      onOpenCategory={handleOpenCategory} 
+                      swapped 
+                      onLaunchTool={(id) => setActiveTool(id as any)} 
+                      visibility={v}
+                    />
                   </div>
 
                   {/* Right — Services stacked vertically */}

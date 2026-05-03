@@ -28,7 +28,17 @@ function AboutUsIcon({ color }: { color?: string }) {
   );
 }
 
-export function PatientGreeting({ onOpenAboutUs, onOpenTour, fillImage }: { onOpenAboutUs?: () => void; onOpenTour?: () => void; fillImage?: boolean }) {
+export function PatientGreeting({ 
+  onOpenAboutUs, 
+  onOpenTour, 
+  fillImage,
+  showAboutUs = true 
+}: { 
+  onOpenAboutUs?: () => void; 
+  onOpenTour?: () => void; 
+  fillImage?: boolean;
+  showAboutUs?: boolean;
+}) {
   const [pressed, setPressed] = useState(false);
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
@@ -167,44 +177,46 @@ export function PatientGreeting({ onOpenAboutUs, onOpenTour, fillImage }: { onOp
       </div>
 
       {/* About Us — pill below image */}
-      <div className="mx-4 mb-4" style={{ position: "relative", zIndex: 10 }}>
-        <button
-          data-nav="true"
-          className="flex items-center justify-center gap-2.5 w-full py-3 cursor-pointer transition-transform duration-150"
-          style={{
-            backgroundColor: pressed ? theme.primaryDark : theme.primary,
-            transform: pressed ? "scale(0.96)" : "scale(1)",
-            border: "none",
-            outline: "none",
-            borderRadius: theme.radiusMd,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenAboutUs?.();
-          }}
-          onPointerDown={(e) => {
-            e.stopPropagation();
-            setPressed(true);
-          }}
-          onPointerUp={(e) => {
-            e.stopPropagation();
-            setPressed(false);
-          }}
-          onPointerLeave={() => setPressed(false)}
-        >
-          <AboutUsIcon color={theme.textInverse} />
-          <span
+      {showAboutUs && (
+        <div className="mx-4 mb-4" style={{ position: "relative", zIndex: 10 }}>
+          <button
+            data-nav="true"
+            className="flex items-center justify-center gap-2.5 w-full py-3 cursor-pointer transition-transform duration-150"
             style={{
-              fontFamily: fontFamily,
-              ...TEXT_STYLE.buttonSm,
-              color: theme.textInverse,
-              letterSpacing: "0.3px",
+              backgroundColor: pressed ? theme.primaryDark : theme.primary,
+              transform: pressed ? "scale(0.96)" : "scale(1)",
+              border: "none",
+              outline: "none",
+              borderRadius: theme.radiusMd,
             }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenAboutUs?.();
+            }}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              setPressed(true);
+            }}
+            onPointerUp={(e) => {
+              e.stopPropagation();
+              setPressed(false);
+            }}
+            onPointerLeave={() => setPressed(false)}
           >
-            {t("general.aboutUs")}
-          </span>
-        </button>
-      </div>
+            <AboutUsIcon color={theme.textInverse} />
+            <span
+              style={{
+                fontFamily: fontFamily,
+                ...TEXT_STYLE.buttonSm,
+                color: theme.textInverse,
+                letterSpacing: "0.3px",
+              }}
+            >
+              {t("general.aboutUs")}
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
