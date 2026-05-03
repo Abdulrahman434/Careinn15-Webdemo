@@ -388,8 +388,8 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                   flexShrink: 0,
                 }}
               >
-                {currentSection.id === "hospital" && aboutUsCms.data?.title 
-                  ? aboutUsCms.data.title 
+                {currentSection.id === "hospital" 
+                  ? (aboutUsCms.data?.title ?? t(currentSection.titleKey, theme.hospitalShortName))
                   : t(currentSection.titleKey, theme.hospitalShortName)}
               </h3>
             )}
@@ -557,8 +557,8 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                   whiteSpace: "pre-line",
                 }}
               >
-                {currentSection.id === "hospital" && aboutUsCms.data?.body 
-                  ? aboutUsCms.data.body 
+                {currentSection.id === "hospital" 
+                  ? (aboutUsCms.data?.body ?? currentSection.content)
                   : currentSection.content}
               </div>
             ) : null}
