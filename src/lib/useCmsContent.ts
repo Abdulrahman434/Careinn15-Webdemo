@@ -19,28 +19,67 @@ export type CmsResult<T> = {
  *  Reads VITE_HOSPITAL_SLUG env var, falls back to "dallah-hospital". 
  */
 function getHospitalSlug(): string {
+  // Try to use the active hospital ID from localStorage if available
+  const activeId = localStorage.getItem('hbs-active-config-id');
+  if (activeId) {
+    if (activeId === 'dsfh') return 'fakeeh-hospital';
+    return `${activeId}-hospital`;
+  }
   return import.meta.env.VITE_HOSPITAL_SLUG || 'dallah-hospital';
 }
 
+/** Check if the user opted into CMS mode via the "-hospital" password suffix. */
+function isCmsModeActive(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return localStorage.getItem('cms-mode') === 'true';
+  } catch {
+    return false;
+  }
+}
+
 export function useCmsHospital(): CmsResult<StrapiHospital> {
+  const [slug, setSlug] = useState(getHospitalSlug());
+  const [cmsActive, setCmsActive] = useState(isCmsModeActive());
   const [state, setState] = useState<CmsResult<StrapiHospital>>({
-    data: null, loading: isCmsEnabled(), error: null, source: 'fallback',
+    data: null, loading: false, error: null, source: 'fallback',
   });
   
   useEffect(() => {
-    if (!isCmsEnabled()) return;
+    const refresh = () => {
+      setSlug(getHospitalSlug());
+      setCmsActive(isCmsModeActive());
+    };
+    window.addEventListener('hospital-changed', refresh);
+    window.addEventListener('cms-mode-changed', refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener('hospital-changed', refresh);
+      window.removeEventListener('cms-mode-changed', refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, []);
+
+  useEffect(() => {
+    // If CMS not active OR not enabled at build time → fallback only, no fetch
+    if (!cmsActive || !isCmsEnabled()) {
+      setState({ data: null, loading: false, error: null, source: 'fallback' });
+      return;
+    }
+    
     let cancelled = false;
-    fetchHospital(getHospitalSlug()).then(data => {
+    setState(s => ({ ...s, loading: true }));
+    fetchHospital(slug).then(data => {
       if (cancelled) return;
       setState({
         data,
         loading: false,
-        error: data ? null : 'No hospital found',
+        error: data ? null : `No CMS hospital found for slug: ${slug}`,
         source: data ? 'cms' : 'fallback',
       });
     });
     return () => { cancelled = true; };
-  }, []);
+  }, [slug, cmsActive]);
   
   return state;
 }
