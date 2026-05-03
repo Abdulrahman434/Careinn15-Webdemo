@@ -4,7 +4,6 @@ import { useTheme, TYPE_SCALE, WEIGHT } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { useCmsHospital, useCmsAboutUs } from '../../lib/useCmsContent';
-import { strapiMediaUrl } from '../../lib/strapi';
 import logoImg from "../../assets/496960c397c9050764df477822163c6970cb738d.png";
 import dnaImg from "../../assets/7d25bcb72cca7f6efa0a0c3b850e8605d6d73401.png";
 import numbersImg from "../../assets/f59e36074e912058a9f8c7099b196139f6e61a09.png";
@@ -359,9 +358,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                       lineHeight: "20px",
                     }}
                   >
-                    {section.id === "hospital" && aboutUsCms.data?.title 
-                      ? aboutUsCms.data.title 
-                      : t(section.titleKey, theme.hospitalShortName)}
+                    {t(section.titleKey, theme.hospitalShortName)}
                   </span>
                 </button>
               );
@@ -398,15 +395,15 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
             )}
 
             {/* Section Image (if exists) */}
+            {currentSection.image && (
               <div className="flex-1 rounded-2xl overflow-hidden flex items-center justify-center">
                 <img
-                  src={currentSection.id === "hospital" && aboutUsCms.data?.featured_image 
-                    ? strapiMediaUrl(aboutUsCms.data.featured_image)! 
-                    : currentSection.image}
+                  src={currentSection.image}
                   alt={currentSection.title}
                   className="w-full h-full object-contain"
                 />
               </div>
+            )}
 
             {/* Section Video (if exists) */}
             {currentSection.video && (
