@@ -1193,7 +1193,7 @@ function FinanceSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: 
         <span style={{
           fontFamily: theme.fontFamily,
           fontSize: labelSize,
-          color: isTotal ? theme.textHeading : theme.textMuted,
+          color: theme.textHeading,
           fontWeight: isTotal ? WEIGHT.bold : WEIGHT.medium,
           lineHeight: 1.2
         }}>{label}</span>
