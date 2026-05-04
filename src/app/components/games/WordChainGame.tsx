@@ -219,10 +219,6 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="px-4 py-2 font-bold rounded-full flex items-center gap-2" style={{ backgroundColor: theme.primarySubtle, color: theme.primary }}>
-            <Trophy size={20} />
-            {gt.bestChain}: {highScore}
-          </div>
           <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
             <div style={{ width: "24px", height: "24px", position: "relative" }}>
               <div style={{ position: "absolute", top: "50%", left: "50%", width: "20px", height: "2px", backgroundColor: theme.textHeading, transform: "translate(-50%, -50%) rotate(45deg)", borderRadius: "2px" }} />
@@ -235,10 +231,20 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
       <div className="flex-1 flex flex-col items-center justify-center overflow-auto p-8 relative">
         {gameState === 'menu' && (
           <div className="w-full max-w-2xl flex flex-col items-center gap-8 bg-white p-10 rounded-3xl shadow-xl">
-            <div className="text-center">
-              <h2 className="text-4xl font-black mb-2" style={{ color: theme.primary }}>{gt.wordChain}</h2>
-              <p className="text-lg text-gray-600">{gt.wordChainDesc}</p>
-              <div className="mt-2 px-4 py-1 rounded-full text-sm font-bold inline-block" style={{ backgroundColor: theme.primarySubtle, color: theme.primary }}>{gt.twoPlayersLocal}</div>
+            <div className="text-center flex flex-col items-center gap-3">
+              <h2 className="text-5xl font-black" style={{ color: theme.primary }}>{gt.wordChain}</h2>
+              <p className="text-lg text-gray-500 font-medium">{gt.wordChainDesc}</p>
+              
+              {/* Best Chain Display Inside the Card */}
+              <div className="flex flex-col items-center gap-1 px-8 py-3 rounded-2xl border-2 border-dashed border-blue-100 bg-blue-50/50">
+                <span className="text-xs font-black text-blue-400 uppercase tracking-widest">{gt.bestChain}</span>
+                <div className="flex items-center gap-2 text-blue-600">
+                  <Trophy size={18} />
+                  <span className="text-xl font-black">{gt.wordsCount(highScore)}</span>
+                </div>
+              </div>
+
+              <div className="mt-2 px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider" style={{ backgroundColor: theme.primarySubtle, color: theme.primary }}>{gt.twoPlayersLocal}</div>
             </div>
 
             <div className="w-full animate-in fade-in slide-in-from-bottom-4">
@@ -260,107 +266,169 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
         )}
 
         {gameState === 'playing' && (
-          <div className="w-full max-w-4xl flex flex-col h-full gap-6 relative">
-            <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm">
-              <div className={`flex items-center gap-3 transition-all ${currentPlayer === 1 ? 'scale-110' : 'text-gray-400'}`} style={{ color: currentPlayer === 1 ? theme.primary : undefined }}>
-                <div className="flex flex-col items-center">
-                  <User size={32} />
-                  <span className="text-xs font-bold">{gt.player1}</span>
-                  <span className="text-xl font-black">{scores[1]} pts</span>
-                  {currentPlayer === 1 && (
-                    <span className="text-sm font-black mt-2 uppercase animate-pulse" style={{ fontSize: '18px', color: theme.primary }}>
-                      {gt.player1Turn}
-                    </span>
-                  )}
+          <div className="w-full max-w-4xl flex flex-col h-full gap-8 py-4 relative">
+            {/* Top Section: Player Info */}
+            <div className="shrink-0 flex justify-between items-center bg-white p-6 rounded-3xl shadow-md border border-gray-100">
+              <div className={`flex flex-col items-center gap-2 transition-all duration-300 ${currentPlayer === 1 ? 'scale-110' : 'opacity-40 grayscale'}`} style={{ color: currentPlayer === 1 ? theme.primary : undefined }}>
+                <div className="w-16 h-16 rounded-full flex items-center justify-center bg-blue-50 border-2 border-blue-100">
+                  <User size={32} color={theme.primary} />
                 </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-sm font-black uppercase tracking-wider">{gt.player1}</span>
+                  <span className="text-2xl font-black">{scores[1]}</span>
+                </div>
+                {currentPlayer === 1 && (
+                  <div className="px-4 py-1 rounded-full text-xs font-black uppercase animate-pulse" style={{ backgroundColor: theme.primary, color: theme.textInverse }}>
+                    {gt.player1Turn}
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col items-center justify-center">
-                <div className={`text-5xl font-black ${timeLeft <= 3 ? 'text-red-500 animate-pulse' : ''}`} style={{ color: timeLeft > 3 ? theme.primary : undefined }}>
-                  {timeLeft}s
+                <div className="w-28 h-28 rounded-full border-8 flex flex-col items-center justify-center transition-all duration-300" 
+                  style={{ 
+                    borderColor: timeLeft <= 3 ? '#EF4444' : theme.primarySubtle,
+                    backgroundColor: 'white',
+                    boxShadow: SHADOW.md
+                  }}>
+                  <div className={`text-4xl font-black ${timeLeft <= 3 ? 'text-red-500 animate-pulse' : ''}`} style={{ color: timeLeft > 3 ? theme.primary : undefined }}>
+                    {timeLeft}s
+                  </div>
                 </div>
-                <div className="text-sm font-bold text-gray-400 mt-1 uppercase tracking-wider">
+                <div className="mt-4 px-4 py-1 rounded-full bg-gray-100 text-gray-500 text-xs font-black uppercase tracking-widest">
                   {gt.turnOf(turnsPlayed + 1)}
                 </div>
               </div>
 
-              <div className={`flex items-center gap-3 transition-all ${currentPlayer === 2 ? 'scale-110' : 'text-gray-400'}`} style={{ color: currentPlayer === 2 ? theme.primary : undefined }}>
-                <div className="flex flex-col items-center">
-                  <User size={32} />
-                  <span className="text-xs font-bold">{gt.player2}</span>
-                  <span className="text-xl font-black">{scores[2]} pts</span>
-                  {currentPlayer === 2 && (
-                    <span className="text-sm font-black mt-2 uppercase animate-pulse" style={{ fontSize: '18px', color: theme.primary }}>
-                      {gt.player2Turn}
-                    </span>
-                  )}
+              <div className={`flex flex-col items-center gap-2 transition-all duration-300 ${currentPlayer === 2 ? 'scale-110' : 'opacity-40 grayscale'}`} style={{ color: currentPlayer === 2 ? theme.primary : undefined }}>
+                <div className="w-16 h-16 rounded-full flex items-center justify-center bg-blue-50 border-2 border-blue-100">
+                  <User size={32} color={theme.primary} />
                 </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-sm font-black uppercase tracking-wider">{gt.player2}</span>
+                  <span className="text-2xl font-black">{scores[2]}</span>
+                </div>
+                {currentPlayer === 2 && (
+                  <div className="px-4 py-1 rounded-full text-xs font-black uppercase animate-pulse" style={{ backgroundColor: theme.primary, color: theme.textInverse }}>
+                    {gt.player2Turn}
+                  </div>
+                )}
               </div>
             </div>
 
+            {/* Middle Section: Vertical Word Chain */}
+            <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col items-center gap-2 scroll-smooth bg-gray-50/50 rounded-3xl border border-dashed border-gray-200"
+              ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}
+            >
+              {chain.length === 0 && (
+                <div className="h-full flex items-center justify-center text-gray-300 italic font-medium">
+                  Waiting for first word...
+                </div>
+              )}
+              {chain.map((word, i) => (
+                <div key={i} className="flex flex-col items-center animate-in slide-in-from-bottom-4 fade-in duration-500">
+                  <div 
+                    className={`px-12 py-6 font-bold rounded-2xl text-2xl capitalize shadow-sm transition-all duration-300 border-2 ${i === chain.length - 1 ? 'scale-105 shadow-xl' : 'opacity-70'}`} 
+                    style={{ 
+                      backgroundColor: i === chain.length - 1 ? theme.primary : 'white', 
+                      color: i === chain.length - 1 ? theme.textInverse : theme.textHeading, 
+                      borderColor: i === chain.length - 1 ? theme.primary : theme.primarySubtle,
+                      minWidth: '320px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '12px',
+                      direction: 'ltr'
+                    }}
+                  >
+                    <span className="flex items-center justify-center w-10 h-10 rounded-full text-lg border-2" 
+                      style={{ 
+                        backgroundColor: i === chain.length - 1 ? 'rgba(255,255,255,0.2)' : theme.primarySubtle,
+                        color: i === chain.length - 1 ? 'white' : theme.primary,
+                        borderColor: i === chain.length - 1 ? 'rgba(255,255,255,0.4)' : theme.primary
+                      }}
+                    >
+                      {i + 1}
+                    </span>
+                    <div className="flex-1 text-center">
+                      {word.slice(0, -1)}
+                      <span 
+                        className={`underline underline-offset-8 decoration-4`} 
+                        style={{ color: i === chain.length - 1 ? 'white' : theme.primary }}
+                      >
+                        {word.slice(-1)}
+                      </span>
+                    </div>
+                  </div>
+                  {i < chain.length - 1 && (
+                    <div className="my-2 text-gray-300 font-black text-2xl">↓</div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Feedback Message (Floating above input) */}
             {lastAction && (
-              <div className="text-center animate-in fade-in slide-in-from-top-2">
-                <span className="px-4 py-1 rounded-full text-sm font-bold" style={{
-                  backgroundColor: lastAction.includes('got it') ? theme.primarySubtle : '#FEE2E2',
-                  color: lastAction.includes('got it') ? theme.primary : '#B91C1C'
-                }}>
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-32 z-10 animate-in fade-in zoom-in duration-300">
+                <div className="px-6 py-2 rounded-full shadow-lg border-2 text-sm font-black uppercase tracking-widest whitespace-nowrap"
+                  style={{
+                    backgroundColor: lastAction.includes('got it') ? '#F0FDF4' : '#FEF2F2',
+                    borderColor: lastAction.includes('got it') ? '#22C55E' : '#EF4444',
+                    color: lastAction.includes('got it') ? '#166534' : '#991B1B'
+                  }}>
                   {lastAction}
-                </span>
+                </div>
               </div>
             )}
 
-            <div className="flex-1 overflow-auto flex flex-col justify-end gap-3 pb-4">
-              <div className="flex flex-wrap gap-2 content-end">
-                {chain.map((word, i) => (
-                  <div key={i} className="flex items-center">
-                    <div className="px-4 py-2 font-bold rounded-lg text-lg capitalize border shadow-sm" style={{ backgroundColor: theme.primarySubtle, color: theme.textHeading, borderColor: theme.primary }}>
-                      {word.slice(0, -1)}
-                      <span className="underline underline-offset-4 decoration-2" style={{ color: theme.primary }}>{word.slice(-1)}</span>
-                    </div>
-                    {i < chain.length - 1 && (
-                      <div className="mx-2 text-gray-400 font-black">→</div>
-                    )}
+            {/* Bottom Section: Input Area */}
+            <div className="shrink-0 flex flex-col gap-4 bg-white p-8 rounded-3xl shadow-xl border border-gray-100 mb-4 relative overflow-visible">
+              <div className="flex justify-between items-center px-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 border border-blue-100">
+                    <span className="text-xl font-black">?</span>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center px-4 h-6">
-                {errorFeedback ? (
-                  <span className="text-sm font-bold text-red-500 animate-bounce">
-                    ❌ {errorFeedback}
-                  </span>
-                ) : (
-                  <span className="text-sm font-bold text-gray-400 uppercase tracking-widest opacity-50">
-                    {gt.roundInProgress}
-                  </span>
-                )}
-                <span className="text-sm font-bold uppercase tracking-widest" style={{ color: theme.primary }}>
-                  {gt.startWith}: <span className="text-xl underline">{chain[chain.length - 1][chain[chain.length - 1].length - 1].toUpperCase()}</span>
-                </span>
-              </div>
-              <form onSubmit={handleSubmit} className="bg-white p-4 rounded-2xl shadow-lg border border-gray-100 flex flex-col gap-2">
-                <div className="flex gap-4">
-                  <div className="flex-1 relative flex items-center">
-                    <div className="absolute left-6 text-3xl font-black pointer-events-none select-none opacity-20" style={{ color: theme.primary }}>
-                      {chain[chain.length - 1][chain[chain.length - 1].length - 1].toUpperCase()}
-                    </div>
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      autoFocus
-                      value={inputValue}
-                      onChange={e => setInputValue(e.target.value)}
-                      placeholder={gt.typeWordIn(category === 'animals' ? gt.catAnimalsW : category === 'countries' ? gt.catCountries : gt.catFoods)}
-                      className="w-full h-16 pl-14 pr-4 text-2xl font-bold bg-gray-50 border-2 border-gray-200 rounded-xl focus:outline-none transition-colors uppercase"
-                      style={{ focusBorderColor: theme.primary } as any}
-                    />
-                  </div>
-                  <button type="submit" className="px-8 h-16 text-white font-bold text-xl rounded-xl active:scale-95 transition-all shadow-md" style={{ backgroundColor: theme.primary }}>
-                    {gt.submit}
-                  </button>
+                  {errorFeedback ? (
+                    <span className="text-sm font-bold text-red-500 animate-bounce">
+                      {errorFeedback}
+                    </span>
+                  ) : (
+                    <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">
+                      {gt.roundInProgress}
+                    </span>
+                  )}
                 </div>
+                
+                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-50 border border-blue-100">
+                  <span className="text-xs font-black text-blue-400 uppercase tracking-widest">{gt.startWith}:</span>
+                  <span className="text-2xl font-black text-blue-600 underline underline-offset-4">
+                    {chain[chain.length - 1][chain[chain.length - 1].length - 1].toUpperCase()}
+                  </span>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit} className="flex gap-4">
+                <div className="flex-1 relative group">
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-4xl font-black pointer-events-none select-none opacity-10 group-focus-within:opacity-20 transition-opacity" style={{ color: theme.primary }}>
+                    {chain[chain.length - 1][chain[chain.length - 1].length - 1].toUpperCase()}
+                  </div>
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    autoFocus
+                    value={inputValue}
+                    onChange={e => setInputValue(e.target.value)}
+                    placeholder={gt.typeWordIn(category === 'animals' ? gt.catAnimalsW : category === 'countries' ? gt.catCountries : gt.catFoods)}
+                    className="w-full h-20 pl-16 pr-6 text-3xl font-black bg-gray-50 border-4 border-transparent rounded-2xl focus:bg-white focus:border-blue-500 focus:outline-none transition-all shadow-inner uppercase placeholder:text-gray-300"
+                  />
+                </div>
+                <button 
+                  type="submit" 
+                  className="px-10 h-20 text-white font-black text-xl rounded-2xl active:scale-95 transition-all shadow-lg hover:brightness-110 flex items-center justify-center" 
+                  style={{ backgroundColor: theme.primary }}
+                >
+                  {gt.submit}
+                </button>
               </form>
             </div>
           </div>

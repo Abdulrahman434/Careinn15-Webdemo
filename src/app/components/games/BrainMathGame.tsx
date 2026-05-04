@@ -255,20 +255,33 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
           <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.brainMath}</h1>
         </div>
 
-        <div className="flex items-center gap-6">
-          <div className="flex flex-col items-end">
-            <div className="flex gap-1 mb-1">
+        <div className="flex items-center gap-8">
+          {/* Lives Indicator */}
+          <div className="flex items-center gap-3 px-6 py-3 bg-red-50 rounded-2xl border border-red-100 shadow-sm">
+            <div className="flex gap-1">
               {[...Array(3)].map((_, i) => (
                 <Heart 
                   key={i} 
-                  size={16} 
+                  size={24} 
                   fill={i < lives ? "#EF4444" : "transparent"} 
-                  color={i < lives ? "#EF4444" : theme.textMuted} 
+                  color={i < lives ? "#EF4444" : "#FCA5A5"} 
+                  strokeWidth={2.5}
                 />
               ))}
             </div>
-            <span style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.bold, color: theme.primary }}>{gt.score}: {score}</span>
+            <span style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.bold, color: "#EF4444" }}>
+              {gt.lives}: {lives}
+            </span>
           </div>
+
+          {/* Score Indicator */}
+          <div className="flex items-center gap-3 px-6 py-3 bg-blue-50 rounded-2xl border border-blue-100 shadow-sm">
+            <Trophy size={24} color={theme.primary} />
+            <span style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.extrabold, color: theme.primary }}>
+              {gt.score}: {score}
+            </span>
+          </div>
+
           <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
             <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
           </button>
