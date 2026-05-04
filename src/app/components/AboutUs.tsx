@@ -116,9 +116,7 @@ const getSections = (themeId: string, isRTL: boolean, locale: string): AboutSect
     title: "Services",
     titleKey: "about.services",
     content: themeId === "careinn"
-      ? (locale === "ar" ? `حلول CareInn
-
-• CareInn15
+      ? (locale === "ar" ? `• CareInn15
 شاشة تفاعلية بجانب السرير تتيح للمرضى سهولة الوصول إلى خدمات المستشفى والترفيه والطلبات والمعلومات الأساسية أثناء إقامتهم. توفر تجربة أكثر تواصلاً وراحة داخل الغرفة.
 
 • CareTV
@@ -131,9 +129,7 @@ const getSections = (themeId: string, isRTL: boolean, locale: string): AboutSect
 منصة تشغيلية تساعد فرق المستشفى على إدارة حالة الغرف وطلبات الخدمة والتدبير المنزلي وسير العمل اليومي. تحسن التنسيق بين الأقسام وتدعم أوقات استجابة أسرع.
 
 • CareConnect
-حل تواصل افتراضي يربط المرضى بفرق الرعاية من خلال تفاعلات رقمية منظمة. يدعم الاستشارة عن بُعد والمتابعة وتسهيل التواصل خلال رحلة المريض.` : `CareInn Solutions
-
-• CareInn15
+حل تواصل افتراضي يربط المرضى بفرق الرعاية من خلال تفاعلات رقمية منظمة. يدعم الاستشارة عن بُعد والمتابعة وتسهيل التواصل خلال رحلة المريض.` : `• CareInn15
 An interactive bedside screen that gives patients easy access to hospital services, entertainment, requests, and key information during their stay. It supports a more connected and comfortable in-room experience.
 
 • CareTV
