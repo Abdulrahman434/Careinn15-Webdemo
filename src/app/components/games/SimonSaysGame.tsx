@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, ArrowLeft, Play } from "lucide-react";
+import { GAME_TRANSLATIONS } from "./gameTranslations";
 
 const CLASSIC_COLORS = ["#EF4444", "#3B82F6", "#10B981", "#F59E0B"];
 const HARD_COLORS = ["#EF4444", "#3B82F6", "#10B981", "#F59E0B", "#A855F7", "#EC4899"];
@@ -17,12 +18,13 @@ const SPEED_CONFIG: Record<Speed, number> = {
 
 export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, isRTL, dir, locale } = useLocale();
+  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
   const [sequence, setSequence] = useState<number[]>([]);
   const [playerSequence, setPlayerSequence] = useState<number[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeColor, setActiveColor] = useState<number | null>(null);
-  const [message, setMessage] = useState("Press Start to play");
+  const [message, setMessage] = useState<string>(gt.simonMsgPress);
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
@@ -68,7 +70,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
       setSpeed(state.speed);
       setMode(state.mode);
       setPlayerSequence([]);
-      setMessage("Your turn!");
+      setMessage(gt.simonMsgTurn);
       setShowResumeModal(false);
     }
   };
@@ -122,7 +124,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
         clearInterval(interval);
         setTimeout(() => {
           setIsPlaying(false);
-          setMessage("Your turn!");
+          setMessage(gt.simonMsgTurn);
         }, intervalTime / 2);
       }
     }, intervalTime);
@@ -135,7 +137,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
     const newSeq = [...currentSeq, nextColor];
     setSequence(newSeq);
     setPlayerSequence([]);
-    setMessage("Watch the sequence...");
+    setMessage(gt.simonMsgWatch);
     setTimeout(() => playSequence(newSeq), 1000);
   }, [playSequence, mode]);
   const startGame = () => {
@@ -161,7 +163,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
 
     // Check if wrong
     if (sequence[newPlayerSeq.length - 1] !== index) {
-      setMessage("Game Over!");
+      setMessage(gt.simonMsgOver);
       setIsComplete(true);
       if (score > highScore) {
         setHighScore(score);
@@ -175,7 +177,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
     // Check if sequence completed
     if (newPlayerSeq.length === sequence.length) {
       setScore(score + 1);
-      setMessage("Correct! Next round...");
+      setMessage(gt.simonMsgCorrect);
       setIsPlaying(true);
       setTimeout(() => startRound(sequence), 1000);
     }
@@ -186,6 +188,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
   return (
     <div
       className="absolute inset-0 z-50 flex flex-col"
+      dir={dir}
       style={{ backgroundColor: theme.background }}
     >
       {/* Header */}
@@ -211,7 +214,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
               outline: "none",
             }}
           >
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
           <h1
             style={{
@@ -221,7 +224,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
               color: theme.textHeading,
             }}
           >
-            Simon Says
+            {gt.simonSays}
           </h1>
         </div>
 
@@ -237,9 +240,9 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
                 backgroundColor: theme.surfaceElevated, color: theme.textHeading, outline: 'none'
               }}
             >
-              <option value="slow">Slow</option>
-              <option value="normal">Normal</option>
-              <option value="fast">Fast</option>
+              <option value="slow">{gt.simonSlow}</option>
+              <option value="normal">{gt.simonNormal}</option>
+              <option value="fast">{gt.simonFast}</option>
             </select>
             <select 
               value={mode}
@@ -253,15 +256,15 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
                 backgroundColor: theme.surfaceElevated, color: theme.textHeading, outline: 'none'
               }}
             >
-              <option value="classic">Classic (4)</option>
-              <option value="hard">Hard (6)</option>
+              <option value="classic">{gt.simonClassic}</option>
+              <option value="hard">{gt.simonHard}</option>
             </select>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="flex flex-col items-end">
-              <span style={{ fontFamily, fontSize: '12px', color: theme.textMuted }}>Best: {highScore}</span>
-              <span style={{ fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.bold, color: theme.primary }}>Score: {score}</span>
+              <span style={{ fontFamily, fontSize: '12px', color: theme.textMuted }}>{gt.best}: {highScore}</span>
+              <span style={{ fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.bold, color: theme.primary }}>{gt.score}: {score}</span>
             </div>
             <button
               onClick={handleNewGame}
@@ -368,7 +371,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
                 color: theme.textHeading,
               }}
             >
-              Game Over!
+              {gt.simonMsgOver}
             </h2>
             <p
               style={{
@@ -378,7 +381,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
                 color: theme.textMuted,
               }}
             >
-              You reached a score of {score}. 
+              {gt.simonReached(score)} 
             </p>
             <div className="flex gap-4 mt-4">
               <button
@@ -395,7 +398,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
                   color: theme.textInverse,
                 }}
               >
-                Play Again
+                {gt.playAgain}
               </button>
               <button
                 onClick={onClose}
@@ -411,7 +414,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
                   color: theme.textHeading,
                 }}
               >
-                Close
+                {gt.close}
               </button>
             </div>
           </div>
@@ -445,10 +448,10 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
             
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
-                Resume Game?
+                {gt.resumeGame}
               </h2>
               <p style={{ fontFamily, fontSize: TYPE_SCALE.md, color: theme.textMuted }}>
-                We found a saved session. Would you like to continue or start fresh?
+                {gt.resumeDesc}
               </p>
             </div>
 
@@ -458,14 +461,14 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
                 className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
                 style={{ backgroundColor: theme.primary, color: theme.textInverse, fontSize: TYPE_SCALE.md }}
               >
-                Continue Playing
+                {gt.continuePlaying}
               </button>
               <button
                 onClick={handleNewGame}
                 className="w-full py-5 rounded-2xl font-bold transition-all hover:bg-black/5 active:scale-95"
                 style={{ backgroundColor: theme.surfaceElevated, color: theme.textHeading, border: theme.cardBorder, fontSize: TYPE_SCALE.md }}
               >
-                Start New Game
+                {gt.startNewGame}
               </button>
             </div>
           </div>

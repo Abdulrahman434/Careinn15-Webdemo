@@ -2,13 +2,15 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Timer, RotateCcw, ArrowLeft, Zap } from "lucide-react";
+import { GAME_TRANSLATIONS } from "./gameTranslations";
 
 type GameMode = 'click' | 'sound' | 'visual';
 type Rating = 'Excellent!' | 'Good' | 'Slow';
 
 export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, isRTL, dir, locale } = useLocale();
+  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
   const [gameState, setGameState] = useState<"idle" | "waiting" | "active" | "result" | "too-early">("idle");
   const [mode, setMode] = useState<GameMode>('click');
   const [reactionTime, setReactionTime] = useState<number | null>(null);
@@ -150,13 +152,13 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
   const averageTime = history.length > 0 ? Math.round(history.reduce((a, b) => a + b, 0) / history.length) : null;
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }}>
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }} dir={dir}>
       <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg }}>
         <div className="flex items-center gap-4">
           <button onClick={onBackToGames} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
-          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>Reaction Speed</h1>
+          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.reactionTime}</h1>
         </div>
 
         <div className="flex items-center gap-4">
@@ -174,16 +176,16 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
             }}
             style={{ padding: "8px 12px", borderRadius: theme.radiusMd, border: theme.cardBorder, outline: "none", fontFamily: fontFamily }}
           >
-            <option value="click">Visual: Click Green</option>
-            <option value="sound">Audio: Wait for Beep</option>
-            <option value="visual">Symbol: Wait for Check</option>
+            <option value="click">{gt.reactionVisualClick}</option>
+            <option value="sound">{gt.reactionAudioBeep}</option>
+            <option value="visual">{gt.reactionSymbolCheck}</option>
           </select>
           <div className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-bold">
-            Round {history.length + (gameState === "result" ? 0 : 1)}/5
+            {gt.reactionRound} {history.length + (gameState === "result" ? 0 : 1)}/5
           </div>
           <button onClick={handleNewGame} className="flex items-center gap-2 px-6 py-3 cursor-pointer active:scale-95 transition-transform" style={{ backgroundColor: theme.primary, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
             <RotateCcw size={20} color={theme.textInverse} />
-            <span style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold, color: theme.textInverse }}>Reset</span>
+            <span style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold, color: theme.textInverse }}>{gt.reset}</span>
           </button>
           <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
             <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
@@ -194,10 +196,10 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side: Leaderboard */}
         <div className="w-80 border-r p-8 flex flex-col gap-6" style={{ backgroundColor: theme.surface, borderColor: theme.cardBorder }}>
-          <h2 style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading }}>Top 5 ({mode})</h2>
+          <h2 style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.reactionTop5} ({mode === 'click' ? gt.reactionVisualClick : mode === 'sound' ? gt.reactionAudioBeep : gt.reactionSymbolCheck})</h2>
           <div className="flex flex-col gap-3">
             {leaderboard[mode].length === 0 ? (
-              <p style={{ fontFamily, color: theme.textMuted }}>No scores yet!</p>
+              <p style={{ fontFamily, color: theme.textMuted }}>{gt.reactionNoScores}</p>
             ) : (
               leaderboard[mode].map((time, i) => (
                 <div key={i} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: theme.surfaceElevated }}>
@@ -209,7 +211,7 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
           </div>
           {averageTime !== null && (
             <div className="mt-auto p-4 rounded-xl border-2 border-dashed" style={{ borderColor: theme.primarySubtle }}>
-              <p style={{ fontFamily, fontSize: TYPE_SCALE.sm, color: theme.textMuted, textAlign: 'center' }}>Average (last {history.length} rounds)</p>
+              <p style={{ fontFamily, fontSize: TYPE_SCALE.sm, color: theme.textMuted, textAlign: 'center' }}>{gt.reactionAverage} {history.length} {gt.reactionRounds}</p>
               <p style={{ fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.primary, textAlign: 'center' }}>{averageTime}ms</p>
             </div>
           )}
@@ -229,17 +231,17 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
                 <div className="w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
                   <Timer size={48} color="white" />
                 </div>
-                <h2 className="text-3xl font-bold" style={{ color: theme.textHeading }}>Ready?</h2>
+                <h2 className="text-3xl font-bold" style={{ color: theme.textHeading }}>{gt.reactionReady}</h2>
                 <p className="text-lg opacity-80" style={{ color: theme.textNormal }}>
-                  {mode === 'click' && "Tap when the screen turns green!"}
-                  {mode === 'sound' && "Tap when you hear the beep!"}
-                  {mode === 'visual' && "Tap when the ❌ turns into ✅!"}
+                  {mode === 'click' && gt.reactionTapGreen}
+                  {mode === 'sound' && gt.reactionTapBeep}
+                  {mode === 'visual' && gt.reactionTapCheck}
                 </p>
                 <button
                   onClick={(e) => { e.stopPropagation(); startTest(); }}
                   className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-xl active:scale-95 transition-all"
                 >
-                  START ROUND 1
+                  {gt.reactionStartRound1}
                 </button>
               </>
             )}
@@ -249,7 +251,7 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
                 <div className="w-24 h-24 bg-red-400 rounded-full flex items-center justify-center animate-pulse">
                   {mode === 'visual' ? <span className="text-5xl">❌</span> : <Timer size={48} color="white" />}
                 </div>
-                <h2 className="text-3xl font-bold text-white uppercase">Wait for it...</h2>
+                <h2 className="text-3xl font-bold text-white uppercase">{gt.reactionWait}</h2>
               </>
             )}
 
@@ -258,7 +260,7 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
                 <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl">
                   {mode === 'visual' ? <span className="text-5xl">✅</span> : <Zap size={48} color="#4ADE80" fill="#4ADE80" />}
                 </div>
-                <h2 className="text-4xl font-black text-white italic">NOW!!!</h2>
+                <h2 className="text-4xl font-black text-white italic">{gt.reactionNow}</h2>
               </>
             )}
 
@@ -271,13 +273,13 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
                   </div>
                 </div>
                 <p className="text-lg opacity-80" style={{ color: theme.textNormal }}>
-                  {history.length < 5 ? `Round ${history.length} complete!` : "5-Round training finished!"}
+                  {history.length < 5 ? `${gt.reactionRound} ${history.length} ${gt.reactionRoundComplete}` : gt.reactionFinished}
                 </p>
                 <button
                   onClick={(e) => { e.stopPropagation(); if (history.length >= 5) resetGame(); else startTest(); }}
                   className="w-full py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl shadow-xl active:scale-95 transition-all"
                 >
-                  {history.length >= 5 ? "RESTART TRAINING" : "START NEXT ROUND"}
+                  {history.length >= 5 ? gt.reactionRestartTraining : gt.reactionStartNext}
                 </button>
               </>
             )}
@@ -287,15 +289,15 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
                 <div className="w-24 h-24 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
                   <Zap size={48} color="white" />
                 </div>
-                <h2 className="text-3xl font-bold text-white uppercase">Too Early!</h2>
+                <h2 className="text-3xl font-bold text-white uppercase">{gt.reactionTooEarly}</h2>
                 <p className="text-lg text-white opacity-90">
-                  Wait for the signal before tapping.
+                  {gt.reactionWaitSignal}
                 </p>
                 <button
                   onClick={(e) => { e.stopPropagation(); startTest(); }}
                   className="w-full py-4 bg-white text-amber-600 font-bold rounded-2xl shadow-xl active:scale-95 transition-all"
                 >
-                  TRY AGAIN
+                  {gt.tryAgain}
                 </button>
               </>
             )}
@@ -330,10 +332,10 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
 
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
-                Resume Game?
+                {gt.resumeGame}
               </h2>
               <p style={{ fontFamily, fontSize: TYPE_SCALE.md, color: theme.textMuted }}>
-                We found a saved session. Would you like to continue or start fresh?
+                {gt.resumeDesc}
               </p>
             </div>
 
@@ -343,14 +345,14 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
                 className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
                 style={{ backgroundColor: theme.primary, color: theme.textInverse, fontSize: TYPE_SCALE.md }}
               >
-                Continue Playing
+                {gt.continuePlaying}
               </button>
               <button
                 onClick={handleNewGame}
                 className="w-full py-5 rounded-2xl font-bold transition-all hover:bg-black/5 active:scale-95"
                 style={{ backgroundColor: theme.surfaceElevated, color: theme.textHeading, border: theme.cardBorder, fontSize: TYPE_SCALE.md }}
               >
-                Start New Game
+                {gt.startNewGame}
               </button>
             </div>
           </div>

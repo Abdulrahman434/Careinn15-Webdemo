@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, Timer, ArrowLeft } from "lucide-react";
+import { GAME_TRANSLATIONS } from "./gameTranslations";
 
 interface ColorOption {
   color: string;
@@ -21,7 +22,18 @@ const COLORS: ColorOption[] = [
 
 export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, isRTL, dir, locale } = useLocale();
+  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
+  const LOCALIZED_COLORS = [
+    { color: "#FF6B6B", name: gt.colorRed },
+    { color: "#4ECDC4", name: gt.colorCyan },
+    { color: "#45B7D1", name: gt.colorBlue },
+    { color: "#FFA07A", name: gt.colorOrange },
+    { color: "#98D8C8", name: gt.colorMint },
+    { color: "#F7DC6F", name: gt.colorYellow },
+    { color: "#BB8FCE", name: gt.colorPurple },
+    { color: "#85C1E2", name: gt.colorSky },
+  ];
   const [targetColor, setTargetColor] = useState<ColorOption>(COLORS[0]);
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
@@ -95,7 +107,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
     setCombo(0);
     setSpeedMultiplier(1);
     setIsPlaying(true);
-    setTargetColor(COLORS[Math.floor(Math.random() * COLORS.length)]);
+    setTargetColor(LOCALIZED_COLORS[Math.floor(Math.random() * LOCALIZED_COLORS.length)]);
     clearGameState();
   }, []);
 
@@ -138,7 +150,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
         }
 
         // Set new target color
-        const newColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+        const newColor = LOCALIZED_COLORS[Math.floor(Math.random() * LOCALIZED_COLORS.length)];
         setTargetColor(newColor);
       } else {
         setLives(prev => prev - 1);
@@ -153,6 +165,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
   return (
     <div
       className="absolute inset-0 z-50 flex flex-col"
+      dir={dir}
       style={{
         backgroundColor: theme.background,
       }}
@@ -180,7 +193,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
               outline: "none",
             }}
           >
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
           <h1
             style={{
@@ -190,13 +203,13 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
               color: theme.textHeading,
             }}
           >
-            Color Match
+            {gt.colorMatch}
           </h1>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex flex-col items-end">
-            <span style={{ fontFamily, fontSize: '12px', color: theme.textMuted }}>High Score: {highScore}</span>
-            <span style={{ fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.bold, color: theme.primary }}>Combo: {combo}x</span>
+            <span style={{ fontFamily, fontSize: '12px', color: theme.textMuted }}>{gt.highScore}: {highScore}</span>
+            <span style={{ fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.bold, color: theme.primary }}>{gt.combo}: {combo}x</span>
           </div>
           <div
             className="flex items-center gap-2 px-6 py-3"
@@ -232,7 +245,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 color: "#EF4444",
               }}
             >
-              Lives: {lives}
+              {gt.lives}: {lives}
             </span>
           </div>
           <div
@@ -250,7 +263,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 color: theme.accent,
               }}
             >
-              Score: {score}
+              {gt.score}: {score}
             </span>
           </div>
           <button
@@ -272,7 +285,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 color: theme.textInverse,
               }}
             >
-              {isPlaying ? "Restart" : "Start Game"}
+              {isPlaying ? gt.restart : gt.startGame}
             </span>
           </button>
           <button
@@ -315,7 +328,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 textAlign: "center",
               }}
             >
-              Match the colors as fast as you can!
+              {gt.matchColors}
             </h2>
             <p
               style={{
@@ -327,7 +340,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 maxWidth: "600px",
               }}
             >
-              Click on the color that matches the color name shown above. You have 30 seconds to score as many points as possible!
+              {gt.colorInstructions}
             </p>
             <button
               onClick={startGame}
@@ -343,7 +356,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 color: theme.textInverse,
               }}
             >
-              Start Game
+              {gt.startGame}
             </button>
           </div>
         ) : (timeLeft <= 0 || lives <= 0) ? (
@@ -358,14 +371,14 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 color: theme.textHeading,
               }}
             >
-              {lives <= 0 ? "No More Lives! 💔" : "Time's Up! 🎉"}
+              {lives <= 0 ? gt.noMoreLives : gt.timesUp}
             </h2>
             <div className="flex flex-col items-center gap-2">
               <p style={{ fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.semibold, color: theme.primary }}>
-                Final Score: {score}
+                {gt.finalScore}: {score}
               </p>
               <p style={{ fontFamily, fontSize: TYPE_SCALE.md, color: theme.textMuted }}>
-                High Score: {highScore}
+                {gt.highScore}: {highScore}
               </p>
             </div>
             <button
@@ -382,7 +395,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 color: theme.textInverse,
               }}
             >
-              Play Again
+              {gt.playAgain}
             </button>
           </div>
         ) : (
@@ -408,7 +421,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
                   marginBottom: "8px",
                 }}
               >
-                Click on:
+                {gt.clickOn}
               </p>
               <h2
                 style={{
@@ -431,7 +444,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 gridTemplateRows: "repeat(2, 180px)",
               }}
             >
-              {COLORS.map((colorOption) => (
+              {LOCALIZED_COLORS.map((colorOption) => (
                 <button
                   key={colorOption.color}
                   onClick={() => handleColorClick(colorOption)}
@@ -516,10 +529,10 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
             
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
-                Resume Game?
+                {gt.resumeGame}
               </h2>
               <p style={{ fontFamily, fontSize: TYPE_SCALE.md, color: theme.textMuted }}>
-                We found a saved session. Would you like to continue or start fresh?
+                {gt.resumeDesc}
               </p>
             </div>
 
@@ -529,14 +542,14 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
                 style={{ backgroundColor: theme.primary, color: theme.textInverse, fontSize: TYPE_SCALE.md }}
               >
-                Continue Playing
+                {gt.continuePlaying}
               </button>
               <button
                 onClick={handleNewGame}
                 className="w-full py-5 rounded-2xl font-bold transition-all hover:bg-black/5 active:scale-95"
                 style={{ backgroundColor: theme.surfaceElevated, color: theme.textHeading, border: theme.cardBorder, fontSize: TYPE_SCALE.md }}
               >
-                Start New Game
+                {gt.startNewGame}
               </button>
             </div>
           </div>

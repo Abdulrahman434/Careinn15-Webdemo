@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, User, Trophy, RotateCcw } from 'lucide-react';
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from '../ThemeContext';
+import { useLocale } from '../i18n';
+import { GAME_TRANSLATIONS } from './gameTranslations';
 
 type Category = 'animals' | 'countries' | 'foods';
 
@@ -18,6 +20,8 @@ const DICTIONARIES: Record<Category, string[]> = {
 
 export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
+  const { isRTL, dir, locale } = useLocale();
+  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
   const [gameState, setGameState] = useState<'menu' | 'playing' | 'gameover'>('menu');
   const [category, setCategory] = useState<Category | null>(null);
   const [chain, setChain] = useState<string[]>([]);
@@ -176,17 +180,18 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
     let error = null;
 
     if (word.length < 2) {
-      error = 'Word too short!';
+      error = gt.wordTooShort;
     } else if (!/^[a-z\s\-]+$/.test(word)) {
-      error = 'Only letters allowed!';
+      error = gt.onlyLetters;
     } else if (firstLetter !== lastLetter) {
-      error = `Must start with "${lastLetter.toUpperCase()}"!`;
+      error = gt.mustStartWith(lastLetter.toUpperCase());
     } else if (chain.some(c => c.toLowerCase() === word)) {
-      error = 'Already used!';
+      error = gt.alreadyUsed;
     } else {
       const dictionary = category ? DICTIONARIES[category] : [];
       if (!dictionary.some(d => d.toLowerCase() === word)) {
-        error = `Not in ${category} list!`;
+        const catLabel = category === 'animals' ? gt.catAnimalsW : category === 'countries' ? gt.catCountries : gt.catFoods;
+        error = gt.notInList(catLabel);
       }
     }
 
@@ -204,19 +209,19 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
   };
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }}>
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }} dir={dir}>
       <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg }}>
         <div className="flex items-center gap-4">
           <button onClick={onBackToGames} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
-          <h1 style={{ fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>Word Chain</h1>
+          <h1 style={{ fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.wordChain}</h1>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="px-4 py-2 font-bold rounded-full flex items-center gap-2" style={{ backgroundColor: theme.primarySubtle, color: theme.primary }}>
             <Trophy size={20} />
-            Best Chain: {highScore}
+            {gt.bestChain}: {highScore}
           </div>
           <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
             <div style={{ width: "24px", height: "24px", position: "relative" }}>
@@ -231,13 +236,13 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
         {gameState === 'menu' && (
           <div className="w-full max-w-2xl flex flex-col items-center gap-8 bg-white p-10 rounded-3xl shadow-xl">
             <div className="text-center">
-              <h2 className="text-4xl font-black mb-2" style={{ color: theme.primary }}>Word Chain</h2>
-              <p className="text-lg text-gray-600">Connect words by their first and last letters!</p>
-              <div className="mt-2 px-4 py-1 rounded-full text-sm font-bold inline-block" style={{ backgroundColor: theme.primarySubtle, color: theme.primary }}>2 Players Local</div>
+              <h2 className="text-4xl font-black mb-2" style={{ color: theme.primary }}>{gt.wordChain}</h2>
+              <p className="text-lg text-gray-600">{gt.wordChainDesc}</p>
+              <div className="mt-2 px-4 py-1 rounded-full text-sm font-bold inline-block" style={{ backgroundColor: theme.primarySubtle, color: theme.primary }}>{gt.twoPlayersLocal}</div>
             </div>
 
             <div className="w-full animate-in fade-in slide-in-from-bottom-4">
-              <h3 className="text-xl font-bold mb-4 text-gray-800 text-center">Select Category & Start</h3>
+              <h3 className="text-xl font-bold mb-4 text-gray-800 text-center">{gt.selectCategory}</h3>
               <div className="grid grid-cols-3 gap-4">
                 {(['animals', 'countries', 'foods'] as Category[]).map(cat => (
                   <button
@@ -246,7 +251,7 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
                     className="p-4 rounded-xl font-bold capitalize text-white active:scale-95 transition-all shadow-md"
                     style={{ backgroundColor: theme.primary }}
                   >
-                    {cat}
+                    {cat === 'animals' ? gt.catAnimalsW : cat === 'countries' ? gt.catCountries : gt.catFoods}
                   </button>
                 ))}
               </div>
@@ -260,11 +265,11 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
               <div className={`flex items-center gap-3 transition-all ${currentPlayer === 1 ? 'scale-110' : 'text-gray-400'}`} style={{ color: currentPlayer === 1 ? theme.primary : undefined }}>
                 <div className="flex flex-col items-center">
                   <User size={32} />
-                  <span className="text-xs font-bold">Player 1</span>
+                  <span className="text-xs font-bold">{gt.player1}</span>
                   <span className="text-xl font-black">{scores[1]} pts</span>
                   {currentPlayer === 1 && (
                     <span className="text-sm font-black mt-2 uppercase animate-pulse" style={{ fontSize: '18px', color: theme.primary }}>
-                      Player 1's Turn
+                      {gt.player1Turn}
                     </span>
                   )}
                 </div>
@@ -275,18 +280,18 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
                   {timeLeft}s
                 </div>
                 <div className="text-sm font-bold text-gray-400 mt-1 uppercase tracking-wider">
-                  Turn {turnsPlayed + 1} / 10
+                  {gt.turnOf(turnsPlayed + 1)}
                 </div>
               </div>
 
               <div className={`flex items-center gap-3 transition-all ${currentPlayer === 2 ? 'scale-110' : 'text-gray-400'}`} style={{ color: currentPlayer === 2 ? theme.primary : undefined }}>
                 <div className="flex flex-col items-center">
                   <User size={32} />
-                  <span className="text-xs font-bold">Player 2</span>
+                  <span className="text-xs font-bold">{gt.player2}</span>
                   <span className="text-xl font-black">{scores[2]} pts</span>
                   {currentPlayer === 2 && (
                     <span className="text-sm font-black mt-2 uppercase animate-pulse" style={{ fontSize: '18px', color: theme.primary }}>
-                      Player 2's Turn
+                      {gt.player2Turn}
                     </span>
                   )}
                 </div>
@@ -328,11 +333,11 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
                   </span>
                 ) : (
                   <span className="text-sm font-bold text-gray-400 uppercase tracking-widest opacity-50">
-                    Round in Progress...
+                    {gt.roundInProgress}
                   </span>
                 )}
                 <span className="text-sm font-bold uppercase tracking-widest" style={{ color: theme.primary }}>
-                  Start with: <span className="text-xl underline">{chain[chain.length - 1][chain[chain.length - 1].length - 1].toUpperCase()}</span>
+                  {gt.startWith}: <span className="text-xl underline">{chain[chain.length - 1][chain[chain.length - 1].length - 1].toUpperCase()}</span>
                 </span>
               </div>
               <form onSubmit={handleSubmit} className="bg-white p-4 rounded-2xl shadow-lg border border-gray-100 flex flex-col gap-2">
@@ -347,13 +352,13 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
                       autoFocus
                       value={inputValue}
                       onChange={e => setInputValue(e.target.value)}
-                      placeholder={`Type word in ${category}...`}
+                      placeholder={gt.typeWordIn(category === 'animals' ? gt.catAnimalsW : category === 'countries' ? gt.catCountries : gt.catFoods)}
                       className="w-full h-16 pl-14 pr-4 text-2xl font-bold bg-gray-50 border-2 border-gray-200 rounded-xl focus:outline-none transition-colors uppercase"
                       style={{ focusBorderColor: theme.primary } as any}
                     />
                   </div>
                   <button type="submit" className="px-8 h-16 text-white font-bold text-xl rounded-xl active:scale-95 transition-all shadow-md" style={{ backgroundColor: theme.primary }}>
-                    Submit
+                    {gt.submit}
                   </button>
                 </div>
               </form>
@@ -367,15 +372,15 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
 
             <div className="text-center">
               <h2 className="text-5xl font-black mb-2 text-gray-800">
-                {winner === 'draw' ? "It's a Draw! 🤝" : `Player ${winner} Wins! 🏆`}
+                {winner === 'draw' ? gt.itsADrawW : winner === 1 ? gt.player1Wins : gt.player2Wins}
               </h2>
               <div className="flex justify-center gap-8 mt-6">
                 <div className="text-center">
-                  <p className="text-sm font-bold text-gray-400 uppercase">Player 1</p>
+                  <p className="text-sm font-bold text-gray-400 uppercase">{gt.player1}</p>
                   <p className="text-3xl font-black" style={{ color: theme.primary }}>{scores[1]}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-bold text-gray-400 uppercase">Player 2</p>
+                  <p className="text-sm font-bold text-gray-400 uppercase">{gt.player2}</p>
                   <p className="text-3xl font-black" style={{ color: theme.primary }}>{scores[2]}</p>
                 </div>
               </div>
@@ -383,10 +388,10 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
 
             <div className="flex flex-col w-full gap-4 mt-4">
               <button onClick={() => setGameState('menu')} className="w-full py-5 text-white font-bold text-xl rounded-2xl shadow-lg active:scale-95 transition-all hover:brightness-110" style={{ backgroundColor: theme.primary }}>
-                Play Again
+                {gt.playAgain}
               </button>
               <button onClick={onBackToGames} className="w-full py-5 bg-gray-100 text-gray-700 font-bold text-xl rounded-2xl active:scale-95 transition-all hover:bg-gray-200">
-                Back to Games
+                {gt.backToGames}
               </button>
             </div>
           </div>
@@ -420,10 +425,10 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
 
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
-                Resume Game?
+                {gt.resumeGame}
               </h2>
               <p style={{ fontSize: TYPE_SCALE.md, color: theme.textMuted }}>
-                We found a saved session. Would you like to continue or start fresh?
+                {gt.resumeDesc}
               </p>
             </div>
 
@@ -433,14 +438,14 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
                 className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95 text-white shadow-md"
                 style={{ fontSize: TYPE_SCALE.md, backgroundColor: theme.primary }}
               >
-                Continue Playing
+                {gt.continuePlaying}
               </button>
               <button
                 onClick={handleNewGameFromResume}
                 className="w-full py-5 rounded-2xl font-bold transition-all hover:bg-gray-100 active:scale-95 border-2 border-gray-200"
                 style={{ backgroundColor: theme.surfaceElevated, color: theme.textHeading, fontSize: TYPE_SCALE.md }}
               >
-                Start New Game
+                {gt.startNewGame}
               </button>
             </div>
           </div>

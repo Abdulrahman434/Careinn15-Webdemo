@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, ArrowLeft } from "lucide-react";
+import { GAME_TRANSLATIONS } from "./gameTranslations";
 
 interface Card {
   id: number;
@@ -28,7 +29,8 @@ const DIFFICULTY_CONFIG: Record<Difficulty, { grid: number; pairs: number }> = {
 
 export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
-  const { t, fontFamily } = useLocale();
+  const { t, fontFamily, isRTL, dir, locale } = useLocale();
+  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [currentTheme, setCurrentTheme] = useState<Theme>('animals');
   const [cards, setCards] = useState<Card[]>([]);
@@ -245,6 +247,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
   return (
     <div
       className="absolute inset-0 z-50 flex flex-col"
+      dir={dir}
       style={{
         backgroundColor: theme.background,
       }}
@@ -272,7 +275,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
               outline: "none",
             }}
           >
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
           <h1
             style={{
@@ -282,7 +285,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
               color: theme.textHeading,
             }}
           >
-            Memory Match
+            {gt.memoryMatch}
           </h1>
         </div>
 
@@ -298,9 +301,9 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
                 backgroundColor: theme.surfaceElevated, color: theme.textHeading, outline: 'none'
               }}
             >
-              <option value="easy">Easy (4x4)</option>
-              <option value="medium">Medium (6x6)</option>
-              <option value="hard">Hard (8x8)</option>
+              <option value="easy">{gt.diffEasy}</option>
+              <option value="medium">{gt.diffMedium}</option>
+              <option value="hard">{gt.diffHard}</option>
             </select>
             <select
               value={currentTheme}
@@ -311,16 +314,16 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
                 backgroundColor: theme.surfaceElevated, color: theme.textHeading, outline: 'none'
               }}
             >
-              <option value="animals">Animals</option>
-              <option value="food">Food</option>
-              <option value="sports">Sports</option>
-              <option value="flags">Flags</option>
+              <option value="animals">{gt.themeAnimals}</option>
+              <option value="food">{gt.themeFood}</option>
+              <option value="sports">{gt.themeSports}</option>
+              <option value="flags">{gt.themeFlags}</option>
             </select>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="flex flex-col items-end">
-              <span style={{ fontFamily, fontSize: '12px', color: theme.textMuted }}>Best: {bestScores[difficulty] ? formatTime(bestScores[difficulty]) : '--:--'}</span>
+              <span style={{ fontFamily, fontSize: '12px', color: theme.textMuted }}>{gt.best}: {bestScores[difficulty] ? formatTime(bestScores[difficulty]) : '--:--'}</span>
               <span style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.bold, color: theme.primary }}>{formatTime(timer)}</span>
             </div>
             <div
@@ -338,7 +341,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
                   color: theme.primary,
                 }}
               >
-                Moves: {moves}
+                {gt.moves}: {moves}
               </span>
             </div>
             <button
@@ -360,7 +363,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
                   color: theme.textInverse,
                 }}
               >
-                New Game
+                {gt.newGame}
               </span>
             </button>
             <button
@@ -462,10 +465,10 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
 
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
-                Resume Game?
+                {gt.resumeGame}
               </h2>
               <p style={{ fontFamily, fontSize: TYPE_SCALE.md, color: theme.textMuted }}>
-                We found a saved session. Would you like to continue or start fresh?
+                {gt.resumeDesc}
               </p>
             </div>
 
@@ -475,14 +478,14 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
                 className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
                 style={{ backgroundColor: theme.primary, color: theme.textInverse, fontSize: TYPE_SCALE.md }}
               >
-                Continue Playing
+                {gt.continuePlaying}
               </button>
               <button
                 onClick={handleNewGame}
                 className="w-full py-5 rounded-2xl font-bold transition-all hover:bg-black/5 active:scale-95"
                 style={{ backgroundColor: theme.surfaceElevated, color: theme.textHeading, border: theme.cardBorder, fontSize: TYPE_SCALE.md }}
               >
-                Start New Game
+                {gt.startNewGame}
               </button>
             </div>
           </div>
@@ -517,7 +520,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
                 color: theme.textHeading,
               }}
             >
-              Congratulations! 🎉
+              {gt.congratulations}
             </h2>
             <p
               style={{
@@ -528,9 +531,9 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
                 textAlign: 'center'
               }}
             >
-              You completed the {difficulty} level in {moves} moves!<br />
-              Final Time: <span style={{ color: theme.primary, fontWeight: WEIGHT.bold }}>{formatTime(timer)}</span><br />
-              Best Time: <span style={{ color: theme.primary, fontWeight: WEIGHT.bold }}>{formatTime(bestScores[difficulty])}</span>
+              {gt.memoryWin(difficulty, moves)}<br />
+              {gt.finalTime}: <span style={{ color: theme.primary, fontWeight: WEIGHT.bold }}>{formatTime(timer)}</span><br />
+              {gt.bestTime}: <span style={{ color: theme.primary, fontWeight: WEIGHT.bold }}>{formatTime(bestScores[difficulty])}</span>
             </p>
             <div className="flex gap-4 mt-4">
               <button
@@ -547,7 +550,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
                   color: theme.textInverse,
                 }}
               >
-                Play Again
+                {gt.playAgain}
               </button>
               <button
                 onClick={onClose}
@@ -563,7 +566,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
                   color: theme.textHeading,
                 }}
               >
-                Close
+                {gt.close}
               </button>
             </div>
           </div>

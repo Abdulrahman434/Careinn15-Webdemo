@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, ArrowLeft, Search } from "lucide-react";
+import { GAME_TRANSLATIONS } from "./gameTranslations";
 
 const WORD_CATEGORIES = {
   Animals: ["LION", "TIGER", "BEAR", "WOLF", "ZEBRA", "GIRAFFE", "MONKEY", "PANDA", "ELEPHANT", "KANGAROO", "DOLPHIN", "SHARK", "PENGUIN", "EAGLE", "SNAKE"],
@@ -25,7 +26,8 @@ const HIGHLIGHT_COLORS = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8",
 
 export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, isRTL, dir, locale } = useLocale();
+  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [grid, setGrid] = useState<string[][]>([]);
   const [foundWords, setFoundWords] = useState<string[]>([]);
@@ -253,7 +255,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
       // This is complex, but I'll skip storing positions for now and just show a random letter of a word
       // Alternatively, I'll update initializeGame to store positions.
       // For simplicity here, I'll just find ONE letter.
-      alert(`Hint: Look for "${wordToHint}"`);
+      alert(`${gt.hint}: "${wordToHint}"`);
     }
   };
 
@@ -264,13 +266,13 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
   };
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }}>
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }} dir={dir}>
       <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg }}>
         <div className="flex items-center gap-4">
           <button onClick={onBackToGames} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
-          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>Word Search</h1>
+          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.wordSearch}</h1>
         </div>
         
         <div className="flex items-center gap-4">
@@ -279,23 +281,23 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
             onChange={(e) => initializeGame(e.target.value as Difficulty, currentCategory)}
             style={{ padding: "8px 12px", borderRadius: theme.radiusMd, border: theme.cardBorder, outline: "none", fontFamily: fontFamily }}
           >
-            <option value="easy">Easy (8x8)</option>
-            <option value="medium">Medium (12x12)</option>
-            <option value="hard">Hard (16x16)</option>
+            <option value="easy">{gt.wsEasy}</option>
+            <option value="medium">{gt.wsMedium}</option>
+            <option value="hard">{gt.wsHard}</option>
           </select>
           <select 
             value={currentCategory} 
             onChange={(e) => initializeGame(difficulty, e.target.value as any)}
             style={{ padding: "8px 12px", borderRadius: theme.radiusMd, border: theme.cardBorder, outline: "none", fontFamily: fontFamily }}
           >
-            {Object.keys(WORD_CATEGORIES).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+            {Object.keys(WORD_CATEGORIES).map(cat => <option key={cat} value={cat}>{(gt[`ws${cat as keyof typeof WORD_CATEGORIES}` as keyof typeof gt] as string) || cat}</option>)}
           </select>
           <div className="px-4 py-2 bg-gray-100 rounded-lg font-mono">
             {formatTime(timer)}
           </div>
           <button onClick={handleNewGame} className="flex items-center gap-2 px-6 py-3 cursor-pointer active:scale-95 transition-transform" style={{ backgroundColor: theme.primary, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
             <RotateCcw size={20} color={theme.textInverse} />
-            <span style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold, color: theme.textInverse }}>Reset</span>
+            <span style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold, color: theme.textInverse }}>{gt.reset}</span>
           </button>
           <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
             <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
@@ -340,12 +342,12 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
         
         <div className="w-80 flex flex-col gap-4 overflow-auto">
           <div className="flex items-center justify-between">
-            <h2 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading }}>Words:</h2>
+            <h2 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.wsWords}</h2>
             <button 
               onClick={showHint}
               className="px-3 py-1 text-xs bg-amber-100 text-amber-700 rounded-full font-bold hover:bg-amber-200"
             >
-              Hint
+              {gt.hint}
             </button>
           </div>
           <div className="flex flex-col gap-2">
@@ -368,10 +370,10 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
         <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", zIndex: 100 }}>
           <div className="flex flex-col items-center gap-6 px-12 py-10" style={{ backgroundColor: theme.surface, borderRadius: theme.radiusCard, boxShadow: SHADOW["2xl"], border: theme.cardBorder }}>
             <Trophy size={80} color={theme.primary} strokeWidth={1.5} />
-            <h2 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>Congratulations! 🎉</h2>
-            <p style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.medium, color: theme.textMuted }}>You found all the words!</p>
+            <h2 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.wsCongrats}</h2>
+            <p style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.medium, color: theme.textMuted }}>{gt.wsAllFound}</p>
             <div className="flex gap-4 mt-4">
-              <button onClick={() => initializeGame()} className="px-8 py-4 cursor-pointer active:scale-95 transition-transform" style={{ backgroundColor: theme.primary, borderRadius: theme.radiusMd, border: "none", outline: "none", fontFamily: fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.semibold, color: theme.textInverse }}>Play Again</button>
+              <button onClick={() => initializeGame()} className="px-8 py-4 cursor-pointer active:scale-95 transition-transform" style={{ backgroundColor: theme.primary, borderRadius: theme.radiusMd, border: "none", outline: "none", fontFamily: fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.semibold, color: theme.textInverse }}>{gt.playAgain}</button>
               <button 
                 onClick={onClose} 
                 className="px-8 py-4 cursor-pointer active:scale-95 transition-transform" 
@@ -386,7 +388,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
                   color: theme.textHeading 
                 }}
               >
-                Close
+                {gt.close}
               </button>
             </div>
           </div>
@@ -420,10 +422,10 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
             
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
-                Resume Game?
+                {gt.resumeGame}
               </h2>
               <p style={{ fontFamily, fontSize: TYPE_SCALE.md, color: theme.textMuted }}>
-                We found a saved session. Would you like to continue or start fresh?
+                {gt.resumeDesc}
               </p>
             </div>
 
@@ -433,14 +435,14 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
                 className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
                 style={{ backgroundColor: theme.primary, color: theme.textInverse, fontSize: TYPE_SCALE.md }}
               >
-                Continue Playing
+                {gt.continuePlaying}
               </button>
               <button
                 onClick={handleNewGame}
                 className="w-full py-5 rounded-2xl font-bold transition-all hover:bg-black/5 active:scale-95"
                 style={{ backgroundColor: theme.surfaceElevated, color: theme.textHeading, border: theme.cardBorder, fontSize: TYPE_SCALE.md }}
               >
-                Start New Game
+                {gt.startNewGame}
               </button>
             </div>
           </div>

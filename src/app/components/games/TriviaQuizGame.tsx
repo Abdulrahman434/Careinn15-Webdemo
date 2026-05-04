@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, ArrowLeft, CheckCircle2, XCircle, ChevronRight, HelpCircle, RotateCcw } from "lucide-react";
+import { GAME_TRANSLATIONS } from "./gameTranslations";
 
 type Question = {
   id: number;
@@ -283,63 +284,11 @@ const TRIVIA_DATA_AR: Record<Category, Question[]> = {
   ]
 };
 
-const UI_TEXT = {
-  en: {
-    title: "Trivia Quiz",
-    selectCat: "Select a Category",
-    testKnowledge: "Test your knowledge in these different fields",
-    question: "Question",
-    resumeGame: "Resume Game?",
-    resumeDesc: "We found a saved session. Would you like to continue or start fresh?",
-    continue: "Continue Playing",
-    startNew: "Start New Game",
-    quizComplete: "Quiz Complete!",
-    youScored: "You scored",
-    outOf: "out of",
-    correctAnswer: "Correct Answer:",
-    yourAnswer: "Your Answer:",
-    replay: "REPLAY",
-    otherCat: "OTHER CATEGORY",
-    cats: {
-      General: "General Knowledge",
-      Science: "Science Knowledge",
-      Geography: "Geography Knowledge",
-      Islamic: "Islamic Facts",
-      Saudi: "Saudi Culture",
-      Health: "Health & Body"
-    }
-  },
-  ar: {
-    title: "اختبار المعلومات",
-    selectCat: "اختر فئة",
-    testKnowledge: "اختبر معلوماتك في هذه المجالات المختلفة",
-    question: "سؤال",
-    resumeGame: "استئناف اللعبة؟",
-    resumeDesc: "وجدنا جلسة محفوظة. هل ترغب في المتابعة أم البدء من جديد؟",
-    continue: "متابعة اللعب",
-    startNew: "بدء لعبة جديدة",
-    quizComplete: "اكتمل الاختبار!",
-    youScored: "لقد سجلت",
-    outOf: "من",
-    correctAnswer: "الإجابة الصحيحة:",
-    yourAnswer: "إجابتك:",
-    replay: "إعادة اللعب",
-    otherCat: "فئة أخرى",
-    cats: {
-      General: "معلومات عامة",
-      Science: "معلومات علمية",
-      Geography: "معلومات جغرافية",
-      Islamic: "حقائق إسلامية",
-      Saudi: "الثقافة السعودية",
-      Health: "الصحة والجسم"
-    }
-  }
-};
+
 
 export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
-  const [language, setLanguage] = useState<'en' | 'ar'>('en');
+  const { fontFamily, locale, isRTL, dir } = useLocale();
   const [gameState, setGameState] = useState<"category" | "playing" | "summary">("category");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
@@ -347,8 +296,8 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
   const [score, setScore] = useState(0);
   const [roundKey, setRoundKey] = useState(0);
 
-  const t = UI_TEXT[language];
-  const activeData = language === 'ar' ? TRIVIA_DATA_AR : TRIVIA_DATA;
+  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
+  const activeData = locale === 'ar' ? TRIVIA_DATA_AR : TRIVIA_DATA;
 
   const saveGameState = useCallback(() => {
     if (gameState !== "playing" || !selectedCategory) return;
@@ -392,11 +341,6 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
   };
 
   useEffect(() => {
-    const savedLang = localStorage.getItem('trivia-language');
-    console.log('=== LOAD GAME STATE ===', 'trivia-language', savedLang);
-    if (savedLang === 'ar' || savedLang === 'en') {
-      setLanguage(savedLang);
-    }
     const saved = localStorage.getItem('trivia-quiz-game-state');
     console.log('=== LOAD GAME STATE ===', 'trivia-quiz-game-state', saved);
     if (saved) {
@@ -404,12 +348,6 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
       setShowResumeModal(true);
     }
   }, []);
-
-  const handleLanguageChange = (lang: 'en' | 'ar') => {
-    setLanguage(lang);
-    localStorage.setItem('trivia-language', lang);
-    console.log('=== SAVE GAME STATE ===', 'trivia-language', lang);
-  };
 
   useEffect(() => {
     saveGameState();
@@ -461,19 +399,19 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
   };
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }} dir={dir}>
       <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg }}>
         <div className="flex items-center gap-4">
           <button onClick={onBackToGames} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
-            <ArrowLeft size={24} color={theme.textHeading} className={language === 'ar' ? 'rotate-180' : ''} />
+            <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
-          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{t.title}</h1>
+          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.triviaQuiz}</h1>
         </div>
 
         <div className="flex items-center gap-4">
           {gameState === "playing" && (
             <div className="px-4 py-2 bg-blue-50 rounded-full">
-              <span className="font-bold text-blue-600">{t.question} {currentQuestionIdx + 1}/{questions.length}</span>
+              <span className="font-bold text-blue-600">{gt.question} {currentQuestionIdx + 1}/{questions.length}</span>
             </div>
           )}
           <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
@@ -485,23 +423,9 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
       <div className="flex-1 flex flex-col items-center justify-center overflow-auto p-8">
         {gameState === "category" && (
           <div className="w-full max-w-4xl flex flex-col items-center gap-10">
-            <div className="flex bg-white rounded-full p-1 shadow-sm border border-gray-100 mb-2">
-              <button
-                onClick={() => handleLanguageChange('en')}
-                className={`px-6 py-2 rounded-full font-bold transition-all ${language === 'en' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
-              >
-                English
-              </button>
-              <button
-                onClick={() => handleLanguageChange('ar')}
-                className={`px-6 py-2 rounded-full font-bold transition-all ${language === 'ar' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
-              >
-                العربية
-              </button>
-            </div>
             <div className="text-center">
-              <h2 className="text-4xl font-black mb-4" style={{ color: theme.textHeading }}>{t.selectCat}</h2>
-              <p className="text-lg opacity-70" style={{ color: theme.textNormal }}>{t.testKnowledge}</p>
+              <h2 className="text-4xl font-black mb-4" style={{ color: theme.textHeading }}>{gt.selectCat}</h2>
+              <p className="text-lg opacity-70" style={{ color: theme.textNormal }}>{gt.testKnowledge}</p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6 w-full">
               {(Object.keys(TRIVIA_DATA) as Category[]).map((cat) => (
@@ -513,7 +437,7 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
                   <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <HelpCircle size={32} color={theme.primary} />
                   </div>
-                  <span className="text-xl font-bold" style={{ color: theme.textHeading }}>{t.cats[cat as keyof typeof t.cats]}</span>
+                  <span className="text-xl font-bold" style={{ color: theme.textHeading }}>{gt[`cat${cat}` as keyof typeof gt] as string}</span>
                 </button>
               ))}
             </div>
@@ -542,7 +466,7 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
                     style={{ color: theme.textHeading }}
                   >
                     <span>{opt}</span>
-                    <ChevronRight className={`opacity-0 group-hover:opacity-100 transition-opacity ${language === 'ar' ? 'rotate-180' : ''}`} />
+                    <ChevronRight className={`opacity-0 group-hover:opacity-100 transition-opacity ${isRTL ? 'rotate-180' : ''}`} />
                   </button>
                 ))}
               </div>
@@ -554,8 +478,8 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
           <div className="w-full max-w-4xl flex flex-col items-center gap-8 py-8">
             <div className="text-center">
               <Trophy size={80} color="#FFD700" className="mx-auto mb-4" />
-              <h2 className="text-4xl font-black mb-2" style={{ color: theme.textHeading }}>{t.quizComplete}</h2>
-              <p className="text-2xl font-bold" style={{ color: theme.primary }}>{t.youScored} {score} {t.outOf} {questions.length}</p>
+              <h2 className="text-4xl font-black mb-2" style={{ color: theme.textHeading }}>{gt.quizComplete}</h2>
+              <p className="text-2xl font-bold" style={{ color: theme.primary }}>{gt.youScored} {score} {gt.outOf} {questions.length}</p>
             </div>
 
             <div className="w-full flex flex-col gap-6">
@@ -571,12 +495,12 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
                   </div>
                   <div className="p-4 rounded-xl bg-gray-50 flex flex-col gap-2">
                     <div className="flex gap-2">
-                      <span className="font-bold text-gray-500">{t.correctAnswer}</span>
+                      <span className="font-bold text-gray-500">{gt.correctAnswerLabel}</span>
                       <span className="font-bold text-green-600">{q.options[q.correctAnswer]}</span>
                     </div>
                     {userAnswers[i] !== q.correctAnswer && (
                       <div className="flex gap-2">
-                        <span className="font-bold text-gray-500">{t.yourAnswer}</span>
+                        <span className="font-bold text-gray-500">{gt.yourAnswerLabel}</span>
                         <span className="font-bold text-red-500">{q.options[userAnswers[i]]}</span>
                       </div>
                     )}
@@ -587,8 +511,8 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
             </div>
 
             <div className="flex gap-4 w-full max-w-md">
-              <button onClick={() => selectCategory(selectedCategory!)} className="flex-1 py-5 bg-blue-600 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-all">{t.replay}</button>
-              <button onClick={reset} className="flex-1 py-5 bg-gray-100 font-bold rounded-2xl active:scale-95 transition-all" style={{ color: theme.textHeading }}>{t.otherCat}</button>
+              <button onClick={() => selectCategory(selectedCategory!)} className="flex-1 py-5 bg-blue-600 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-all">{gt.replay}</button>
+              <button onClick={reset} className="flex-1 py-5 bg-gray-100 font-bold rounded-2xl active:scale-95 transition-all" style={{ color: theme.textHeading }}>{gt.otherCat}</button>
             </div>
           </div>
         )}
@@ -621,10 +545,10 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
 
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
-                {t.resumeGame}
+                {gt.resumeGame}
               </h2>
               <p style={{ fontFamily, fontSize: TYPE_SCALE.md, color: theme.textMuted }}>
-                {t.resumeDesc}
+                {gt.resumeDesc}
               </p>
             </div>
 
@@ -634,14 +558,14 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
                 className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
                 style={{ backgroundColor: theme.primary, color: theme.textInverse, fontSize: TYPE_SCALE.md }}
               >
-                {t.continue}
+                {gt.continuePlaying}
               </button>
               <button
                 onClick={handleNewGame}
                 className="w-full py-5 rounded-2xl font-bold transition-all hover:bg-black/5 active:scale-95"
                 style={{ backgroundColor: theme.surfaceElevated, color: theme.textHeading, border: theme.cardBorder, fontSize: TYPE_SCALE.md }}
               >
-                {t.startNew}
+                {gt.startNewGame}
               </button>
             </div>
           </div>

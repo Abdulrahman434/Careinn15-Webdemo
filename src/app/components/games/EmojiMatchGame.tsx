@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, Timer, ArrowLeft } from "lucide-react";
+import { GAME_TRANSLATIONS } from "./gameTranslations";
 
 interface EmojiPair {
   id: number;
@@ -21,7 +22,8 @@ const CATEGORIES: Record<Category, string[]> = {
 
 export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, isRTL, dir, locale } = useLocale();
+  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
   const [category, setCategory] = useState<Category>('faces');
   const [leftEmojis, setLeftEmojis] = useState<EmojiPair[]>([]);
   const [rightEmojis, setRightEmojis] = useState<EmojiPair[]>([]);
@@ -280,6 +282,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
   return (
     <div
       className="absolute inset-0 z-50 flex flex-col"
+      dir={dir}
       style={{
         backgroundColor: theme.background,
       }}
@@ -307,7 +310,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
               outline: "none",
             }}
           >
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
           <h1
             style={{
@@ -317,7 +320,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
               color: theme.textHeading,
             }}
           >
-            Emoji Match
+            {gt.emojiMatchGame}
           </h1>
         </div>
         <div className="flex items-center gap-4">
@@ -330,16 +333,16 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
               backgroundColor: theme.surfaceElevated, color: theme.textHeading, outline: 'none'
             }}
           >
-            <option value="faces">Faces</option>
-            <option value="animals">Animals</option>
-            <option value="food">Food</option>
-            <option value="travel">Travel</option>
-            <option value="sports">Sports</option>
+            <option value="faces">{gt.emojiFaces}</option>
+            <option value="animals">{gt.emojiAnimals}</option>
+            <option value="food">{gt.emojiFood}</option>
+            <option value="travel">{gt.emojiTravel}</option>
+            <option value="sports">{gt.emojiSports}</option>
           </select>
 
           <div className="flex flex-col items-end">
-            <span style={{ fontFamily, fontSize: '12px', color: theme.textMuted }}>Best: {highScore}</span>
-            <span style={{ fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.bold, color: theme.primary }}>Streak: {streak}x</span>
+            <span style={{ fontFamily, fontSize: '12px', color: theme.textMuted }}>{gt.best}: {highScore}</span>
+            <span style={{ fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.bold, color: theme.primary }}>{gt.streak}: {streak}x</span>
           </div>
 
           <div
@@ -376,7 +379,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 color: theme.accent,
               }}
             >
-              Score: {score}
+              {gt.score}: {score}
             </span>
           </div>
           <button
@@ -398,7 +401,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 color: theme.textInverse,
               }}
             >
-              {!isPlaying && leftEmojis.length === 0 ? "Start Game" : "Restart"}
+              {!isPlaying && leftEmojis.length === 0 ? gt.startGame : gt.restart}
             </span>
           </button>
           <button
@@ -441,7 +444,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 textAlign: "center",
               }}
             >
-              Match the Emojis!
+              {gt.emojiMatchTitle}
             </h2>
             <p
               style={{
@@ -453,7 +456,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 maxWidth: "600px",
               }}
             >
-              Click on matching emojis from the left and right columns to connect them. Match all pairs before time runs out!
+              {gt.emojiDesc}
             </p>
             <button
               onClick={() => startGame()}
@@ -469,7 +472,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 color: theme.textInverse,
               }}
             >
-              Start Game
+              {gt.startGame}
             </button>
           </div>
         ) : isGameComplete ? (
@@ -484,7 +487,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 color: theme.textHeading,
               }}
             >
-              Perfect Match! 🎉
+              {gt.emojiPerfect}
             </h2>
             <p
               style={{
@@ -494,7 +497,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 color: theme.primary,
               }}
             >
-              Final Score: {score}
+              {gt.finalScore}: {score}
             </p>
             <p
               style={{
@@ -504,7 +507,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 color: theme.textMuted,
               }}
             >
-              Time remaining: {timeLeft} seconds
+              {gt.emojiTimeRem} {timeLeft} {gt.emojiSeconds}
             </p>
             <button
               onClick={() => startGame()}
@@ -520,7 +523,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 color: theme.textInverse,
               }}
             >
-              Play Again
+              {gt.playAgain}
             </button>
           </div>
         ) : timeLeft === 0 ? (
@@ -543,7 +546,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 color: theme.textHeading,
               }}
             >
-              Time's Up!
+              {gt.timesUp}
             </h2>
             <p
               style={{
@@ -553,7 +556,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 color: theme.primary,
               }}
             >
-              Score: {score}
+              {gt.score}: {score}
             </p>
             <p
               style={{
@@ -563,7 +566,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 color: theme.textMuted,
               }}
             >
-              You matched {matches} out of {leftEmojis.length} pairs
+              {gt.emojiMatched} {matches} {gt.emojiOutOf} {leftEmojis.length} {gt.emojiPairs}
             </p>
             <button
               onClick={() => startGame()}
@@ -579,7 +582,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 color: theme.textInverse,
               }}
             >
-              Try Again
+              {gt.tryAgain}
             </button>
           </div>
         ) : (
@@ -636,7 +639,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                     maxWidth: "150px",
                   }}
                 >
-                  Match the pairs
+                  {gt.emojiMatchTitle}
                 </p>
                 <div
                   className="px-4 py-2"
@@ -733,10 +736,10 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
 
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
-                Resume Game?
+                {gt.resumeGame}
               </h2>
               <p style={{ fontFamily, fontSize: TYPE_SCALE.md, color: theme.textMuted }}>
-                We found a saved session. Would you like to continue or start fresh?
+                {gt.resumeDesc}
               </p>
             </div>
 
@@ -746,14 +749,14 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
                 style={{ backgroundColor: theme.primary, color: theme.textInverse, fontSize: TYPE_SCALE.md }}
               >
-                Continue Playing
+                {gt.continuePlaying}
               </button>
               <button
                 onClick={handleNewGame}
                 className="w-full py-5 rounded-2xl font-bold transition-all hover:bg-black/5 active:scale-95"
                 style={{ backgroundColor: theme.surfaceElevated, color: theme.textHeading, border: theme.cardBorder, fontSize: TYPE_SCALE.md }}
               >
-                Start New Game
+                {gt.startNewGame}
               </button>
             </div>
           </div>

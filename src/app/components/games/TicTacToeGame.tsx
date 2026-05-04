@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, Circle, X, ArrowLeft } from "lucide-react";
+import { GAME_TRANSLATIONS } from "./gameTranslations";
 
 type Player = "X" | "O" | null;
 type GameMode = "friend" | "computer";
@@ -22,7 +23,8 @@ function calculateWinner(squares: Player[]): Player {
 
 export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, isRTL, dir, locale } = useLocale();
+  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
   const [squares, setSquares] = useState<Player[]>(Array(9).fill(null));
   const [xIsNext, setXIsNext] = useState(true);
   const [gameMode, setGameMode] = useState<GameMode>("friend");
@@ -181,6 +183,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
   return (
     <div
       className="absolute inset-0 z-50 flex flex-col"
+      dir={dir}
       style={{
         backgroundColor: theme.background,
       }}
@@ -208,7 +211,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
               outline: "none",
             }}
           >
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
           <h1
             style={{
@@ -218,7 +221,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
               color: theme.textHeading,
             }}
           >
-            Tic-Tac-Toe
+            {gt.ticTacToe}
           </h1>
         </div>
         <div className="flex items-center gap-4">
@@ -241,7 +244,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
                 color: theme.textInverse,
               }}
             >
-              New Round
+              {gt.newRound}
             </span>
           </button>
           <button
@@ -258,7 +261,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
               color: theme.textHeading,
             }}
           >
-            Reset Scores
+            {gt.resetScores}
           </button>
           <button
             onClick={onClose}
@@ -299,7 +302,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
                 color: theme.primary,
               }}
             >
-              {winner ? `Winner: ${winner}` : isDraw ? "It's a Draw!" : `Next: ${xIsNext ? "X" : "O"}`}
+              {winner ? gt.winner(winner) : isDraw ? gt.itsADraw : gt.next(xIsNext ? "X" : "O")}
             </span>
           </div>
 
@@ -342,7 +345,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
                 fontSize: TYPE_SCALE.sm
               }}
             >
-              Play with Friend
+              {gt.playWithFriend}
             </button>
             <button
               onClick={() => { setGameMode("computer"); resetScores(); }}
@@ -353,7 +356,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
                 fontSize: TYPE_SCALE.sm
               }}
             >
-              Play with Computer
+              {gt.playWithComputer}
             </button>
           </div>
         </div>
@@ -378,7 +381,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
               textAlign: "center",
             }}
           >
-            Scoreboard
+            {gt.scoreboard}
           </h2>
           <div className="flex flex-col gap-4">
             <div
@@ -398,7 +401,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
                     color: theme.textHeading,
                   }}
                 >
-                  {gameMode === "computer" ? "You (X)" : "Player X"}
+                  {gameMode === "computer" ? gt.youX : gt.playerX}
                 </span>
               </div>
               <span
@@ -429,7 +432,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
                     color: theme.textHeading,
                   }}
                 >
-                  {gameMode === "computer" ? "Computer (O)" : "Player O"}
+                  {gameMode === "computer" ? gt.computerO : gt.playerO}
                 </span>
               </div>
               <span
@@ -458,7 +461,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
                   color: theme.textHeading,
                 }}
               >
-                Draws
+                {gt.draws}
               </span>
               <span
                 style={{
@@ -496,7 +499,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
               color: "#fff",
             }}
           >
-            {winner ? `🎉 Player ${winner} wins!` : "🤝 It's a draw!"}
+            {winner ? gt.playerWins(winner) : gt.drawMessage}
           </span>
         </div>
       )}
@@ -528,10 +531,10 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
             
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
-                Resume Game?
+                {gt.resumeGame}
               </h2>
               <p style={{ fontFamily, fontSize: TYPE_SCALE.md, color: theme.textMuted }}>
-                We found a saved session. Would you like to continue or start fresh?
+                {gt.resumeDesc}
               </p>
             </div>
 
@@ -541,14 +544,14 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
                 className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
                 style={{ backgroundColor: theme.primary, color: theme.textInverse, fontSize: TYPE_SCALE.md }}
               >
-                Continue Playing
+                {gt.continuePlaying}
               </button>
               <button
                 onClick={handleNewGame}
                 className="w-full py-5 rounded-2xl font-bold transition-all hover:bg-black/5 active:scale-95"
                 style={{ backgroundColor: theme.surfaceElevated, color: theme.textHeading, border: theme.cardBorder, fontSize: TYPE_SCALE.md }}
               >
-                Start New Game
+                {gt.startNewGame}
               </button>
             </div>
           </div>

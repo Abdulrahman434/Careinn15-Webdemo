@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, ArrowLeft, Camera, Image as ImageIcon } from "lucide-react";
+import { GAME_TRANSLATIONS } from "./gameTranslations";
 
 type Difficulty = 3 | 4 | 5;
 type Category = 'Nature' | 'Animals';
@@ -31,7 +32,8 @@ const IMAGES: Record<Category, string[]> = {
 
 export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, isRTL, dir, locale } = useLocale();
+  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
   const [gameState, setGameState] = useState<"menu" | "playing" | "complete">("menu");
   const [difficulty, setDifficulty] = useState<Difficulty>(3);
   const [category, setCategory] = useState<Category>('Nature');
@@ -221,7 +223,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
   };
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }}>
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }} dir={dir}>
       <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg }}>
         <div className="flex items-center gap-4">
           <button
@@ -235,16 +237,16 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
             style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}
           >
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
-          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>Puzzle</h1>
+          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.puzzle}</h1>
         </div>
 
         <div className="flex items-center gap-6">
           {gameState === "playing" && (
             <>
               <div className="flex flex-col items-end">
-                <span style={{ fontFamily, fontSize: '12px', color: theme.textMuted }}>Moves: {moves}</span>
+                <span style={{ fontFamily, fontSize: '12px', color: theme.textMuted }}>{gt.moves}: {moves}</span>
                 <span style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.bold, color: theme.primary }}>{formatTime(timer)}</span>
               </div>
               <button
@@ -256,13 +258,13 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
                   border: theme.cardBorder
                 }}
               >
-                {showNumbers ? "Hide Numbers" : "Show Numbers"}
+                {showNumbers ? gt.jigsawHideNum : gt.jigsawShowNum}
               </button>
               <button
                 onClick={giveHint}
                 className="px-4 py-2 rounded-xl font-bold bg-amber-100 text-amber-700 border border-amber-200 transition-all active:scale-95"
               >
-                Hint
+                {gt.hint}
               </button>
               <button onClick={handleNewGame} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
                 <RotateCcw size={24} color={theme.textHeading} />
@@ -279,13 +281,13 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
         {gameState === "menu" && (
           <div className="w-full max-w-6xl flex flex-col items-center gap-10">
             <div className="text-center">
-              <h2 className="text-4xl font-black mb-4" style={{ color: theme.textHeading }}>Picture Puzzle</h2>
-              <p className="text-lg opacity-70" style={{ color: theme.textNormal }}>Choose a category, a specific image, and difficulty to start.</p>
+              <h2 className="text-4xl font-black mb-4" style={{ color: theme.textHeading }}>{gt.jigsawPicture}</h2>
+              <p className="text-lg opacity-70" style={{ color: theme.textNormal }}>{gt.jigsawDesc}</p>
             </div>
 
             <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-12">
               <div className="flex flex-col gap-6">
-                <h3 className="text-xl font-bold" style={{ color: theme.textHeading }}>1. Choose Category</h3>
+                <h3 className="text-xl font-bold" style={{ color: theme.textHeading }}>{gt.jigsawChooseCat}</h3>
                 <div className="grid grid-cols-2 gap-4">
                   {(['Nature', 'Animals'] as Category[]).map(cat => (
                     <button
@@ -300,12 +302,12 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
                       <div className={`p-3 rounded-xl ${category === cat ? 'bg-white' : 'bg-gray-100'}`}>
                         {cat === 'Nature' ? <ImageIcon size={24} /> : <Camera size={24} />}
                       </div>
-                      <span className="text-lg font-bold" style={{ color: theme.textHeading }}>{cat}</span>
+                      <span className="text-lg font-bold" style={{ color: theme.textHeading }}>{cat === 'Nature' ? gt.jigsawNature : gt.jigsawAnimals}</span>
                     </button>
                   ))}
                 </div>
 
-                <h3 className="text-xl font-bold mt-4" style={{ color: theme.textHeading }}>2. Difficulty</h3>
+                <h3 className="text-xl font-bold mt-4" style={{ color: theme.textHeading }}>{gt.jigsawDiff}</h3>
                 <div className="grid grid-cols-1 gap-4">
                   {[3, 4, 5].map(d => (
                     <button
@@ -317,15 +319,15 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
                         borderColor: difficulty === d ? theme.primary : '#F3F4F6'
                       }}
                     >
-                      <span className="text-lg font-bold" style={{ color: theme.textHeading }}>{d}x{d} ({d * d} Pieces)</span>
-                      <span className="text-sm font-medium px-3 py-1 rounded-full bg-white">{d === 3 ? 'Easy' : d === 4 ? 'Medium' : 'Hard'}</span>
+                      <span className="text-lg font-bold" style={{ color: theme.textHeading }}>{d}x{d} ({d * d} {gt.jigsawPieces})</span>
+                      <span className="text-sm font-medium px-3 py-1 rounded-full bg-white">{d === 3 ? gt.easy : d === 4 ? gt.medium : gt.hard}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div className="lg:col-span-2 flex flex-col gap-6">
-                <h3 className="text-xl font-bold" style={{ color: theme.textHeading }}>3. Select Image</h3>
+                <h3 className="text-xl font-bold" style={{ color: theme.textHeading }}>{gt.jigsawSelectImg}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
                   {IMAGES[category].map((url, idx) => (
                     <button
@@ -353,7 +355,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
                   onClick={() => initializeGame(difficulty)}
                   className="mt-4 py-5 bg-blue-600 text-white text-xl font-black rounded-2xl shadow-xl hover:bg-blue-700 transition-all active:scale-95"
                 >
-                  START PUZZLE
+                  {gt.jigsawStart}
                 </button>
               </div>
             </div>
@@ -414,11 +416,11 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
               </div>
               <div className="flex gap-4">
                 <div className="px-6 py-3 bg-white rounded-2xl shadow-md border border-gray-100 flex flex-col items-center">
-                  <span className="text-xs uppercase text-gray-400 font-bold">Category</span>
-                  <span className="font-bold">{category}</span>
+                  <span className="text-xs uppercase text-gray-400 font-bold">{gt.jigsawCategory}</span>
+                  <span className="font-bold">{category === 'Nature' ? gt.jigsawNature : gt.jigsawAnimals}</span>
                 </div>
                 <div className="px-6 py-3 bg-white rounded-2xl shadow-md border border-gray-100 flex flex-col items-center">
-                  <span className="text-xs uppercase text-gray-400 font-bold">Grid</span>
+                  <span className="text-xs uppercase text-gray-400 font-bold">{gt.jigsawGrid}</span>
                   <span className="font-bold">{difficulty}x{difficulty}</span>
                 </div>
               </div>
@@ -438,17 +440,17 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
             </div>
 
             <div>
-              <h2 className="text-4xl font-black" style={{ color: theme.textHeading }}>Puzzle Complete! 🎉</h2>
-              <p className="text-xl opacity-70 mt-2">Amazing work! You solved it perfectly.</p>
+              <h2 className="text-4xl font-black" style={{ color: theme.textHeading }}>{gt.jigsawComplete}</h2>
+              <p className="text-xl opacity-70 mt-2">{gt.jigsawAmazing}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4 w-full">
               <div className="p-4 rounded-2xl bg-white border border-gray-100 shadow-sm">
-                <span className="block text-xs uppercase text-gray-400 font-bold">Time</span>
+                <span className="block text-xs uppercase text-gray-400 font-bold">{gt.time}</span>
                 <span className="text-2xl font-bold" style={{ color: theme.textHeading }}>{formatTime(timer)}</span>
               </div>
               <div className="p-4 rounded-2xl bg-white border border-gray-100 shadow-sm">
-                <span className="block text-xs uppercase text-gray-400 font-bold">Moves</span>
+                <span className="block text-xs uppercase text-gray-400 font-bold">{gt.moves}</span>
                 <span className="text-2xl font-bold" style={{ color: theme.textHeading }}>{moves}</span>
               </div>
             </div>
@@ -457,7 +459,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
               onClick={() => setGameState("menu")}
               className="w-full py-5 bg-blue-600 text-white font-bold rounded-2xl shadow-xl active:scale-95 transition-all text-xl"
             >
-              NEW PUZZLE
+              {gt.jigsawNew}
             </button>
           </div>
         )}
@@ -505,10 +507,10 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
 
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
-                Resume Game?
+                {gt.resumeGame}
               </h2>
               <p style={{ fontFamily, fontSize: TYPE_SCALE.md, color: theme.textMuted }}>
-                We found a saved session. Would you like to continue or start fresh?
+                {gt.resumeDesc}
               </p>
             </div>
 
@@ -518,14 +520,14 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
                 className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
                 style={{ backgroundColor: theme.primary, color: theme.textInverse, fontSize: TYPE_SCALE.md }}
               >
-                Continue Playing
+                {gt.continuePlaying}
               </button>
               <button
                 onClick={handleNewGame}
                 className="w-full py-5 rounded-2xl font-bold transition-all hover:bg-black/5 active:scale-95"
                 style={{ backgroundColor: theme.surfaceElevated, color: theme.textHeading, border: theme.cardBorder, fontSize: TYPE_SCALE.md }}
               >
-                Start New Game
+                {gt.startNewGame}
               </button>
             </div>
           </div>

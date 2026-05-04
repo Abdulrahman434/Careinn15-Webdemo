@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
-import { Trophy, RotateCcw, ArrowLeft, Timer, Zap, Brain } from "lucide-react";
+import { Trophy, RotateCcw, ArrowLeft, Timer, Zap, Brain, Heart } from "lucide-react";
+import { GAME_TRANSLATIONS } from "./gameTranslations";
 
 type Equation = {
   num1: number;
@@ -13,7 +14,8 @@ type Equation = {
 
 export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, isRTL, dir, locale } = useLocale();
+  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
   const [gameState, setGameState] = useState<"idle" | "playing" | "gameover">("idle");
   const [equation, setEquation] = useState<Equation | null>(null);
   const [level, setLevel] = useState(1);
@@ -25,16 +27,20 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
   const [questionsSolved, setQuestionsSolved] = useState(0);
   const timerRef = useRef<any>(null);
   const startTimestamp = useRef<number>(0);
+  const [lives, setLives] = useState(3);
+  const [streak, setStreak] = useState(0);
+  const [highLevel, setHighLevel] = useState(1);
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [hasSavedGame, setHasSavedGame] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('brain-math-high-score');
-    console.log('=== LOAD GAME STATE ===', 'brain-math-high-score', saved);
     if (saved) setHighScore(parseInt(saved));
 
+    const savedLevel = localStorage.getItem('brain-math-high-level');
+    if (savedLevel) setHighLevel(parseInt(savedLevel));
+
     const savedState = localStorage.getItem('brain-math-game-state');
-    console.log('=== LOAD GAME STATE ===', 'brain-math-game-state', savedState);
     if (savedState) {
       setHasSavedGame(true);
       setShowResumeModal(true);
@@ -46,6 +52,8 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
     const state = {
       level,
       score,
+      lives,
+      streak,
       questionsSolved,
       totalTimeTaken,
       averageSpeed,
@@ -54,17 +62,16 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
       timestamp: Date.now()
     };
     localStorage.setItem('brain-math-game-state', JSON.stringify(state));
-    console.log('=== SAVE ===', state);
-    console.log('=== SAVE GAME STATE ===', 'brain-math-game-state', JSON.stringify(state));
-  }, [gameState, level, score, questionsSolved, totalTimeTaken, averageSpeed, equation, timeLeft]);
+  }, [gameState, level, score, lives, questionsSolved, totalTimeTaken, averageSpeed, equation, timeLeft]);
 
   const loadGameState = () => {
     const saved = localStorage.getItem('brain-math-game-state');
-    console.log('=== LOAD GAME STATE ===', 'brain-math-game-state', saved);
     if (saved) {
       const state = JSON.parse(saved);
       setLevel(state.level);
       setScore(state.score);
+      setLives(state.lives || 3);
+      setStreak(state.streak || 0);
       setQuestionsSolved(state.questionsSolved);
       setTotalTimeTaken(state.totalTimeTaken);
       setAverageSpeed(state.averageSpeed);
@@ -91,11 +98,22 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
   }, [saveGameState]);
 
   const generateEquation = useCallback((currentLevel: number) => {
-    const operators = ["+", "-", "*"];
-    const operator = operators[Math.floor(Math.random() * (currentLevel > 5 ? 3 : 2))];
+    let operators = ["+"];
+    if (currentLevel >= 8) operators = ["+", "-", "*", "/"];
+    else if (currentLevel >= 4) operators = ["+", "-", "*", "/"];
+    else if (currentLevel >= 3) operators = ["+", "-", "*"];
+    else if (currentLevel >= 2) operators = ["+", "-"];
+    
+    // Override for specific levels as per requirements
+    let operator = operators[Math.floor(Math.random() * operators.length)];
+    if (currentLevel === 2) operator = "-";
+    if (currentLevel === 3) operator = "*";
+    if (currentLevel === 4) operator = "/";
 
     let n1, n2, ans;
-    const range = 10 + currentLevel * 2;
+    let range = 10;
+    if (currentLevel >= 7) range = 1000;
+    else if (currentLevel >= 5) range = 100;
 
     if (operator === "+") {
       n1 = Math.floor(Math.random() * range) + 1;
@@ -105,10 +123,17 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
       ans = Math.floor(Math.random() * range) + 1;
       n2 = Math.floor(Math.random() * range) + 1;
       n1 = ans + n2;
-    } else {
-      n1 = Math.floor(Math.random() * Math.min(12, currentLevel + 2)) + 2;
-      n2 = Math.floor(Math.random() * Math.min(10, currentLevel + 1)) + 2;
+    } else if (operator === "*") {
+      const multRange = currentLevel >= 7 ? 50 : (currentLevel >= 5 ? 20 : 10);
+      n1 = Math.floor(Math.random() * multRange) + 2;
+      n2 = Math.floor(Math.random() * multRange) + 2;
       ans = n1 * n2;
+    } else {
+      // Division
+      const divRange = currentLevel >= 7 ? 20 : 10;
+      ans = Math.floor(Math.random() * (range / divRange)) + 1;
+      n2 = Math.floor(Math.random() * divRange) + 2;
+      n1 = ans * n2;
     }
 
     const options = [ans];
@@ -135,6 +160,8 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
     setGameState("playing");
     setScore(0);
     setLevel(1);
+    setLives(3);
+    setStreak(0);
     setQuestionsSolved(0);
     setTotalTimeTaken(0);
     setAverageSpeed(0);
@@ -145,26 +172,60 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
   const handleAnswer = (selected: number) => {
     if (gameState !== "playing" || !equation) return;
 
+    const timeTaken = (performance.now() - startTimestamp.current) / 1000;
+
     if (selected === equation.answer) {
-      const timeTaken = (performance.now() - startTimestamp.current) / 1000;
       setTotalTimeTaken(prev => prev + timeTaken);
       setQuestionsSolved(prev => prev + 1);
 
-      const newScore = score + Math.max(10, Math.round(timeLeft * 10));
+      // 1. Correct Answer Base
+      let points = 10;
+
+      // 2. Speed Bonus (Answer < 2s: +15, 2-4s: +10, > 4s: +5)
+      if (timeTaken < 2) points += 15;
+      else if (timeTaken <= 4) points += 10;
+      else points += 5;
+
+      // 3. Level Multiplier (Removed as per request)
+      // if (level >= 4) points *= 1.5;
+
+      // 4. Streak Bonus
+      const newStreak = streak + 1;
+      setStreak(newStreak);
+      if (newStreak === 3) points += 10;
+      else if (newStreak >= 5) points += 20;
+
+      const newScore = Math.round(score + points);
       setScore(newScore);
 
       if (newScore > highScore) {
         setHighScore(newScore);
         localStorage.setItem('brain-math-high-score', newScore.toString());
-        console.log('=== SAVE GAME STATE ===', 'brain-math-high-score', newScore.toString());
       }
 
+      // Increase level every 3 correct answers
       const nextLevel = Math.floor((questionsSolved + 1) / 3) + 1;
-      setLevel(nextLevel);
+      if (nextLevel > level) {
+        setLevel(nextLevel);
+        if (nextLevel > highLevel) {
+          setHighLevel(nextLevel);
+          localStorage.setItem('brain-math-high-level', nextLevel.toString());
+        }
+      }
       generateEquation(nextLevel);
     } else {
-      setGameState("gameover");
-      clearGameState();
+      setStreak(0);
+      const newScore = Math.max(0, score - 5); // Wrong answer penalty
+      setScore(newScore);
+      
+      const newLives = lives - 1;
+      setLives(newLives);
+      if (newLives <= 0) {
+        setGameState("gameover");
+        clearGameState();
+      } else {
+        generateEquation(level);
+      }
     }
   };
 
@@ -185,19 +246,28 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
   }, [questionsSolved, totalTimeTaken]);
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }}>
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }} dir={dir}>
       <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg }}>
         <div className="flex items-center gap-4">
           <button onClick={onBackToGames} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
-          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>Brain Math</h1>
+          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.brainMath}</h1>
         </div>
 
         <div className="flex items-center gap-6">
           <div className="flex flex-col items-end">
-            <span style={{ fontFamily, fontSize: '12px', color: theme.textMuted }}>Level {level}</span>
-            <span style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.bold, color: theme.primary }}>Score: {score}</span>
+            <div className="flex gap-1 mb-1">
+              {[...Array(3)].map((_, i) => (
+                <Heart 
+                  key={i} 
+                  size={16} 
+                  fill={i < lives ? "#EF4444" : "transparent"} 
+                  color={i < lives ? "#EF4444" : theme.textMuted} 
+                />
+              ))}
+            </div>
+            <span style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.bold, color: theme.primary }}>{gt.score}: {score}</span>
           </div>
           <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
             <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
@@ -211,23 +281,27 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
             <div className="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center shadow-inner">
               <Brain size={64} color={theme.primary} />
             </div>
-            <h2 className="text-4xl font-black" style={{ color: theme.textHeading }}>Mental Math Challenge</h2>
-            <p className="text-lg opacity-80" style={{ color: theme.textNormal }}>Solve equations as fast as you can. The time limit gets shorter each level!</p>
-            <div className="grid grid-cols-2 gap-4 w-full">
+            <h2 className="text-4xl font-black" style={{ color: theme.textHeading }}>{gt.mentalMath}</h2>
+            <p className="text-lg opacity-80" style={{ color: theme.textNormal }}>{gt.mathInstructions}</p>
+            <div className="grid grid-cols-3 gap-4 w-full">
               <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
-                <span className="block text-xs uppercase text-gray-400 font-bold">Best Score</span>
-                <span className="text-2xl font-bold" style={{ color: theme.textHeading }}>{highScore}</span>
+                <span className="block text-xs uppercase text-gray-400 font-bold">{gt.bestScore}</span>
+                <span className="text-xl font-bold" style={{ color: theme.textHeading }}>{highScore}</span>
               </div>
               <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
-                <span className="block text-xs uppercase text-gray-400 font-bold">Avg Speed</span>
-                <span className="text-2xl font-bold" style={{ color: theme.textHeading }}>{averageSpeed > 0 ? averageSpeed.toFixed(2) + "s" : "--"}</span>
+                <span className="block text-xs uppercase text-gray-400 font-bold">Best Level</span>
+                <span className="text-xl font-bold" style={{ color: theme.textHeading }}>{highLevel}</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                <span className="block text-xs uppercase text-gray-400 font-bold">{gt.avgSpeed}</span>
+                <span className="text-xl font-bold" style={{ color: theme.textHeading }}>{averageSpeed > 0 ? averageSpeed.toFixed(1) + "s" : "--"}</span>
               </div>
             </div>
             <button
               onClick={startGame}
               className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-xl active:scale-95 transition-all text-xl"
             >
-              START GAME
+              {gt.startGame}
             </button>
           </div>
         )}
@@ -241,10 +315,20 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
               />
             </div>
 
-            <div className="flex flex-col items-center gap-4">
+            <div className="flex flex-col items-center gap-6">
+              <div className="flex items-center gap-4">
+                <div className="px-8 py-3 bg-blue-50 rounded-2xl border-2 border-blue-200">
+                  <span className="text-2xl font-black text-blue-600 uppercase tracking-widest">{gt.level} {level}</span>
+                </div>
+                {streak >= 2 && (
+                  <div className="px-6 py-3 bg-orange-50 rounded-2xl border-2 border-orange-200 animate-bounce">
+                    <span className="text-xl font-black text-orange-500 uppercase tracking-widest">🔥 {streak} {gt.streak}</span>
+                  </div>
+                )}
+              </div>
               <div className="text-8xl font-black flex items-center gap-6" style={{ color: theme.textHeading }}>
                 <span>{equation.num1}</span>
-                <span className="text-blue-500">{equation.operator === "*" ? "×" : equation.operator}</span>
+                <span className="text-blue-500">{equation.operator === "*" ? "×" : equation.operator === "/" ? "÷" : equation.operator}</span>
                 <span>{equation.num2}</span>
                 <span className="text-gray-300">=</span>
                 <span className="text-gray-300">?</span>
@@ -272,18 +356,22 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
               <Zap size={64} color="#EF4444" />
             </div>
             <div>
-              <h2 className="text-4xl font-black text-red-500">Game Over!</h2>
-              <p className="text-xl font-bold mt-2" style={{ color: theme.textHeading }}>Final Score: {score}</p>
+              <h2 className="text-4xl font-black text-red-500">{gt.gameOver}</h2>
+              <p className="text-xl font-bold mt-2" style={{ color: theme.textHeading }}>{gt.finalScore}: {score}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 w-full">
+            <div className="grid grid-cols-3 gap-4 w-full">
               <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
-                <span className="block text-xs uppercase text-gray-400 font-bold">Solved</span>
-                <span className="text-2xl font-bold" style={{ color: theme.textHeading }}>{questionsSolved}</span>
+                <span className="block text-xs uppercase text-gray-400 font-bold">Final Level</span>
+                <span className="text-xl font-bold" style={{ color: theme.textHeading }}>{level}</span>
               </div>
               <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
-                <span className="block text-xs uppercase text-gray-400 font-bold">Avg Speed</span>
-                <span className="text-2xl font-bold" style={{ color: theme.textHeading }}>{averageSpeed.toFixed(2)}s</span>
+                <span className="block text-xs uppercase text-gray-400 font-bold">{gt.solved}</span>
+                <span className="text-xl font-bold" style={{ color: theme.textHeading }}>{questionsSolved}</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                <span className="block text-xs uppercase text-gray-400 font-bold">{gt.avgSpeed}</span>
+                <span className="text-xl font-bold" style={{ color: theme.textHeading }}>{averageSpeed.toFixed(1)}s</span>
               </div>
             </div>
 
@@ -291,14 +379,14 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
               onClick={startGame}
               className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-xl active:scale-95 transition-all text-xl"
             >
-              TRY AGAIN
+              {gt.tryAgain}
             </button>
             <button
               onClick={onBackToGames}
               className="w-full py-4 bg-gray-100 hover:bg-gray-200 font-bold rounded-2xl transition-all"
               style={{ color: theme.textHeading }}
             >
-              BACK TO GAMES
+              {gt.backToGames}
             </button>
           </div>
         )}
@@ -331,10 +419,10 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
 
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
-                Resume Game?
+                {gt.resumeGame}
               </h2>
               <p style={{ fontFamily, fontSize: TYPE_SCALE.md, color: theme.textMuted }}>
-                We found a saved session. Would you like to continue or start fresh?
+                {gt.resumeDesc}
               </p>
             </div>
 
@@ -344,14 +432,14 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
                 className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
                 style={{ backgroundColor: theme.primary, color: theme.textInverse, fontSize: TYPE_SCALE.md }}
               >
-                Continue Playing
+                {gt.continuePlaying}
               </button>
               <button
                 onClick={handleNewGame}
                 className="w-full py-5 rounded-2xl font-bold transition-all hover:bg-black/5 active:scale-95"
                 style={{ backgroundColor: theme.surfaceElevated, color: theme.textHeading, border: theme.cardBorder, fontSize: TYPE_SCALE.md }}
               >
-                Start New Game
+                {gt.startNewGame}
               </button>
             </div>
           </div>

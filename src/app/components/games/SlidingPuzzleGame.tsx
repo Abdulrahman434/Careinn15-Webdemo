@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, Shuffle, ArrowLeft } from "lucide-react";
+import { GAME_TRANSLATIONS } from "./gameTranslations";
 
 interface Tile {
   id: number;
@@ -19,7 +20,8 @@ const DIFFICULTY_CONFIG: Record<Difficulty, number> = {
 
 export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, isRTL, dir, locale } = useLocale();
+  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [tiles, setTiles] = useState<Tile[]>([]);
   const [moves, setMoves] = useState(0);
@@ -282,6 +284,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
   return (
     <div
       className="absolute inset-0 z-50 flex flex-col"
+      dir={dir}
       style={{
         backgroundColor: theme.background,
       }}
@@ -309,7 +312,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
               outline: "none",
             }}
           >
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
           <h1
             style={{
@@ -319,7 +322,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
               color: theme.textHeading,
             }}
           >
-            Sliding Puzzle
+            {gt.slidingPuzzle}
           </h1>
         </div>
         <div className="flex items-center gap-4">
@@ -332,9 +335,9 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
               backgroundColor: theme.surfaceElevated, color: theme.textHeading, outline: 'none'
             }}
           >
-            <option value="easy">Easy (3x3)</option>
-            <option value="medium">Medium (4x4)</option>
-            <option value="hard">Hard (5x5)</option>
+            <option value="easy">{gt.slideDiffEasy}</option>
+            <option value="medium">{gt.slideDiffMedium}</option>
+            <option value="hard">{gt.slideDiffHard}</option>
           </select>
 
           <div className="flex flex-col items-end">
@@ -356,7 +359,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
                 color: theme.primary,
               }}
             >
-              Moves: {moves}
+              {gt.moves}: {moves}
             </span>
           </div>
 
@@ -372,7 +375,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
               color: theme.textHeading,
             }}
           >
-            Hint
+            {gt.hint}
           </button>
 
           <button
@@ -394,7 +397,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
                 color: theme.textInverse,
               }}
             >
-              Shuffle
+              {gt.shuffle}
             </span>
           </button>
           <button
@@ -481,7 +484,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
                   color: theme.primary,
                 }}
               >
-                Solution
+                {gt.solution}
               </span>
             </div>
             <div
@@ -560,10 +563,10 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
 
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
-                Resume Game?
+                {gt.resumeGame}
               </h2>
               <p style={{ fontFamily, fontSize: TYPE_SCALE.md, color: theme.textMuted }}>
-                We found a saved session. Would you like to continue or start fresh?
+                {gt.resumeDesc}
               </p>
             </div>
 
@@ -573,14 +576,14 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
                 className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
                 style={{ backgroundColor: theme.primary, color: theme.textInverse, fontSize: TYPE_SCALE.md }}
               >
-                Continue Playing
+                {gt.continuePlaying}
               </button>
               <button
                 onClick={handleNewGame}
                 className="w-full py-5 rounded-2xl font-bold transition-all hover:bg-black/5 active:scale-95"
                 style={{ backgroundColor: theme.surfaceElevated, color: theme.textHeading, border: theme.cardBorder, fontSize: TYPE_SCALE.md }}
               >
-                Start New Game
+                {gt.startNewGame}
               </button>
             </div>
           </div>
@@ -615,7 +618,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
                 color: theme.textHeading,
               }}
             >
-              Puzzle Solved! 🎉
+              {gt.puzzleSolved}
             </h2>
             <p
               style={{
@@ -625,7 +628,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
                 color: theme.textMuted,
               }}
             >
-              You completed the puzzle in {moves} moves!
+              {gt.solvedIn(moves)}
             </p>
             <div className="flex gap-4 mt-4">
               <button
@@ -642,7 +645,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
                   color: theme.textInverse,
                 }}
               >
-                Play Again
+                {gt.playAgain}
               </button>
               <button
                 onClick={onClose}
@@ -658,7 +661,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
                   color: theme.textHeading,
                 }}
               >
-                Close
+                {gt.close}
               </button>
             </div>
           </div>

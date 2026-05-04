@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, ArrowLeft } from "lucide-react";
+import { GAME_TRANSLATIONS } from "./gameTranslations";
 
 const COLORS = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E2"];
 
@@ -9,7 +10,8 @@ type GameState = "idle" | "showing" | "playing" | "correct" | "wrong" | "gameove
 
 export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, isRTL, dir, locale } = useLocale();
+  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
   const [pattern, setPattern] = useState<number[]>([]);
   const [playerPattern, setPlayerPattern] = useState<number[]>([]);
   const [gameState, setGameState] = useState<GameState>("idle");
@@ -178,6 +180,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
   return (
     <div
       className="absolute inset-0 z-50 flex flex-col"
+      dir={dir}
       style={{
         backgroundColor: theme.background,
       }}
@@ -205,7 +208,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
               outline: "none",
             }}
           >
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
           <h1
             style={{
@@ -215,7 +218,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
               color: theme.textHeading,
             }}
           >
-            Pattern Memory
+            {gt.patternMemory}
           </h1>
         </div>
         <div className="flex items-center gap-4">
@@ -234,7 +237,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
                 color: theme.primary,
               }}
             >
-              Level: {level}
+              {gt.level}: {level}
             </span>
           </div>
           <div
@@ -252,7 +255,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
                 color: theme.accent,
               }}
             >
-              Best: {highScore}
+              {gt.best}: {highScore}
             </span>
           </div>
           <button
@@ -275,7 +278,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
                 color: canWatchAgain && gameState === "playing" ? "#fff" : theme.textMuted,
               }}
             >
-              Watch Again {canWatchAgain ? "(1)" : "(0)"}
+              {gt.patternWatchAgain} {canWatchAgain ? "(1)" : "(0)"}
             </span>
           </button>
           <button
@@ -297,7 +300,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
                 color: theme.textInverse,
               }}
             >
-              {gameState === "idle" ? "Start Game" : "Restart"}
+              {gameState === "idle" ? gt.startGame : gt.restart}
             </span>
           </button>
           <button
@@ -340,7 +343,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
                 textAlign: "center",
               }}
             >
-              Remember the Pattern!
+              {gt.patternRemember}
             </h2>
             <p
               style={{
@@ -352,7 +355,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
                 maxWidth: "600px",
               }}
             >
-              Watch the pattern light up, then repeat it by clicking the squares in the same order. Each level adds one more step!
+              {gt.patternDesc}
             </p>
             <button
               onClick={startGame}
@@ -368,7 +371,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
                 color: theme.textInverse,
               }}
             >
-              Start Game
+              {gt.startGame}
             </button>
           </div>
         ) : gameState === "gameover" ? (
@@ -383,7 +386,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
                 color: theme.textHeading,
               }}
             >
-              Game Over!
+              {gt.patternWrongMsg}
             </h2>
             <p
               style={{
@@ -393,7 +396,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
                 color: theme.primary,
               }}
             >
-              You reached Level {level}
+              {gt.simonReached(level - 1)}
             </p>
             {level > highScore && (
               <p
@@ -404,7 +407,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
                   color: theme.accent,
                 }}
               >
-                🎉 New High Score!
+                {gt.patternNewHighScore}
               </p>
             )}
             <button
@@ -421,7 +424,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
                 color: theme.textInverse,
               }}
             >
-              Play Again
+              {gt.playAgain}
             </button>
           </div>
         ) : (
@@ -447,10 +450,10 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
                   color: theme.textHeading,
                 }}
               >
-                {gameState === "showing" && "Watch the pattern..."}
-                {gameState === "playing" && "Your turn!"}
-                {gameState === "correct" && "✓ Correct! Next level..."}
-                {gameState === "wrong" && "✗ Wrong pattern!"}
+                {gameState === "showing" && gt.patternWatchMsg}
+                {gameState === "playing" && gt.patternTurnMsg}
+                {gameState === "correct" && gt.patternCorrectMsg}
+                {gameState === "wrong" && gt.patternWrongMsg}
               </h3>
             </div>
 
@@ -550,10 +553,10 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
             
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
-                Resume Game?
+                {gt.resumeGame}
               </h2>
               <p style={{ fontFamily, fontSize: TYPE_SCALE.md, color: theme.textMuted }}>
-                We found a saved session. Would you like to continue or start fresh?
+                {gt.resumeDesc}
               </p>
             </div>
 
@@ -563,14 +566,14 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
                 className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
                 style={{ backgroundColor: theme.primary, color: theme.textInverse, fontSize: TYPE_SCALE.md }}
               >
-                Continue Playing
+                {gt.continuePlaying}
               </button>
               <button
                 onClick={handleNewGame}
                 className="w-full py-5 rounded-2xl font-bold transition-all hover:bg-black/5 active:scale-95"
                 style={{ backgroundColor: theme.surfaceElevated, color: theme.textHeading, border: theme.cardBorder, fontSize: TYPE_SCALE.md }}
               >
-                Start New Game
+                {gt.startNewGame}
               </button>
             </div>
           </div>
