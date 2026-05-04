@@ -553,13 +553,13 @@ function TimelineSlide({
           mode === "daily" ? (
             <div className="flex items-center justify-center gap-4 mb-5 py-1" style={{ borderBottom: `1px solid ${theme.borderDefault}30` }}>
               <button onClick={() => setPatientDate(toISO(shiftDay(selectedDate, -1)))} style={{ background: "none", border: "none", color: theme.textHeading, cursor: "pointer" }}>
-                <ChevronLeft size={18} />
+                <ChevronLeft size={18} style={{ transform: t("direction") === "rtl" ? "scaleX(-1)" : "none" }} />
               </button>
               <span style={{ fontSize: "15px", fontWeight: 800, color: theme.textHeading, minWidth: "120px", textAlign: "center" }}>
                 {dateLabel}
               </span>
               <button onClick={() => setPatientDate(toISO(shiftDay(selectedDate, 1)))} style={{ background: "none", border: "none", color: theme.textHeading, cursor: "pointer" }}>
-                <ChevronRight size={18} />
+                <ChevronRight size={18} style={{ transform: t("direction") === "rtl" ? "scaleX(-1)" : "none" }} />
               </button>
             </div>
           ) : (
@@ -652,7 +652,7 @@ function TimelineSlide({
                   fontFamily: theme.fontFamily,
                   fontSize: valueSize,
                   fontWeight: step.active ? WEIGHT.semibold : WEIGHT.normal,
-                  color: step.active ? theme.primary : step.done ? theme.textMuted : theme.textHeading,
+                  color: step.active ? theme.primary : theme.textHeading,
                   textDecoration: "none",
                 }}>
                   {t("direction") === "rtl" && step.labelAr ? step.labelAr : (step.label || (step.labelKey ? t(step.labelKey) : ""))}
