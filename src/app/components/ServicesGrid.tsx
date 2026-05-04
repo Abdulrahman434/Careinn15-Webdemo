@@ -11,6 +11,7 @@ import podcastIcon from "@/assets/5513479d879a8c3fcdd1f6832dd30ce350c81789.png";
 import caremedicalicon from "@/assets/caremedicalicon.png";
 import dallahPodcastIcon from "@/assets/dallah-podcast.png";
 import patientPortalIcon from "@/assets/patient-portal.png";
+import careinnAdminPortalIcon from "@/assets/careinn-admin-icon.png";
 
 export interface SectionVisibility {
   show_iptv: boolean;
@@ -40,7 +41,9 @@ interface ShortcutItem {
 
 const getShortcutItems = (hospitalId: string): ShortcutItem[] => {
   let podcastData;
-  if (hospitalId === "caremed") {
+  if (hospitalId === "careinn") {
+    podcastData = { labelKey: "shortcut.adminPortal", icon: careinnAdminPortalIcon, url: "https://dashboard.careinn.com" };
+  } else if (hospitalId === "caremed") {
     podcastData = { labelKey: "shortcut.podcast", icon: caremedicalicon, url: "https://www.youtube.com/playlist?list=PLbWY8VfHuoBSK7XeJJtutBSTeY_e7Kut3" };
   } else if (hospitalId === "dallah") {
     podcastData = { labelKey: "shortcut.dallahPodcast", icon: dallahPodcastIcon, url: "https://www.youtube.com/watch?v=FTacFGIn8aA&list=PLptiCCjrXsQt5lExxVzvUx61Hd65Tsefg" };
@@ -463,12 +466,12 @@ function ShortcutTile({ item, contained, onLaunchTool }: { item: ShortcutItem; c
       }}
       aria-label={t(item.labelKey)}
     >
-      {item.labelKey === "shortcut.patientPortal" || item.labelKey === "shortcut.dallahPodcast" ? (
+      {item.labelKey === "shortcut.patientPortal" || item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.adminPortal" ? (
         <div 
           style={{
             width: SPACE[12],
             height: SPACE[12],
-            backgroundColor: item.labelKey === "shortcut.dallahPodcast" ? "#00A3C1" : "#fff",
+            backgroundColor: item.labelKey === "shortcut.dallahPodcast" ? "#00A3C1" : item.labelKey === "shortcut.adminPortal" ? "#4EBEE3" : "#fff",
             borderRadius: theme.radiusXl,
             display: "flex",
             alignItems: "center",
@@ -484,7 +487,7 @@ function ShortcutTile({ item, contained, onLaunchTool }: { item: ShortcutItem; c
               maxWidth: "100%",
               maxHeight: "100%",
               objectFit: "contain",
-              filter: item.labelKey === "shortcut.dallahPodcast" ? "brightness(0) invert(1)" : "none",
+              filter: (item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.adminPortal") ? "brightness(0) invert(1)" : "none",
             }}
           />
         </div>
@@ -549,12 +552,12 @@ function ShortcutTileCompact({ item, onLaunchTool }: { item: ShortcutItem; onLau
       }}
       aria-label={t(item.labelKey)}
     >
-      {item.labelKey === "shortcut.patientPortal" || item.labelKey === "shortcut.dallahPodcast" ? (
+      {item.labelKey === "shortcut.patientPortal" || item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.adminPortal" ? (
         <div 
           style={{
             width: "88px",
             height: "88px",
-            backgroundColor: item.labelKey === "shortcut.dallahPodcast" ? "#00A3C1" : "#fff",
+            backgroundColor: item.labelKey === "shortcut.dallahPodcast" ? "#00A3C1" : item.labelKey === "shortcut.adminPortal" ? "#4EBEE3" : "#fff",
             borderRadius: theme.radiusLg,
             display: "flex",
             alignItems: "center",
@@ -570,7 +573,7 @@ function ShortcutTileCompact({ item, onLaunchTool }: { item: ShortcutItem; onLau
               maxWidth: "100%",
               maxHeight: "100%",
               objectFit: "contain",
-              filter: item.labelKey === "shortcut.dallahPodcast" ? "brightness(0) invert(1)" : "none",
+              filter: (item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.adminPortal") ? "brightness(0) invert(1)" : "none",
             }}
           />
         </div>

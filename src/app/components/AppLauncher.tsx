@@ -1056,7 +1056,31 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
       label: "Education",
       labelKey: "launcher.education",
       icon: BookOpenText,
-      apps: theme.id === "caremed"
+      apps: theme.id === "careinn"
+        ? /* ── CareInn product materials ── */
+          [
+            { id: "ci-edu-careinn15",  name: "CareInn15",    pdf: "/pdfs/careinn/CareInn15.pdf" },
+            { id: "ci-edu-caretv",     name: "CareTV",       pdf: "/pdfs/careinn/CareTV.pdf" },
+            { id: "ci-edu-caresuite",  name: "CareSuite",    pdf: "/pdfs/careinn/CareSuite.pdf" },
+            { id: "ci-edu-careconnect",name: "CareConnect",  pdf: "/pdfs/careinn/CareConnect.pdf" },
+            { id: "ci-edu-caresign",   name: "CareSign",     pdf: "/pdfs/careinn/CareSign.pdf" },
+          ].map((item) => ({
+            id: item.id,
+            name: item.name,
+            bg: "transparent",
+            mark: "",
+            textColor: "#333",
+            pdfSource: item.pdf,
+            customRender: () => (
+              <div className="flex flex-col items-center justify-center text-center" style={{ width: 150, height: 150, padding: 12, background: "#fff", borderRadius: theme.radiusXl }}>
+                <div className="flex items-center justify-center mb-1.5" style={{ width: 64, height: 64, backgroundColor: "#E8453C", borderRadius: theme.radiusLg }}>
+                  <FileText size={32} color="#fff" strokeWidth={1.5} />
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 800, color: "#E8453C", letterSpacing: 0.5 }}>PDF</span>
+              </div>
+            ),
+          }))
+        : theme.id === "caremed"
         ? /* ── Care Medical patient education from care.med.sa ── */
           [
             { id: "cm-edu-normal-birth", nameKey: "caremed.edu.normalBirth", viewId: "30715" },

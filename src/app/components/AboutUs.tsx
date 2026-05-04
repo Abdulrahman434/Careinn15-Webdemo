@@ -23,6 +23,11 @@ import imcVideo from "../../assets/IMC.mp4";
 import imcDna from "../../assets/about-imc.png";
 import imcAccreds from "../../assets/accredsimc.jpeg";
 import imcHistory from "../../assets/imchistory.png";
+import careinnDna from "../../assets/careinn-about-dna.png";
+import careinnDnaAr from "../../assets/careinn-about-dna-ar.png";
+import careinnParticipations from "../../assets/careinn-participations.png";
+import careinnCertifications from "../../assets/careinn-certifications.png";
+import careinnClients from "../../assets/careinn-clients.png";
 
 interface AboutSection {
   id: string;
@@ -86,31 +91,63 @@ const dallahPatientRightsAr = `سيقوم مكتب الاستقبال أو طا�
 
 const dallahAccreditationsText = ``; // Replaced by images
 
-const getSections = (themeId: string, isRTL: boolean): AboutSection[] => [
+const getSections = (themeId: string, isRTL: boolean, locale: string): AboutSection[] => [
   {
     id: "hospital",
     title: themeId === "dallah" ? "About Dallah" : "Our Hospital",
     titleKey: themeId === "dallah" ? "about.aboutDallah" : "about.ourHospital",
-    video: themeId === "imc" ? imcVideo : themeId === "caremed" ? "HW7Od_8C3_I" : themeId === "dallah" ? "JPgxKaOQf3s" : "4VXy7_qn608",
+    video: themeId === "imc" ? imcVideo : themeId === "careinn" ? (locale === "ar" ? "5ZQofr0sVn4" : "pbnYEIewk6Q") : themeId === "caremed" ? "HW7Od_8C3_I" : themeId === "dallah" ? "JPgxKaOQf3s" : "4VXy7_qn608",
   },
   {
     id: "dna",
     title: themeId === "caremed" ? "CareMed InBrief" : themeId === "dallah" ? "Dallah DNA" : "Fakeeh Care DNA",
     titleKey: themeId === "caremed" ? "about.caremedInBrief" : themeId === "dallah" ? "about.dallahDna" : "about.dna",
-    image: themeId === "imc" ? imcDna : themeId === "dallah" ? dallahDna : themeId === "caremed" ? (isRTL ? careMedInBriefAr : careMedInBriefEn) : dnaImg,
+    image: themeId === "careinn" ? (isRTL ? careinnDnaAr : careinnDna) : themeId === "imc" ? imcDna : themeId === "dallah" ? dallahDna : themeId === "caremed" ? (isRTL ? careMedInBriefAr : careMedInBriefEn) : dnaImg,
   },
-  {
+  ...(themeId === "careinn" ? [] : [{
     id: "numbers",
     title: themeId === "imc" ? "IMC History" : themeId === "caremed" ? "CareMed In Numbers" : themeId === "dallah" ? "Accreditations" : "Fakeeh In Numbers",
     titleKey: themeId === "imc" ? "about.imcHistory" : themeId === "dallah" ? "about.accreditations" : "about.numbers",
     image: themeId === "imc" ? imcHistory : themeId === "dallah" ? (isRTL ? dallahAccredsAr : dallahAccredsEn) : themeId === "caremed" ? (isRTL ? numbersAr : numbersEn) : numbersImg,
     content: themeId === "dallah" ? undefined : undefined,
-  },
+  }]),
   {
     id: "services",
     title: "Services",
     titleKey: "about.services",
-    content: `Comprehensive Medical & Surgical Services
+    content: themeId === "careinn"
+      ? (locale === "ar" ? `حلول CareInn
+
+• CareInn15
+شاشة تفاعلية بجانب السرير تتيح للمرضى سهولة الوصول إلى خدمات المستشفى والترفيه والطلبات والمعلومات الأساسية أثناء إقامتهم. توفر تجربة أكثر تواصلاً وراحة داخل الغرفة.
+
+• CareTV
+تجربة تلفزيون ذكية في المستشفى تجلب خدمات المرضى والمعلومات والترفيه إلى شاشة الغرفة. تساعد المستشفيات على تحويل التلفزيون إلى نقطة اتصال أكثر فائدة وتتمحور حول المريض.
+
+• CareSign
+حل لافتات رقمية لغرف المرضى وأبواب العيادات، يعرض معلومات الغرفة أو الطبيب أو الزيارة بوضوح. يحسن التواصل ويدعم بيئة رعاية أكثر تنظيماً.
+
+• CareSuite
+منصة تشغيلية تساعد فرق المستشفى على إدارة حالة الغرف وطلبات الخدمة والتدبير المنزلي وسير العمل اليومي. تحسن التنسيق بين الأقسام وتدعم أوقات استجابة أسرع.
+
+• CareConnect
+حل تواصل افتراضي يربط المرضى بفرق الرعاية من خلال تفاعلات رقمية منظمة. يدعم الاستشارة عن بُعد والمتابعة وتسهيل التواصل خلال رحلة المريض.` : `CareInn Solutions
+
+• CareInn15
+An interactive bedside screen that gives patients easy access to hospital services, entertainment, requests, and key information during their stay. It supports a more connected and comfortable in-room experience.
+
+• CareTV
+A smart hospital TV experience that brings patient services, information, and entertainment to the room screen. It helps hospitals turn the TV into a more useful and patient-centered touchpoint.
+
+• CareSign
+A digital signage solution for patient rooms and clinic doors, displaying relevant room, doctor, or visit information clearly. It improves communication and supports a more organized care environment.
+
+• CareSuite
+An operational platform that helps hospital teams manage room status, service requests, housekeeping, and daily workflows. It improves coordination between departments and supports faster response times.
+
+• CareConnect
+A virtual communication solution that connects patients with care teams through structured digital interactions. It supports remote consultation, follow-up, and easier communication during the patient journey.`)
+      : `Comprehensive Medical & Surgical Services
 
 Emergency & Critical Care
 • 24/7 Emergency Department
@@ -138,15 +175,17 @@ Support Services
   },
   {
     id: "accreditations",
-    title: themeId === "dallah" ? "Awards" : "Accreditations",
-    titleKey: themeId === "dallah" ? "about.awards" : "about.accreditations",
-    image: themeId === "imc" ? imcAccreds : themeId === "dallah" ? (isRTL ? dallahAwardsAr : dallahAwardsEn) : themeId === "caremed" ? accredsImg : accreditationsImg,
+    title: themeId === "careinn" ? "Certifications" : themeId === "dallah" ? "Awards" : "Accreditations",
+    titleKey: themeId === "careinn" ? "about.certifications" : themeId === "dallah" ? "about.awards" : "about.accreditations",
+    image: themeId === "careinn" ? careinnCertifications : themeId === "imc" ? imcAccreds : themeId === "dallah" ? (isRTL ? dallahAwardsAr : dallahAwardsEn) : themeId === "caremed" ? accredsImg : accreditationsImg,
   },
   {
     id: "digital",
-    title: themeId === "dallah" ? "Patient Rights" : "Digital Services",
-    titleKey: themeId === "dallah" ? "about.patientRights" : "about.digital",
-    content: themeId === "dallah" ? (isRTL ? dallahPatientRightsAr : dallahPatientRightsEn) : `Connected Care at Your Fingertips
+    title: themeId === "careinn" ? "Participations" : themeId === "dallah" ? "Patient Rights" : "Digital Services",
+    titleKey: themeId === "careinn" ? "about.participations" : themeId === "dallah" ? "about.patientRights" : "about.digital",
+    ...(themeId === "careinn"
+      ? { image: careinnParticipations }
+      : { content: themeId === "dallah" ? (isRTL ? dallahPatientRightsAr : dallahPatientRightsEn) : `Connected Care at Your Fingertips
 
 Patient Portal
 • View lab results & medical records
@@ -170,7 +209,7 @@ Smart Hospital Features
 • Electronic Health Records (EHR)
 • AI-assisted diagnostics
 • Robotic surgery capabilities
-• Advanced patient monitoring systems`,
+• Advanced patient monitoring systems` }),
   },
   ...(themeId === "dsfh"
     ? [
@@ -181,12 +220,22 @@ Smart Hospital Features
         },
       ]
     : []),
+  ...(themeId === "careinn"
+    ? [
+        {
+          id: "clients",
+          title: "Clients",
+          titleKey: "about.clients",
+          image: careinnClients,
+        },
+      ]
+    : []),
 ];
 
 export function AboutUs({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
   const { t, isRTL, locale } = useLocale();
-  const sections = getSections(theme.id, isRTL);
+  const sections = getSections(theme.id, isRTL, locale);
   const [activeSection, setActiveSection] = useState(sections[0].id);
   const [videoPlaying, setVideoPlaying] = useState(false);
 

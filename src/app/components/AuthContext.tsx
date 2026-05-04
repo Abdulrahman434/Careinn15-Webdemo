@@ -113,7 +113,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isFullAccess = hashHex === CAREINN_HASH;
     const hospitalId = isFullAccess ? null : mapping;
 
-    if (hospitalId) {
+    // For careinn (full access), default to the CareInn hospital config
+    if (isFullAccess) {
+      localStorage.setItem('active-hospital-id', 'careinn');
+    } else if (hospitalId) {
       localStorage.setItem('active-hospital-id', hospitalId);
     }
 

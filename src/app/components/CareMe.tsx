@@ -58,6 +58,7 @@ import imgDrOmarAbdulhalim from "@/assets/2318867853acb678569427c88b9e543e22bd46
 import imgBabyCam from "@/assets/68ba9ba13c5aa1cc7d2af5bee7bc955298b612dd.png";
 import imgDallahBabyCam from "@/assets/dallah-baby-cam.jpg";
 import imgCareMedBabyCam from "@/assets/CareMedicalHospital.jpeg";
+import imgCareInnBabyCam from "@/assets/careinn-baby-cam.jpg";
 
 const careTeam = [
   { nameKey: "care.team.name.nura", roleKey: "care.team.primaryNurse", specialtyKey: "care.team.specialty.icu", img: imgNuraAlRashid },
@@ -1022,7 +1023,8 @@ function BabyCameraSlide({ isExpanded = false }: { isExpanded?: boolean }) {
 
   const isDallah = theme.id === "dallah";
   const isCareMed = theme.id === "caremed";
-  const cameraImage = isDallah ? imgDallahBabyCam : isCareMed ? imgCareMedBabyCam : imgBabyCam;
+  const isCareInn = theme.id === "careinn";
+  const cameraImage = isCareInn ? imgCareInnBabyCam : isDallah ? imgDallahBabyCam : isCareMed ? imgCareMedBabyCam : imgBabyCam;
 
   const titleSize = isExpanded ? "21px" : "16px";
   const subSize = isExpanded ? "16px" : "13px";

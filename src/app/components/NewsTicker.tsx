@@ -34,6 +34,17 @@ export function NewsTicker() {
         `🤝  ${t("news.imc.4")}`,
         `📱  ${t("news.imc.5")}`,
       ]
+    : theme.id === "careinn"
+    ? [
+        `🏆  ${t("news.careinn.1")}`,
+        `🌍  ${t("news.careinn.2")}`,
+        `🤝  ${t("news.careinn.3")}`,
+        `🏥  ${t("news.careinn.4")}`,
+        `⭐  ${t("news.careinn.5")}`,
+        `🚀  ${t("news.careinn.6")}`,
+        `📺  ${t("news.careinn.7")}`,
+        `🔬  ${t("news.careinn.8")}`,
+      ]
     : [
         `🏆  ${t("news.wifi")}`,
         `🌍  ${t("news.carePlans")}`,

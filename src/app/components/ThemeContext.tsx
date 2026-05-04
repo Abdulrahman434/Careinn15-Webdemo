@@ -334,9 +334,9 @@ function buildTheme(core: {
     fontFamilyAr: c.fontFamilyAr,
     fontFamilyMono: `${c.fontFamily.split(",")[0]}, monospace`,
 
-    logoUrl: c.logoUrl || (c.id === "dsfh" ? DSFH_LOGO : c.id === "burjeel" ? burjeelLogo : c.id === "slh" ? slhLogo : c.id === "dallah" ? dallahLogo : c.id === "caremed" ? caremedLogo : c.id === "imc" ? imcLogo : ""),
-    heroImageUrl: c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : ""),
-    heroImageUrls: c.heroImageUrls && c.heroImageUrls.length > 0 ? c.heroImageUrls : [c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : "")],
+    logoUrl: c.logoUrl || (c.id === "dsfh" ? DSFH_LOGO : c.id === "burjeel" ? burjeelLogo : c.id === "slh" ? slhLogo : c.id === "dallah" ? dallahLogo : c.id === "caremed" ? caremedLogo : c.id === "imc" ? imcLogo : c.id === "careinn" ? careinnLogo : ""),
+    heroImageUrl: c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : ""),
+    heroImageUrls: c.heroImageUrls && c.heroImageUrls.length > 0 ? c.heroImageUrls : [c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : "")],
     heroCropPosition: c.heroCropPosition || "50% 15%",
     slideshowInterval: c.slideshowInterval || 5,
     location: (c as any).location || "Riyadh",
@@ -537,6 +537,9 @@ import caremedHero from "../../assets/CareMedicalHospital.jpeg";
 import imcLogo from "../../assets/imclogo.png";
 import imcHero from "../../assets/IMC-e1556123324461.jpg";
 
+import careinnLogo from "../../assets/careinn-hospital-logo.png";
+import careinnHero from "../../assets/careinn-hospital-hero.jpg";
+
 /* Canonical built-in asset URLs — used as fallbacks for DSFH */
 export const DSFH_LOGO = logoImage;
 export const DSFH_HERO = hospitalImg;
@@ -657,6 +660,25 @@ export const IMC_CORE: HospitalCoreConfig = {
   location: "Jeddah",
 };
 
+export const CAREINN_CORE: HospitalCoreConfig = {
+  id: "careinn",
+  hospitalName: "CareInn Hospital",
+  hospitalShortName: "CareInn",
+  fontFamily: "'Mulish', sans-serif",
+  fontFamilyAr: "'Almarai', sans-serif",
+  logoUrl: careinnLogo,
+  hospitalWebsiteUrl: "",
+  heroImageUrl: careinnHero,
+  heroCropPosition: "50% 40%",
+  primary: "#16274D",
+  primaryDark: "#0E1A35",
+  primaryLight: "#E3E7EE",
+  accent: "#4EBEE3",
+  accentDark: "#3A96B5",
+  accentLight: "#E2F5FA",
+  location: "Riyadh",
+};
+
 /** All built-in hospital presets (always available, never deleted) */
 export const BUILTIN_PRESETS: HospitalCoreConfig[] = [
   DSFH_CORE,
@@ -665,6 +687,7 @@ export const BUILTIN_PRESETS: HospitalCoreConfig[] = [
   DALLAH_CORE,
   CAREMED_CORE,
   IMC_CORE,
+  CAREINN_CORE,
 ];
 
 
@@ -710,7 +733,7 @@ function saveConfigs(configs: HospitalCoreConfig[]) {
 }
 
 function loadActiveId(): string {
-  return localStorage.getItem(ACTIVE_KEY) || "dsfh";
+  return localStorage.getItem(ACTIVE_KEY) || "careinn";
 }
 
 function saveActiveId(id: string) {
@@ -852,7 +875,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const merged = BUILTIN_PRESETS.map((preset) => {
       const saved = savedConfigs.find((c) => c.id === preset.id);
       if (!saved) return preset;
-      const hasBuiltinAssets = ["dsfh", "burjeel", "slh", "dallah", "caremed"].includes(preset.id);
+      const hasBuiltinAssets = ["dsfh", "burjeel", "slh", "dallah", "caremed", "careinn"].includes(preset.id);
       return {
         ...preset,
         ...saved,
@@ -892,7 +915,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const saveConfigFn = useCallback((config: HospitalCoreConfig) => {
-    const hasBuiltinAssets = ["dsfh", "burjeel", "slh", "dallah", "caremed"].includes(config.id);
+    const hasBuiltinAssets = ["dsfh", "burjeel", "slh", "dallah", "caremed", "careinn"].includes(config.id);
     const toSave = hasBuiltinAssets
       ? {
         ...config,
@@ -921,8 +944,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       return next;
     });
     if (activeId === id && !isBuiltin) {
-      setActiveId("dsfh");
-      saveActiveId("dsfh");
+      setActiveId("careinn");
+      saveActiveId("careinn");
     }
   }, [activeId]);
 
