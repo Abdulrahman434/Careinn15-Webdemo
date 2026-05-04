@@ -27,7 +27,7 @@ import careinnDna from "../../assets/careinn-about-dna.png";
 import careinnDnaAr from "../../assets/careinn-about-dna-ar.png";
 import careinnParticipations from "../../assets/careinn-participations.png";
 import careinnCertifications from "../../assets/careinn-certifications.png";
-import careinnClients from "../../assets/careinn-clients.png";
+import careinnClients from "../../assets/careinn-clients.jpg";
 
 interface AboutSection {
   id: string;
