@@ -442,7 +442,7 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
   const handleAnswer = (idx: number) => {
     const newAnswers = [...userAnswers, idx];
     setUserAnswers(newAnswers);
-    
+
     if (idx === questions[currentQuestionIdx].correctAnswer) {
       setScore(score + 1);
     }
@@ -469,7 +469,7 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
           </button>
           <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{t.title}</h1>
         </div>
-        
+
         <div className="flex items-center gap-4">
           {gameState === "playing" && (
             <div className="px-4 py-2 bg-blue-50 rounded-full">
@@ -486,13 +486,13 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
         {gameState === "category" && (
           <div className="w-full max-w-4xl flex flex-col items-center gap-10">
             <div className="flex bg-white rounded-full p-1 shadow-sm border border-gray-100 mb-2">
-              <button 
+              <button
                 onClick={() => handleLanguageChange('en')}
                 className={`px-6 py-2 rounded-full font-bold transition-all ${language === 'en' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
               >
                 English
               </button>
-              <button 
+              <button
                 onClick={() => handleLanguageChange('ar')}
                 className={`px-6 py-2 rounded-full font-bold transition-all ${language === 'ar' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
               >
@@ -523,12 +523,12 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
         {gameState === "playing" && (
           <div className="w-full max-w-3xl flex flex-col gap-8">
             <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-blue-500 transition-all duration-300" 
+              <div
+                className="h-full bg-blue-500 transition-all duration-300"
                 style={{ width: `${((currentQuestionIdx + 1) / questions.length) * 100}%` }}
               />
             </div>
-            
+
             <div className="bg-white p-12 rounded-[40px] shadow-xl border border-gray-100">
               <h3 className="text-3xl font-bold leading-tight mb-10" style={{ color: theme.textHeading }}>
                 {questions[currentQuestionIdx].question}
@@ -618,7 +618,7 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
             <div className="w-24 h-24 rounded-full bg-primarySubtle flex items-center justify-center" style={{ backgroundColor: theme.primarySubtle }}>
               <RotateCcw size={48} color={theme.primary} />
             </div>
-            
+
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
                 {t.resumeGame}
