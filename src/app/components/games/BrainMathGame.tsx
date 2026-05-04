@@ -93,7 +93,7 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
   const generateEquation = useCallback((currentLevel: number) => {
     const operators = ["+", "-", "*"];
     const operator = operators[Math.floor(Math.random() * (currentLevel > 5 ? 3 : 2))];
-    
+
     let n1, n2, ans;
     const range = 10 + currentLevel * 2;
 
@@ -125,7 +125,7 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
       answer: ans,
       options: options.sort(() => Math.random() - 0.5)
     });
-    
+
     const timeLimit = Math.max(3, 10 - Math.floor(currentLevel / 3));
     setTimeLeft(timeLimit);
     startTimestamp.current = performance.now();
@@ -149,14 +149,14 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
       const timeTaken = (performance.now() - startTimestamp.current) / 1000;
       setTotalTimeTaken(prev => prev + timeTaken);
       setQuestionsSolved(prev => prev + 1);
-      
+
       const newScore = score + Math.max(10, Math.round(timeLeft * 10));
       setScore(newScore);
-      
+
       if (newScore > highScore) {
         setHighScore(newScore);
         localStorage.setItem('brain-math-high-score', newScore.toString());
-    console.log('=== SAVE GAME STATE ===', 'brain-math-high-score', newScore.toString());
+        console.log('=== SAVE GAME STATE ===', 'brain-math-high-score', newScore.toString());
       }
 
       const nextLevel = Math.floor((questionsSolved + 1) / 3) + 1;
@@ -193,7 +193,7 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
           </button>
           <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>Brain Math</h1>
         </div>
-        
+
         <div className="flex items-center gap-6">
           <div className="flex flex-col items-end">
             <span style={{ fontFamily, fontSize: '12px', color: theme.textMuted }}>Level {level}</span>
@@ -223,7 +223,7 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
                 <span className="text-2xl font-bold" style={{ color: theme.textHeading }}>{averageSpeed > 0 ? averageSpeed.toFixed(2) + "s" : "--"}</span>
               </div>
             </div>
-            <button 
+            <button
               onClick={startGame}
               className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-xl active:scale-95 transition-all text-xl"
             >
@@ -235,8 +235,8 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
         {gameState === "playing" && equation && (
           <div className="w-full max-w-2xl flex flex-col items-center gap-12">
             <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden shadow-inner">
-              <div 
-                className="h-full bg-red-500 transition-all duration-100" 
+              <div
+                className="h-full bg-red-500 transition-all duration-100"
                 style={{ width: `${(timeLeft / (Math.max(3, 10 - Math.floor(level / 3)))) * 100}%` }}
               />
             </div>
@@ -275,7 +275,7 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
               <h2 className="text-4xl font-black text-red-500">Game Over!</h2>
               <p className="text-xl font-bold mt-2" style={{ color: theme.textHeading }}>Final Score: {score}</p>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4 w-full">
               <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
                 <span className="block text-xs uppercase text-gray-400 font-bold">Solved</span>
@@ -287,13 +287,13 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
               </div>
             </div>
 
-            <button 
+            <button
               onClick={startGame}
               className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-xl active:scale-95 transition-all text-xl"
             >
               TRY AGAIN
             </button>
-            <button 
+            <button
               onClick={onBackToGames}
               className="w-full py-4 bg-gray-100 hover:bg-gray-200 font-bold rounded-2xl transition-all"
               style={{ color: theme.textHeading }}
@@ -328,7 +328,7 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
             <div className="w-24 h-24 rounded-full bg-primarySubtle flex items-center justify-center" style={{ backgroundColor: theme.primarySubtle }}>
               <RotateCcw size={48} color={theme.primary} />
             </div>
-            
+
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
                 Resume Game?

@@ -44,9 +44,10 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
   const gridSize = DIFFICULTY_CONFIG[difficulty].size;
   const wordCount = DIFFICULTY_CONFIG[difficulty].count;
 
-  const clearGameState = useCallback(() => {
-    localStorage.removeItem('word-search-game-state');
-  }, []);
+  const clearGameState = useCallback((diff?: Difficulty) => {
+    const targetDiff = diff || difficulty;
+    localStorage.removeItem(`word-search-${targetDiff}-state`);
+  }, [difficulty]);
 
   const saveGameState = useCallback(() => {
     if (!isActive || isComplete) return;
@@ -60,14 +61,26 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
       timer,
       timestamp: Date.now()
     };
-    localStorage.setItem('word-search-game-state', JSON.stringify(state));
-    console.log('=== SAVE ===', state);
-    console.log('=== SAVE GAME STATE ===', 'word-search-game-state', JSON.stringify(state));
+    localStorage.setItem(`word-search-${difficulty}-state`, JSON.stringify(state));
   }, [difficulty, grid, foundWords, currentCategory, foundCellsMap, targetWords, timer, isActive, isComplete]);
 
   const initializeGame = useCallback((newDiff?: Difficulty, newCat?: keyof typeof WORD_CATEGORIES) => {
     const targetDiff = newDiff || difficulty;
     const targetCat = newCat || currentCategory;
+
+    // Check for saved game when switching difficulty
+    if (newDiff) {
+      const saved = localStorage.getItem(`word-search-${targetDiff}-state`);
+      if (saved) {
+        setDifficulty(targetDiff);
+        setCurrentCategory(targetCat);
+        setHasSavedGame(true);
+        setShowResumeModal(true);
+        setIsActive(false);
+        return;
+      }
+    }
+
     const config = DIFFICULTY_CONFIG[targetDiff];
     const allWords = WORD_CATEGORIES[targetCat];
     const words = [...allWords].sort(() => Math.random() - 0.5).slice(0, config.count);
@@ -128,8 +141,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
     setCurrentCategory(targetCat);
     setShowResumeModal(false);
     setHasSavedGame(false);
-    clearGameState();
-  }, [currentCategory, difficulty, clearGameState]);
+  }, [currentCategory, difficulty]);
 
   const handleNewGame = useCallback(() => {
     clearGameState();
@@ -140,8 +152,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
 
   const loadGameState = useCallback(() => {
     try {
-      const saved = localStorage.getItem('word-search-game-state');
-    console.log('=== LOAD GAME STATE ===', 'word-search-game-state', saved);
+      const saved = localStorage.getItem(`word-search-${difficulty}-state`);
       if (saved) {
         const state = JSON.parse(saved);
         if (state && state.grid) {
@@ -162,12 +173,12 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
       clearGameState();
       handleNewGame();
     }
-  }, [clearGameState, handleNewGame]);
+  }, [difficulty, clearGameState, handleNewGame]);
 
 
   // Initial mount: Check for saved game or auto-start
   useEffect(() => {
-    const saved = localStorage.getItem('word-search-game-state');
+    const saved = localStorage.getItem(`word-search-${difficulty}-state`);
     if (saved) {
       setHasSavedGame(true);
       setShowResumeModal(true);

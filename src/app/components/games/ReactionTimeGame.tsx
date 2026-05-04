@@ -9,7 +9,7 @@ type Rating = 'Excellent!' | 'Good' | 'Slow';
 export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
   const { fontFamily } = useLocale();
-  const [gameState, setGameState] = useState<"idle" | "waiting" | "active" | "result">("idle");
+  const [gameState, setGameState] = useState<"idle" | "waiting" | "active" | "result" | "too-early">("idle");
   const [mode, setMode] = useState<GameMode>('click');
   const [reactionTime, setReactionTime] = useState<number | null>(null);
   const [history, setHistory] = useState<number[]>([]);
@@ -21,34 +21,38 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
 
   useEffect(() => {
     const saved = localStorage.getItem('reaction-leaderboard');
-    console.log('=== LOAD GAME STATE ===', 'reaction-leaderboard', saved);
     if (saved) setLeaderboard(JSON.parse(saved));
 
-    const savedState = localStorage.getItem('reaction-speed-game-state');
-    console.log('=== LOAD GAME STATE ===', 'reaction-speed-game-state', savedState);
+    const savedState = localStorage.getItem(`reaction-speed-${mode}-state`);
     if (savedState) {
       setHasSavedGame(true);
       setShowResumeModal(true);
     }
+
+    return () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    };
   }, []);
 
   const saveGameState = useCallback(() => {
     if (gameState === "active" || gameState === "waiting" || (gameState === "idle" && history.length === 0)) return;
+    // Don't save if 5 rounds are already finished
+    if (history.length >= 5 && gameState === "result") {
+      clearGameState();
+      return;
+    }
     const state = {
       mode,
       history,
-      gameState: gameState === "result" ? "result" : "idle",
+      gameState: (gameState === "result" || gameState === "too-early") ? gameState : "idle",
       reactionTime,
       timestamp: Date.now()
     };
-    localStorage.setItem('reaction-speed-game-state', JSON.stringify(state));
-    console.log('=== SAVE ===', state);
-    console.log('=== SAVE GAME STATE ===', 'reaction-speed-game-state', JSON.stringify(state));
+    localStorage.setItem(`reaction-speed-${mode}-state`, JSON.stringify(state));
   }, [mode, history, gameState, reactionTime]);
 
   const loadGameState = () => {
-    const saved = localStorage.getItem('reaction-speed-game-state');
-    console.log('=== LOAD GAME STATE ===', 'reaction-speed-game-state', saved);
+    const saved = localStorage.getItem(`reaction-speed-${mode}-state`);
     if (saved) {
       const state = JSON.parse(saved);
       setMode(state.mode);
@@ -59,8 +63,8 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
     }
   };
 
-  const clearGameState = () => {
-    localStorage.removeItem('reaction-speed-game-state');
+  const clearGameState = (targetMode?: GameMode) => {
+    localStorage.removeItem(`reaction-speed-${targetMode || mode}-state`);
   };
 
   const handleNewGame = () => {
@@ -74,9 +78,11 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
     saveGameState();
   }, [saveGameState]);
 
-  const playBeep = () => {
+  const playBeep = async () => {
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext);
+      if (!AudioCtx) return;
+      const audioContext = new AudioCtx();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
@@ -85,35 +91,39 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
       gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
       oscillator.start();
       oscillator.stop(audioContext.currentTime + 0.2);
-    } catch (e) {}
+      setTimeout(() => audioContext.close(), 500);
+    } catch (e) { }
   };
 
-  const startTest = () => {
+  const startTest = (targetMode?: GameMode) => {
+    const activeMode = targetMode || mode;
     if (history.length >= 5) setHistory([]);
     setGameState("waiting");
     setReactionTime(null);
-    
+
     const delay = Math.random() * 2000 + 1500; // 1.5-3.5 seconds
+    if (timerRef.current) window.clearTimeout(timerRef.current);
     timerRef.current = window.setTimeout(() => {
       setGameState("active");
-      if (mode === 'sound') playBeep();
+      if (activeMode === 'sound') playBeep();
       startTimestamp.current = performance.now();
     }, delay);
   };
 
   const handleTap = () => {
     if (gameState === "waiting") {
-      clearTimeout(timerRef.current!);
-      setGameState("idle");
-      alert("Too early! Wait for the signal.");
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+      setGameState("too-early");
     } else if (gameState === "active") {
+      // Prevent double-click race condition
+      setGameState("result");
       const time = performance.now() - startTimestamp.current;
       const roundedTime = Math.round(time);
       setReactionTime(roundedTime);
-      
+
       const newHistory = [...history, roundedTime];
       setHistory(newHistory);
-      
+
       // Update leaderboard
       const currentModeLeaderboard = [...(leaderboard[mode] || []), roundedTime]
         .sort((a, b) => a - b)
@@ -121,13 +131,11 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
       const newLeaderboard = { ...leaderboard, [mode]: currentModeLeaderboard };
       setLeaderboard(newLeaderboard);
       localStorage.setItem('reaction-leaderboard', JSON.stringify(newLeaderboard));
-    console.log('=== SAVE GAME STATE ===', 'reaction-leaderboard', JSON.stringify(newLeaderboard));
-      
-      setGameState("result");
     }
   };
 
   const resetGame = () => {
+    if (timerRef.current) window.clearTimeout(timerRef.current);
     setGameState("idle");
     setReactionTime(null);
     setHistory([]);
@@ -150,11 +158,20 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
           </button>
           <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>Reaction Speed</h1>
         </div>
-        
+
         <div className="flex items-center gap-4">
-          <select 
+          <select
             value={mode}
-            onChange={(e) => { setMode(e.target.value as GameMode); resetGame(); }}
+            onChange={(e) => {
+              const newMode = e.target.value as GameMode;
+              resetGame();
+              setMode(newMode);
+              const saved = localStorage.getItem(`reaction-speed-${newMode}-state`);
+              if (saved) {
+                setHasSavedGame(true);
+                setShowResumeModal(true);
+              }
+            }}
             style={{ padding: "8px 12px", borderRadius: theme.radiusMd, border: theme.cardBorder, outline: "none", fontFamily: fontFamily }}
           >
             <option value="click">Visual: Click Green</option>
@@ -199,11 +216,11 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
         </div>
 
         {/* Main Game Area */}
-        <div 
+        <div
           className="flex-1 flex flex-col items-center justify-center cursor-pointer transition-colors duration-200"
           onClick={handleTap}
-          style={{ 
-            backgroundColor: gameState === "active" ? "#4ADE80" : gameState === "waiting" ? "#F87171" : theme.background
+          style={{
+            backgroundColor: gameState === "active" ? "#4ADE80" : gameState === "waiting" ? "#F87171" : gameState === "too-early" ? "#F59E0B" : theme.background
           }}
         >
           <div className="flex flex-col items-center gap-8 p-12 bg-white/10 backdrop-blur-md rounded-[40px] border border-white/20 shadow-2xl max-w-md w-full text-center">
@@ -218,7 +235,7 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
                   {mode === 'sound' && "Tap when you hear the beep!"}
                   {mode === 'visual' && "Tap when the ❌ turns into ✅!"}
                 </p>
-                <button 
+                <button
                   onClick={(e) => { e.stopPropagation(); startTest(); }}
                   className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-xl active:scale-95 transition-all"
                 >
@@ -256,11 +273,29 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
                 <p className="text-lg opacity-80" style={{ color: theme.textNormal }}>
                   {history.length < 5 ? `Round ${history.length} complete!` : "5-Round training finished!"}
                 </p>
-                <button 
+                <button
                   onClick={(e) => { e.stopPropagation(); if (history.length >= 5) resetGame(); else startTest(); }}
                   className="w-full py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl shadow-xl active:scale-95 transition-all"
                 >
                   {history.length >= 5 ? "RESTART TRAINING" : "START NEXT ROUND"}
+                </button>
+              </>
+            )}
+
+            {gameState === "too-early" && (
+              <>
+                <div className="w-24 h-24 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
+                  <Zap size={48} color="white" />
+                </div>
+                <h2 className="text-3xl font-bold text-white uppercase">Too Early!</h2>
+                <p className="text-lg text-white opacity-90">
+                  Wait for the signal before tapping.
+                </p>
+                <button
+                  onClick={(e) => { e.stopPropagation(); startTest(); }}
+                  className="w-full py-4 bg-white text-amber-600 font-bold rounded-2xl shadow-xl active:scale-95 transition-all"
+                >
+                  TRY AGAIN
                 </button>
               </>
             )}
@@ -292,7 +327,7 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
             <div className="w-24 h-24 rounded-full bg-primarySubtle flex items-center justify-center" style={{ backgroundColor: theme.primarySubtle }}>
               <RotateCcw size={48} color={theme.primary} />
             </div>
-            
+
             <div className="text-center gap-2 flex flex-col">
               <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>
                 Resume Game?

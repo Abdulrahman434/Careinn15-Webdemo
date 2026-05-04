@@ -37,35 +37,62 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
   const [category, setCategory] = useState<Category>('Nature');
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [imageUrl, setImageUrl] = useState("");
-  const [pieces, setPieces] = useState<{ id: number; currentPos: number }[]>([]);
+  const [pieces, setPieces] = useState<number[]>([]); // Simple array of IDs
   const [selectedPiece, setSelectedPiece] = useState<number | null>(null);
   const [timer, setTimer] = useState(0);
   const [moves, setMoves] = useState(0);
   const timerRef = useRef<any>(null);
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [hasSavedGame, setHasSavedGame] = useState(false);
+  const [showNumbers, setShowNumbers] = useState(false);
 
-  const initializeGame = useCallback(() => {
+  const getDifficultyKey = (diff: Difficulty) => {
+    if (diff === 3) return 'easy';
+    if (diff === 4) return 'medium';
+    return 'hard';
+  };
+
+  const initializeGame = useCallback((targetDiff: Difficulty) => {
+    // Check for saved state first
+    const key = `jigsaw-puzzle-${getDifficultyKey(targetDiff)}-state`;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      setHasSavedGame(true);
+      setShowResumeModal(true);
+      setDifficulty(targetDiff);
+      return;
+    }
+
     const urls = IMAGES[category];
     const url = urls[selectedImageIndex];
     setImageUrl(url);
 
-    const totalPieces = difficulty * difficulty;
-    let initialPieces = Array.from({ length: totalPieces }, (_, i) => ({ id: i, currentPos: i }));
+    const totalPieces = targetDiff * targetDiff;
+    let initialPieces = Array.from({ length: totalPieces }, (_, i) => i);
 
-    // Shuffle
+    // Professional Fisher-Yates Shuffle
+    const shuffleArray = (arr: number[]) => {
+      const shuffled = [...arr];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    };
+
+    let shuffled: number[] = [];
     do {
-      initialPieces = initialPieces.sort(() => Math.random() - 0.5);
-      initialPieces.forEach((p, i) => p.currentPos = i);
-    } while (isSolved(initialPieces));
+      shuffled = shuffleArray(initialPieces);
+    } while (isSolved(shuffled));
 
-    setPieces(initialPieces);
+    setPieces(shuffled);
     setGameState("playing");
     setTimer(0);
     setMoves(0);
     setSelectedPiece(null);
-    clearGameState();
-  }, [category, difficulty, selectedImageIndex]);
+    setDifficulty(targetDiff);
+    clearGameState(targetDiff);
+  }, [category, selectedImageIndex]);
 
   const saveGameState = useCallback(() => {
     if (gameState !== "playing" || pieces.length === 0) return;
@@ -79,21 +106,31 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
       moves,
       timestamp: Date.now()
     };
-    localStorage.setItem('image-jigsaw-game-state', JSON.stringify(state));
-    console.log('=== SAVE ===', state);
-    console.log('=== SAVE GAME STATE ===', 'image-jigsaw-game-state', JSON.stringify(state));
+    const key = `jigsaw-puzzle-${getDifficultyKey(difficulty)}-state`;
+    localStorage.setItem(key, JSON.stringify(state));
   }, [gameState, pieces, difficulty, category, selectedImageIndex, imageUrl, timer, moves]);
 
   const loadGameState = () => {
-    const saved = localStorage.getItem('image-jigsaw-game-state');
-    console.log('=== LOAD GAME STATE ===', 'image-jigsaw-game-state', saved);
+    const key = `jigsaw-puzzle-${getDifficultyKey(difficulty)}-state`;
+    const saved = localStorage.getItem(key);
     if (saved) {
       const state = JSON.parse(saved);
+      // Integrity check: Ensure uniqueness and correct length
+      const piecesArr = Array.isArray(state.pieces) ? state.pieces : [];
+      const flatPieces = piecesArr.map((p: any) => typeof p === 'object' ? p.id : p);
+      const uniqueIds = new Set(flatPieces);
+
+      if (uniqueIds.size !== (state.difficulty * state.difficulty)) {
+        // Fallback
+        setGameState("menu");
+        return;
+      }
+
       setDifficulty(state.difficulty);
       setCategory(state.category);
       setSelectedImageIndex(state.selectedImageIndex);
       setImageUrl(state.imageUrl);
-      setPieces(state.pieces);
+      setPieces(flatPieces);
       setTimer(state.timer);
       setMoves(state.moves);
       setGameState("playing");
@@ -101,8 +138,10 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
     }
   };
 
-  const clearGameState = () => {
-    localStorage.removeItem('image-jigsaw-game-state');
+  const clearGameState = (diff?: Difficulty) => {
+    const targetDiff = diff || difficulty;
+    const key = `jigsaw-puzzle-${getDifficultyKey(targetDiff)}-state`;
+    localStorage.removeItem(key);
   };
 
   const handleNewGame = () => {
@@ -113,20 +152,12 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem('image-jigsaw-game-state');
-    console.log('=== LOAD ===', saved);
-    if (saved) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
-    }
-  }, []);
-
-  useEffect(() => {
     saveGameState();
   }, [saveGameState]);
 
-  const isSolved = (currentPieces: { id: number; currentPos: number }[]) => {
-    return currentPieces.every(p => p.id === p.currentPos);
+  const isSolved = (currentPieces: number[]) => {
+    if (currentPieces.length === 0) return false;
+    return currentPieces.every((id, index) => id === index);
   };
 
   useEffect(() => {
@@ -144,13 +175,11 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
     } else {
       if (selectedPiece !== index) {
         const newPieces = [...pieces];
-        // Swap pieces
-        const tempId = newPieces[selectedPiece].id;
-        newPieces[selectedPiece].id = newPieces[index].id;
-        newPieces[index].id = tempId;
+        // Perfect swap - impossible to duplicate
+        [newPieces[selectedPiece], newPieces[index]] = [newPieces[index], newPieces[selectedPiece]];
 
         setPieces(newPieces);
-        setMoves(moves + 1);
+        setMoves(m => m + 1);
 
         if (isSolved(newPieces)) {
           setGameState("complete");
@@ -158,6 +187,30 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
         }
       }
       setSelectedPiece(null);
+    }
+  };
+
+  const giveHint = () => {
+    if (gameState !== "playing" || pieces.length === 0) return;
+    // Find first piece that is not in its correct position
+    const wrongIndex = pieces.findIndex((id, i) => id !== i);
+    if (wrongIndex === -1) return;
+
+    // Find where the correct piece is
+    const correctId = wrongIndex;
+    const currentPieceIndex = pieces.indexOf(correctId);
+
+    if (currentPieceIndex !== -1) {
+      const newPieces = [...pieces];
+      // Perfect swap
+      [newPieces[wrongIndex], newPieces[currentPieceIndex]] = [newPieces[currentPieceIndex], newPieces[wrongIndex]];
+
+      setPieces(newPieces);
+      setMoves(m => m + 1);
+      if (isSolved(newPieces)) {
+        setGameState("complete");
+        clearGameState();
+      }
     }
   };
 
@@ -171,7 +224,17 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
     <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }}>
       <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg }}>
         <div className="flex items-center gap-4">
-          <button onClick={onBackToGames} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
+          <button
+            onClick={() => {
+              if (gameState !== "menu") {
+                setGameState("menu");
+              } else {
+                onBackToGames();
+              }
+            }}
+            className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+            style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}
+          >
             <ArrowLeft size={24} color={theme.textHeading} />
           </button>
           <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>Puzzle</h1>
@@ -184,6 +247,23 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
                 <span style={{ fontFamily, fontSize: '12px', color: theme.textMuted }}>Moves: {moves}</span>
                 <span style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.bold, color: theme.primary }}>{formatTime(timer)}</span>
               </div>
+              <button
+                onClick={() => setShowNumbers(!showNumbers)}
+                className="px-4 py-2 rounded-xl font-bold transition-all active:scale-95"
+                style={{
+                  backgroundColor: showNumbers ? theme.primary : theme.surfaceElevated,
+                  color: showNumbers ? theme.textInverse : theme.textHeading,
+                  border: theme.cardBorder
+                }}
+              >
+                {showNumbers ? "Hide Numbers" : "Show Numbers"}
+              </button>
+              <button
+                onClick={giveHint}
+                className="px-4 py-2 rounded-xl font-bold bg-amber-100 text-amber-700 border border-amber-200 transition-all active:scale-95"
+              >
+                Hint
+              </button>
               <button onClick={handleNewGame} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
                 <RotateCcw size={24} color={theme.textHeading} />
               </button>
@@ -230,7 +310,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
                   {[3, 4, 5].map(d => (
                     <button
                       key={d}
-                      onClick={() => setDifficulty(d as Difficulty)}
+                      onClick={() => initializeGame(d as Difficulty)}
                       className="flex items-center justify-between p-4 rounded-2xl border-2 transition-all active:scale-95"
                       style={{
                         backgroundColor: difficulty === d ? theme.primarySubtle : 'white',
@@ -270,7 +350,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
                 </div>
 
                 <button
-                  onClick={initializeGame}
+                  onClick={() => initializeGame(difficulty)}
                   className="mt-4 py-5 bg-blue-600 text-white text-xl font-black rounded-2xl shadow-xl hover:bg-blue-700 transition-all active:scale-95"
                 >
                   START PUZZLE
@@ -297,9 +377,9 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
                   aspectRatio: "1/1"
                 }}
               >
-                {pieces.map((piece, i) => {
-                  const row = Math.floor(piece.id / difficulty);
-                  const col = piece.id % difficulty;
+                {pieces.map((id, i) => {
+                  const row = Math.floor(id / difficulty);
+                  const col = id % difficulty;
                   const percentage = 100 / (difficulty - 1);
 
                   return (
@@ -318,11 +398,16 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
                         className="absolute inset-0 w-full h-full"
                         style={{
                           backgroundImage: `url(${imageUrl})`,
-                          backgroundSize: `${difficulty * 100}%`,
+                          backgroundSize: `${difficulty * 100}% ${difficulty * 100}%`,
                           backgroundPosition: `${col * percentage}% ${row * percentage}%`,
                         }}
                       />
                       <div className="absolute inset-0 bg-black/5" />
+                      {showNumbers && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                          <span className="text-white text-3xl font-black drop-shadow-lg">{id + 1}</span>
+                        </div>
+                      )}
                     </button>
                   );
                 })}
