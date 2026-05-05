@@ -24,6 +24,15 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
     setUrl(formattedUrl);
   }, [initialUrl]);
 
+  // Known sites that block embedding via X-Frame-Options
+  const blockedDomains = ["bbc.com", "cnn.com", "edition.cnn.com", "bing.com", "okaz.com.sa"];
+  const isBlocked = blockedDomains.some(domain => url.toLowerCase().includes(domain));
+
+  // If the site is blocked, we use a high-compatibility proxy to force it to show
+  const displayUrl = isBlocked 
+    ? `https://corsproxy.io/?${encodeURIComponent(url)}` 
+    : url;
+
   return (
     <div 
       className="absolute inset-0 z-[100] flex flex-col animate-in fade-in zoom-in-95 duration-200"
@@ -64,7 +73,7 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
               border: `1px solid ${theme.primarySubtle}` 
             }}
           >
-            <Shield size={18} color={theme.success} />
+            <Shield size={18} color={isBlocked ? theme.accent : theme.success} />
             <span 
               className="text-sm font-medium truncate" 
               style={{ color: theme.textMuted }}
@@ -88,6 +97,7 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
           >
             <RefreshCw size={20} color={theme.textHeading} className={isLoading ? 'animate-spin' : ''} />
           </button>
+          
           <button 
             onClick={onClose} 
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" 
@@ -116,33 +126,13 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
         )}
 
         <iframe 
-          key={url}
-          src={url}
+          key={displayUrl}
+          src={displayUrl}
           className="w-full h-full border-none"
           onLoad={() => setIsLoading(false)}
           sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
           title="Internet Browser Content"
         />
-
-        {/* Technical Guidance Banner */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-6 pointer-events-none">
-          <div 
-            className="bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-2xl flex items-start gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-700 fill-mode-forwards opacity-0"
-            style={{ pointerEvents: "auto" }}
-          >
-            <div className="bg-blue-500/20 p-2 rounded-lg text-blue-400">
-              <Info size={24} />
-            </div>
-            <div className="flex-1">
-              <h4 className="text-white font-bold text-sm mb-1">Technical Note for Testing</h4>
-              <p className="text-white/60 text-xs leading-relaxed">
-                Sites like <b>BBC, CNN, and Google</b> block embedding in standard browsers. 
-                <span className="text-emerald-400 font-bold block mt-1">This will work on the actual bedside hardware.</span> 
-                For now, please use the <b>"Open Full"</b> button in the toolbar.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
       
       {/* Security Footer Notice */}

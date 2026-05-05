@@ -1482,6 +1482,12 @@ export function AppLauncher({
       if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
         finalUrl = 'https://' + finalUrl;
       }
+
+      // Special handling for Google to make it iframe-friendly
+      if (finalUrl.includes("google.com") && !finalUrl.includes("igu=1")) {
+        finalUrl = `https://www.google.com/search?igu=1`;
+      }
+      
       setBrowserUrl(finalUrl);
       setShowBrowser(true);
     } else {
