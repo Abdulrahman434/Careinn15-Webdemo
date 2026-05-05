@@ -29,8 +29,8 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
 
   // Known sites that block embedding via X-Frame-Options
   const blockedDomains = [
-    "bbc.com", "cnn.com", "edition.cnn.com", "bing.com", 
-    "okaz.com.sa", "saudigazette.com.sa", "instagram.com", 
+    "bbc.com", "cnn.com", "edition.cnn.com", "bing.com",
+    "okaz.com.sa", "saudigazette.com.sa", "instagram.com",
     "facebook.com", "twitter.com", "x.com", "linkedin.com",
     "stctv.com"
   ];
@@ -58,29 +58,29 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
   };
 
   return (
-    <div 
+    <div
       className="absolute inset-0 z-[100] flex flex-col animate-in fade-in zoom-in-95 duration-200"
       style={{ backgroundColor: theme.background }}
       dir={dir}
     >
       {/* Browser Toolbar */}
-      <div 
-        className="shrink-0 flex items-center justify-between px-8" 
-        style={{ 
-          height: "80px", 
-          backgroundColor: theme.surface, 
+      <div
+        className="shrink-0 flex items-center justify-between px-8"
+        style={{
+          height: "80px",
+          backgroundColor: theme.surface,
           borderBottom: theme.cardBorder,
-          boxShadow: SHADOW.md 
+          boxShadow: SHADOW.md
         }}
       >
         <div className="flex items-center gap-4 flex-1">
-          <button 
-            onClick={onClose} 
-            className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform group" 
-            style={{ 
-              width: "56px", 
-              height: "56px", 
-              backgroundColor: theme.primary, 
+          <button
+            onClick={onClose}
+            className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform group"
+            style={{
+              width: "56px",
+              height: "56px",
+              backgroundColor: theme.primary,
               borderRadius: theme.radiusMd,
               border: "none",
               boxShadow: SHADOW.sm
@@ -88,18 +88,18 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
           >
             <ArrowLeft size={28} color="#fff" className={isRTL ? 'rotate-180' : ''} />
           </button>
-          
-          <div 
-            className="flex items-center gap-3 px-4 py-2 flex-1 max-w-2xl" 
-            style={{ 
-              backgroundColor: theme.background, 
+
+          <div
+            className="flex items-center gap-3 px-4 py-2 flex-1 max-w-2xl"
+            style={{
+              backgroundColor: theme.background,
               borderRadius: theme.radiusLg,
-              border: `1px solid ${theme.primarySubtle}` 
+              border: `1px solid ${theme.primarySubtle}`
             }}
           >
             <img src={edgeLogo} alt="Browser" style={{ width: 24, height: 24 }} />
-            <span 
-              className="text-sm font-medium truncate" 
+            <span
+              className="text-sm font-medium truncate"
               style={{ color: theme.textMuted }}
             >
               {url}
@@ -108,11 +108,11 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
         </div>
 
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => setShowFallback(true)}
             className="flex items-center justify-center gap-2 px-4 h-[48px] cursor-pointer active:scale-95 transition-all"
-            style={{ 
-              backgroundColor: "rgba(239, 68, 68, 0.1)", 
+            style={{
+              backgroundColor: "rgba(239, 68, 68, 0.1)",
               borderRadius: theme.radiusMd,
               border: "1px solid rgba(239, 68, 68, 0.2)",
               color: "#ef4444"
@@ -123,13 +123,13 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
           </button>
 
           {!showFallback && (
-            <button 
+            <button
               onClick={() => { setIsLoading(true); setShowFallback(false); const currentUrl = url; setUrl(''); setTimeout(() => setUrl(currentUrl), 10); }}
               className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
-              style={{ 
-                width: "48px", 
-                height: "48px", 
-                backgroundColor: theme.surfaceElevated, 
+              style={{
+                width: "48px",
+                height: "48px",
+                backgroundColor: theme.surfaceElevated,
                 borderRadius: theme.radiusMd,
                 border: "none"
               }}
@@ -137,14 +137,14 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
               <RefreshCw size={20} color={theme.textHeading} className={isLoading ? 'animate-spin' : ''} />
             </button>
           )}
-          
-          <button 
-            onClick={onClose} 
-            className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" 
-            style={{ 
-              width: "48px", 
-              height: "48px", 
-              backgroundColor: theme.surfaceElevated, 
+
+          <button
+            onClick={onClose}
+            className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+            style={{
+              width: "48px",
+              height: "48px",
+              backgroundColor: theme.surfaceElevated,
               borderRadius: theme.radiusMd,
               border: "none"
             }}
@@ -167,14 +167,14 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
             <p className="text-slate-500 max-w-md mb-8 leading-relaxed">
               This website might be blocked or taking too long to load inside the app. For the best experience, please open it in a full window.
             </p>
-            <button 
+            <button
               onClick={handleOpenExternal}
               className="px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition-all active:scale-95 flex items-center gap-3"
             >
               <ExternalLink size={20} />
               Open in External Browser
             </button>
-            <button 
+            <button
               onClick={() => setShowFallback(false)}
               className="mt-4 text-blue-600 font-bold hover:underline"
             >
@@ -192,7 +192,7 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
               </div>
             )}
 
-            <iframe 
+            <iframe
               key={url}
               src={url}
               className="w-full h-full border-none"
@@ -203,7 +203,7 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
           </>
         )}
       </div>
-      
+
       {/* Security Footer Notice */}
       <div className="shrink-0 px-8 py-2 flex items-center justify-center gap-2" style={{ backgroundColor: theme.surface, fontSize: '12px', color: theme.textMuted }}>
         <Globe size={12} />

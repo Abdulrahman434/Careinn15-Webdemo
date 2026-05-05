@@ -284,20 +284,25 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
   const DANGER = "#D10044";
 
   const handleDial = useCallback((ext: { extension: string, displayName: string, emergency?: boolean }) => {
+    // Always set the call target first so the UI knows who we're calling
+    setSimCallTarget({
+      id: ext.extension,
+      nameKey: ext.displayName,
+      descKey: "",
+      ext: ext.extension,
+      icon: ext.emergency ? Heart : Phone,
+      iconColor: "#fff",
+      iconBg: "transparent",
+      emergency: ext.emergency
+    });
+
     if (isSipAvailable) {
+      // Set local state immediately for instant UI feedback;
+      // bridge events will keep it in sync from here
+      setSimCallState("outgoing");
       sip.call(ext.extension);
     } else {
-      // Simulation logic
-      setSimCallTarget({
-        id: ext.extension,
-        nameKey: ext.displayName,
-        descKey: "",
-        ext: ext.extension,
-        icon: ext.emergency ? Heart : Phone,
-        iconColor: "#fff",
-        iconBg: "transparent",
-        emergency: ext.emergency
-      });
+      // Simulation fallback — exactly as before
       setSimCallState("outgoing");
       setTimeout(() => setSimCallState("active"), 3000);
     }
@@ -305,17 +310,33 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
 
   const handleDialCustom = useCallback(() => {
     if (!dialInput) return;
-    if (isSipAvailable) {
-      sip.call(dialInput);
-    } else {
-      handleDial({ extension: dialInput, displayName: t("call.dialExt") });
-    }
-  }, [dialInput, isSipAvailable, handleDial, t]);
+    // Always route through handleDial so UI feedback is consistent
+    handleDial({
+      extension: dialInput,
+      displayName: dialInput,  // show the number itself as the name
+      emergency: false
+    });
+  }, [dialInput, handleDial]);
 
   const handleSimulateIncoming = useCallback(() => {
     setSimCallTarget(EXTENSIONS[0]); // Simulate incoming from Nurse
     setSimCallState("incoming");
   }, []);
+
+  // Reset sim state when the SIP bridge signals the call has ended
+  useEffect(() => {
+    if (sipCallState === 'End' || sipCallState === 'Released' ||
+        sipCallState === 'Error') {
+      // Brief delay so any "call ended" state is visible before clearing
+      const t = setTimeout(() => {
+        setSimCallState("idle");
+        setSimCallTarget(null);
+        setShowKeypad(false);
+        setInCallDigits("");
+      }, 1500);
+      return () => clearTimeout(t);
+    }
+  }, [sipCallState]);
 
   const handleAccept = useCallback(() => {
     if (!isSipIdle) sip.answer();
