@@ -776,6 +776,17 @@ function BluetoothDialog({
     'bluetooth-device-found',
     (d) => {
       if (!isNative) return;
+
+      // Filter out unnamed or placeholder devices
+      const name = d.name?.trim() || "";
+      if (
+        !name ||
+        name.toLowerCase() === "unknown" ||
+        name.toLowerCase() === "unknown device"
+      ) {
+        return;
+      }
+
       setBtDevices((prev) => {
         const filtered = prev.filter((x) => x.id !== d.address);
         return [
@@ -864,77 +875,86 @@ function BluetoothDialog({
               )}
             </div>
 
-            {/* Paired devices section */}
-            {filteredPaired.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <DialogSectionLabel>{tr("bt.paired")}</DialogSectionLabel>
-                {filteredPaired.map((device) => {
-                  const isConnected = connectedId === device.id;
-                  const DevIcon = device.icon;
-                  return (
-                    <DeviceListItem
-                      key={device.id}
-                      icon={<DevIcon size={18} style={{ color: isConnected ? t.primary : t.iconDefault }} />}
-                      name={device.name}
-                      subtitle={isConnected ? tr("wifi.connected") : tr("bt.pairedStatus")}
-                      isConnected={isConnected}
-                      onClick={() => {
-                        if (isConnected) {
-                          if (isNative) bluetoothBridge.disconnect(device.id);
-                          onDisconnect();
-                        } else {
+            {/* Paired + Available sections (Scrollable) */}
+            <div
+              className="flex flex-col gap-3"
+              style={{
+                maxHeight: "min(420px, 50vh)",
+                overflowY: "auto",
+              }}
+            >
+              {/* Paired devices section */}
+              {filteredPaired.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <DialogSectionLabel>{tr("bt.paired")}</DialogSectionLabel>
+                  {filteredPaired.map((device) => {
+                    const isConnected = connectedId === device.id;
+                    const DevIcon = device.icon;
+                    return (
+                      <DeviceListItem
+                        key={device.id}
+                        icon={<DevIcon size={18} style={{ color: isConnected ? t.primary : t.iconDefault }} />}
+                        name={device.name}
+                        subtitle={isConnected ? tr("wifi.connected") : tr("bt.pairedStatus")}
+                        isConnected={isConnected}
+                        onClick={() => {
+                          if (isConnected) {
+                            if (isNative) bluetoothBridge.disconnect(device.id);
+                            onDisconnect();
+                          } else {
+                            if (isNative) bluetoothBridge.connect(device.id);
+                            else onConnect(device.id);
+                          }
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Available devices section */}
+              {filteredAvailable.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <DialogSectionLabel>{tr("bt.available")}</DialogSectionLabel>
+                  {filteredAvailable.map((device) => {
+                    const DevIcon = device.icon;
+                    return (
+                      <DeviceListItem
+                        key={device.id}
+                        icon={<DevIcon size={18} style={{ color: t.iconDefault }} />}
+                        name={device.name}
+                        subtitle={device.type}
+                        isConnected={false}
+                        onClick={() => {
                           if (isNative) bluetoothBridge.connect(device.id);
                           else onConnect(device.id);
-                        }
-                      }}
-                    />
-                  );
-                })}
-              </div>
-            )}
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              )}
 
-            {/* Available devices section */}
-            {filteredAvailable.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <DialogSectionLabel>{tr("bt.available")}</DialogSectionLabel>
-                {filteredAvailable.map((device) => {
-                  const DevIcon = device.icon;
-                  return (
-                    <DeviceListItem
-                      key={device.id}
-                      icon={<DevIcon size={18} style={{ color: t.iconDefault }} />}
-                      name={device.name}
-                      subtitle={device.type}
-                      isConnected={false}
-                      onClick={() => {
-                        if (isNative) bluetoothBridge.connect(device.id);
-                        else onConnect(device.id);
-                      }}
-                    />
-                  );
-                })}
-              </div>
-            )}
-
-            {/* No results */}
-            {filteredPaired.length === 0 && filteredAvailable.length === 0 && (
-              <div
-                className="flex flex-col items-center justify-center gap-2"
-                style={{ padding: "20px 0" }}
-              >
-                <Search size={24} style={{ color: t.textDisabled }} />
-                <span
-                  style={{
-                    fontFamily: t.fontFamily,
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    color: t.textMuted,
-                  }}
+              {/* No results */}
+              {filteredPaired.length === 0 && filteredAvailable.length === 0 && (
+                <div
+                  className="flex flex-col items-center justify-center gap-2"
+                  style={{ padding: "20px 0" }}
                 >
-                  {tr("bt.noMatch", search)}
-                </span>
-              </div>
-            )}
+                  <Search size={24} style={{ color: t.textDisabled }} />
+                  <span
+                    style={{
+                      fontFamily: t.fontFamily,
+                      fontSize: "13px",
+                      fontWeight: 500,
+                      color: t.textMuted,
+                    }}
+                  >
+                    {tr("bt.noMatch", search)}
+                  </span>
+                </div>
+              )}
+            </div>
 
             {connectedId && (
               <DisconnectButton
