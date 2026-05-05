@@ -17,6 +17,8 @@ import {
   Moon,
   Edit2,
   Search,
+  Shield,
+  X,
 } from "lucide-react";
 import { InternetBrowser } from "./InternetBrowser";
 import { useTheme } from "./ThemeContext";
@@ -91,6 +93,8 @@ interface CategoryConfig {
   icon: React.ComponentType<any>;
   apps: AppItem[];
 }
+
+type CategoryKey = string;
 
 /* ── App data with accurate branding ────────────────────────── */
 
@@ -754,33 +758,14 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
       labelKey: "launcher.internet",
       icon: Globe,
       apps: [
-        ...(theme.id === "dsfh"
-          ? [
-              {
-                id: "dsfh-updates",
-                name: locale === "ar" ? "تحديثات فقيه" : "Fakeeh Updates",
-                bg: theme.primary,
-                mark: "",
-                textColor: "#fff",
-                url: locale === "ar" ? "https://dsfhriyadh.fakeeh.care/about-us/updates" : "https://en.dsfhriyadh.fakeeh.care/about-us/updates",
-                customRender: () => (
-                  <div className="flex flex-col items-center justify-center p-4" style={{ width: 150, height: 150 }}>
-                    <div className="flex items-center justify-center mb-2" style={{ width: 64, height: 64, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: theme.radiusLg }}>
-                      <Globe size={32} color="#fff" strokeWidth={1.5} />
-                    </div>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", textAlign: "center" }}>{locale === "ar" ? "آخر التحديثات" : "Latest Updates"}</span>
-                  </div>
-                ),
-              },
-            ]
-          : []),
+        // Removed Fakeeh Updates per user request
         {
           id: "chrome",
           name: locale === "ar" ? "جوجل" : "Google",
           bg: "#fff",
           mark: "",
           textColor: "#333",
-          url: "https://google.com",
+          url: "https://www.google.com/search?igu=1",
           customRender: () => (
             <img src={chromeIcon} alt="Chrome" style={{ width: 90, height: 90, objectFit: "contain" }} />
           ),
@@ -802,7 +787,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           bg: "#1a1a1a",
           mark: "",
           textColor: "#fff",
-          url: "https://bbc.com/news",
+          url: "https://www.bbc.com/news/lite",
           customRender: () => (
             <div className="flex flex-col items-center gap-1">
               <div className="flex">
@@ -822,17 +807,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           bg: "#CC0000",
           mark: "CNN",
           textColor: "#fff",
-          url: "https://cnn.com",
-          markSize: 32,
-          markWeight: 900,
-        },
-        {
-          id: "okaz",
-          name: locale === "ar" ? "عكاظ" : "Okaz",
-          bg: "#fff",
-          mark: "Okaz",
-          textColor: "#000",
-          url: "https://okaz.com.sa",
+          url: "https://edition.cnn.com/mobile",
           markSize: 32,
           markWeight: 900,
         },
@@ -846,6 +821,20 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           customRender: () => (
             <div className="flex items-center justify-center bg-slate-100 rounded-xl w-full h-full">
               <span className="text-5xl font-serif text-slate-800">W</span>
+            </div>
+          ),
+        },
+        {
+          id: "url-browser",
+          name: locale === "ar" ? "متصفح الروابط" : "URL Browser",
+          bg: "linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)",
+          mark: "",
+          textColor: "#fff",
+          customRender: () => (
+            <div className="flex flex-col items-center justify-center w-full h-full">
+              <div className="flex items-center justify-center bg-white/20 rounded-2xl w-20 h-20 mb-2">
+                <Globe size={40} color="#fff" strokeWidth={1.5} />
+              </div>
             </div>
           ),
         },
@@ -1414,6 +1403,7 @@ export function AppLauncher({
 
   // Internet Browser States
   const [showBrowser, setShowBrowser] = useState(false);
+  const [showUrlNavigator, setShowUrlNavigator] = useState(false);
   const [browserUrl, setBrowserUrl] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [urlError, setUrlError] = useState("");
@@ -1468,12 +1458,17 @@ export function AppLauncher({
 
   const isValidUrl = (input: string) => {
     const val = input.trim().toLowerCase();
-    // Strict URL validation: Must start with http://, https://, or www.
-    if (val.startsWith('http://') || val.startsWith('https://') || val.startsWith('www.')) {
-      // Further check for at least one dot to ensure it's a domain
-      return val.includes('.');
-    }
-    return false;
+    
+    // 1. Block any input with spaces (this prevents search engine usage)
+    if (val.includes(' ')) return false;
+
+    // 2. Check for direct URL indicators
+    const hasProtocol = val.startsWith('http://') || val.startsWith('https://');
+    const hasWww = val.startsWith('www.');
+    const hasDomainExtension = val.includes('.') && val.split('.').pop()!.length >= 2;
+
+    // Must be either a protocol URL or a clear domain.com string
+    return hasProtocol || hasWww || hasDomainExtension;
   };
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
@@ -1495,6 +1490,12 @@ export function AppLauncher({
   };
 
   const handleAppTap = (app: any) => {
+    // Special case for the standalone URL Browser app
+    if (app.id === "url-browser") {
+      setShowUrlNavigator(true);
+      return;
+    }
+
     // 1. Intercept specifically known internet apps first (Always open in internal browser)
     const isInternetApp = ["chrome", "bbc", "cnn", "saudigazette", "okaz", "aljazeera", "wikipedia"].includes(app.id);
     
@@ -1770,12 +1771,82 @@ export function AppLauncher({
         />
       )}
 
+      {/* Dedicated URL Navigator Screen (Standalone App View) */}
+      {showUrlNavigator && (
+        <div 
+          className="absolute inset-0 z-[60] flex flex-col animate-in fade-in zoom-in-95 duration-200"
+          style={{ 
+            background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+          }}
+        >
+          <InternalPageHeader 
+            title={locale === "ar" ? "متصفح الروابط" : "URL Browser"}
+            icon={<Globe size={26} color="#fff" />}
+            onClose={() => setShowUrlNavigator(false)}
+          />
+          
+          <div className="flex-1 flex flex-col items-center justify-center px-16">
+            <div className="w-full max-w-3xl animate-in slide-in-from-bottom-8 duration-500">
+              <h3 className="text-white/60 text-lg font-medium mb-6 text-center">
+                {locale === "ar" ? "أدخل رابط الموقع المباشر" : "Enter Direct Website URL"}
+              </h3>
+              
+              <form 
+                onSubmit={handleSearchSubmit}
+                className="flex items-stretch h-20 bg-white/5 rounded-2xl overflow-hidden border border-white/10 backdrop-blur-xl"
+              >
+                <div className="flex-1 px-8 flex items-center">
+                  <input 
+                    type="text"
+                    autoFocus
+                    value={searchInput}
+                    onChange={(e) => { setSearchInput(e.target.value); if (urlError) setUrlError(""); }}
+                    placeholder="https://example.com"
+                    className="w-full bg-transparent border-none outline-none text-white text-2xl font-medium placeholder:text-white/10"
+                    dir="ltr"
+                    spellCheck={false}
+                    autoComplete="off"
+                  />
+                </div>
+                <button 
+                  type="submit"
+                  className="px-12 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xl transition-all active:scale-95"
+                >
+                  GO
+                </button>
+              </form>
+              
+              {urlError && (
+                <div className="mt-6 text-center text-red-400 font-bold text-lg animate-bounce">
+                  {urlError}
+                </div>
+              )}
+
+              <div className="mt-12 grid grid-cols-2 gap-6 text-white/30 text-sm">
+                <div className="flex items-center gap-3 bg-white/5 p-4 rounded-xl">
+                  <Shield size={18} />
+                  <span>Secure Direct Access</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/5 p-4 rounded-xl">
+                  <X size={18} />
+                  <span>No Search Engine</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Embedded Browser Overlay */}
       {showBrowser && (
         <InternetBrowser 
           key={browserUrl} // Critical: Force re-render when URL changes to ensure it loads
           initialUrl={browserUrl} 
-          onClose={() => setShowBrowser(false)} 
+          onClose={() => {
+            setShowBrowser(false);
+            // If we opened from the URL navigator, keep it open so back returns to it
+            // Otherwise it will just show the grid
+          }} 
         />
       )}
     </div>

@@ -57,16 +57,6 @@ interface AndroidSystemInterface {
   playIptv(url: string, channelName: string): void;
   stopIptv(): void;
   isIptvPlaying(): boolean;
-
-  // SIP methods
-  sipGetContacts(): string;           // returns JSON string
-  sipCall(extension: string): void;
-  sipAnswer(): void;
-  sipHangup(): void;
-  sipSetMuted(muted: boolean): void;
-  sipIsMuted(): boolean;
-  sipGetCallState(): string;
-  sipGetRegistrationState(): string;
 }
 
 /* ─── CustomEvent detail shapes dispatched by the Android side ─── */
@@ -142,10 +132,7 @@ export type AndroidEventName =
   | "iptv-channels-loaded"
   | "iptv-channels-error"
   | "iptv-playing"
-  | "iptv-stopped"
-  | "sip-registration-state"
-  | "sip-call-state"
-  | "sip-contacts-updated";
+  | "iptv-stopped";
 
 /* ─── Augment the global Window type ─── */
 declare global {

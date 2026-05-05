@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { ThemeProvider, useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "./components/ThemeContext";
 import { IptvChannels } from "./components/IptvChannels";
-import { isAndroidApp, useSipCallState } from "./utils/androidBridge";
+import { isAndroidApp } from "./utils/androidBridge";
 import { useLocale } from "./components/i18n";
 import { TopBar } from "./components/TopBar";
 import { NewsTicker } from "./components/NewsTicker";
@@ -119,14 +119,7 @@ function BedsideScreen() {
   const [showBlankPage, setShowBlankPage] = useState(false);
   const [showIptv, setShowIptv] = useState(false);
 
-  /* ── SIP Call State Integration ── */
-  const { callState: sipCallState } = useSipCallState();
-  useEffect(() => {
-    const activeStates = ['IncomingReceived', 'OutgoingInit', 'OutgoingProgress', 'OutgoingRinging', 'OutgoingEarlyMedia', 'Connected', 'StreamsRunning'];
-    if (activeStates.includes(sipCallState)) {
-      setShowCall(true);
-    }
-  }, [sipCallState]);
+
 
   /* ── CMS Integration ── */
   const cmsHospital = useCmsHospital();
