@@ -122,11 +122,11 @@ function BedsideScreen() {
   /* ── SIP Call State Integration ── */
   const { callState: sipCallState } = useSipCallState();
   useEffect(() => {
-    const activeStates = ['IncomingReceived', 'OutgoingInit', 'OutgoingProgress', 'OutgoingRinging', 'OutgoingEarlyMedia', 'Connected', 'StreamsRunning'];
-    if (activeStates.includes(sipCallState)) {
+    if (!isAndroidApp()) return;
+    if (sipCallState === 'IncomingReceived' && !showCall) {
       setShowCall(true);
     }
-  }, [sipCallState]);
+  }, [sipCallState, showCall]);
 
   /* ── CMS Integration ── */
   const cmsHospital = useCmsHospital();

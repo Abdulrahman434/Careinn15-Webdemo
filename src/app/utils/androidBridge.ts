@@ -632,6 +632,28 @@ export function useSipCallState() {
   return { callState, remote, direction, durationMs };
 }
 
+/**
+ * Lightweight hook for global incoming call detection.
+ * Only returns true when an incoming call needs attention.
+ */
+export function useIncomingCall(): {
+  isIncoming: boolean;
+  callerExtension: string;
+  callerName: string;
+} {
+  const { callState, remote } = useSipCallState();
+  const contacts = useSipContacts();
+
+  const isIncoming = callState === 'IncomingReceived';
+
+  const contact = contacts.find(c => c.extension === remote);
+  const callerName = contact
+    ? contact.nameEn
+    : remote || 'Unknown';
+
+  return { isIncoming, callerExtension: remote, callerName };
+}
+
 
 /**
  * Reactive registration state. Updates when the Android bridge 
