@@ -235,27 +235,65 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
   const regState = useSipRegistration();
   const isSipAvailable = useSipAvailable();
 
-  // Mapping SIP states to legacy string states
-  const isSipIncoming = sipCallState === 'IncomingReceived';
-  const isSipOutgoing = sipCallState === 'OutgoingInit' || sipCallState === 'OutgoingProgress' || sipCallState === 'OutgoingRinging' || sipCallState === 'OutgoingEarlyMedia';
-  const isSipActive = sipCallState === 'Connected' || sipCallState === 'StreamsRunning';
-  const isSipIdle = sipCallState === 'Idle' || sipCallState === 'Released' || sipCallState === 'Error' || sipCallState === 'End';
-
   // Local Simulation State
   const [simCallState, setSimCallState] = useState<CallState>("idle");
   const [simCallTarget, setSimCallTarget] = useState<Extension | null>(null);
 
-  // Derived effective state (SIP takes priority if active, otherwise simulation)
-  const callState: CallState = (!isSipIdle)
-    ? (isSipIncoming ? "incoming" : isSipOutgoing ? "outgoing" : isSipActive ? "active" : "idle")
+  // Bridge state takes priority ONLY for incoming calls and 
+  // connected state — everything else follows simCallState
+  const bridgeIsIncoming = sipCallState === 'IncomingReceived';
+  const bridgeIsConnected = sipCallState === 'Connected' || 
+                            sipCallState === 'StreamsRunning';
+  const bridgeIsEnded = sipCallState === 'End' || 
+                        sipCallState === 'Released' || 
+                        sipCallState === 'Error';
+
+  const isSipIdle = sipCallState === 'Idle' || bridgeIsEnded;
+
+  // Effective call state:
+  // - Bridge incoming overrides everything (patient can't miss a call)
+  // - Bridge connected promotes outgoing→active
+  // - Bridge ended resets (via useEffect below)
+  // - Everything else: trust simCallState for instant UI feedback
+  const callState: CallState = bridgeIsIncoming
+    ? "incoming"
+    : (bridgeIsConnected && simCallState === "outgoing")
+    ? "active"
     : simCallState;
 
-  const currentContact = contacts.find(c => c.extension === remote);
-  const targetName = currentContact ? (locale === 'ar' ? currentContact.nameAr : currentContact.nameEn) : remote;
-  
-  const callTarget: Extension | null = (!isSipIdle)
-    ? { id: "sip", nameKey: targetName || "Unknown", descKey: "", ext: remote || "", icon: Phone, iconColor: "#fff", iconBg: "transparent" }
-    : simCallTarget;
+  const callTarget = simCallTarget;
+
+  // Sync bridge call target for incoming calls
+  useEffect(() => {
+    if (bridgeIsIncoming && simCallState !== "incoming") {
+      const sipCaller = contacts.find(c => c.extension === remote);
+      setSimCallTarget({
+        id: remote || "unknown",
+        nameKey: sipCaller 
+          ? (locale === 'ar' ? sipCaller.nameAr : sipCaller.nameEn)
+          : remote || "Unknown",
+        descKey: "",
+        ext: remote || "?",
+        icon: Phone,
+        iconColor: "#E11D48",
+        iconBg: "rgba(225,29,72,0.08)",
+      });
+      setSimCallState("incoming");
+    }
+  }, [bridgeIsIncoming, remote, contacts, locale, simCallState]);
+
+  // Reset when bridge reports call ended
+  useEffect(() => {
+    if (bridgeIsEnded && simCallState !== "idle") {
+      const t = setTimeout(() => {
+        setSimCallState("idle");
+        setSimCallTarget(null);
+        setShowKeypad(false);
+        setInCallDigits("");
+      }, 1500);
+      return () => clearTimeout(t);
+    }
+  }, [bridgeIsEnded, simCallState]);
 
   const [muted, setMuted] = useState(false);
   const [speaker, setSpeaker] = useState(false);
@@ -283,8 +321,12 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
   const primary = theme.primary;
   const DANGER = "#D10044";
 
-  const handleDial = useCallback((ext: { extension: string, displayName: string, emergency?: boolean }) => {
-    // Always set the call target first so the UI knows who we're calling
+  const handleDial = useCallback((ext: { 
+    extension: string, 
+    displayName: string, 
+    emergency?: boolean 
+  }) => {
+    // Set target FIRST so the overlay has a name to display
     setSimCallTarget({
       id: ext.extension,
       nameKey: ext.displayName,
@@ -295,26 +337,25 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
       iconBg: "transparent",
       emergency: ext.emergency
     });
-
+    // Set state SECOND to trigger the overlay
+    setSimCallState("outgoing");
+    // Call SIP LAST — bridge events arrive async, UI is already showing
     if (isSipAvailable) {
-      // Set local state immediately for instant UI feedback;
-      // bridge events will keep it in sync from here
-      setSimCallState("outgoing");
       sip.call(ext.extension);
-    } else {
-      // Simulation fallback — exactly as before
-      setSimCallState("outgoing");
+    }
+    // No else needed — simulation: bridge won't fire, 
+    // so we advance to active after 3s
+    if (!isSipAvailable) {
       setTimeout(() => setSimCallState("active"), 3000);
     }
   }, [isSipAvailable]);
 
   const handleDialCustom = useCallback(() => {
     if (!dialInput) return;
-    // Always route through handleDial so UI feedback is consistent
-    handleDial({
-      extension: dialInput,
-      displayName: dialInput,  // show the number itself as the name
-      emergency: false
+    handleDial({ 
+      extension: dialInput, 
+      displayName: dialInput,
+      emergency: false,
     });
   }, [dialInput, handleDial]);
 
@@ -323,20 +364,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
     setSimCallState("incoming");
   }, []);
 
-  // Reset sim state when the SIP bridge signals the call has ended
-  useEffect(() => {
-    if (sipCallState === 'End' || sipCallState === 'Released' ||
-        sipCallState === 'Error') {
-      // Brief delay so any "call ended" state is visible before clearing
-      const t = setTimeout(() => {
-        setSimCallState("idle");
-        setSimCallTarget(null);
-        setShowKeypad(false);
-        setInCallDigits("");
-      }, 1500);
-      return () => clearTimeout(t);
-    }
-  }, [sipCallState]);
+
 
   const handleAccept = useCallback(() => {
     if (!isSipIdle) sip.answer();
@@ -378,9 +406,17 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
   /* ═══════════════════════════════════════════════════════════════════════
    * RENDER — Call-in-progress overlays (dark)
    * ══════════════════════════════════════════════════════════════════════ */
-  if (callState !== "idle" && callTarget) {
+  if (callState !== "idle" && simCallTarget) {
     return (
-      <div className="absolute inset-0 z-50 flex flex-col" style={{ animation: "callScreenIn 0.25s ease-out" }}>
+      <div 
+        className="flex flex-col"
+        style={{ 
+          position: "fixed",
+          top: 0, left: 0, right: 0, bottom: 0,
+          zIndex: 9999,
+          animation: "callScreenIn 0.25s ease-out"
+        }}
+      >
         <div className="absolute inset-0" style={{
           background: callState === "incoming"
             ? `linear-gradient(160deg, ${primary} 0%, ${theme.primaryDark} 50%, #0a1628 100%)`
