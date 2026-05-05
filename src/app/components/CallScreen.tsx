@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { sip, useSipCallState, useSipRegistration, useSipContacts, useSipAvailable, isAndroidApp } from "../utils/androidBridge";
+import { sip, useSipCallState, useSipRegistration, useSipContacts, useSipAvailable, useSipLocalExtension, isAndroidApp } from "../utils/androidBridge";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Phone,
@@ -234,6 +234,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
   const { callState: sipCallState, remote } = useSipCallState();
   const regState = useSipRegistration();
   const isSipAvailable = useSipAvailable();
+  const localExtension = useSipLocalExtension();
 
   // Local Simulation State
   const [simCallState, setSimCallState] = useState<CallState>("idle");
@@ -681,7 +682,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
           </div>
           <div className="text-left">
             <p style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "14px", color: "rgba(255,255,255,0.7)" }}>{t("call.yourExtension")}</p>
-            <p style={{ fontFamily: theme.fontFamilyMono, fontSize: "20px", fontWeight: WEIGHT.bold, color: "#fff", letterSpacing: "1px", lineHeight: 1 }}>{isAndroidApp() ? (sip.getLocalExtension() || '4120') : '4120'}</p>
+            <p style={{ fontFamily: theme.fontFamilyMono, fontSize: "20px", fontWeight: WEIGHT.bold, color: "#fff", letterSpacing: "1px", lineHeight: 1 }}>{localExtension || '—'}</p>
           </div>
         </button>
       </div>

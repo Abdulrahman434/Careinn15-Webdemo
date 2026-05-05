@@ -689,6 +689,41 @@ export function useSipContacts() {
   });
   return contacts;
 }
+/**
+ * Reactive hook for the local SIP extension.
+ * Updates when the Android app refreshes SIP credentials from the API.
+ */
+export function useSipLocalExtension(): string {
+  const [extension, setExtension] = useState<string>(
+    () => {
+      try {
+        return window.AndroidSystem?.sipGetLocalExtension?.() ?? '';
+      } catch { return ''; }
+    }
+  );
+
+  // Update when API refresh completes
+  useAndroidEvent<{ extension: string }>(
+    'sip-credentials-updated',
+    (d) => {
+      if (d.extension) setExtension(d.extension);
+    }
+  );
+
+  // Also poll once after 3 seconds to catch the initial API refresh
+  useEffect(() => {
+    if (!isAndroidApp()) return;
+    const t = setTimeout(() => {
+      try {
+        const ext = window.AndroidSystem?.sipGetLocalExtension?.() ?? '';
+        if (ext) setExtension(ext);
+      } catch {}
+    }, 3500);  // slightly after the 2s API refresh delay
+    return () => clearTimeout(t);
+  }, []);
+
+  return extension;
+}
 
 /**
  * Convenience hook — returns true when running inside the Android app

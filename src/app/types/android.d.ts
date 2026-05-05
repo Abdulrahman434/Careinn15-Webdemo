@@ -145,7 +145,8 @@ export type AndroidEventName =
   | "iptv-stopped"
   | "sip-registration-state"
   | "sip-call-state"
-  | "sip-contacts-updated";
+  | "sip-contacts-updated"
+  | "sip-credentials-updated";
 
 /* ─── Augment the global Window type ─── */
 declare global {
