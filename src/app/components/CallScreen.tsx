@@ -265,13 +265,15 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
 
   // Sync bridge call target for incoming calls
   useEffect(() => {
-    if (bridgeIsIncoming && simCallState !== "incoming") {
+    if (bridgeIsIncoming) {
       const sipCaller = contacts.find(c => c.extension === remote);
+      const callerDisplayName = sipCaller
+        ? (locale === 'ar' ? sipCaller.nameAr : sipCaller.nameEn)
+        : remote || 'Unknown';  // fallback: show the extension number
+
       setSimCallTarget({
         id: remote || "unknown",
-        nameKey: sipCaller 
-          ? (locale === 'ar' ? sipCaller.nameAr : sipCaller.nameEn)
-          : remote || "Unknown",
+        nameKey: callerDisplayName,
         descKey: "",
         ext: remote || "?",
         icon: Phone,
@@ -280,7 +282,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
       });
       setSimCallState("incoming");
     }
-  }, [bridgeIsIncoming, remote, contacts, locale, simCallState]);
+  }, [bridgeIsIncoming, remote, contacts, locale]);
 
   // Reset when bridge reports call ended
   useEffect(() => {
@@ -367,27 +369,39 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
 
 
   const handleAccept = useCallback(() => {
-    if (!isSipIdle) sip.answer();
-    else setSimCallState("active");
-  }, [isSipIdle]);
+    if (isSipAvailable) {
+      sip.answer();
+      // Move to active immediately — poll will confirm Connected state
+      setSimCallState("active");
+      setMuted(false);
+      setSpeaker(false);
+      setOnHold(false);
+    } else {
+      // Simulation fallback
+      setSimCallState("active");
+      setMuted(false);
+      setSpeaker(false);
+      setOnHold(false);
+    }
+  }, [isSipAvailable]);
 
-  const handleDecline = useCallback(() => { 
-    if (!isSipIdle) sip.hangup();
-    else {
-      setSimCallState("idle"); 
-      setSimCallTarget(null);
-    }
-    setShowKeypad(false); setInCallDigits(""); 
-  }, [isSipIdle]);
-  
-  const handleEnd = useCallback(() => { 
-    if (!isSipIdle) sip.hangup();
-    else {
-      setSimCallState("idle"); 
-      setSimCallTarget(null);
-    }
-    setShowKeypad(false); setInCallDigits(""); 
-  }, [isSipIdle]);
+  const handleDecline = useCallback(() => {
+    if (isSipAvailable) sip.hangup();
+    // Reset immediately — don't wait for poll
+    setSimCallState("idle");
+    setSimCallTarget(null);
+    setShowKeypad(false);
+    setInCallDigits("");
+  }, [isSipAvailable]);
+
+  const handleEnd = useCallback(() => {
+    if (isSipAvailable) sip.hangup();
+    // Reset immediately — don't wait for poll
+    setSimCallState("idle");
+    setSimCallTarget(null);
+    setShowKeypad(false);
+    setInCallDigits("");
+  }, [isSipAvailable]);
 
   const onKeypadPress = useCallback((digit: string) => {
     playDTMF(digit);
