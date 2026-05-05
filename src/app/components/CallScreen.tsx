@@ -266,6 +266,18 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
 
   const callTimer = useCallTimer(callState === "active");
   useCallAudio(callState);
+
+  const displayContacts = (contacts && contacts.length > 0)
+    ? contacts.map(c => ({
+        extension: c.extension,
+        displayName: locale === 'ar' ? c.nameAr : c.nameEn,
+        emergency: !!c.emergency
+      }))
+    : EXTENSIONS.map(ext => ({
+        extension: ext.ext,
+        displayName: t(ext.nameKey),
+        emergency: !!ext.emergency
+      }));
   
   const primary = theme.primary;
   const DANGER = "#D10044";
@@ -567,7 +579,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
           </div>
           <div className="text-left">
             <p style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "14px", color: "rgba(255,255,255,0.7)" }}>{t("call.yourExtension")}</p>
-            <p style={{ fontFamily: theme.fontFamilyMono, fontSize: "20px", fontWeight: WEIGHT.bold, color: "#fff", letterSpacing: "1px", lineHeight: 1 }}>{sip.getRegistrationState() === 'Ok' ? "SIP" : "..."}</p>
+            <p style={{ fontFamily: theme.fontFamilyMono, fontSize: "20px", fontWeight: WEIGHT.bold, color: "#fff", letterSpacing: "1px", lineHeight: 1 }}>4120</p>
           </div>
         </button>
       </div>
@@ -799,8 +811,8 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
               gridTemplateColumns: "repeat(2, 1fr)",
               gap: "16px",
             }}>
-              {contacts.map((contact) => (
-                <ExtensionCard key={contact.extension} contact={contact} disabled={!isAndroidApp() || regState !== 'Ok'} />
+              {displayContacts.map((c) => (
+                <ExtensionCard key={c.extension} contact={c} disabled={!isAndroidApp() || regState !== 'Ok'} />
               ))}
             </div>
           </div>
@@ -824,16 +836,14 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
  * SUB-COMPONENTS
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-function ExtensionCard({ contact, disabled }: { contact: SipContact; disabled?: boolean }) {
+function ExtensionCard({ contact, disabled }: { contact: { extension: string, displayName: string, emergency?: boolean }; disabled?: boolean }) {
   const { theme } = useTheme();
-  const { locale, fontFamily } = useLocale();
+  const { fontFamily } = useLocale();
   const [pressed, setPressed] = useState(false);
   const ExtIcon = contact.emergency ? Heart : Phone;
   
   const isHighlighted = contact.emergency;
   const isFilled = isHighlighted ? !pressed : pressed;
-
-  const displayName = locale === 'ar' ? contact.nameAr : contact.nameEn;
 
   return (
     <button
@@ -872,7 +882,7 @@ function ExtensionCard({ contact, disabled }: { contact: SipContact; disabled?: 
         fontFamily, fontSize: "16px", fontWeight: WEIGHT.semibold,
         color: isFilled ? theme.textInverse : theme.textHeading, margin: 0, lineHeight: "1.2",
       }}>
-        {displayName}
+        {contact.displayName}
       </p>
 
       {/* Extension number */}

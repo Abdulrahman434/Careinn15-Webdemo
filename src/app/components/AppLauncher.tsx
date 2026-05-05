@@ -16,7 +16,9 @@ import {
   Info,
   Moon,
   Edit2,
+  Search,
 } from "lucide-react";
+import { InternetBrowser } from "./InternetBrowser";
 import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
@@ -774,10 +776,11 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           : []),
         {
           id: "chrome",
-          name: locale === "ar" ? "كروم" : "Chrome",
+          name: locale === "ar" ? "جوجل" : "Google",
           bg: "#fff",
           mark: "",
           textColor: "#333",
+          url: "https://google.com",
           customRender: () => (
             <img src={chromeIcon} alt="Chrome" style={{ width: 90, height: 90, objectFit: "contain" }} />
           ),
@@ -788,16 +791,18 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           bg: "#fff",
           mark: "",
           textColor: "#fff",
+          url: "https://saudigazette.com.sa",
           customRender: () => (
             <img src={saudiGazetteLogo} alt="Saudi Gazette" style={{ width: 110, height: 110, objectFit: "contain" }} />
           ),
         },
         {
           id: "bbc",
-          name: locale === "ar" ? "بي بي سي الإخبارية" : "BBC News",
+          name: locale === "ar" ? "بي بي سي" : "BBC News",
           bg: "#1a1a1a",
           mark: "",
           textColor: "#fff",
+          url: "https://bbc.com/news",
           customRender: () => (
             <div className="flex flex-col items-center gap-1">
               <div className="flex">
@@ -817,6 +822,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           bg: "#CC0000",
           mark: "CNN",
           textColor: "#fff",
+          url: "https://cnn.com",
           markSize: 32,
           markWeight: 900,
         },
@@ -824,8 +830,32 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           id: "okaz",
           name: locale === "ar" ? "عكاظ" : "Okaz",
           bg: "#fff",
+          mark: "Okaz",
+          textColor: "#000",
+          url: "https://okaz.com.sa",
+          markSize: 32,
+          markWeight: 900,
+        },
+        {
+          id: "wikipedia",
+          name: locale === "ar" ? "ويكيبيديا" : "Wikipedia",
+          bg: "#fff",
+          mark: "W",
+          textColor: "#333",
+          url: "https://www.wikipedia.org",
+          customRender: () => (
+            <div className="flex items-center justify-center bg-slate-100 rounded-xl w-full h-full">
+              <span className="text-5xl font-serif text-slate-800">W</span>
+            </div>
+          ),
+        },
+        {
+          id: "okaz",
+          name: locale === "ar" ? "عكاظ" : "Okaz",
+          bg: "#fff",
           mark: "",
           textColor: "#333",
+          url: "https://okaz.com.sa",
           customRender: () => (
             <img src={okazIcon} alt="Okaz" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
@@ -1382,6 +1412,12 @@ export function AppLauncher({
   const swipeStartX = useRef<number | null>(null);
   const touchOffset = useRef<number>(0);
 
+  // Internet Browser States
+  const [showBrowser, setShowBrowser] = useState(false);
+  const [browserUrl, setBrowserUrl] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [urlError, setUrlError] = useState("");
+
   // Reset page index when switching categories
   useEffect(() => {
     setPageIndex(0);
@@ -1430,24 +1466,72 @@ export function AppLauncher({
   };
   const currentApps = category.apps.slice(pageIndex * appsPerPage, (pageIndex + 1) * appsPerPage);
 
-  const handleAppTap = (app: AppItem) => {
-    // Check if it's a tool first (based on category)
+  const isValidUrl = (input: string) => {
+    const val = input.trim().toLowerCase();
+    // Strict URL validation: Must start with http://, https://, or www.
+    if (val.startsWith('http://') || val.startsWith('https://') || val.startsWith('www.')) {
+      // Further check for at least one dot to ensure it's a domain
+      return val.includes('.');
+    }
+    return false;
+  };
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const input = searchInput.trim();
+    if (!input) return;
+
+    if (isValidUrl(input)) {
+      setUrlError("");
+      let finalUrl = input;
+      if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+        finalUrl = 'https://' + finalUrl;
+      }
+      setBrowserUrl(finalUrl);
+      setShowBrowser(true);
+    } else {
+      setUrlError(t("launcher.invalidUrl") || "Please enter a valid URL");
+    }
+  };
+
+  const handleAppTap = (app: any) => {
+    // 1. Intercept specifically known internet apps first (Always open in internal browser)
+    const isInternetApp = ["chrome", "bbc", "cnn", "saudigazette", "okaz", "aljazeera", "wikipedia"].includes(app.id);
+    
+    if (isInternetApp && app.url) {
+      setBrowserUrl(app.url);
+      setShowBrowser(true);
+      return;
+    }
+
+    // 2. Check if it's a category/folder icon (to switch views)
+    const categoryIds = ["media", "games", "tools", "social", "reading", "meeting", "internet", "education"];
+    if (categoryIds.includes(app.id)) {
+      const targetKey = app.id.charAt(0).toUpperCase() + app.id.slice(1);
+      setActiveKey(targetKey as CategoryKey);
+      setPageIndex(0); // Reset page on category switch
+      return;
+    }
+
+    // 3. Category-specific interactive logic (Tools & Games)
     if (category.labelKey === "launcher.tools" && app.isInteractive && onLaunchTool) {
       onLaunchTool(app.id);
       return;
     }
 
-    // Check if it's an interactive game
     if (category.labelKey === "launcher.games" && app.isInteractive && onLaunchGame) {
       onLaunchGame(app.id);
       return;
     }
 
+    // 4. Handle other URLs (Fallback internal browser)
     if (app.url) {
-      window.open(app.url, "_blank", "noopener,noreferrer");
+      setBrowserUrl(app.url);
+      setShowBrowser(true);
       return;
     }
 
+    // 5. Handle PDFs
     if (app.pdfSource) {
       setPdfSource(app.pdfSource);
       setPdfTitle(app.name);
@@ -1456,18 +1540,18 @@ export function AppLauncher({
     }
 
     if (app.id === "careinn-whitepaper") {
-      setPdfSource(undefined); // use default hardcoded one
+      setPdfSource(undefined); 
       setPdfTitle("CareInn Whitepaper");
       setShowPdf(true);
       return;
     }
 
+    // 6. Handle IPTV
     if (app.id === "iptv") {
       if (onLaunchIptv) {
         onLaunchIptv();
         return;
       }
-      
       if (!isAndroidApp()) {
         console.warn('IPTV is only available in the kiosk app');
         return;
@@ -1476,6 +1560,7 @@ export function AppLauncher({
       return;
     }
 
+    // 7. General Toast feedback for other apps
     const displayName = app.nameKey ? t(app.nameKey) : app.name;
     setLaunchedApp(displayName);
     setTimeout(() => setLaunchedApp(null), 2000);
@@ -1682,6 +1767,15 @@ export function AppLauncher({
           onClose={() => setShowPdf(false)}
           pdfSource={pdfSource}
           title={pdfTitle}
+        />
+      )}
+
+      {/* Embedded Browser Overlay */}
+      {showBrowser && (
+        <InternetBrowser 
+          key={browserUrl} // Critical: Force re-render when URL changes to ensure it loads
+          initialUrl={browserUrl} 
+          onClose={() => setShowBrowser(false)} 
         />
       )}
     </div>

@@ -39,6 +39,8 @@ const translations: Record<string, TranslationEntry> = {
   "general.room": { en: "Room", ar: "غرفة", ur: "کمرہ" },
   "general.bed": { en: "Bed", ar: "سرير", ur: "بستر" },
   "general.done": { en: "Done", ar: "تم", ur: "ہو گیا" },
+  "general.go": { en: "Go", ar: "اذهب", ur: "جاؤ" },
+  "general.loading": { en: "Loading...", ar: "جاري التحميل...", ur: "لوڈنگ ہو رہی ہے..." },
 
   /* ─── Idle Screen ─── */
   "idle.welcome": { en: "Welcome to {0}", ar: "مرحباً بك في {0}", ur: "{0} میں خوش آمدید" },
@@ -263,10 +265,6 @@ const translations: Record<string, TranslationEntry> = {
   "careplan.tomorrow": { en: "Tomorrow", ar: "غداً", ur: "کل" },
   "careplan.overallTitle": { en: "Overall Plan", ar: "خطة شاملة", ur: "مجموعی منصوبہ" },
   "careplan.overallDesc": { en: "Here is our treatment plan, it will be updated regularly", ar: "هذه هي خطتنا العلاجية، وسيتم تحديثها بانتظام", ur: "یہ ہمارا علاج کا منصوبہ ہے، اسے باقاعدگی سے اپ ڈیٹ کیا جائے گا" },
-  "careplan.emptyHeader": { en: "No Care Plan available", ar: "لا توجد خطة رعاية متاحة", ur: "کوئی کیئر پلان دستیاب نہیں ہے۔" },
-  "careplan.emptyDesc": { en: "your Careplan will appear here once it is been allowed by your Care Team.", ar: "ستظهر خطة الرعاية الخاصة بك هنا بمجرد السماح بها من قبل فريق الرعاية الخاص بك.", ur: "آپ کا کیئر پلان یہاں ظاہر ہو جائے گا جب آپ کی کیئر ٹیم اسے اجازت دے دے گی۔" },
-  "discharge.emptyHeader": { en: "No discharge plan available", ar: "لا توجد خطة خروج متاحة", ur: "ڈسچارج کا کوئی منصوبہ دستیاب نہیں ہے۔" },
-  "discharge.emptyDesc": { en: "Your discharge plan will appear here once it is ready.", ar: "ستظهر خطة الخروج الخاصة بك هنا بمجرد جاهزيتها.", ur: "آپ کا ڈسچارج پلان تیار ہونے کے بعد یہاں ظاہر ہوگا۔" },
 
   /* ─── Admission / Discharge Labels ─── */
   "care.admitted": { en: "Admitted", ar: "تاريخ الدخول", ur: "داخلہ" },
@@ -542,6 +540,8 @@ const translations: Record<string, TranslationEntry> = {
   "launcher.tools": { en: "Tools", ar: "الأدوات", ur: "اوزار" },
   "launcher.education": { en: "Education", ar: "تثقيف المرضى", ur: "تعلیم" },
   "launcher.launching": { en: "Launching {0}...", ar: "جارٍ تشغيل {0}...", ur: "{0} شروع ہو رہا ہے..." },
+  "launcher.invalidUrl": { en: "Please enter a valid URL", ar: "يرجى إدخال عنوان URL صحيح", ur: "براہ کرم ایک درست URL درج کریں" },
+  "launcher.urlPlaceholder": { en: "Enter website address (e.g. www.google.com)", ar: "أدخل عنوان الموقع (مثلاً www.google.com)", ur: "ویب سائٹ کا پتہ درج کریں" },
 
   /* ─── Room Info ─── */
   "room.info": { en: "Room 412", ar: "غرفة ٤١٢", ur: "کمرہ 412" },
