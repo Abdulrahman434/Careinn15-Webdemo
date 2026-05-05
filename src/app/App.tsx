@@ -366,6 +366,8 @@ function BedsideScreen() {
       setShowFoodOrder(true);
     } else if (categoryKey === "Housekeeping") {
       window.open("https://demo.hospitalopsai.com/patient/?mrd_id=3344&room=342", "_blank", "noopener,noreferrer");
+    } else if (categoryKey === "Consultation") {
+      window.open("https://intracare.icare.medoment.com/login?mrnEncrypted=1611605&deviceId=Rom1", "_blank", "noopener,noreferrer");
     } else {
       setOpenCategory(categoryKey);
     }
