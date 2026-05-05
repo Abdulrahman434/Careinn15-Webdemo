@@ -536,29 +536,84 @@ export const sip = {
 // ─── SIP React Hooks ──────────────────────────────────────────────────
 
 /**
- * Reactive call state. Updates automatically when the Android bridge 
- * dispatches 'sip-call-state' events.
+ * Reactive call state. Polls sipGetCallState() with adaptive interval:
+ *   - 2 000 ms when idle (barely any overhead)
+ *   - 300 ms during an active/ringing call (sub-second feedback)
+ * Also listens to 'sip-call-state' bridge events as a fast-path.
  */
 export function useSipCallState() {
   const [callState, setCallState] = useState<SipCallState>(
     () => sip.getCallState()
   );
   const [remote, setRemote] = useState('');
-  const [direction, setDirection] = 
+  const [direction, setDirection] =
     useState<'incoming' | 'outgoing' | null>(null);
   const [durationMs, setDurationMs] = useState(0);
 
+  // Track last polled state without triggering re-renders
+  const prevStateRef = useRef<SipCallState>(sip.getCallState());
+
+  // Fast-path: bridge-dispatched events (fires immediately when available)
   useAndroidEvent<{
     state: SipCallState;
     remote: string;
     direction: 'incoming' | 'outgoing';
     durationMs: number;
   }>('sip-call-state', (d) => {
+    prevStateRef.current = d.state;
     setCallState(d.state);
     setRemote(d.remote);
     setDirection(d.direction);
     setDurationMs(d.durationMs);
   });
+
+  // Adaptive polling — fallback when bridge events are not dispatched
+  useEffect(() => {
+    if (!isAndroidApp()) return;
+
+    let intervalMs = 2000; // slow when idle — barely noticeable
+    let intervalId: ReturnType<typeof setInterval>;
+
+    const poll = () => {
+      try {
+        const polled = (window.AndroidSystem?.sipGetCallState()
+            ?? 'Idle') as SipCallState;
+
+        if (polled !== prevStateRef.current) {
+          prevStateRef.current = polled;
+          setCallState(polled);
+
+          if (polled === 'IncomingReceived') {
+            setDirection('incoming');
+          } else if (
+            polled === 'OutgoingInit' ||
+            polled === 'OutgoingProgress' ||
+            polled === 'OutgoingRinging' ||
+            polled === 'OutgoingEarlyMedia'
+          ) {
+            setDirection('outgoing');
+          }
+
+          // State changed — switch to fast polling
+          const newMs = (polled === 'Idle' || polled === 'Released' ||
+                         polled === 'End' || polled === 'Error')
+              ? 2000   // back to slow after call ends
+              : 300;   // fast during active call
+
+          if (newMs !== intervalMs) {
+            intervalMs = newMs;
+            clearInterval(intervalId);
+            intervalId = setInterval(poll, intervalMs);
+          }
+        }
+      } catch (e) {
+        // silent
+      }
+    };
+
+    intervalId = setInterval(poll, intervalMs);
+    return () => clearInterval(intervalId);
+  }, []);
 
   // Auto-reset to Idle after terminal states so the UI clears cleanly
   useEffect(() => {
@@ -576,6 +631,7 @@ export function useSipCallState() {
 
   return { callState, remote, direction, durationMs };
 }
+
 
 /**
  * Reactive registration state. Updates when the Android bridge 
