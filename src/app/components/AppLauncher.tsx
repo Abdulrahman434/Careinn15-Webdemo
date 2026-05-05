@@ -27,7 +27,7 @@ import { useRipple } from "./useRipple";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { PdfReaderModal } from "./PdfReaderModal";
 import { apps, isAndroidApp, KNOWN_APPS } from "../utils/androidBridge";
-import chromeIcon from "../../assets/272d9a4c809b16af18cfbe153fa4edc5816536b3.png";
+import edgeLogo from "../../assets/edge_logo.png";
 import saudiGazetteLogo from "../../assets/5a0099c6364ba06a603226f636904e61c8e17c07.png";
 import iptvIcon from "../../assets/e66dff686b2ee163965b5d28c8ab0d919a5e5307.png";
 import mbcIcon from "../../assets/c22249e2a0a3b6e2cac9fa73410c844f9f2ec1b4.png";
@@ -767,7 +767,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           textColor: "#333",
           url: "https://www.google.com/search?igu=1",
           customRender: () => (
-            <img src={chromeIcon} alt="Chrome" style={{ width: 90, height: 90, objectFit: "contain" }} />
+            <img src={edgeLogo} alt="Edge" style={{ width: 90, height: 90, objectFit: "contain" }} />
           ),
         },
         {
@@ -832,9 +832,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           textColor: "#fff",
           customRender: () => (
             <div className="flex flex-col items-center justify-center w-full h-full">
-              <div className="flex items-center justify-center bg-white/20 rounded-2xl w-20 h-20 mb-2">
-                <Globe size={40} color="#fff" strokeWidth={1.5} />
-              </div>
+              <img src={edgeLogo} alt="Browser" style={{ width: 120, height: 120, objectFit: "contain" }} />
             </div>
           ),
         },

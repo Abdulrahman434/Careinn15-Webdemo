@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { sip, useSipCallState, useSipRegistration, useSipContacts, isAndroidApp } from "../utils/androidBridge";
+import { sip, useSipCallState, useSipRegistration, useSipContacts, useSipAvailable, isAndroidApp } from "../utils/androidBridge";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Phone,
@@ -233,7 +233,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
   const contacts = useSipContacts();
   const { callState: sipCallState, remote } = useSipCallState();
   const regState = useSipRegistration();
-  const isSipAvailable = regState === 'Ok' && isAndroidApp();
+  const isSipAvailable = useSipAvailable();
 
   // Mapping SIP states to legacy string states
   const isSipIncoming = sipCallState === 'IncomingReceived';

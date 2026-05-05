@@ -520,6 +520,17 @@ export const sip = {
           ?? 'None') as SipRegistrationState;
     } catch { return 'None'; }
   },
+
+  /**
+   * Returns true only when running inside the Android kiosk app
+   * AND the SIP account has successfully registered.
+   */
+  isAvailable(): boolean {
+    try {
+      return isAndroidApp() &&
+             window.AndroidSystem?.sipGetRegistrationState() === 'Ok';
+    } catch { return false; }
+  },
 };
 
 // ─── SIP React Hooks ──────────────────────────────────────────────────
@@ -548,6 +559,20 @@ export function useSipCallState() {
     setDirection(d.direction);
     setDurationMs(d.durationMs);
   });
+
+  // Auto-reset to Idle after terminal states so the UI clears cleanly
+  useEffect(() => {
+    if (callState === 'Released' || callState === 'End' ||
+        callState === 'Error') {
+      const t = setTimeout(() => {
+        setCallState('Idle');
+        setRemote('');
+        setDirection(null);
+        setDurationMs(0);
+      }, 1500);
+      return () => clearTimeout(t);
+    }
+  }, [callState]);
 
   return { callState, remote, direction, durationMs };
 }
@@ -581,3 +606,12 @@ export function useSipContacts() {
   return contacts;
 }
 
+/**
+ * Convenience hook — returns true when running inside the Android app
+ * and SIP registration is 'Ok'. Components can use this instead of
+ * combining isAndroidApp() + useSipRegistration() manually.
+ */
+export function useSipAvailable() {
+  const regState = useSipRegistration();
+  return isAndroidApp() && regState === 'Ok';
+}

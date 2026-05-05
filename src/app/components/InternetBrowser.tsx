@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { ArrowLeft, RefreshCw, X, Globe, Shield, ExternalLink, Info } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "./ThemeContext";
 import { useLocale } from "./i18n";
+import edgeLogo from "../../assets/edge_logo.png";
 
 interface InternetBrowserProps {
   initialUrl: string;
@@ -24,14 +25,37 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
     setUrl(formattedUrl);
   }, [initialUrl]);
 
-  // Known sites that block embedding via X-Frame-Options
-  const blockedDomains = ["bbc.com", "cnn.com", "edition.cnn.com", "bing.com", "okaz.com.sa"];
-  const isBlocked = blockedDomains.some(domain => url.toLowerCase().includes(domain));
+  const [showFallback, setShowFallback] = useState(false);
 
-  // If the site is blocked, we use a high-compatibility proxy to force it to show
-  const displayUrl = isBlocked 
-    ? `https://corsproxy.io/?${encodeURIComponent(url)}` 
-    : url;
+  // Known sites that block embedding via X-Frame-Options
+  const blockedDomains = [
+    "bbc.com", "cnn.com", "edition.cnn.com", "bing.com", 
+    "okaz.com.sa", "saudigazette.com.sa", "instagram.com", 
+    "facebook.com", "twitter.com", "x.com", "linkedin.com",
+    "stctv.com"
+  ];
+  const isHardcodedBlocked = blockedDomains.some(domain => url.toLowerCase().includes(domain));
+
+  // Global Watchdog: If a site takes too long (likely blocked), show the fallback
+  useEffect(() => {
+    setShowFallback(false);
+    if (isHardcodedBlocked) {
+      setShowFallback(true);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      if (isLoading) {
+        setShowFallback(true);
+      }
+    }, 2500); // 2.5 seconds timeout
+
+    return () => clearTimeout(timer);
+  }, [url, isHardcodedBlocked, isLoading]);
+
+  const handleOpenExternal = () => {
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <div 
@@ -73,7 +97,7 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
               border: `1px solid ${theme.primarySubtle}` 
             }}
           >
-            <Shield size={18} color={isBlocked ? theme.accent : theme.success} />
+            <img src={edgeLogo} alt="Browser" style={{ width: 24, height: 24 }} />
             <span 
               className="text-sm font-medium truncate" 
               style={{ color: theme.textMuted }}
@@ -85,18 +109,34 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
 
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => { setIsLoading(true); const currentUrl = url; setUrl(''); setTimeout(() => setUrl(currentUrl), 10); }}
-            className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+            onClick={() => setShowFallback(true)}
+            className="flex items-center justify-center gap-2 px-4 h-[48px] cursor-pointer active:scale-95 transition-all"
             style={{ 
-              width: "48px", 
-              height: "48px", 
-              backgroundColor: theme.surfaceElevated, 
+              backgroundColor: "rgba(239, 68, 68, 0.1)", 
               borderRadius: theme.radiusMd,
-              border: "none"
+              border: "1px solid rgba(239, 68, 68, 0.2)",
+              color: "#ef4444"
             }}
           >
-            <RefreshCw size={20} color={theme.textHeading} className={isLoading ? 'animate-spin' : ''} />
+            <Shield size={18} />
+            <span className="text-sm font-bold">Connection Help</span>
           </button>
+
+          {!showFallback && (
+            <button 
+              onClick={() => { setIsLoading(true); setShowFallback(false); const currentUrl = url; setUrl(''); setTimeout(() => setUrl(currentUrl), 10); }}
+              className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+              style={{ 
+                width: "48px", 
+                height: "48px", 
+                backgroundColor: theme.surfaceElevated, 
+                borderRadius: theme.radiusMd,
+                border: "none"
+              }}
+            >
+              <RefreshCw size={20} color={theme.textHeading} className={isLoading ? 'animate-spin' : ''} />
+            </button>
+          )}
           
           <button 
             onClick={onClose} 
@@ -116,23 +156,52 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
 
       {/* Browser Content */}
       <div className="flex-1 relative bg-white overflow-hidden">
-        {isLoading && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm">
-            <div className="w-16 h-16 border-4 border-t-blue-600 border-blue-100 rounded-full animate-spin mb-4" />
-            <p className="text-slate-600 font-bold animate-pulse">
-              {t("general.loading") || "Loading content..."}
+        {showFallback ? (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-50 p-8 text-center">
+            <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6">
+              <Shield size={48} className="text-red-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-slate-900 mb-2">
+              Connection Trouble?
+            </h3>
+            <p className="text-slate-500 max-w-md mb-8 leading-relaxed">
+              This website might be blocked or taking too long to load inside the app. For the best experience, please open it in a full window.
             </p>
+            <button 
+              onClick={handleOpenExternal}
+              className="px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition-all active:scale-95 flex items-center gap-3"
+            >
+              <ExternalLink size={20} />
+              Open in External Browser
+            </button>
+            <button 
+              onClick={() => setShowFallback(false)}
+              className="mt-4 text-blue-600 font-bold hover:underline"
+            >
+              Try waiting a bit longer
+            </button>
           </div>
-        )}
+        ) : (
+          <>
+            {isLoading && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm">
+                <div className="w-16 h-16 border-4 border-t-blue-600 border-blue-100 rounded-full animate-spin mb-4" />
+                <p className="text-slate-600 font-bold animate-pulse">
+                  {t("general.loading") || "Loading content..."}
+                </p>
+              </div>
+            )}
 
-        <iframe 
-          key={displayUrl}
-          src={displayUrl}
-          className="w-full h-full border-none"
-          onLoad={() => setIsLoading(false)}
-          sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
-          title="Internet Browser Content"
-        />
+            <iframe 
+              key={url}
+              src={url}
+              className="w-full h-full border-none"
+              onLoad={() => setIsLoading(false)}
+              sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+              title="Internet Browser Content"
+            />
+          </>
+        )}
       </div>
       
       {/* Security Footer Notice */}
