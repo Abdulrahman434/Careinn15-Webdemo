@@ -20,7 +20,8 @@ import {
   Shield,
   X,
 } from "lucide-react";
-import { InternetBrowser } from "./InternetBrowser";
+
+// import { InternetBrowser } from "./InternetBrowser";
 import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
@@ -1400,10 +1401,10 @@ export function AppLauncher({
   const swipeStartX = useRef<number | null>(null);
   const touchOffset = useRef<number>(0);
 
-  // Internet Browser States
-  const [showBrowser, setShowBrowser] = useState(false);
+  // Internet Browser States (hidden for now, might be used later)
+  // const [showBrowser, setShowBrowser] = useState(false);
+  // const [browserUrl, setBrowserUrl] = useState("");
   const [showUrlNavigator, setShowUrlNavigator] = useState(false);
-  const [browserUrl, setBrowserUrl] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [urlError, setUrlError] = useState("");
 
@@ -1487,8 +1488,7 @@ export function AppLauncher({
         finalUrl = `https://www.google.com/search?igu=1`;
       }
       
-      setBrowserUrl(finalUrl);
-      setShowBrowser(true);
+      window.open(finalUrl, "_blank", "noopener,noreferrer");
     } else {
       setUrlError(t("launcher.invalidUrl") || "Please enter a valid URL");
     }
@@ -1501,12 +1501,8 @@ export function AppLauncher({
       return;
     }
 
-    // 1. Intercept specifically known internet apps first (Always open in internal browser)
-    const isInternetApp = ["chrome", "bbc", "cnn", "saudigazette", "okaz", "aljazeera", "wikipedia"].includes(app.id);
-    
-    if (isInternetApp && app.url) {
-      setBrowserUrl(app.url);
-      setShowBrowser(true);
+    if (app.url) {
+      window.open(app.url, "_blank", "noopener,noreferrer");
       return;
     }
 
@@ -1530,12 +1526,7 @@ export function AppLauncher({
       return;
     }
 
-    // 4. Handle other URLs (Fallback internal browser)
-    if (app.url) {
-      setBrowserUrl(app.url);
-      setShowBrowser(true);
-      return;
-    }
+    // 4. (Removed redundant app.url check)
 
     // 5. Handle PDFs
     if (app.pdfSource) {
@@ -1845,18 +1836,19 @@ export function AppLauncher({
         </div>
       )}
 
-      {/* Embedded Browser Overlay */}
+      {/* Embedded Browser Overlay (hidden for now, might be used later) */}
+      {/* 
       {showBrowser && (
         <InternetBrowser 
-          key={browserUrl} // Critical: Force re-render when URL changes to ensure it loads
+          key={browserUrl} 
           initialUrl={browserUrl} 
           onClose={() => {
             setShowBrowser(false);
-            // If we opened from the URL navigator, keep it open so back returns to it
-            // Otherwise it will just show the grid
           }} 
         />
       )}
+      */}
+
     </div>
   );
 }
