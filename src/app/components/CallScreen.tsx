@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { sip, useSipCallState, useSipRegistration, useSipContacts, isAndroidApp, SipContact } from "../utils/androidBridge";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Phone,
@@ -225,11 +226,36 @@ function useCallAudio(callState: CallState) {
 
 export function CallScreen({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
-  const { t, isRTL, fontFamily } = useLocale();
+  const { t, isRTL, fontFamily, locale } = useLocale();
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
-  const [callState, setCallState] = useState<CallState>("idle");
-  const [callTarget, setCallTarget] = useState<Extension | null>(null);
+  const contacts = useSipContacts();
+  const { callState: sipCallState, remote, durationMs } = useSipCallState();
+  const regState = useSipRegistration();
+
+  const isIdle = sipCallState === 'Idle' || sipCallState === 'Released' || sipCallState === 'Error' || sipCallState === 'End';
+  const isIncoming = sipCallState === 'IncomingReceived';
+  const isOutgoing = sipCallState === 'OutgoingInit' || sipCallState === 'OutgoingProgress' || sipCallState === 'OutgoingRinging' || sipCallState === 'OutgoingEarlyMedia';
+  const isActive = sipCallState === 'Connected' || sipCallState === 'StreamsRunning';
+
+  // Map to legacy state string to preserve audio/UI logic without massive refactoring
+  const callState: CallState = isIncoming ? "incoming" : isOutgoing ? "outgoing" : isActive ? "active" : "idle";
+
+  const currentContact = contacts.find(c => c.extension === remote);
+  const targetName = currentContact ? (locale === 'ar' ? currentContact.nameAr : currentContact.nameEn) : remote;
+  const targetExt = remote;
+
+  // Mock callTarget to keep existing JSX working
+  const callTarget: Extension | null = isIdle ? null : { 
+    id: "sip-remote", 
+    nameKey: targetName, 
+    descKey: "", 
+    ext: targetExt, 
+    icon: Phone, 
+    iconColor: "#fff", 
+    iconBg: "transparent" 
+  };
+
   const [muted, setMuted] = useState(false);
   const [speaker, setSpeaker] = useState(false);
   const [onHold, setOnHold] = useState(false);
@@ -244,40 +270,32 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
   const primary = theme.primary;
   const DANGER = "#D10044";
 
-  useEffect(() => {
-    if (callState === "outgoing") {
-      const timer = setTimeout(() => setCallState("active"), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [callState]);
-
   const handleDial = useCallback((ext: Extension) => {
-    setCallTarget(ext);
-    setMuted(false); setSpeaker(false); setOnHold(false);
-    setCallState("outgoing");
+    sip.call(ext.ext);
   }, []);
 
   const handleDialCustom = useCallback(() => {
     if (!dialInput) return;
-    const found = EXTENSIONS.find((e) => e.ext === dialInput);
-    const target: Extension = found ?? { id: "custom", nameKey: "call.ext", descKey: "", ext: dialInput };
-    setCallTarget(target);
-    setMuted(false); setSpeaker(false); setOnHold(false);
-    setCallState("outgoing");
+    sip.call(dialInput);
   }, [dialInput]);
 
   const handleSimulateIncoming = useCallback(() => {
-    setCallTarget(EXTENSIONS[0]);
-    setCallState("incoming");
+    // Left empty since we use real SIP events now
   }, []);
 
   const handleAccept = useCallback(() => {
-    setCallState("active");
-    setMuted(false); setSpeaker(false); setOnHold(false);
+    sip.answer();
   }, []);
 
-  const handleDecline = useCallback(() => { setCallState("idle"); setCallTarget(null); setShowKeypad(false); setInCallDigits(""); }, []);
-  const handleEnd = useCallback(() => { setCallState("idle"); setCallTarget(null); setShowKeypad(false); setInCallDigits(""); }, []);
+  const handleDecline = useCallback(() => { 
+    sip.hangup();
+    setShowKeypad(false); setInCallDigits(""); 
+  }, []);
+  
+  const handleEnd = useCallback(() => { 
+    sip.hangup();
+    setShowKeypad(false); setInCallDigits(""); 
+  }, []);
 
   const onKeypadPress = useCallback((digit: string) => {
     playDTMF(digit);
@@ -413,7 +431,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
               ) : (
                 /* ── Normal call controls ── */
                 <div className="flex items-center justify-center gap-10">
-                  <CallControlButton icon={muted ? MicOff : Mic} label={muted ? t("call.unmute") : t("call.mute")} active={muted} onTap={() => setMuted(!muted)} fontFamily={fontFamily} />
+                  <CallControlButton icon={sip.isMuted() ? MicOff : Mic} label={sip.isMuted() ? t("call.unmute") : t("call.mute")} active={sip.isMuted()} onTap={() => sip.setMuted(!sip.isMuted())} fontFamily={fontFamily} />
                   <CallControlButton icon={Volume2} label={t("call.speaker")} active={speaker} onTap={() => setSpeaker(!speaker)} fontFamily={fontFamily} />
                   <CallControlButton icon={onHold ? Play : Pause} label={onHold ? t("call.resume") : t("call.hold")} active={onHold} onTap={() => setOnHold(!onHold)} fontFamily={fontFamily} />
                   <CallControlButton icon={Grid3X3} label={t("call.keypad")} active={false} onTap={() => setShowKeypad(true)} fontFamily={fontFamily} />
@@ -509,16 +527,26 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center" style={{
               width: "52px", height: "52px", borderRadius: theme.radiusLg,
-              backgroundColor: "rgba(255,255,255,0.12)",
+              backgroundColor: regState === 'Ok' ? "rgba(34,197,94,0.15)" : regState === 'Progress' ? "rgba(234,179,8,0.15)" : "rgba(239,68,68,0.15)",
             }}>
-              <Phone size={26} fill="#fff" style={{ color: "#fff" }} />
+              <Phone size={26} fill={regState === 'Ok' ? "#22C55E" : regState === 'Progress' ? "#EAB308" : "#EF4444"} style={{ color: regState === 'Ok' ? "#22C55E" : regState === 'Progress' ? "#EAB308" : "#EF4444" }} />
             </div>
             <div>
-              <h2 style={{ fontFamily, ...TEXT_STYLE.display, fontSize: "32px", color: "#FFFFFF", lineHeight: "36px" }}>
+              <h2 className="flex items-center gap-3" style={{ fontFamily, ...TEXT_STYLE.display, fontSize: "32px", color: "#FFFFFF", lineHeight: "36px" }}>
                 {t("call.title")}
+                <span style={{
+                  fontSize: "12px", 
+                  padding: "4px 8px", 
+                  borderRadius: "12px", 
+                  backgroundColor: regState === 'Ok' ? "rgba(34,197,94,0.2)" : regState === 'Progress' ? "rgba(234,179,8,0.2)" : "rgba(239,68,68,0.2)",
+                  color: regState === 'Ok' ? "#4ade80" : regState === 'Progress' ? "#facc15" : "#f87171",
+                  fontFamily: theme.fontFamilyMono
+                }}>
+                  {regState === 'Ok' ? "Connected" : regState === 'Progress' ? "Connecting..." : "Unavailable"}
+                </span>
               </h2>
               <p style={{ fontFamily, ...TEXT_STYLE.caption, color: "rgba(255,255,255,0.6)", marginTop: "2px" }}>
-                {t("call.tapToCall")}
+                {!isAndroidApp() ? "Calling is only available on the kiosk device" : t("call.tapToCall")}
               </p>
             </div>
           </div>
@@ -539,7 +567,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
           </div>
           <div className="text-left">
             <p style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "14px", color: "rgba(255,255,255,0.7)" }}>{t("call.yourExtension")}</p>
-            <p style={{ fontFamily: theme.fontFamilyMono, fontSize: "20px", fontWeight: WEIGHT.bold, color: "#fff", letterSpacing: "1px", lineHeight: 1 }}>4120</p>
+            <p style={{ fontFamily: theme.fontFamilyMono, fontSize: "20px", fontWeight: WEIGHT.bold, color: "#fff", letterSpacing: "1px", lineHeight: 1 }}>{sip.getRegistrationState() === 'Ok' ? "SIP" : "..."}</p>
           </div>
         </button>
       </div>
@@ -740,7 +768,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
                   opacity: dialInput ? 1 : 0.5,
                   boxShadow: dialInput ? "0 8px 32px rgba(34,197,94,0.4)" : "none",
                 }}
-                disabled={!dialInput}
+                disabled={!dialInput || !isAndroidApp() || regState !== 'Ok'}
               >
                 <Phone size={24} color="#fff" />
                 <span style={{ fontFamily, ...TEXT_STYLE.buttonSm, fontSize: "18px", color: "#fff" }}>{t("call.title")}</span>
@@ -771,8 +799,8 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
               gridTemplateColumns: "repeat(2, 1fr)",
               gap: "16px",
             }}>
-              {EXTENSIONS.slice(0, 6).map((ext) => (
-                <ExtensionCard key={ext.id} ext={ext} onDial={handleDial} />
+              {contacts.map((contact) => (
+                <ExtensionCard key={contact.extension} contact={contact} disabled={!isAndroidApp() || regState !== 'Ok'} />
               ))}
             </div>
           </div>
@@ -796,23 +824,27 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
  * SUB-COMPONENTS
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-function ExtensionCard({ ext, onDial }: { ext: Extension; onDial: (e: Extension) => void }) {
+function ExtensionCard({ contact, disabled }: { contact: SipContact; disabled?: boolean }) {
   const { theme } = useTheme();
-  const { t, fontFamily } = useLocale();
+  const { locale, fontFamily } = useLocale();
   const [pressed, setPressed] = useState(false);
-  const ExtIcon = ext.icon;
+  const ExtIcon = contact.emergency ? Heart : Phone;
   
-  const isHighlighted = ext.id === "nurse";
+  const isHighlighted = contact.emergency;
   const isFilled = isHighlighted ? !pressed : pressed;
+
+  const displayName = locale === 'ar' ? contact.nameAr : contact.nameEn;
 
   return (
     <button
-      onPointerDown={() => setPressed(true)}
+      onPointerDown={() => { if (!disabled) setPressed(true); }}
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
-      onClick={() => onDial(ext)}
-      className="flex flex-col items-center justify-center gap-3 cursor-pointer transition-transform"
+      onClick={() => { if (!disabled) sip.call(contact.extension); }}
+      className="flex flex-col items-center justify-center gap-3 transition-transform"
       style={{
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.5 : 1,
         aspectRatio: "1 / 1",
         padding: "16px 12px",
         borderRadius: theme.radiusXl,
@@ -840,7 +872,7 @@ function ExtensionCard({ ext, onDial }: { ext: Extension; onDial: (e: Extension)
         fontFamily, fontSize: "16px", fontWeight: WEIGHT.semibold,
         color: isFilled ? theme.textInverse : theme.textHeading, margin: 0, lineHeight: "1.2",
       }}>
-        {t(ext.nameKey)}
+        {displayName}
       </p>
 
       {/* Extension number */}
@@ -848,7 +880,7 @@ function ExtensionCard({ ext, onDial }: { ext: Extension; onDial: (e: Extension)
         fontFamily: theme.fontFamilyMono, fontSize: "15px", fontWeight: WEIGHT.medium,
         color: isFilled ? "rgba(255,255,255,0.8)" : theme.textMuted,
       }}>
-        {ext.ext}
+        {contact.extension}
       </span>
     </button>
   );
