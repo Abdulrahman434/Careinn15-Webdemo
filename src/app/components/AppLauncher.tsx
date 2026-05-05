@@ -1580,7 +1580,7 @@ export function AppLauncher({
     <div
       className="absolute inset-0 z-50 flex flex-col"
       style={{
-        background: `linear-gradient(160deg, ${primary} 0%, ${theme.primaryDark} 40%, #0a1628 100%)`,
+        background: `linear-gradient(160deg, ${theme.primary} 0%, ${theme.primaryDark} 40%, #0a1628 100%)`,
         animation: "appLauncherIn 0.2s ease-out",
       }}
     >
@@ -1781,24 +1781,25 @@ export function AppLauncher({
         <div 
           className="absolute inset-0 z-[60] flex flex-col animate-in fade-in zoom-in-95 duration-200"
           style={{ 
-            background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+            background: theme.background,
           }}
         >
           <InternalPageHeader 
             title={locale === "ar" ? "متصفح الروابط" : "URL Browser"}
-            icon={<Globe size={26} color="#fff" />}
+            icon={<Globe size={26} color={theme.primary} />}
             onClose={() => setShowUrlNavigator(false)}
           />
           
           <div className="flex-1 flex flex-col items-center justify-center px-16">
             <div className="w-full max-w-3xl animate-in slide-in-from-bottom-8 duration-500">
-              <h3 className="text-white/60 text-lg font-medium mb-6 text-center">
+              <h3 className="text-lg font-medium mb-6 text-center" style={{ color: theme.textMuted }}>
                 {locale === "ar" ? "أدخل رابط الموقع المباشر" : "Enter Direct Website URL"}
               </h3>
               
               <form 
                 onSubmit={handleSearchSubmit}
-                className="flex items-stretch h-20 bg-white/5 rounded-2xl overflow-hidden border border-white/10 backdrop-blur-xl"
+                className="flex items-stretch h-20 rounded-2xl overflow-hidden border backdrop-blur-xl"
+                style={{ backgroundColor: theme.surfaceElevated, borderColor: theme.borderDefault }}
               >
                 <div className="flex-1 px-8 flex items-center">
                   <input 
@@ -1807,7 +1808,8 @@ export function AppLauncher({
                     value={searchInput}
                     onChange={(e) => { setSearchInput(e.target.value); if (urlError) setUrlError(""); }}
                     placeholder="https://example.com"
-                    className="w-full bg-transparent border-none outline-none text-white text-2xl font-medium placeholder:text-white/10"
+                    className="w-full bg-transparent border-none outline-none text-2xl font-medium"
+                    style={{ color: theme.textHeading }}
                     dir="ltr"
                     spellCheck={false}
                     autoComplete="off"
@@ -1815,7 +1817,8 @@ export function AppLauncher({
                 </div>
                 <button 
                   type="submit"
-                  className="px-12 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xl transition-all active:scale-95"
+                  className="px-12 font-bold text-xl transition-all active:scale-95"
+                  style={{ backgroundColor: theme.primary, color: theme.textInverse }}
                 >
                   GO
                 </button>
@@ -1827,12 +1830,12 @@ export function AppLauncher({
                 </div>
               )}
 
-              <div className="mt-12 grid grid-cols-2 gap-6 text-white/30 text-sm">
-                <div className="flex items-center gap-3 bg-white/5 p-4 rounded-xl">
+              <div className="mt-12 grid grid-cols-2 gap-6 text-sm" style={{ color: theme.textMuted }}>
+                <div className="flex items-center gap-3 p-4 rounded-xl" style={{ backgroundColor: theme.surfaceElevated }}>
                   <Shield size={18} />
                   <span>Secure Direct Access</span>
                 </div>
-                <div className="flex items-center gap-3 bg-white/5 p-4 rounded-xl">
+                <div className="flex items-center gap-3 p-4 rounded-xl" style={{ backgroundColor: theme.surfaceElevated }}>
                   <X size={18} />
                   <span>No Search Engine</span>
                 </div>

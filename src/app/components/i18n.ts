@@ -675,6 +675,14 @@ const translations: Record<string, TranslationEntry> = {
   "call.history": { en: "Call History", ar: "سجل المكالمات", ur: "کال کی تاریخ" },
   "call.all": { en: "All", ar: "الكل", ur: "تمام" },
   "call.noHistory": { en: "No call history", ar: "لا يوجد سجل مكالمات", ur: "کال کی کوئی تاریخ نہیں" },
+
+  /* ─── Internet Browser ─── */
+  "browser.connectionHelp": { en: "Connection Help", ar: "مساعدة في الاتصال", ur: "کنکشن میں مدد" },
+  "browser.connectionTrouble": { en: "Connection Trouble?", ar: "مشكلة في الاتصال؟", ur: "کنکشن میں دشواری؟" },
+  "browser.blockedDesc": { en: "This website might be blocked or taking too long to load inside the app. For the best experience, please open it in a full window.", ar: "قد يكون هذا الموقع محظوراً أو يستغرق وقتاً طويلاً للتحميل داخل التطبيق. للحصول على أفضل تجربة، يرجى فتحه في نافذة كاملة.", ur: "ہو سکتا ہے کہ یہ ویب سائٹ بلاک ہو یا ایپ کے اندر لوڈ ہونے میں بہت زیادہ وقت لے رہی ہو۔ بہترین تجربے کے لیے، براہ کرم اسے مکمل ونڈو میں کھولیں۔" },
+  "browser.openExternal": { en: "Open in External Browser", ar: "فتح في متصفح خارجي", ur: "بیرونی براؤزر میں کھولیں" },
+  "browser.waitLonger": { en: "Try waiting a bit longer", ar: "حاول الانتظار لفترة أطول قليلاً", ur: "تھوڑی دیر اور انتظار کرنے کی کوشش کریں" },
+  "browser.securityNotice": { en: "You are browsing within the secure CareInn environment. External links are monitored.", ar: "أنت تتصفح داخل بيئة CareInn الآمنة. يتم مراقبة الروابط الخارجية.", ur: "آپ CareInn کے محفوظ ماحول میں براؤز کر رہے ہیں۔ بیرونی لنکس کی نگرانی کی جاتی ہے۔" },
 };
 
 /* ── Number Localization ── */

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ArrowLeft, RefreshCw, X, Globe, Shield, ExternalLink, Info } from "lucide-react";
-import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "./ThemeContext";
+import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import edgeLogo from "../../assets/edge_logo.png";
 
@@ -112,14 +112,14 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
             onClick={() => setShowFallback(true)}
             className="flex items-center justify-center gap-2 px-4 h-[48px] cursor-pointer active:scale-95 transition-all"
             style={{
-              backgroundColor: "rgba(239, 68, 68, 0.1)",
+              backgroundColor: theme.errorSubtle,
               borderRadius: theme.radiusMd,
-              border: "1px solid rgba(239, 68, 68, 0.2)",
-              color: "#ef4444"
+              border: `1px solid ${theme.errorSubtle}`,
+              color: theme.error
             }}
           >
             <Shield size={18} />
-            <span className="text-sm font-bold">Connection Help</span>
+            <span className="text-sm font-bold">{t("browser.connectionHelp") || "Connection Help"}</span>
           </button>
 
           {!showFallback && (
@@ -155,38 +155,45 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
       </div>
 
       {/* Browser Content */}
-      <div className="flex-1 relative bg-white overflow-hidden">
+      <div className="flex-1 relative overflow-hidden" style={{ backgroundColor: theme.background }}>
         {showFallback ? (
-          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-50 p-8 text-center">
-            <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6">
-              <Shield size={48} className="text-red-600" />
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-8 text-center" style={{ backgroundColor: theme.background }}>
+            <div className="w-24 h-24 rounded-full flex items-center justify-center mb-6" style={{ backgroundColor: theme.errorSubtle }}>
+              <Shield size={48} color={theme.error} />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-2">
-              Connection Trouble?
+            <h3 className="mb-2" style={{ ...TEXT_STYLE.sectionTitle, color: theme.textHeading }}>
+              {t("browser.connectionTrouble") || "Connection Trouble?"}
             </h3>
-            <p className="text-slate-500 max-w-md mb-8 leading-relaxed">
-              This website might be blocked or taking too long to load inside the app. For the best experience, please open it in a full window.
+            <p className="max-w-md mb-8 leading-relaxed" style={{ ...TEXT_STYLE.body, color: theme.textMuted }}>
+              {t("browser.blockedDesc") || "This website might be blocked or taking too long to load inside the app. For the best experience, please open it in a full window."}
             </p>
             <button
               onClick={handleOpenExternal}
-              className="px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition-all active:scale-95 flex items-center gap-3"
+              className="px-10 py-4 font-bold shadow-lg transition-all active:scale-95 flex items-center gap-3"
+              style={{ 
+                backgroundColor: theme.primary, 
+                color: theme.textInverse, 
+                borderRadius: theme.radiusMd,
+                border: 'none'
+              }}
             >
               <ExternalLink size={20} />
-              Open in External Browser
+              {t("browser.openExternal") || "Open in External Browser"}
             </button>
             <button
               onClick={() => setShowFallback(false)}
-              className="mt-4 text-blue-600 font-bold hover:underline"
+              className="mt-4 font-bold hover:underline"
+              style={{ color: theme.primary, backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }}
             >
-              Try waiting a bit longer
+              {t("browser.waitLonger") || "Try waiting a bit longer"}
             </button>
           </div>
         ) : (
           <>
             {isLoading && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm">
-                <div className="w-16 h-16 border-4 border-t-blue-600 border-blue-100 rounded-full animate-spin mb-4" />
-                <p className="text-slate-600 font-bold animate-pulse">
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center backdrop-blur-sm" style={{ backgroundColor: theme.overlay }}>
+                <div className="w-16 h-16 border-4 rounded-full animate-spin mb-4" style={{ borderTopColor: theme.primary, borderColor: theme.primarySubtle }} />
+                <p className="font-bold animate-pulse" style={{ color: theme.textHeading }}>
                   {t("general.loading") || "Loading content..."}
                 </p>
               </div>
@@ -207,7 +214,7 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
       {/* Security Footer Notice */}
       <div className="shrink-0 px-8 py-2 flex items-center justify-center gap-2" style={{ backgroundColor: theme.surface, fontSize: '12px', color: theme.textMuted }}>
         <Globe size={12} />
-        <span>You are browsing within the secure CareInn environment. External links are monitored.</span>
+        <span>{t("browser.securityNotice") || "You are browsing within the secure CareInn environment. External links are monitored."}</span>
       </div>
     </div>
   );
