@@ -446,3 +446,138 @@ export function useIptvChannels() {
   return { channels, loading, error, reload };
 }
 
+// ─── SIP Types ────────────────────────────────────────────────────────
+
+export type SipContact = {
+  extension: string;
+  nameEn: string;
+  nameAr: string;
+  emergency: boolean;
+};
+
+export type SipCallState =
+  | 'Idle' | 'OutgoingInit' | 'OutgoingProgress' | 'OutgoingRinging'
+  | 'OutgoingEarlyMedia' | 'Connected' | 'StreamsRunning'
+  | 'IncomingReceived' | 'Pausing' | 'Paused' | 'Resuming'
+  | 'Released' | 'Error' | 'End';
+
+export type SipRegistrationState =
+  | 'None' | 'Progress' | 'Ok' | 'Cleared' | 'Failed' | 'Refreshing';
+
+// ─── SIP Bridge Object ────────────────────────────────────────────────
+
+export const sip = {
+
+  /**
+   * Get the current contact directory. The Android app fetches this 
+   * from http://10.32.0.86/api/sip/directory/devices/ on startup.
+   * Always returns at least the hardcoded fallback (Sara, ext 629).
+   */
+  getContacts(): SipContact[] {
+    try {
+      const json = window.AndroidSystem?.sipGetContacts();
+      if (!json) return [];
+      const parsed = JSON.parse(json);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
+  },
+
+  call(extension: string): void {
+    try { window.AndroidSystem?.sipCall(extension); }
+    catch (e) { console.warn('sip.call failed', e); }
+  },
+
+  answer(): void {
+    try { window.AndroidSystem?.sipAnswer(); }
+    catch (e) { console.warn('sip.answer failed', e); }
+  },
+
+  hangup(): void {
+    try { window.AndroidSystem?.sipHangup(); }
+    catch (e) { console.warn('sip.hangup failed', e); }
+  },
+
+  setMuted(muted: boolean): void {
+    try { window.AndroidSystem?.sipSetMuted(muted); }
+    catch (e) { console.warn('sip.setMuted failed', e); }
+  },
+
+  isMuted(): boolean {
+    try { return window.AndroidSystem?.sipIsMuted() ?? false; }
+    catch { return false; }
+  },
+
+  getCallState(): SipCallState {
+    try {
+      return (window.AndroidSystem?.sipGetCallState() 
+          ?? 'Idle') as SipCallState;
+    } catch { return 'Idle'; }
+  },
+
+  getRegistrationState(): SipRegistrationState {
+    try {
+      return (window.AndroidSystem?.sipGetRegistrationState() 
+          ?? 'None') as SipRegistrationState;
+    } catch { return 'None'; }
+  },
+};
+
+// ─── SIP React Hooks ──────────────────────────────────────────────────
+
+/**
+ * Reactive call state. Updates automatically when the Android bridge 
+ * dispatches 'sip-call-state' events.
+ */
+export function useSipCallState() {
+  const [callState, setCallState] = useState<SipCallState>(
+    () => sip.getCallState()
+  );
+  const [remote, setRemote] = useState('');
+  const [direction, setDirection] = 
+    useState<'incoming' | 'outgoing' | null>(null);
+  const [durationMs, setDurationMs] = useState(0);
+
+  useAndroidEvent<{
+    state: SipCallState;
+    remote: string;
+    direction: 'incoming' | 'outgoing';
+    durationMs: number;
+  }>('sip-call-state', (d) => {
+    setCallState(d.state);
+    setRemote(d.remote);
+    setDirection(d.direction);
+    setDurationMs(d.durationMs);
+  });
+
+  return { callState, remote, direction, durationMs };
+}
+
+/**
+ * Reactive registration state. Updates when the Android bridge 
+ * dispatches 'sip-registration-state' events.
+ */
+export function useSipRegistration() {
+  const [regState, setRegState] = useState<SipRegistrationState>(
+    () => sip.getRegistrationState()
+  );
+  useAndroidEvent<{ state: SipRegistrationState }>(
+    'sip-registration-state',
+    (d) => setRegState(d.state)
+  );
+  return regState;
+}
+
+/**
+ * Reactive contact list. Refreshes when the Android app updates 
+ * the directory from the hospital API.
+ */
+export function useSipContacts() {
+  const [contacts, setContacts] = useState<SipContact[]>(
+    () => sip.getContacts()
+  );
+  useAndroidEvent('sip-contacts-updated', () => {
+    setContacts(sip.getContacts());
+  });
+  return contacts;
+}
+

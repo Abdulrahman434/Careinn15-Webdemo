@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { isAndroidApp } from "../utils/androidBridge";
+import { sip, useSipCallState, useSipRegistration, useSipContacts, isAndroidApp } from "../utils/androidBridge";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Phone,
@@ -229,8 +229,33 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
   const { t, isRTL, fontFamily, locale } = useLocale();
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
-  const [callState, setCallState] = useState<CallState>("idle");
-  const [callTarget, setCallTarget] = useState<Extension | null>(null);
+  // SIP Data
+  const contacts = useSipContacts();
+  const { callState: sipCallState, remote } = useSipCallState();
+  const regState = useSipRegistration();
+  const isSipAvailable = regState === 'Ok' && isAndroidApp();
+
+  // Mapping SIP states to legacy string states
+  const isSipIncoming = sipCallState === 'IncomingReceived';
+  const isSipOutgoing = sipCallState === 'OutgoingInit' || sipCallState === 'OutgoingProgress' || sipCallState === 'OutgoingRinging' || sipCallState === 'OutgoingEarlyMedia';
+  const isSipActive = sipCallState === 'Connected' || sipCallState === 'StreamsRunning';
+  const isSipIdle = sipCallState === 'Idle' || sipCallState === 'Released' || sipCallState === 'Error' || sipCallState === 'End';
+
+  // Local Simulation State
+  const [simCallState, setSimCallState] = useState<CallState>("idle");
+  const [simCallTarget, setSimCallTarget] = useState<Extension | null>(null);
+
+  // Derived effective state (SIP takes priority if active, otherwise simulation)
+  const callState: CallState = (!isSipIdle)
+    ? (isSipIncoming ? "incoming" : isSipOutgoing ? "outgoing" : isSipActive ? "active" : "idle")
+    : simCallState;
+
+  const currentContact = contacts.find(c => c.extension === remote);
+  const targetName = currentContact ? (locale === 'ar' ? currentContact.nameAr : currentContact.nameEn) : remote;
+  
+  const callTarget: Extension | null = (!isSipIdle)
+    ? { id: "sip", nameKey: targetName || "Unknown", descKey: "", ext: remote || "", icon: Phone, iconColor: "#fff", iconBg: "transparent" }
+    : simCallTarget;
 
   const [muted, setMuted] = useState(false);
   const [speaker, setSpeaker] = useState(false);
@@ -243,52 +268,77 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
   const callTimer = useCallTimer(callState === "active");
   useCallAudio(callState);
 
+  const displayContacts = (contacts && contacts.length > 0)
+    ? contacts.map(c => ({
+        extension: c.extension,
+        displayName: locale === 'ar' ? c.nameAr : c.nameEn,
+        emergency: !!c.emergency
+      }))
+    : EXTENSIONS.map(ext => ({
+        extension: ext.ext,
+        displayName: t(ext.nameKey),
+        emergency: !!ext.emergency
+      }));
+
   const primary = theme.primary;
   const DANGER = "#D10044";
 
-  const handleDial = useCallback((ext: Extension) => {
-    setCallTarget(ext);
-    setCallState("outgoing");
-    // Simulate connection after 3s
-    setTimeout(() => {
-      setCallState("active");
-    }, 3000);
-  }, []);
+  const handleDial = useCallback((ext: { extension: string, displayName: string, emergency?: boolean }) => {
+    if (isSipAvailable) {
+      sip.call(ext.extension);
+    } else {
+      // Simulation logic
+      setSimCallTarget({
+        id: ext.extension,
+        nameKey: ext.displayName,
+        descKey: "",
+        ext: ext.extension,
+        icon: ext.emergency ? Heart : Phone,
+        iconColor: "#fff",
+        iconBg: "transparent",
+        emergency: ext.emergency
+      });
+      setSimCallState("outgoing");
+      setTimeout(() => setSimCallState("active"), 3000);
+    }
+  }, [isSipAvailable]);
 
   const handleDialCustom = useCallback(() => {
     if (!dialInput) return;
-    const mockExt: Extension = {
-      id: "custom",
-      nameKey: "call.dialExt",
-      descKey: "",
-      ext: dialInput,
-      icon: Phone,
-      iconColor: "#fff",
-      iconBg: "transparent"
-    };
-    handleDial(mockExt);
-  }, [dialInput, handleDial]);
+    if (isSipAvailable) {
+      sip.call(dialInput);
+    } else {
+      handleDial({ extension: dialInput, displayName: t("call.dialExt") });
+    }
+  }, [dialInput, isSipAvailable, handleDial, t]);
 
   const handleSimulateIncoming = useCallback(() => {
-    setCallTarget(EXTENSIONS[0]); // Simulate incoming from Nurse
-    setCallState("incoming");
+    setSimCallTarget(EXTENSIONS[0]); // Simulate incoming from Nurse
+    setSimCallState("incoming");
   }, []);
 
   const handleAccept = useCallback(() => {
-    setCallState("active");
-  }, []);
+    if (!isSipIdle) sip.answer();
+    else setSimCallState("active");
+  }, [isSipIdle]);
 
   const handleDecline = useCallback(() => { 
-    setCallState("idle"); 
-    setCallTarget(null);
+    if (!isSipIdle) sip.hangup();
+    else {
+      setSimCallState("idle"); 
+      setSimCallTarget(null);
+    }
     setShowKeypad(false); setInCallDigits(""); 
-  }, []);
+  }, [isSipIdle]);
   
   const handleEnd = useCallback(() => { 
-    setCallState("idle"); 
-    setCallTarget(null);
+    if (!isSipIdle) sip.hangup();
+    else {
+      setSimCallState("idle"); 
+      setSimCallTarget(null);
+    }
     setShowKeypad(false); setInCallDigits(""); 
-  }, []);
+  }, [isSipIdle]);
 
   const onKeypadPress = useCallback((digit: string) => {
     playDTMF(digit);
@@ -347,7 +397,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="text-center">
-            <p style={{ fontFamily, ...TEXT_STYLE.display, color: "#FFFFFF", margin: 0 }}>{t(callTarget.nameKey)}</p>
+            <p style={{ fontFamily, ...TEXT_STYLE.display, color: "#FFFFFF", margin: 0 }}>{callTarget.nameKey.startsWith('call.') ? t(callTarget.nameKey) : callTarget.nameKey}</p>
             <p style={{ fontFamily, ...TEXT_STYLE.body, color: "rgba(255,255,255,0.5)", marginTop: "8px" }}>
               {t("call.ext")} {callTarget.ext}
             </p>
@@ -424,7 +474,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
               ) : (
                 /* ── Normal call controls ── */
                 <div className="flex items-center justify-center gap-10">
-                  <CallControlButton icon={muted ? MicOff : Mic} label={muted ? t("call.unmute") : t("call.mute")} active={muted} onTap={() => setMuted(!muted)} fontFamily={fontFamily} />
+                  <CallControlButton icon={(isSipAvailable ? sip.isMuted() : muted) ? MicOff : Mic} label={(isSipAvailable ? sip.isMuted() : muted) ? t("call.unmute") : t("call.mute")} active={isSipAvailable ? sip.isMuted() : muted} onTap={() => isSipAvailable ? sip.setMuted(!sip.isMuted()) : setMuted(!muted)} fontFamily={fontFamily} />
                   <CallControlButton icon={Volume2} label={t("call.speaker")} active={speaker} onTap={() => setSpeaker(!speaker)} fontFamily={fontFamily} />
                   <CallControlButton icon={onHold ? Play : Pause} label={onHold ? t("call.resume") : t("call.hold")} active={onHold} onTap={() => setOnHold(!onHold)} fontFamily={fontFamily} />
                   <CallControlButton icon={Grid3X3} label={t("call.keypad")} active={false} onTap={() => setShowKeypad(true)} fontFamily={fontFamily} />
@@ -520,13 +570,27 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center" style={{
               width: "52px", height: "52px", borderRadius: theme.radiusLg,
-              backgroundColor: "rgba(255,255,255,0.15)",
+              backgroundColor: regState === 'Ok' ? "rgba(34,197,94,0.15)" : regState === 'Progress' ? "rgba(234,179,8,0.15)" : "rgba(239,68,68,0.15)",
             }}>
-              <Phone size={26} color="#fff" />
+              <Phone size={26} fill={regState === 'Ok' ? "#22C55E" : regState === 'Progress' ? "#EAB308" : "#EF4444"} style={{ color: regState === 'Ok' ? "#22C55E" : regState === 'Progress' ? "#EAB308" : "#EF4444" }} />
             </div>
             <div>
-              <h2 style={{ fontFamily, ...TEXT_STYLE.display, fontSize: "32px", color: "#FFFFFF", lineHeight: "36px" }}>{t("call.title")}</h2>
-              <p style={{ fontFamily, ...TEXT_STYLE.caption, color: "rgba(255,255,255,0.6)", marginTop: "2px" }}>{t("call.tapToCall")}</p>
+              <h2 className="flex items-center gap-3" style={{ fontFamily, ...TEXT_STYLE.display, fontSize: "32px", color: "#FFFFFF", lineHeight: "36px" }}>
+                {t("call.title")}
+                <span style={{
+                  fontSize: "12px", 
+                  padding: "4px 8px", 
+                  borderRadius: "12px", 
+                  backgroundColor: regState === 'Ok' ? "rgba(34,197,94,0.2)" : regState === 'Progress' ? "rgba(234,179,8,0.2)" : "rgba(239,68,68,0.2)",
+                  color: regState === 'Ok' ? "#4ade80" : regState === 'Progress' ? "#facc15" : "#f87171",
+                  fontFamily: theme.fontFamilyMono
+                }}>
+                  {regState === 'Ok' ? "Connected" : regState === 'Progress' ? "Connecting..." : "Unavailable"}
+                </span>
+              </h2>
+              <p style={{ fontFamily, ...TEXT_STYLE.caption, color: "rgba(255,255,255,0.6)", marginTop: "2px" }}>
+                {isSipAvailable ? t("call.tapToCall") : "Using simulation mode (Bridge unavailable)"}
+              </p>
             </div>
           </div>
         </div>
@@ -616,21 +680,14 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
             <AnimatePresence mode="wait">
               {historyTab === "all" ? (
                 <motion.div key="all" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
-                  {MOCK_MISSED.length === 0 && MOCK_ATTENDED.length === 0 ? (
+                  {[...MOCK_ATTENDED, ...MOCK_MISSED].length === 0 ? (
                     <EmptyState message={t("call.noHistory")} />
                   ) : (
                     <div className="flex flex-col gap-3">
                       <p className="px-2 pt-1 pb-2" style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "16px", color: theme.textMuted }}>{t("call.today")}</p>
-                      {MOCK_MISSED.map((entry) => (
+                      {[...MOCK_ATTENDED, ...MOCK_MISSED].sort((a,b) => b.id.localeCompare(a.id)).map((entry) => (
                         <CallLogRow key={entry.id} entry={entry} onCallback={(e) => {
-                          const ext = EXTENSIONS.find((x) => x.id === e.extensionId);
-                          if (ext) handleDial(ext);
-                        }} />
-                      ))}
-                      {MOCK_ATTENDED.map((entry) => (
-                        <CallLogRow key={entry.id} entry={entry} onCallback={(e) => {
-                          const ext = EXTENSIONS.find((x) => x.id === e.extensionId);
-                          if (ext) handleDial(ext);
+                          handleDial({ extension: e.ext, displayName: t(e.nameKey) });
                         }} />
                       ))}
                     </div>
@@ -645,8 +702,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
                       <p className="px-2 pt-1 pb-2" style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "16px", color: theme.textMuted }}>{t("call.today")}</p>
                       {MOCK_MISSED.map((entry) => (
                         <CallLogRow key={entry.id} entry={entry} onCallback={(e) => {
-                          const ext = EXTENSIONS.find((x) => x.id === e.extensionId);
-                          if (ext) handleDial(ext);
+                          handleDial({ extension: e.ext, displayName: t(e.nameKey) });
                         }} />
                       ))}
                     </div>
@@ -661,8 +717,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
                       <p className="px-2 pt-1 pb-2" style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "16px", color: theme.textMuted }}>{t("call.today")}</p>
                       {MOCK_ATTENDED.map((entry) => (
                         <CallLogRow key={entry.id} entry={entry} onCallback={(e) => {
-                          const ext = EXTENSIONS.find((x) => x.id === e.extensionId);
-                          if (ext) handleDial(ext);
+                          handleDial({ extension: e.ext, displayName: t(e.nameKey) });
                         }} />
                       ))}
                     </div>
@@ -747,7 +802,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
                   opacity: dialInput ? 1 : 0.5,
                   boxShadow: dialInput ? "0 8px 32px rgba(34,197,94,0.4)" : "none",
                 }}
-                disabled={!dialInput || !isAndroidApp() || regState !== 'Ok'}
+                disabled={!dialInput}
               >
                 <Phone size={24} color="#fff" />
                 <span style={{ fontFamily, ...TEXT_STYLE.buttonSm, fontSize: "18px", color: "#fff" }}>{t("call.title")}</span>
@@ -778,9 +833,9 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
               gridTemplateColumns: "repeat(2, 1fr)",
               gap: "16px",
             }}>
-              {EXTENSIONS.map((ext) => (
-                <ExtensionCard key={ext.id} ext={ext} onDial={() => handleDial(ext)} />
-              ))}
+              {displayContacts.map((c) => (
+                 <ExtensionCard key={c.extension} contact={c} onDial={() => handleDial(c)} />
+               ))}
             </div>
           </div>
         </div>
@@ -803,13 +858,13 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
  * SUB-COMPONENTS
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-function ExtensionCard({ ext, onDial }: { ext: Extension; onDial: () => void }) {
+function ExtensionCard({ contact, onDial }: { contact: { extension: string, displayName: string, emergency?: boolean }; onDial: () => void }) {
   const { theme } = useTheme();
-  const { t, fontFamily } = useLocale();
+  const { fontFamily } = useLocale();
   const [pressed, setPressed] = useState(false);
-  const ExtIcon = ext.icon;
+  const ExtIcon = contact.emergency ? Heart : Phone;
   
-  const isHighlighted = ext.emergency;
+  const isHighlighted = contact.emergency;
   const isFilled = isHighlighted ? !pressed : pressed;
 
   return (
@@ -848,7 +903,7 @@ function ExtensionCard({ ext, onDial }: { ext: Extension; onDial: () => void }) 
         fontFamily, fontSize: "16px", fontWeight: WEIGHT.semibold,
         color: isFilled ? theme.textInverse : theme.textHeading, margin: 0, lineHeight: "1.2",
       }}>
-        {t(ext.nameKey)}
+        {contact.displayName}
       </p>
 
       {/* Extension number */}
@@ -856,7 +911,7 @@ function ExtensionCard({ ext, onDial }: { ext: Extension; onDial: () => void }) 
         fontFamily: theme.fontFamilyMono, fontSize: "15px", fontWeight: WEIGHT.medium,
         color: isFilled ? "rgba(255,255,255,0.8)" : theme.textMuted,
       }}>
-        {ext.ext}
+        {contact.extension}
       </span>
     </button>
   );
