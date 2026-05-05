@@ -521,6 +521,12 @@ export const sip = {
     } catch { return 'None'; }
   },
 
+  getLocalExtension(): string {
+    try {
+      return window.AndroidSystem?.sipGetLocalExtension?.() ?? '';
+    } catch { return ''; }
+  },
+
   /**
    * Returns true only when running inside the Android kiosk app
    * AND the SIP account has successfully registered.

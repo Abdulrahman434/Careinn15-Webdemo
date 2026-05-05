@@ -67,8 +67,8 @@ interface AndroidSystemInterface {
   sipIsMuted(): boolean;
   sipGetCallState(): string;
   sipGetRegistrationState(): string;
+  sipGetLocalExtension(): string;
 }
-
 /* ─── CustomEvent detail shapes dispatched by the Android side ─── */
 export interface BrightnessChangedDetail {
   value: number; // 0.0 – 1.0
