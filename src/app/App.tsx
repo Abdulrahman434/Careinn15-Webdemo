@@ -121,7 +121,7 @@ function BedsideScreen() {
   const [showIptv, setShowIptv] = useState(false);
   const anyOtherOverlayOpen = !!(
     openCategory || showSurvey || showAboutUs || showSettings ||
-    showNotifications || showTour || showTasbih || showConfigurator ||
+    showNotifications || showTour || showConfigurator ||
     showCareMeExpanded || showCall || showFoodOrder || activeBroadcast ||
     activeGame || activeTool || showIptv
   );
