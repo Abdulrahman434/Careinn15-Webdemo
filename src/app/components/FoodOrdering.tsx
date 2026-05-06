@@ -1284,8 +1284,22 @@ function FoodCarousel({
         <PrevIcon size={24} color="#fff" />
       </button>
 
-      {/* Cards */}
-      <div className="flex-1 flex items-center justify-center gap-5" style={{ minHeight: 0, height: "100%" }}>
+      {/* Cards container */}
+      <motion.div
+        className="flex-1 flex items-center justify-center gap-5"
+        style={{ minHeight: 0, height: "100%", touchAction: "none" }}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.2}
+        onDragEnd={(_, info) => {
+          const threshold = 60;
+          if (info.offset.x > threshold) {
+            isRTL ? goNext() : goPrev();
+          } else if (info.offset.x < -threshold) {
+            isRTL ? goPrev() : goNext();
+          }
+        }}
+      >
         <AnimatePresence mode="popLayout">
           {visible.map(({ item, position, originalIndex }) => (
             <motion.div
@@ -1322,7 +1336,7 @@ function FoodCarousel({
             </motion.div>
           ))}
         </AnimatePresence>
-      </div>
+      </motion.div>
 
       {/* Next arrow */}
       <button
