@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 import { useTheme, WEIGHT, TYPE_SCALE } from "./ThemeContext";
@@ -341,10 +341,6 @@ const TIME_SLOTS: TimeSlot[] = [
       { ar: "رَبَّنَا لاَ تُؤَاخِذْنَآ إِن نَّسِينَآ أَوْ أَخْطَأْنَا رَبَّنَا وَلاَ تَحْمِلْ عَلَيْنَآ إِصْرًا كَمَا حَمَلْتَهُ عَلَى الَّذِينَ مِن قَبْلِنَا", en: "Our Lord! Do not punish us if we forget or make a mistake. Our Lord! Do not place a burden on us like the one You placed on those before us." },
       { ar: "رَبَّنَا وَلاَ تُحَمّلْنَا مَا لاَ طَاقَةَ لَنَا بِهِ وَاعْفُ عَنَّا وَاغْفِرْ لَنَا وَارْحَمْنَآ أَنتَ مَوْلَـنَا فَانْصُرْنَا عَلَى الْقَوْمِ الْكَـفِرِينَ", en: "Our Lord! Do not burden us with what we cannot bear. Pardon us, forgive us, and have mercy on us. You are our only Guardian. So grant us victory over the disbelieving people." },
 
-      // ── سورة الكافرون ──
-      { ar: "قُلْ يَا أَيُّهَا الْكَافِرُونَ ۞ لَا أَعْبُدُ مَا تَعْبُدُونَ ۞ وَلَا أَنتُمْ عَابِدُونَ مَا أَعْبُدُ", en: "Say: O you disbelievers! I do not worship what you worship, nor do you worship what I worship." },
-      { ar: "وَلَا أَنَا عَابِدٌ مَّا عَبَدتُّمْ ۞ وَلَا أَنتُمْ عَابِدُونَ مَا أَعْبُدُ ۞ لَكُمْ دِينُكُمْ وَلِيَ دِينِ", en: "I will never worship what you worship, nor will you ever worship what I worship. You have your way, and I have my Way." },
-
       // ── بسمك اللهم أموت وأحيا ──
       { ar: "بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا", en: "With Your name, O Allah, I die and I live." },
 
@@ -467,10 +463,29 @@ export function TasbihScreenSaver({ onClose }: TasbihScreenSaverProps) {
     return () => clearInterval(interval);
   }, [currentSlot.intervalMs, currentSlot.phrases.length]);
 
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
 
   const currentDhikr = AZKAR[selectedDhikrIdx];
+
+  const [showPhrases, setShowPhrases] = useState(false);
+  const phrasesTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const resetPhrasesTimer = useCallback(() => {
+    setShowPhrases(false);
+    if (phrasesTimerRef.current) clearTimeout(phrasesTimerRef.current);
+    phrasesTimerRef.current = setTimeout(() => {
+      setShowPhrases(true);
+    }, 30000); // 30 seconds
+  }, []);
+
+  // Start timer on mount, clear on unmount
+  useEffect(() => {
+    resetPhrasesTimer();
+    return () => {
+      if (phrasesTimerRef.current) clearTimeout(phrasesTimerRef.current);
+    };
+  }, [resetPhrasesTimer]);
 
   /* ── Palette: dark vs light ── */
   const pal = darkMode
@@ -512,6 +527,7 @@ export function TasbihScreenSaver({ onClose }: TasbihScreenSaverProps) {
   // Increment counter on tap
   const handleTap = (e: React.PointerEvent) => {
     if (showResetConfirm || showAzkarPicker) return;
+    resetPhrasesTimer();
     const rect = e.currentTarget.getBoundingClientRect();
     setCount((prev) => prev + 1);
     const id = Date.now();
@@ -534,6 +550,7 @@ export function TasbihScreenSaver({ onClose }: TasbihScreenSaverProps) {
 
   const handleReset = () => { setShowResetConfirm(false); setCount(0); };
   const handleSelectDhikr = (idx: number) => {
+    resetPhrasesTimer();
     if (idx !== selectedDhikrIdx) { setSelectedDhikrIdx(idx); setCount(0); }
     setShowAzkarPicker(false);
   };
@@ -991,58 +1008,70 @@ export function TasbihScreenSaver({ onClose }: TasbihScreenSaverProps) {
         </AnimatePresence>
 
         {/* ── Time-based Athkar ── */}
-        <div
-          className="shrink-0 flex flex-col items-center justify-center"
-          style={{ minHeight: "110px", marginBottom: "8px", width: "100%", maxWidth: "500px" }}
-        >
-          {/* Slot label — e.g. "أذكار الصباح" */}
-          <p style={{
-            fontFamily: "'Amiri', 'Almarai', serif",
-            fontSize: TYPE_SCALE.sm,
-            fontWeight: WEIGHT.semibold,
-            color: pal.glow,
-            margin: 0,
-            marginBottom: "8px",
-            letterSpacing: "1px",
-          }}>
-            {isRTL ? currentSlot.label.ar : currentSlot.label.en}
-          </p>
-
-          <AnimatePresence mode="wait">
+        <AnimatePresence>
+          {showPhrases && (
             <motion.div
-              key={phraseIdx}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: currentSlot.intervalMs <= 5000 ? 0.4 : 0.8, ease: "easeInOut" }}
-              className="flex flex-col items-center gap-1 text-center px-4"
+              transition={{ duration: 1.2, ease: "easeInOut" }}
+              className="w-full flex justify-center"
             >
-              <p
-                dir="rtl"
-                style={{
-                  fontFamily: "'Amiri', 'Almarai', serif",
-                  fontSize: "30px",
-                  fontWeight: 600,
-                  color: "rgba(255,255,255,0.92)",
-                  margin: 0,
-                  lineHeight: "46px",
-                }}
+              <div
+                className="shrink-0 flex flex-col items-center justify-center"
+                style={{ minHeight: "110px", marginBottom: "8px", width: "100%", maxWidth: "600px" }}
               >
-                {currentSlot.phrases[phraseIdx].ar}
-              </p>
-              <p style={{
-                fontFamily: theme.fontFamily,
-                fontSize: TYPE_SCALE.base,
-                fontWeight: WEIGHT.normal,
-                color: "rgba(255,255,255,0.6)",
-                margin: 0,
-                fontStyle: "italic",
-              }}>
-                {currentSlot.phrases[phraseIdx].en}
-              </p>
+                {/* Slot label — e.g. "أذكار الصباح" */}
+                <p style={{
+                  fontFamily: "'Amiri', 'Almarai', serif",
+                  fontSize: TYPE_SCALE.sm,
+                  fontWeight: WEIGHT.semibold,
+                  color: pal.glow,
+                  margin: 0,
+                  marginBottom: "8px",
+                  letterSpacing: "1px",
+                }}>
+                  {isRTL ? currentSlot.label.ar : currentSlot.label.en}
+                </p>
+
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={phraseIdx}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: currentSlot.intervalMs <= 5000 ? 0.4 : 0.8, ease: "easeInOut" }}
+                    className="flex flex-col items-center gap-1 text-center px-4"
+                  >
+                    <p
+                      dir="rtl"
+                      style={{
+                        fontFamily: "'Amiri', 'Almarai', serif",
+                        fontSize: "30px",
+                        fontWeight: 600,
+                        color: "rgba(255,255,255,0.92)",
+                        margin: 0,
+                        lineHeight: "46px",
+                      }}
+                    >
+                      {currentSlot.phrases[phraseIdx].ar}
+                    </p>
+                    <p style={{
+                      fontFamily: theme.fontFamily,
+                      fontSize: TYPE_SCALE.base,
+                      fontWeight: WEIGHT.normal,
+                      color: "rgba(255,255,255,0.6)",
+                      margin: 0,
+                      fontStyle: "italic",
+                    }}>
+                      {currentSlot.phrases[phraseIdx].en}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
             </motion.div>
-          </AnimatePresence>
-        </div>
+          )}
+        </AnimatePresence>
 
         {/* ── Bottom: Reset + Hint ── */}
         <motion.div

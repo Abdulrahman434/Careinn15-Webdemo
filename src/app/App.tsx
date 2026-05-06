@@ -175,7 +175,7 @@ function BedsideScreen() {
 
   // --- Idle Timer for Tasbih Screen Saver ---
   useEffect(() => {
-    let idleTimer: NodeJS.Timeout;
+    let idleTimer: ReturnType<typeof setTimeout>;
 
     const startTimer = () => {
       clearTimeout(idleTimer);
