@@ -120,6 +120,99 @@ function BedsideScreen() {
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
 
+  // --- Centralized Overlay Management ---
+  const anyOtherOverlayOpen = !!(
+    openCategory || showSurvey || showAboutUs || showSettings ||
+    showNotifications || showTour || showConfigurator ||
+    showCareMeExpanded || showCall || showFoodOrder || activeBroadcast ||
+    activeGame || activeTool
+  );
+  const anyOverlayOpen = anyOtherOverlayOpen || showTasbih;
+
+  const handleGoHome = useCallback(() => {
+    setOpenCategory(null);
+    setShowSurvey(false);
+    setShowAboutUs(false);
+    setShowSettings(false);
+    setShowNotifications(false);
+    setShowTour(false);
+    setShowTasbih(false);
+    setShowConfigurator(false);
+    setShowCareMeExpanded(false);
+    setShowCall(false);
+    setShowFoodOrder(false);
+    setActiveBroadcast(null);
+    setActiveGame(null);
+    setActiveTool(null);
+    setActiveCareRole(null);
+  }, []);
+
+  // --- Idle Timer for Tasbih Screen Saver ---
+  useEffect(() => {
+    let idleTimer: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      // If screen saver is active, hide it on any interaction
+      if (showTasbih) {
+        setShowTasbih(false);
+      }
+      
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        // Only show if no other overlays are open and patient is admitted
+        if (!anyOtherOverlayOpen && patientAdmitted) {
+          setShowTasbih(true);
+        }
+      }, 60000); // 1 minute
+    };
+
+    const events = ['mousemove', 'mousedown', 'keypress', 'touchstart', 'scroll', 'click'];
+    events.forEach(evt => window.addEventListener(evt, resetTimer));
+
+    // Initial start or reset when dependencies change
+    resetTimer();
+
+    return () => {
+      events.forEach(evt => window.removeEventListener(evt, resetTimer));
+      clearTimeout(idleTimer);
+    };
+  }, [anyOtherOverlayOpen, patientAdmitted, showTasbih]);
+
+  // Dismiss screen saver if any other overlay opens (e.g. call or broadcast)
+  useEffect(() => {
+    if (anyOtherOverlayOpen && showTasbih) {
+      setShowTasbih(false);
+    }
+  }, [anyOtherOverlayOpen, showTasbih]);
+
+  // --- Back Button Handling ---
+  const lastOverlayState = useRef(false);
+  const isPopping = useRef(false);
+
+  useEffect(() => {
+    const onPopState = () => {
+      if (anyOverlayOpen) {
+        isPopping.current = true;
+        handleGoHome();
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [anyOverlayOpen, handleGoHome]);
+
+  useEffect(() => {
+    if (anyOverlayOpen && !lastOverlayState.current) {
+      window.history.pushState({ overlay: true }, "");
+    } else if (!anyOverlayOpen && lastOverlayState.current) {
+      if (!isPopping.current) {
+        try { window.history.back(); } catch (e) { }
+      }
+    }
+    lastOverlayState.current = anyOverlayOpen;
+    isPopping.current = false;
+  }, [anyOverlayOpen]);
+
+
   /* ── Prayer Monitoring / Azan Alarm ── */
   const lastPrayerRef = useRef<PrayerType>(Prayer.None);
   const azanAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -336,11 +429,8 @@ function BedsideScreen() {
 
   // ── Keyboard Navigation ──
   useEffect(() => {
-    const anyOverlayOpen =
-      openCategory || showSurvey || showAboutUs || showSettings ||
-      showNotifications || showTour || showTasbih || showConfigurator ||
-      showCareMeExpanded || showCall || showFoodOrder || activeBroadcast ||
-      activeGame || activeTool;
+    // anyOverlayOpen is now defined at the top level of BedsideScreen
+
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Escape closes the topmost overlay
@@ -450,7 +540,7 @@ function BedsideScreen() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [openCategory, showSurvey, showAboutUs, showSettings,
     showNotifications, showTour, showTasbih, showConfigurator,
-    showCareMe, showCall, showFoodOrder, activeBroadcast,
+    showCareMeExpanded, showCall, showFoodOrder, activeBroadcast,
     activeGame, activeTool]);
 
   return (
