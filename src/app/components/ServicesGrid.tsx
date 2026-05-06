@@ -4,7 +4,7 @@ import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
 import svgPaths from "../../imports/svg-ca68x68c4i";
 import { Stethoscope, BookOpenText, MessageSquareMore } from "lucide-react";
-import whatsappIcon from "@/assets/7583d2073e01dcd488456b25bc53248baf8547e8.png";
+import roomControlIcon from "@/assets/room-control-icon.png";
 import quranIcon from "@/assets/5303963df7d14bbca33ccffa43f982a464344809.png";
 import mirrorIcon from "@/assets/0ab7565691ddb8401a21da44af1864e8f4058536.png";
 import podcastIcon from "@/assets/5513479d879a8c3fcdd1f6832dd30ce350c81789.png";
@@ -52,7 +52,7 @@ const getShortcutItems = (hospitalId: string): ShortcutItem[] => {
   }
 
   return [
-    { labelKey: "shortcut.whatsapp", icon: whatsappIcon, url: "" },
+    { labelKey: "shortcut.roomControl", icon: roomControlIcon, url: "roomcontrol" },
     { labelKey: "shortcut.quran", icon: quranIcon, url: "https://app.quranflash.com/book/Medina1?ar#/reader/chapter/3" },
     hospitalId === "caremed"
       ? { labelKey: "shortcut.academy", icon: caremedicalicon, url: "https://care.classera.com/explore/courses?lang=en" }
@@ -440,6 +440,10 @@ function ShortcutTile({ item, contained, onLaunchTool }: { item: ShortcutItem; c
       onLaunchTool("mirror");
       return;
     }
+    if (item.url === "roomcontrol" && onLaunchTool) {
+      onLaunchTool("roomcontrol");
+      return;
+    }
     if (item.url) {
       window.open(item.url, "_blank", "noopener,noreferrer");
     }
@@ -529,6 +533,10 @@ function ShortcutTileCompact({ item, onLaunchTool }: { item: ShortcutItem; onLau
       onLaunchTool("mirror");
       return;
     }
+    if (item.url === "roomcontrol" && onLaunchTool) {
+      onLaunchTool("roomcontrol");
+      return;
+    }
     if (item.url) {
       window.open(item.url, "_blank", "noopener,noreferrer");
     }
@@ -614,6 +622,10 @@ function ShortcutTileBare({ item, onLaunchTool }: { item: ShortcutItem; onLaunch
   const handleTap = () => {
     if (item.labelKey === "shortcut.mirror" && onLaunchTool) {
       onLaunchTool("mirror");
+      return;
+    }
+    if (item.url === "roomcontrol" && onLaunchTool) {
+      onLaunchTool("roomcontrol");
       return;
     }
     if (item.url) {

@@ -52,6 +52,7 @@ import { UnitConverterTool } from "./components/tools/UnitConverterTool";
 import { BreathingTool } from "./components/tools/BreathingTool";
 import { WhiteboardTool } from "./components/tools/WhiteboardTool";
 import { MirrorTool } from "./components/tools/MirrorTool";
+import { RoomControl } from "./components/RoomControl";
 
 import { getPrayerStatus, PRAYER_NAMES, formatPrayerTime } from "./utils/prayerUtils";
 import { Prayer } from "adhan";
@@ -865,6 +866,7 @@ function BedsideScreen() {
         {activeTool === "breathing" && <BreathingTool onClose={() => setActiveTool(null)} onBackToTools={() => { setActiveTool(null); setOpenCategory("Tools"); }} />}
         {activeTool === "whiteboard" && <WhiteboardTool onClose={() => setActiveTool(null)} onBackToTools={() => { setActiveTool(null); setOpenCategory("Tools"); }} />}
         {activeTool === "mirror" && <MirrorTool onClose={() => setActiveTool(null)} onBackToTools={() => { setActiveTool(null); setOpenCategory("Tools"); }} />}
+        {activeTool === "roomcontrol" && <RoomControl onClose={() => setActiveTool(null)} />}
 
 
         {/* Blank Page Overlay */}
