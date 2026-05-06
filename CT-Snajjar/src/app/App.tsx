@@ -159,14 +159,15 @@ function BedsideScreen() {
       
       clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
-        // Only show if no other overlays are open and patient is admitted
-        if (!anyOtherOverlayOpen && patientAdmitted) {
+        // Only show if no other overlays are open
+        if (!anyOtherOverlayOpen) {
           setShowTasbih(true);
         }
       }, 60000); // 1 minute
     };
 
-    const events = ['mousemove', 'mousedown', 'keypress', 'touchstart', 'scroll', 'click'];
+    const events = ['mousemove', 'mousedown', 'keydown', 'keypress', 'touchstart', 'scroll', 'click'];
+
     events.forEach(evt => window.addEventListener(evt, resetTimer));
 
     // Initial start or reset when dependencies change
@@ -176,7 +177,8 @@ function BedsideScreen() {
       events.forEach(evt => window.removeEventListener(evt, resetTimer));
       clearTimeout(idleTimer);
     };
-  }, [anyOtherOverlayOpen, patientAdmitted, showTasbih]);
+  }, [anyOtherOverlayOpen, showTasbih]);
+
 
   // Dismiss screen saver if any other overlay opens (e.g. call or broadcast)
   useEffect(() => {
