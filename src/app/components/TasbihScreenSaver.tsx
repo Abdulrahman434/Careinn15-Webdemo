@@ -686,7 +686,7 @@ export function TasbihScreenSaver({ onClose }: TasbihScreenSaverProps) {
           </p>
           {/* Hijri date */}
           <p style={{
-            fontFamily: "'Amiri', 'Almarai', serif",
+            fontFamily: theme.fontFamily,
             fontSize: TYPE_SCALE.sm,
             fontWeight: WEIGHT.normal,
             color: "rgba(255,255,255,0.5)",
@@ -695,7 +695,7 @@ export function TasbihScreenSaver({ onClose }: TasbihScreenSaverProps) {
             direction: "rtl",
           }}>
             {new Intl.DateTimeFormat("ar-SA-u-ca-islamic", {
-              weekday: "long",
+
               day: "numeric",
               month: "long",
               year: "numeric",
