@@ -119,6 +119,58 @@ function BedsideScreen() {
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [showBlankPage, setShowBlankPage] = useState(false);
   const [showIptv, setShowIptv] = useState(false);
+  const anyOverlayOpen = !!(
+    openCategory || showSurvey || showAboutUs || showSettings ||
+    showNotifications || showTour || showTasbih || showConfigurator ||
+    showCareMeExpanded || showCall || showFoodOrder || activeBroadcast ||
+    activeGame || activeTool || showIptv
+  );
+
+  const handleGoHome = useCallback(() => {
+    setOpenCategory(null);
+    setShowSurvey(false);
+    setShowAboutUs(false);
+    setShowSettings(false);
+    setShowNotifications(false);
+    setShowTour(false);
+    setShowTasbih(false);
+    setShowConfigurator(false);
+    setShowCareMeExpanded(false);
+    setShowCall(false);
+    setShowFoodOrder(false);
+    setActiveBroadcast(null);
+    setActiveGame(null);
+    setActiveTool(null);
+    setShowIptv(false);
+    setActiveCareRole(null);
+  }, []);
+
+  const lastOverlayState = useRef(false);
+  const isPopping = useRef(false);
+
+  useEffect(() => {
+    const onPopState = () => {
+      if (anyOverlayOpen) {
+        isPopping.current = true;
+        handleGoHome();
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [anyOverlayOpen, handleGoHome]);
+
+  useEffect(() => {
+    if (anyOverlayOpen && !lastOverlayState.current) {
+      window.history.pushState({ overlay: true }, "");
+    } else if (!anyOverlayOpen && lastOverlayState.current) {
+      if (!isPopping.current) {
+        try { window.history.back(); } catch (e) { console.error(e); }
+      }
+    }
+    lastOverlayState.current = anyOverlayOpen;
+    isPopping.current = false;
+  }, [anyOverlayOpen]);
+
 
   /* ── SIP Call State Integration ── */
   const { callState: sipCallState } = useSipCallState();
@@ -416,11 +468,8 @@ function BedsideScreen() {
 
   // ── Keyboard Navigation ──
   useEffect(() => {
-    const anyOverlayOpen =
-      openCategory || showSurvey || showAboutUs || showSettings ||
-      showNotifications || showTour || showTasbih || showConfigurator ||
-      showCareMeExpanded || showCall || showFoodOrder || activeBroadcast ||
-      activeGame || activeTool;
+    // anyOverlayOpen is now defined at the top level of BedsideScreen
+
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Escape closes the topmost overlay
@@ -531,7 +580,7 @@ function BedsideScreen() {
   }, [openCategory, showSurvey, showAboutUs, showSettings,
       showNotifications, showTour, showTasbih, showConfigurator,
       showCareMeExpanded, showCall, showFoodOrder, activeBroadcast,
-      activeGame, activeTool]);
+      activeGame, activeTool, showIptv]);
 
   return (
     <div
