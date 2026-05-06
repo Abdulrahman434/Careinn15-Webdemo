@@ -177,12 +177,7 @@ function BedsideScreen() {
   useEffect(() => {
     let idleTimer: NodeJS.Timeout;
 
-    const resetTimer = () => {
-      // If screen saver is active, hide it on any interaction
-      if (showTasbih) {
-        setShowTasbih(false);
-      }
-      
+    const startTimer = () => {
       clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
         // Only show if no other overlays are open
@@ -192,18 +187,24 @@ function BedsideScreen() {
       }, 60000); // 1 minute
     };
 
-    const events = ['mousemove', 'mousedown', 'keydown', 'keypress', 'touchstart', 'scroll', 'click'];
+    const handleUserActivity = () => {
+      setShowTasbih(false);
+      startTimer();
+    };
 
-    events.forEach(evt => window.addEventListener(evt, resetTimer));
+    // Removed 'click' and 'keypress' (keydown is sufficient) to prevent bubbling issues
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    
+    events.forEach(evt => window.addEventListener(evt, handleUserActivity));
 
-    // Initial start or reset when dependencies change
-    resetTimer();
+    // Initial start
+    startTimer();
 
     return () => {
-      events.forEach(evt => window.removeEventListener(evt, resetTimer));
+      events.forEach(evt => window.removeEventListener(evt, handleUserActivity));
       clearTimeout(idleTimer);
     };
-  }, [anyOtherOverlayOpen, showTasbih]);
+  }, [anyOtherOverlayOpen]);
 
 
   // Dismiss screen saver if any other overlay opens (e.g. call or broadcast)
