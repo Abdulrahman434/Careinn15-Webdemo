@@ -40,6 +40,29 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
   const { t, locale, isRTL, fontFamily } = useLocale();
   const [time, setTime] = useState(new Date());
   const [prayerData, setPrayerData] = useState(() => getPrayerStatus(new Date()));
+  const [temperature, setTemperature] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const city = theme.location || "Jeddah";
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=01a477912e47daf2010808cc62015829`
+        );
+        const data = await response.json();
+        if (data.main && data.main.temp !== undefined) {
+          setTemperature(Math.round(data.main.temp));
+        }
+      } catch (error) {
+        console.error("Weather fetch error:", error);
+      }
+    };
+
+    fetchWeather();
+    const weatherInterval = setInterval(fetchWeather, 30 * 60 * 1000);
+    return () => clearInterval(weatherInterval);
+  }, [theme.location]);
+
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -192,7 +215,7 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
               color: theme.textHeading,
             }}
           >
-            38°C
+            {temperature !== null ? `${temperature}°C` : "38°C"}
           </span>
         </div>
 
