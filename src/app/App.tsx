@@ -188,7 +188,6 @@ function BedsideScreen() {
     };
 
     const handleUserActivity = () => {
-      setShowTasbih(false);
       startTimer();
     };
 
