@@ -119,12 +119,14 @@ function BedsideScreen() {
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [showBlankPage, setShowBlankPage] = useState(false);
   const [showIptv, setShowIptv] = useState(false);
-  const anyOverlayOpen = !!(
+  const anyOtherOverlayOpen = !!(
     openCategory || showSurvey || showAboutUs || showSettings ||
     showNotifications || showTour || showTasbih || showConfigurator ||
     showCareMeExpanded || showCall || showFoodOrder || activeBroadcast ||
     activeGame || activeTool || showIptv
   );
+  const anyOverlayOpen = anyOtherOverlayOpen || showTasbih;
+
 
   const handleGoHome = useCallback(() => {
     setOpenCategory(null);
@@ -170,6 +172,45 @@ function BedsideScreen() {
     lastOverlayState.current = anyOverlayOpen;
     isPopping.current = false;
   }, [anyOverlayOpen]);
+
+  // --- Idle Timer for Tasbih Screen Saver ---
+  useEffect(() => {
+    let idleTimer: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      // If screen saver is active, hide it on any interaction
+      if (showTasbih) {
+        setShowTasbih(false);
+      }
+      
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        // Only show if no other overlays are open and patient is admitted
+        if (!anyOtherOverlayOpen && patientAdmitted) {
+          setShowTasbih(true);
+        }
+      }, 60000); // 1 minute
+    };
+
+    const events = ['mousemove', 'mousedown', 'keypress', 'touchstart', 'scroll', 'click'];
+    events.forEach(evt => window.addEventListener(evt, resetTimer));
+
+    // Initial start or reset when dependencies change
+    resetTimer();
+
+    return () => {
+      events.forEach(evt => window.removeEventListener(evt, resetTimer));
+      clearTimeout(idleTimer);
+    };
+  }, [anyOtherOverlayOpen, patientAdmitted, showTasbih]);
+
+  // Dismiss screen saver if any other overlay opens (e.g. call or broadcast)
+  useEffect(() => {
+    if (anyOtherOverlayOpen && showTasbih) {
+      setShowTasbih(false);
+    }
+  }, [anyOtherOverlayOpen, showTasbih]);
+
 
 
   /* ── SIP Call State Integration ── */
