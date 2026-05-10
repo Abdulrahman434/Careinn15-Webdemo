@@ -947,9 +947,10 @@ function BedsideScreen() {
         {/* Tasbih Screen Saver */}
         {showTasbih && (
           <TasbihScreenSaver onClose={() => {
-            setShowTasbih(false);
             if (isAccountSet()) {
               setShowAccountLock(true);
+            } else {
+              setShowTasbih(false);
             }
           }} />
         )}
@@ -1018,13 +1019,29 @@ function BedsideScreen() {
 
       <AccountLockScreen
         visible={showAccountLock}
-        onUnlock={() => setShowAccountLock(false)}
+        onUnlock={() => {
+          guestModeStore.exitGuestMode();
+          setShowAccountLock(false);
+          setShowTasbih(false);
+        }}
+        onSkipAsGuest={() => {
+          setShowAccountLock(false);
+          setShowTasbih(false);
+        }}
+        onClose={() => setShowAccountLock(false)}
       />
 
       {showCareMePinDialog && (
         <CareMePinDialog
           onClose={() => setShowCareMePinDialog(false)}
-          onSuccess={() => guestModeStore.unlockCareMe()}
+          onSuccess={() => {
+            guestModeStore.unlockCareMe();
+            setShowCareMePinDialog(false);
+          }}
+          onNfcSuccess={() => {
+            guestModeStore.exitGuestMode();
+            setShowCareMePinDialog(false);
+          }}
         />
       )}
 

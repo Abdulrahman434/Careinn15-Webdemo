@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
-import { verifyPin } from "../lib/accountAuth";
+import { verifyPin, verifyNfcUid, getAccount } from "../lib/accountAuth";
+import { useNfcTap } from "../utils/nfc";
 import { HeartPulse, X } from "lucide-react";
 
 function CenteredDialog({
@@ -46,13 +47,26 @@ function CenteredDialog({
 interface Props {
   onClose: () => void;
   onSuccess: () => void;
+  onNfcSuccess: () => void;
 }
 
-export function CareMePinDialog({ onClose, onSuccess }: Props) {
+export function CareMePinDialog({ onClose, onSuccess, onNfcSuccess }: Props) {
   const { theme: t } = useTheme();
   const { t: tr, fontFamily } = useLocale();
   const [pin, setPin] = useState("");
   const [error, setError] = useState(false);
+
+  const acc = getAccount();
+  const hasNfcCard = !!acc?.nfcCardUid;
+
+  useNfcTap((uid: string) => {
+    if (verifyNfcUid(uid)) {
+      onNfcSuccess();
+    } else {
+      setError(true);
+      setTimeout(() => setError(false), 800);
+    }
+  });
 
   const handleDigit = (d: string) => {
     if (pin.length < 4) {
@@ -138,6 +152,16 @@ export function CareMePinDialog({ onClose, onSuccess }: Props) {
         >
           {error ? tr("guest.careMe.dialog.incorrect") : tr("guest.careMe.dialog.enterPin")}
         </span>
+
+        {hasNfcCard && (
+          <p style={{ 
+            fontFamily, fontSize: "12px", 
+            color: t.textMuted, textAlign: "center",
+            marginTop: "12px",
+          }}>
+            {tr("lock.nfc.hint")}
+          </p>
+        )}
       </div>
 
       {/* PIN dots */}

@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { useTheme } from "./ThemeContext";
+import { useTheme, SHADOW } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { getAccount, verifyPin, verifyNfcUid } from "../lib/accountAuth";
 import { useNfcTap } from "../utils/nfc";
-import { Lock, Smartphone } from "lucide-react";
+import { Lock, Smartphone, X } from "lucide-react";
 import { PinKeypad } from "./MyAccountDialog";
 import { guestModeStore } from "../lib/guestMode";
 
 interface Props {
   visible: boolean;
   onUnlock: () => void;
+  onClose: () => void;
+  onSkipAsGuest: () => void;
 }
 
-export function AccountLockScreen({ visible, onUnlock }: Props) {
+export function AccountLockScreen({ visible, onUnlock, onClose, onSkipAsGuest }: Props) {
   const { theme: t } = useTheme();
   const { t: tr } = useLocale();
   const [pin, setPin] = useState("");
@@ -59,30 +61,49 @@ export function AccountLockScreen({ visible, onUnlock }: Props) {
 
   const handleSkipAsGuest = () => {
     guestModeStore.enterGuestMode();
-    onUnlock();
+    onSkipAsGuest();
   };
 
   if (!visible) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
       style={{
-        backgroundColor: t.surface,
-        backgroundImage: `linear-gradient(to bottom, ${t.primarySubtle}, ${t.surface})`,
-        animation: "settingsFadeIn 0.3s ease-out",
+        backgroundColor: "rgba(0,0,0,0.55)",
+        backdropFilter: "blur(4px)",
+        WebkitBackdropFilter: "blur(4px)",
       }}
     >
       <div
-        className="flex flex-col items-center justify-center"
+        className="relative flex flex-col items-center justify-center"
         style={{
-          width: "400px",
-          padding: "40px 32px",
+          width: "340px",
+          padding: "32px 24px 24px 24px",
           borderRadius: t.radiusXl,
           backgroundColor: "#FFFFFF",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)",
+          boxShadow: SHADOW.xl,
+          animation: "lockDialogIn 0.2s ease-out",
         }}
       >
+        {/* (×) close button */}
+        <button
+          onClick={onClose}
+          className="absolute flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
+          style={{
+            top: "12px",
+            right: "12px",
+            width: "32px",
+            height: "32px",
+            borderRadius: t.radiusFull,
+            backgroundColor: t.tileInactiveBg,
+            border: "none",
+            outline: "none",
+          }}
+        >
+          <X size={18} style={{ color: t.textMuted }} />
+        </button>
+
         <div
           className="flex items-center justify-center mb-6"
           style={{ width: "64px", height: "64px", borderRadius: t.radiusFull, backgroundColor: t.primarySubtle }}
@@ -134,6 +155,12 @@ export function AccountLockScreen({ visible, onUnlock }: Props) {
           </span>
         </div>
       </div>
+      <style>{`
+        @keyframes lockDialogIn {
+          from { opacity: 0; transform: scale(0.94) translateY(8px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
