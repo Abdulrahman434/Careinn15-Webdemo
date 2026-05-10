@@ -154,7 +154,7 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
               {[
                 { code: "NAS", label: "No Added Salt" },
                 { code: "DM", label: "Diabetic Diet" },
-                { code: "LD", label: "Low Diet" },
+                { code: "LS", label: "Low Sodium" },
                 { code: "NPO", label: "Nothing by mouth" },
                 { code: "SOFT", label: "Soft Diet" },
                 { code: "LIQ", label: "Clear Liquid" },

@@ -21,6 +21,19 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
   
   useAndroidEvent('iptv-stopped', () => setPlayingId(null));
 
+  useEffect(() => {
+    (window as any).__handsetChannelNext = () => {
+      iptv.channelNext(channels, playingId);
+    };
+    (window as any).__handsetChannelPrev = () => {
+      iptv.channelPrev(channels, playingId);
+    };
+    return () => {
+      delete (window as any).__handsetChannelNext;
+      delete (window as any).__handsetChannelPrev;
+    };
+  }, [channels, playingId]);
+
   const handlePlay = (channel: IptvChannel) => {
     if (playingId === channel.id) {
       iptv.stop();

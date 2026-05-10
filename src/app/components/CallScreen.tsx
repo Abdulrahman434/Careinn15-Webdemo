@@ -240,6 +240,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
   const isSipAvailable = useSipAvailable();
   const localExtension = useSipLocalExtension();
 
+
   // Local Simulation State
   const [simCallState, setSimCallState] = useState<CallState>("idle");
   const [simCallTarget, setSimCallTarget] = useState<Extension | null>(null);
@@ -469,6 +470,9 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
     }
   }, [isSipAvailable]);
 
+  // ── Handset Event Listeners ──
+
+
   const handleDialCustom = useCallback(() => {
     if (!dialInput) return;
     handleDial({ 
@@ -533,6 +537,86 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
     playDTMF("delete");
     setDialInput((prev) => prev.slice(0, -1));
   }, [dialInput]);
+
+  // ── Handset Event Listeners ──
+
+  // Listen for handset "focus dialer" — focus the keypad input
+  useEffect(() => {
+    const handler = () => {
+      setDialInput(""); // clear previous input
+      const firstKey = document.querySelector(
+        '[data-keypad-digit="1"]'
+      ) as HTMLElement;
+      if (firstKey) firstKey.focus();
+    };
+    window.addEventListener('handset-focus-dialer', handler);
+    return () => window.removeEventListener('handset-focus-dialer', handler);
+  }, []);
+
+  // Listen for handset "nurse call" — call emergency contact
+  useEffect(() => {
+    const handler = () => {
+      const emergencyContact = contacts.find(c => c.emergency);
+      if (emergencyContact) {
+        handleDial({
+          extension: emergencyContact.extension,
+          displayName: locale === 'ar' 
+            ? emergencyContact.nameAr 
+            : emergencyContact.nameEn,
+          emergency: true,
+        });
+      } else {
+        const nurseExt = EXTENSIONS.find(e => e.id === "nurse");
+        if (nurseExt) {
+          handleDial({
+            extension: nurseExt.ext,
+            displayName: t(nurseExt.nameKey),
+            emergency: true,
+          });
+        }
+      }
+    };
+    window.addEventListener('handset-nurse-call', handler);
+    return () => window.removeEventListener('handset-nurse-call', handler);
+  }, [contacts, handleDial, locale, t]);
+
+  // Listen for handset digit keys — append to dialer when call page open
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { digit } = (e as CustomEvent<{ digit: string }>).detail;
+      if (simCallState === "idle") {
+        setDialInput(prev => prev.length >= 15 ? prev : prev + digit);
+      }
+    };
+    window.addEventListener('handset-dial-digit', handler);
+    return () => window.removeEventListener('handset-dial-digit', handler);
+  }, [simCallState]);
+
+  // Listen for handset "dial" action (accept call or dial input)
+  useEffect(() => {
+    const handler = () => {
+      if (callState === "incoming") {
+        handleAccept();
+      } else if (callState === "idle" && dialInput) {
+        handleDialCustom();
+      }
+    };
+    window.addEventListener('handset-dial-action', handler);
+    return () => window.removeEventListener('handset-dial-action', handler);
+  }, [callState, dialInput, handleAccept, handleDialCustom]);
+
+  // Listen for handset "hangup" action (decline or end call)
+  useEffect(() => {
+    const handler = () => {
+      if (callState === "incoming") {
+        handleDecline();
+      } else if (callState === "active" || callState === "outgoing") {
+        handleEnd();
+      }
+    };
+    window.addEventListener('handset-hangup-action', handler);
+    return () => window.removeEventListener('handset-hangup-action', handler);
+  }, [callState, handleDecline, handleEnd]);
 
   /* ═══════════════════════════════════════════════════════════════════════
    * RENDER — Call-in-progress overlays (dark)
@@ -628,7 +712,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
                    {[["1","2","3"],["4","5","6"],["7","8","9"],["*","0","#"]].map((row, ri) => (
                       <div key={ri} className="flex gap-4 justify-center">
                         {row.map((digit) => (
-                           <button key={digit} data-no-tick="true" onPointerDown={() => { playDTMF(digit); setInCallDigits(prev => prev.length >= 16 ? prev : prev + digit); }} className="active:scale-90 transition-transform" style={{
+                           <button key={digit} data-keypad-digit={digit} data-no-tick="true" onPointerDown={() => { playDTMF(digit); setInCallDigits(prev => prev.length >= 16 ? prev : prev + digit); }} className="active:scale-90 transition-transform" style={{
                              width:"68px", height:"68px", borderRadius:theme.radiusFull, backgroundColor:"rgba(255,255,255,0.12)",
                              display:"flex", alignItems:"center", justifyContent:"center", border: "none",
                            }}>
@@ -1216,6 +1300,7 @@ function KeypadButton({ digit, onPress }: { digit: string; onPress: (digit: stri
   
   return (
     <button
+      data-keypad-digit={digit}
       data-no-tick="true"
       onPointerDown={() => setPressed(true)}
       onPointerUp={() => setPressed(false)}

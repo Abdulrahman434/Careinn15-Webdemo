@@ -358,6 +358,28 @@ export const iptv = {
     try { return sys()?.isIptvPlaying() ?? false; } 
     catch { return false; }
   },
+
+  channelNext(channels: IptvChannel[], currentId: number | null): void {
+    if (!channels.length) return;
+    if (currentId === null) {
+      iptv.play(channels[0]);
+      return;
+    }
+    const idx = channels.findIndex(c => c.id === currentId);
+    const next = channels[(idx + 1) % channels.length];
+    iptv.play(next);
+  },
+
+  channelPrev(channels: IptvChannel[], currentId: number | null): void {
+    if (!channels.length) return;
+    if (currentId === null) {
+      iptv.play(channels[channels.length - 1]);
+      return;
+    }
+    const idx = channels.findIndex(c => c.id === currentId);
+    const prev = channels[(idx - 1 + channels.length) % channels.length];
+    iptv.play(prev);
+  },
 };
 
 /**

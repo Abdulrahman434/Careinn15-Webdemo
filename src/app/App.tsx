@@ -61,6 +61,8 @@ import { AccountLockScreen } from "./components/AccountLockScreen";
 import { useGuestMode, guestModeStore } from "./lib/guestMode";
 import { CareMePinDialog } from "./components/CareMePinDialog";
 import { Lock } from "lucide-react";
+import { matchBinding } from "./lib/handsetConfig";
+import { sip } from "./utils/androidBridge";
 
 
 const DESIGN_W = 1920;
@@ -571,12 +573,121 @@ function BedsideScreen() {
     };
   }, []);
 
+  useEffect(() => {
+    // Open call page and focus the dialer input
+    (window as any).__handsetOpenDialer = () => {
+      setShowCall(true);
+      // Signal CallScreen to focus the dialer
+      // Give it 300ms to mount then fire the event
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('handset-focus-dialer'));
+      }, 300);
+    };
+
+    // Call the nurse/emergency extension immediately
+    (window as any).__handsetNurseCall = () => {
+      setShowCall(true);
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('handset-nurse-call'));
+      }, 300);
+    };
+
+    return () => {
+      delete (window as any).__handsetOpenDialer;
+      delete (window as any).__handsetNurseCall;
+    };
+  }, [setShowCall]);
+
   // ── Keyboard Navigation ──
   useEffect(() => {
     // anyOverlayOpen is now defined at the top level of BedsideScreen
 
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // ── Block ALL handset actions when lock dialog is active ──
+      if (lockActiveRef.current) {
+        // Only allow digit keys for PIN entry (handled by lock screen)
+        // Block everything else to prevent navigation/feature bypasses
+        const isDigit = /^[0-9]$/.test(e.key) && !e.ctrlKey && !e.altKey;
+        if (!isDigit) {
+          if (e.key === "Escape") return; // Handled below for safety
+          e.preventDefault();
+        }
+        if (e.key === "Escape") return;
+      }
+
+      // ── Handset key binding resolution ──────────────────────────────
+      const binding = matchBinding(e);
+      if (binding) {
+        e.preventDefault();  // always prevent default for handset keys
+
+        switch (binding.action) {
+          case "ignore":
+            return;
+
+          case "dial_digit": {
+            // If call page is open, send digit to dialer
+            if (showCall) {
+              window.dispatchEvent(new CustomEvent('handset-dial-digit', {
+                detail: { digit: binding.digit ?? "" }
+              }));
+            } else {
+              // If call page closed, open it then send digit
+              setShowCall(true);
+              const d = binding.digit ?? "";
+              setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('handset-dial-digit', {
+                  detail: { digit: d }
+                }));
+              }, 300);
+            }
+            return;
+          }
+
+          case "open_dialer": {
+            if (showCall) {
+              window.dispatchEvent(new CustomEvent('handset-dial-action'));
+            } else {
+              if (typeof (window as any).__handsetOpenDialer === "function") {
+                (window as any).__handsetOpenDialer();
+              }
+            }
+            return;
+          }
+
+          case "nurse_call": {
+            if (typeof (window as any).__handsetNurseCall === "function") {
+              (window as any).__handsetNurseCall();
+            }
+            return;
+          }
+
+          case "hangup": {
+            if (showCall) {
+              window.dispatchEvent(new CustomEvent('handset-hangup-action'));
+            } else {
+              sip.hangup();
+            }
+            return;
+          }
+
+          case "channel_next": {
+            if (typeof (window as any).__handsetChannelNext === "function") {
+              (window as any).__handsetChannelNext();
+            }
+            return;
+          }
+
+          case "channel_prev": {
+            if (typeof (window as any).__handsetChannelPrev === "function") {
+              (window as any).__handsetChannelPrev();
+            }
+            return;
+          }
+        }
+      }
+      // ── END handset key binding resolution ───────────────────────────
+
       // Escape closes the topmost overlay
       if (e.key === "Escape") {
         // NEVER dismiss security dialogs with Escape
@@ -688,7 +799,7 @@ function BedsideScreen() {
   }, [openCategory, showSurvey, showAboutUs, showSettings,
       showNotifications, showTour, showTasbih, showConfigurator,
       showCareMeExpanded, showCall, showFoodOrder, activeBroadcast,
-      activeGame, activeTool, showIptv]);
+      activeGame, activeTool, showIptv, matchBinding]);
 
   return (
     <div
