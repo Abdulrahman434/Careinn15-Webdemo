@@ -114,6 +114,7 @@ function BedsideScreen() {
   });
   const [showConfigurator, setShowConfigurator] = useState(false);
   const [showAccountLock, setShowAccountLock] = useState(false);
+  const [openAccountDirectly, setOpenAccountDirectly] = useState(false);
 
   const [showCareMeExpanded, setShowCareMeExpanded] = useState(false);
   const [showCareMePinDialog, setShowCareMePinDialog] = useState(false);
@@ -721,7 +722,14 @@ function BedsideScreen() {
               <div className="flex-1 flex gap-[40px] min-w-0 min-h-0">
                 {/* Left — 2×4 Hub Grid */}
                 <div className="flex flex-col shrink-0 min-h-0" style={{ width: "400px" }}>
-                  <HubGridCompact onOpenCategory={handleOpenCategory} visibility={v} />
+                  <HubGridCompact 
+                    onOpenCategory={handleOpenCategory} 
+                    visibility={v} 
+                    onRequestPinSetup={() => {
+                      setOpenAccountDirectly(true);
+                      setShowSettings(true);
+                    }}
+                  />
                 </div>
 
                 {/* Center — Greeting + CareMe side by side, Services below */}
@@ -745,12 +753,26 @@ function BedsideScreen() {
                     </div>
                   </div>
                   {/* Bottom: Service cards row */}
-                  <ServiceCardsRow onOpenCategory={handleOpenCategory} visibility={v} />
+                  <ServiceCardsRow 
+                    onOpenCategory={handleOpenCategory} 
+                    visibility={v} 
+                    onRequestPinSetup={() => {
+                      setOpenAccountDirectly(true);
+                      setShowSettings(true);
+                    }}
+                  />
                 </div>
 
                 {/* Right — Shortcuts */}
                 <div className="flex flex-col shrink-0 min-h-0" style={{ width: "280px" }}>
-                  <ShortcutsColumn onOpenSurvey={() => setShowSurvey(true)} onLaunchTool={(id) => setActiveTool(id as any)} />
+                  <ShortcutsColumn 
+                    onOpenSurvey={() => setShowSurvey(true)} 
+                    onLaunchTool={(id) => setActiveTool(id as any)} 
+                    onRequestPinSetup={() => {
+                      setOpenAccountDirectly(true);
+                      setShowSettings(true);
+                    }}
+                  />
                 </div>
               </div>
             ) : layoutVersion === 1 ? (
@@ -779,12 +801,23 @@ function BedsideScreen() {
                       onOpenCategory={handleOpenCategory} 
                       onLaunchTool={(id) => setActiveTool(id as any)} 
                       visibility={v}
+                      onRequestPinSetup={() => {
+                        setOpenAccountDirectly(true);
+                        setShowSettings(true);
+                      }}
                     />
                   </div>
 
                   {/* Right — Shortcuts */}
                   <div className="flex flex-col shrink-0 min-h-0" style={{ width: "280px" }}>
-                    <ShortcutsColumn onOpenSurvey={() => setShowSurvey(true)} onLaunchTool={(id) => setActiveTool(id as any)} />
+                    <ShortcutsColumn 
+                      onOpenSurvey={() => setShowSurvey(true)} 
+                      onLaunchTool={(id) => setActiveTool(id as any)} 
+                      onRequestPinSetup={() => {
+                        setOpenAccountDirectly(true);
+                        setShowSettings(true);
+                      }}
+                    />
                   </div>
                 </div>
               </>
@@ -811,12 +844,25 @@ function BedsideScreen() {
                       swapped 
                       onLaunchTool={(id) => setActiveTool(id as any)} 
                       visibility={v}
+                      onRequestPinSetup={() => {
+                        setOpenAccountDirectly(true);
+                        setShowSettings(true);
+                      }}
                     />
                   </div>
 
                   {/* Right — Services stacked vertically */}
                   <div className="flex flex-col shrink-0 min-h-0" style={{ width: "280px" }}>
-                    <ShortcutsColumn contained onOpenSurvey={() => setShowSurvey(true)} swapped onLaunchTool={(id) => setActiveTool(id as any)} />
+                    <ShortcutsColumn 
+                      contained 
+                      onOpenSurvey={() => setShowSurvey(true)} 
+                      swapped 
+                      onLaunchTool={(id) => setActiveTool(id as any)} 
+                      onRequestPinSetup={() => {
+                        setOpenAccountDirectly(true);
+                        setShowSettings(true);
+                      }}
+                    />
                   </div>
                 </div>
               </>
@@ -882,6 +928,10 @@ function BedsideScreen() {
               setShowIptv(true);
               setOpenCategory(null);
             }}
+            onRequestPinSetup={() => {
+              setOpenAccountDirectly(true);
+              setShowSettings(true);
+            }}
           />
         )}
 
@@ -902,11 +952,13 @@ function BedsideScreen() {
             onClose={() => {
               setShowSettings(false);
               setActiveCareRole(null);
+              setOpenAccountDirectly(false);
             }}
             onFullscreenTap={handleFullscreenTap}
             isFullscreen={isFullscreen}
             activeCareRole={activeCareRole}
             setActiveCareRole={setActiveCareRole}
+            openAccountDirectly={openAccountDirectly}
           />
         )}
 

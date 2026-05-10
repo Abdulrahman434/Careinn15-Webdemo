@@ -1707,12 +1707,14 @@ export function SettingsPanel({
   isFullscreen,
   activeCareRole,
   setActiveCareRole,
+  openAccountDirectly,
 }: {
   onClose: () => void;
   onFullscreenTap: () => void;
   isFullscreen: boolean;
   activeCareRole: "nurse" | "doctor" | null;
   setActiveCareRole: (role: "nurse" | "doctor" | null) => void;
+  openAccountDirectly?: boolean;
 }) {
   const { theme: t, darkMode, setDarkMode, castDevice, setCastDevice, locale: currentLocale, setLocale, prayerAlarm, setPrayerAlarm } = useTheme();
   const { t: tr, isRTL, fontFamily, locale } = useLocale();
@@ -1814,6 +1816,12 @@ export function SettingsPanel({
   const [showLangDialog, setShowLangDialog] = useState(false);
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
+
+  useEffect(() => {
+    if (openAccountDirectly) {
+      setShowAccountDialog(true);
+    }
+  }, [openAccountDirectly]);
 
   // Listen for CareMe "Nurse View" button event
   useEffect(() => {

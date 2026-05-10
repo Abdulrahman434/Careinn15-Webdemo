@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 import { useTheme, WEIGHT, TYPE_SCALE } from "./ThemeContext";
 import { useLocale } from "./i18n";
+import { ConfirmDialog } from "./ConfirmDialog";
 import islamicBg from "../../assets/5fe21555a4f83b05fa771caa690aaf6f27d2f6ec.png";
 import { getPrayerStatus, PRAYER_NAMES, formatPrayerTime } from "../utils/prayerUtils";
 import { Prayer } from "adhan";
@@ -1112,65 +1113,14 @@ export function TasbihScreenSaver({ onClose }: TasbihScreenSaverProps) {
         </motion.div>
       </div>
 
-      {/* ── Reset confirmation dialog ── */}
-      <AnimatePresence>
-        {showResetConfirm && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 z-10"
-              style={{ backgroundColor: pal.overlayBg }}
-              onClick={(e) => { e.stopPropagation(); setShowResetConfirm(false); }}
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="absolute z-20 flex flex-col"
-              style={{
-                width: "420px", backgroundColor: pal.surface, borderRadius: theme.radiusXl,
-                padding: "28px", backdropFilter: "blur(16px)",
-                boxShadow: `0 24px 64px rgba(0,0,0,0.4), 0 0 1px ${pal.border}`,
-                border: `1px solid ${pal.border}`,
-                top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 style={{ fontFamily: theme.fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: pal.textPrimary, margin: 0, marginBottom: "8px" }}>
-                {t("tasbih.resetConfirmTitle")}
-              </h3>
-              <p style={{ fontFamily: theme.fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.normal, color: pal.textSecondary, margin: 0, marginBottom: "24px" }}>
-                {t("tasbih.resetConfirmBody")}
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={(e) => { e.stopPropagation(); setShowResetConfirm(false); }}
-                  className="flex-1 flex items-center justify-center cursor-pointer active:scale-[0.96] transition-transform"
-                  style={{
-                    height: "52px", borderRadius: theme.radiusLg,
-                    border: `1px solid ${pal.border}`, backgroundColor: pal.surfaceElevated,
-                    fontFamily: theme.fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.semibold,
-                    color: pal.textSecondary, outline: "none",
-                  }}
-                >
-                  {t("general.cancel")}
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleReset(); }}
-                  className="flex-1 flex items-center justify-center cursor-pointer active:scale-[0.96] transition-transform"
-                  style={{
-                    height: "52px", borderRadius: theme.radiusLg, border: "none",
-                    backgroundColor: theme.primary, fontFamily: theme.fontFamily,
-                    fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.semibold, color: "#FFFFFF",
-                    outline: "none", boxShadow: `0 4px 20px ${pal.glowStrong}`,
-                  }}
-                >
-                  {t("tasbih.resetConfirm")}
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      <ConfirmDialog
+        visible={showResetConfirm}
+        title={t("tasbih.resetConfirmTitle")}
+        message={t("tasbih.resetConfirmBody")}
+        confirmLabel={t("tasbih.resetConfirm")}
+        onConfirm={handleReset}
+        onCancel={() => setShowResetConfirm(false)}
+      />
     </motion.div>
   );
 }

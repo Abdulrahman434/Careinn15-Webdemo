@@ -34,6 +34,7 @@ const translations: Record<string, TranslationEntry> = {
   "general.aboutUs": { en: "About Us", ar: "عن المستشفى", ur: "ہمارے بارے میں" },
   "general.close": { en: "Close", ar: "إغلاق", ur: "بند کریں" },
   "general.cancel": { en: "Cancel", ar: "إلغاء", ur: "منسوخ" },
+  "general.logout": { en: "Logout", ar: "تسجيل الخروج", ur: "لاگ آؤٹ" },
   "general.confirm": { en: "Confirm", ar: "تأكيد", ur: "تصدیق کریں" },
   "general.back": { en: "Back", ar: "رجوع", ur: "واپس" },
   "general.room": { en: "Room", ar: "غرفة", ur: "کمرہ" },
@@ -730,7 +731,7 @@ const translations: Record<string, TranslationEntry> = {
   "settings.account.overview.changeP": { en: "Change PIN", ar: "تغيير الرمز السري" },
   "settings.account.overview.changeNfc": { en: "Register New NFC Card", ar: "تسجيل بطاقة جديدة" },
   "settings.account.overview.remove": { en: "Remove Account", ar: "إزالة الحساب" },
-  "settings.account.overview.removeConfirm": { en: "Are you sure you want to remove your account?", ar: "هل أنت متأكد أنك تريد إزالة حسابك؟" },
+  "settings.account.overview.removeConfirm": { en: "Are you sure you want to logout from your account?", ar: "هل أنت متأكد أنك تريد تسجيل الخروج من حسابك؟" },
   "settings.account.setPin.title": { en: "Set a 4-Digit PIN", ar: "قم بتعيين رمز سري من 4 أرقام" },
   "settings.account.setPin.subtitle": { en: "This PIN will be used to unlock your screen.", ar: "سيتم استخدام هذا الرمز لفتح شاشتك." },
   "settings.account.confirmPin.title": { en: "Confirm your PIN", ar: "تأكيد الرمز السري" },
@@ -791,7 +792,23 @@ const translations: Record<string, TranslationEntry> = {
     en: "Incorrect PIN",
     ar: "رمز غير صحيح",
     ur: "غلط PIN"
-  }
+  },
+
+  /* ── App Lock ── */
+  "appLock.lock.title": { en: "Lock this app", ar: "قفل هذا التطبيق", ur: "یہ ایپ مقفل کریں" },
+  "appLock.lock.subtitle": { en: "Require PIN to open", ar: "يتطلب رمز PIN للفتح", ur: "کھولنے کے لیے PIN درکار" },
+  "appLock.lock.button": { en: "Lock", ar: "قفل", ur: "مقفل کریں" },
+  "appLock.unlock.title": { en: "Unlock this app", ar: "إلغاء قفل هذا التطبيق", ur: "ایپ کھولیں" },
+  "appLock.unlock.subtitle": { en: "Currently requires PIN to open", ar: "يتطلب حاليًا رمز PIN للفتح", ur: "فی الحال PIN درکار ہے" },
+  "appLock.unlock.button": { en: "Unlock", ar: "فتح القفل", ur: "غیر مقفل کریں" },
+  "appLock.verify.title": { en: "Enter PIN to unlock", ar: "أدخل PIN للفتح", ur: "PIN درج کریں" },
+  "appLock.open.title": { en: "Enter PIN to open", ar: "أدخل PIN للفتح", ur: "کھولنے کے لیے PIN درج کریں" },
+  "appLock.noPinSetup.title": { en: "No PIN set", ar: "لم يتم تعيين رمز PIN", ur: "PIN سیٹ نہیں" },
+  "appLock.noPinSetup.subtitle": { en: "Set up a PIN first to lock apps", ar: "قم بإعداد رمز PIN أولاً لقفل التطبيقات", ur: "ایپس مقفل کرنے کے لیے پہلے PIN سیٹ کریں" },
+  "appLock.noPinSetup.button": { en: "Set up PIN", ar: "إعداد PIN", ur: "PIN ترتیب دیں" },
+  "appLock.locked": { en: "Locked", ar: "مقفل", ur: "مقفل" },
+  "appLock.unlocked": { en: "Unlocked", ar: "تم الفتح", ur: "کھل گیا" },
+  "appLock.cancel": { en: "Cancel", ar: "إلغاء", ur: "منسوخ کریں" }
 };
 
 /* ── Number Localization ── */

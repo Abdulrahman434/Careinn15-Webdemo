@@ -14,7 +14,11 @@ type Step =
   | 'nfc-tap1'
   | 'nfc-tap2'
   | 'nfc-mismatch'
+  | 'verify-current-pin'
+  | 'remove-confirm'
   | 'success';
+
+type PendingAction = 'reset-pin' | 'reset-nfc' | 'remove-account' | null;
 
 function CenteredDialog({
   children,
@@ -206,6 +210,8 @@ export function MyAccountDialog({
   const [pin2, setPin2] = useState("");
   const [error, setError] = useState(false);
   const [nfcUid1, setNfcUid1] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [verifyPinVal, setVerifyPinVal] = useState("");
 
   const account = getAccount();
 
@@ -220,6 +226,8 @@ export function MyAccountDialog({
       setPin2("");
       setError(false);
       setNfcUid1(null);
+      setPendingAction(null);
+      setVerifyPinVal("");
     }
   }, [open]);
 
@@ -277,7 +285,12 @@ export function MyAccountDialog({
             
             <div className="flex flex-col w-full gap-3">
               <button
-                onClick={() => { setPin1(""); setPin2(""); setStep('setup-pin1'); }}
+                onClick={() => { 
+                  setVerifyPinVal(""); 
+                  setError(false);
+                  setPendingAction('reset-pin');
+                  setStep('verify-current-pin'); 
+                }}
                 className="flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97]"
                 style={{ height: "44px", borderRadius: t.radiusMd, backgroundColor: t.primarySubtle, border: `1px solid ${t.primary}44` }}
               >
@@ -286,7 +299,12 @@ export function MyAccountDialog({
                 </span>
               </button>
               <button
-                onClick={() => { setNfcUid1(null); setStep('nfc-tap1'); }}
+                onClick={() => { 
+                  setVerifyPinVal(""); 
+                  setError(false);
+                  setPendingAction('reset-nfc');
+                  setStep('verify-current-pin'); 
+                }}
                 className="flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97]"
                 style={{ height: "44px", borderRadius: t.radiusMd, backgroundColor: t.tileInactiveBg, border: `1px solid ${t.borderDefault}` }}
               >
@@ -296,16 +314,16 @@ export function MyAccountDialog({
               </button>
               <button
                 onClick={() => {
-                  if (window.confirm(tr("settings.account.overview.removeConfirm"))) {
-                    clearAccount();
-                    onClose();
-                  }
+                  setVerifyPinVal("");
+                  setError(false);
+                  setPendingAction('remove-account');
+                  setStep('verify-current-pin');
                 }}
                 className="flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97] mt-2"
-                style={{ height: "44px", borderRadius: t.radiusMd, backgroundColor: "transparent", border: "none" }}
+                style={{ height: "44px", border: "none", background: "none" }}
               >
-                <Trash2 size={16} style={{ color: "#D10044" }} />
-                <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 600, color: "#D10044" }}>
+                <Trash2 size={16} style={{ color: "#EF4444" }} />
+                <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 600, color: "#EF4444" }}>
                   {tr("settings.account.overview.remove")}
                 </span>
               </button>
@@ -447,12 +465,109 @@ export function MyAccountDialog({
           </div>
         );
 
+      case 'verify-current-pin':
+        return (
+          <div className="flex flex-col items-center" style={{ padding: "32px 24px" }}>
+            <div
+              className="flex items-center justify-center mb-6"
+              style={{ width: "56px", height: "56px", borderRadius: t.radiusLg, backgroundColor: t.primarySubtle }}
+            >
+              <Shield size={28} style={{ color: t.primary }} />
+            </div>
+            <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
+              {tr("appLock.verify.title")}
+            </span>
+            <span style={{ fontFamily: t.fontFamily, fontSize: "13px", color: t.textMuted, textAlign: "center", marginBottom: "24px" }}>
+              {tr("settings.account.setPin.subtitle")}
+            </span>
+
+            <PinKeypad 
+              pin={verifyPinVal} 
+              setPin={setVerifyPinVal} 
+              error={error} 
+              onComplete={async (p) => {
+                const ok = await verifyPin(p);
+                if (ok) {
+                  if (pendingAction === 'remove-account') {
+                    setStep('remove-confirm');
+                  } else if (pendingAction === 'reset-pin') {
+                    setPin1("");
+                    setPin2("");
+                    setStep('setup-pin1');
+                  } else if (pendingAction === 'reset-nfc') {
+                    setNfcUid1(null);
+                    setStep('nfc-tap1');
+                  }
+                } else {
+                  setError(true);
+                  setTimeout(() => {
+                    setVerifyPinVal("");
+                    setError(false);
+                  }, 1000);
+                }
+              }} 
+            />
+          </div>
+        );
+
+      case 'remove-confirm':
+        return (
+          <div className="flex flex-col items-center" style={{ padding: "32px 24px" }}>
+            <div
+              className="flex items-center justify-center mb-6"
+              style={{ width: "64px", height: "64px", borderRadius: t.radiusFull, backgroundColor: "#FEE2E2" }}
+            >
+              <Trash2 size={32} style={{ color: "#EF4444" }} />
+            </div>
+            <span style={{ fontFamily: t.fontFamily, fontSize: "20px", fontWeight: 700, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
+              {tr("settings.account.overview.removeConfirm")}
+            </span>
+            <span style={{ fontFamily: t.fontFamily, fontSize: "14px", color: t.textMuted, textAlign: "center", marginBottom: "24px" }}>
+              {tr("appLock.lock.subtitle")} {/* Or another descriptive key */}
+            </span>
+
+            <div className="flex flex-col w-full gap-3">
+              <button
+                onClick={() => {
+                  clearAccount();
+                  setStep('success');
+                }}
+                className="flex items-center justify-center w-full py-3.5 cursor-pointer active:scale-95 transition-transform"
+                style={{
+                  backgroundColor: "#EF4444",
+                  borderRadius: t.radiusLg,
+                  border: "none",
+                  color: "#FFFFFF",
+                  fontWeight: 700,
+                  fontSize: "16px"
+                }}
+              >
+                {tr("settings.account.overview.remove")}
+              </button>
+              <button
+                onClick={() => setStep('overview')}
+                className="flex items-center justify-center w-full py-3.5 cursor-pointer active:scale-95 transition-transform"
+                style={{
+                  backgroundColor: "transparent",
+                  borderRadius: t.radiusLg,
+                  border: `1.5px solid ${t.borderDefault}`,
+                  color: t.textMuted,
+                  fontWeight: 600,
+                  fontSize: "16px"
+                }}
+              >
+                {tr("appLock.cancel")}
+              </button>
+            </div>
+          </div>
+        );
+
       case 'success':
         return (
           <div className="flex flex-col items-center justify-center" style={{ padding: "40px 24px" }}>
             <CheckCircle size={48} style={{ color: "#10B981", marginBottom: "16px" }} />
             <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, textAlign: "center" }}>
-              {getAccount() ? tr("settings.account.success.updated") : tr("settings.account.success.set")}
+              {pendingAction === 'remove-account' ? tr("general.done") : (getAccount() ? tr("settings.account.success.updated") : tr("settings.account.success.set"))}
             </span>
           </div>
         );

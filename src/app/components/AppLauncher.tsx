@@ -19,7 +19,13 @@ import {
   Search,
   Shield,
   X,
+  Lock,
 } from "lucide-react";
+
+import { useLockedApps } from "../lib/lockedApps";
+import { useLongPress } from "../lib/useLongPress";
+import { AppLockMenu } from "./AppLockMenu";
+import { LockBadge } from "./LockBadge";
 
 // import { InternetBrowser } from "./InternetBrowser";
 import { useTheme } from "./ThemeContext";
@@ -1280,8 +1286,6 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
               { id: "edu-emotional-health", name: "Emotional Health\nAfter Delivery", nameKey: "edu.emotionalHealth", type: "video" as const },
               { id: "edu-scar-care", name: "Scar Care &\nHealing Timeline", nameKey: "edu.scarCare", type: "pdf" as const },
               { id: "edu-sleep-tips", name: "Sleep Positions\nAfter C-Section", nameKey: "edu.sleepTips", type: "pdf" as const },
-              { id: "edu-pelvic-floor", name: "Pelvic Floor\nExercises", nameKey: "edu.pelvicFloor", type: "video" as const },
-              { id: "edu-when-to-call", name: "When to Call\nYour Doctor", nameKey: "edu.whenToCall", type: "pdf" as const },
             ].map((item) => ({
               id: item.id,
               name: item.name,
@@ -1312,28 +1316,46 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
 
 /* ── App Tile ──────────────────────────────────────────────── */
 
-function AppTile({ app, onTap }: { app: AppItem; onTap: () => void }) {
-  const { onPointerDown, rippleElements } = useRipple("rgba(255,255,255,0.15)");
-  const { t } = useLocale();
+function AppTile({ app, onTap, onLongPress, isLocked }: { app: AppItem; onTap: () => void; onLongPress: () => void; isLocked: boolean }) {
   const { theme } = useTheme();
+  const { t } = useLocale();
+  const [pressed, setPressed] = useState(false);
+  const { onPointerDown, rippleElements } = useRipple("rgba(255,255,255,0.15)");
+
+  const { handlers, handleClick } = useLongPress(onLongPress, 600);
   const displayName = app.nameKey ? t(app.nameKey) : app.name;
 
   return (
     <button
-      onPointerDown={onPointerDown}
-      onClick={onTap}
-      className="relative overflow-hidden flex flex-col items-center gap-3 hover:scale-[1.05] active:scale-[0.94] transition-transform duration-200 cursor-pointer"
+      data-nav="true"
+      onPointerDown={(e) => { onPointerDown(e); handlers.onPointerDown(); setPressed(true); }}
+      onPointerUp={() => { handlers.onPointerUp(); setPressed(false); }}
+      onPointerLeave={() => { handlers.onPointerLeave(); setPressed(false); }}
+      onClick={() => handleClick(onTap)}
+      className="relative flex flex-col items-center gap-3 transition-transform duration-100 ease-out active:scale-95 cursor-pointer"
+      style={{ 
+        width: 160, 
+        transform: pressed ? "scale(0.96)" : "scale(1)",
+        outline: "none",
+        border: "none",
+        background: "none",
+        padding: 0
+      }}
     >
-      {rippleElements}
+      {/* Icon Square */}
       <div
-        className="flex items-center justify-center relative overflow-hidden"
+        className="relative overflow-hidden flex items-center justify-center shrink-0"
         style={{
-          width: "150px",
-          height: "150px",
+          width: 140,
+          height: 140,
           borderRadius: theme.radiusXl,
           background: app.bg,
+          boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3), 0 8px 10px -6px rgba(0,0,0,0.3)",
+          border: "1.5px solid rgba(255,255,255,0.1)",
         }}
       >
+        {rippleElements}
+        {isLocked && <LockBadge />}
         {app.customRender ? (
           <div className="absolute inset-0 flex items-center justify-center overflow-hidden" style={{ borderRadius: theme.radiusXl }}>
             {app.customRender()}
@@ -1379,15 +1401,19 @@ export function AppLauncher({
   onLaunchGame,
   onLaunchTool,
   onLaunchIptv,
+  onRequestPinSetup,
 }: {
   categoryKey: string;
   onClose: () => void;
   onLaunchGame?: (gameId: string) => void;
   onLaunchTool?: (toolId: string) => void;
   onLaunchIptv?: () => void;
+  onRequestPinSetup?: () => void;
 }) {
   const { theme } = useTheme();
   const { t, locale, isRTL } = useLocale();
+  const lockedIds = useLockedApps();
+  const [lockMenu, setLockMenu] = useState<string | null>(null);
   const [activeKey, setActiveKey] = useState(categoryKey);
   const allCategories = getCategories(theme, locale);
   const category = allCategories[activeKey];
@@ -1649,7 +1675,19 @@ export function AppLauncher({
                   }}
                 >
                   {pageApps.map((app) => (
-                    <AppTile key={app.id} app={app} onTap={() => handleAppTap(app)} />
+                    <AppTile
+                      key={app.id}
+                      app={app}
+                      onTap={() => {
+                        if (lockedIds.has(app.id)) {
+                          setLockMenu(app.id + "__open");
+                        } else {
+                          handleAppTap(app);
+                        }
+                      }}
+                      onLongPress={() => setLockMenu(app.id)}
+                      isLocked={lockedIds.has(app.id)}
+                    />
                   ))}
                 </div>
               </div>
@@ -1849,6 +1887,22 @@ export function AppLauncher({
       )}
       */}
 
+      {/* App Lock Menu Overlay */}
+      {lockMenu && (
+        <AppLockMenu
+          appId={lockMenu.replace("__open", "")}
+          appName={category.apps.find(a => a.id === lockMenu.replace("__open", ""))?.name || lockMenu.replace("__open", "")}
+          isCurrentlyLocked={lockedIds.has(lockMenu.replace("__open", ""))}
+          anchorRect={null}
+          onClose={() => setLockMenu(null)}
+          onRequestPinSetup={onRequestPinSetup || (() => {})}
+          onOpenApp={lockMenu.endsWith("__open") ? () => {
+            const id = lockMenu.replace("__open", "");
+            const targetApp = category.apps.find(a => a.id === id);
+            if (targetApp) handleAppTap(targetApp);
+          } : undefined}
+        />
+      )}
     </div>
   );
 }

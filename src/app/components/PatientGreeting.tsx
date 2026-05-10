@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useTheme, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, LogOut } from "lucide-react";
 import { AutoCarousel } from "./AutoCarousel";
 import { useNurseStore } from "./NurseDataStore";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { useGuestMode } from "../lib/guestMode";
+import { useAuth } from "./AuthContext";
 import svgPaths from "../../imports/svg-ca68x68c4i";
 
 function AboutUsIcon({ color }: { color?: string }) {
@@ -41,11 +43,13 @@ export function PatientGreeting({
   showAboutUs?: boolean;
 }) {
   const [pressed, setPressed] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
   const rippleElements = useRipple(theme.primarySubtle).rippleElements;
   const nurseStore = useNurseStore();
   const { isGuest } = useGuestMode();
+  const { logout } = useAuth();
 
   return (
     <div
@@ -116,23 +120,9 @@ export function PatientGreeting({
           >{t("general.welcome", theme.hospitalShortName)}</p>
         </div>
 
-        {/* Badges */}
+        {/* Badges: [Room] [Ext] [Logout] */}
         {!isGuest && (
           <div className="flex items-center flex-wrap gap-2" style={{ paddingTop: SPACE[2] }}>
-            <div
-              className="flex items-center px-3 py-1.5"
-              style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
-            >
-              <span
-                style={{
-                  fontFamily: fontFamily,
-                  ...TEXT_STYLE.pill,
-                  color: theme.primary,
-                }}
-              >
-                {t("greeting.mrn")} {nurseStore.patient.mrn}
-              </span>
-            </div>
             <div
               className="flex items-center px-3 py-1.5"
               style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
@@ -161,6 +151,26 @@ export function PatientGreeting({
                 {t("greeting.ext", nurseStore.patient.extension)}
               </span>
             </div>
+            <button
+              onClick={() => setShowLogoutConfirm(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer active:scale-95 transition-transform border-none outline-none"
+              style={{ 
+                backgroundColor: "#FEE2E2", 
+                borderRadius: theme.radiusFull,
+              }}
+            >
+              <LogOut size={12} style={{ color: "#EF4444" }} />
+              <span
+                style={{
+                  fontFamily: fontFamily,
+                  ...TEXT_STYLE.pill,
+                  color: "#EF4444",
+                  fontWeight: WEIGHT.bold,
+                }}
+              >
+                {t("general.logout")}
+              </span>
+            </button>
           </div>
         )}
       </div>
@@ -223,6 +233,19 @@ export function PatientGreeting({
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        visible={showLogoutConfirm}
+        title={t("general.logout")}
+        message={t("settings.account.overview.removeConfirm")}
+        confirmLabel={t("general.logout")}
+        variant="danger"
+        onConfirm={() => {
+          setShowLogoutConfirm(false);
+          logout();
+        }}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </div>
   );
 }
