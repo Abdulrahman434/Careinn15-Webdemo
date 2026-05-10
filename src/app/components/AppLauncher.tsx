@@ -1402,6 +1402,8 @@ export function AppLauncher({
   onLaunchTool,
   onLaunchIptv,
   onRequestPinSetup,
+  lockMenu,
+  onLockMenuChange: setLockMenu = () => {}
 }: {
   categoryKey: string;
   onClose: () => void;
@@ -1409,11 +1411,12 @@ export function AppLauncher({
   onLaunchTool?: (toolId: string) => void;
   onLaunchIptv?: () => void;
   onRequestPinSetup?: () => void;
+  lockMenu?: string | null;
+  onLockMenuChange?: (val: string | null) => void;
 }) {
   const { theme } = useTheme();
   const { t, locale, isRTL } = useLocale();
   const lockedIds = useLockedApps();
-  const [lockMenu, setLockMenu] = useState<string | null>(null);
   const [activeKey, setActiveKey] = useState(categoryKey);
   const allCategories = getCategories(theme, locale);
   const category = allCategories[activeKey];

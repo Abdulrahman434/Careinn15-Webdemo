@@ -735,7 +735,9 @@ export function ServicesGrid({
   swapped, 
   compact,
   visibility = DEFAULT_VISIBILITY,
-  onRequestPinSetup
+  onRequestPinSetup,
+  lockMenu,
+  onLockMenuChange: setLockMenu = () => {}
 }: { 
   onOpenCategory?: (key: string) => void; 
   onLaunchTool?: (id: string) => void; 
@@ -744,11 +746,12 @@ export function ServicesGrid({
   compact?: boolean;
   visibility?: SectionVisibility;
   onRequestPinSetup?: () => void;
+  lockMenu?: string | null;
+  onLockMenuChange?: (val: string | null) => void;
 }) {
   const { theme } = useTheme();
   const { t } = useLocale();
   const lockedIds = useLockedApps();
-  const [lockMenu, setLockMenu] = useState<string | null>(null);
 
   const shortcutItems = getShortcutItems(theme.id);
   const gridGap = compact ? "gap-3" : "gap-6";

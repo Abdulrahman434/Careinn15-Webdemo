@@ -113,11 +113,17 @@ function BedsideScreen() {
     }
   });
   const [showConfigurator, setShowConfigurator] = useState(false);
-  const [showAccountLock, setShowAccountLock] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
   const [openAccountDirectly, setOpenAccountDirectly] = useState(false);
 
   const [showCareMeExpanded, setShowCareMeExpanded] = useState(false);
   const [showCareMePinDialog, setShowCareMePinDialog] = useState(false);
+  const [lockMenuApp, setLockMenuApp] = useState<string | null>(null);
+
+  const lockActiveRef = useRef(false);
+
+  // Note: Existing history back/push logic for normal overlays at line 174 
+  // is still needed for non-lock overlays, but we've integrated popstate above.
   const { isGuest, careMeUnlocked } = useGuestMode();
   const [showCall, setShowCall] = useState(false);
   const [showFoodOrder, setShowFoodOrder] = useState(false);
@@ -157,19 +163,51 @@ function BedsideScreen() {
     setActiveCareRole(null);
   }, []);
 
-  const lastOverlayState = useRef(false);
-  const isPopping = useRef(false);
+  // ── Security & History Management ──
+
+  // Global monitoring for Android and security gates
+  useEffect(() => {
+    window.__isLockActive = () => lockActiveRef.current;
+    return () => { delete (window as any).__isLockActive; };
+  }, []);
 
   useEffect(() => {
-    const onPopState = () => {
+    lockActiveRef.current = 
+      isLocked || 
+      showCareMePinDialog || 
+      !!lockMenuApp;
+  }, [isLocked, showCareMePinDialog, lockMenuApp]);
+
+  // Initialize history state once on mount
+  useEffect(() => {
+    window.history.pushState({ careinnLock: true }, "");
+  }, []);
+
+  // FIX 2: Block browser back navigation when lock is active
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      if (lockActiveRef.current) {
+        // Lock is active — push state back immediately to 
+        // prevent navigation. The back button is neutralized.
+        window.history.pushState({ careinnLock: true }, "");
+        return;
+      }
+      
+      // If no lock, but an overlay is open, close it (existing logic)
       if (anyOverlayOpen) {
         isPopping.current = true;
         handleGoHome();
       }
     };
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, [anyOverlayOpen, handleGoHome]);
+
+  const lastOverlayState = useRef(false);
+  const isPopping = useRef(false);
+
+  // Replaced by unified popstate effect above
 
   useEffect(() => {
     if (anyOverlayOpen && !lastOverlayState.current) {
@@ -535,6 +573,9 @@ function BedsideScreen() {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Escape closes the topmost overlay
       if (e.key === "Escape") {
+        // NEVER dismiss security dialogs with Escape
+        if (lockActiveRef.current) return;
+
         if (activeTool) { setActiveTool(null); return; }
         if (activeGame) { setActiveGame(null); return; }
         if (activeBroadcast) { setActiveBroadcast(null); return; }
@@ -805,6 +846,8 @@ function BedsideScreen() {
                         setOpenAccountDirectly(true);
                         setShowSettings(true);
                       }}
+                      lockMenu={lockMenuApp}
+                      onLockMenuChange={setLockMenuApp}
                     />
                   </div>
 
@@ -848,6 +891,8 @@ function BedsideScreen() {
                         setOpenAccountDirectly(true);
                         setShowSettings(true);
                       }}
+                      lockMenu={lockMenuApp}
+                      onLockMenuChange={setLockMenuApp}
                     />
                   </div>
 
@@ -932,6 +977,8 @@ function BedsideScreen() {
               setOpenAccountDirectly(true);
               setShowSettings(true);
             }}
+            lockMenu={lockMenuApp}
+            onLockMenuChange={setLockMenuApp}
           />
         )}
 
@@ -1000,7 +1047,7 @@ function BedsideScreen() {
         {showTasbih && (
           <TasbihScreenSaver onClose={() => {
             if (isAccountSet()) {
-              setShowAccountLock(true);
+              setIsLocked(true);
             } else {
               setShowTasbih(false);
             }
@@ -1070,17 +1117,17 @@ function BedsideScreen() {
       )}
 
       <AccountLockScreen
-        visible={showAccountLock}
+        visible={isLocked}
         onUnlock={() => {
           guestModeStore.exitGuestMode();
-          setShowAccountLock(false);
+          setIsLocked(false);
           setShowTasbih(false);
         }}
         onSkipAsGuest={() => {
-          setShowAccountLock(false);
+          setIsLocked(false);
           setShowTasbih(false);
         }}
-        onClose={() => setShowAccountLock(false)}
+        onClose={() => setIsLocked(false)}
       />
 
       {showCareMePinDialog && (
