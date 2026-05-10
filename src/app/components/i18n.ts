@@ -723,6 +723,34 @@ const translations: Record<string, TranslationEntry> = {
   "browser.openExternal": { en: "Open in External Browser", ar: "فتح في متصفح خارجي", ur: "بیرونی براؤزر میں کھولیں" },
   "browser.waitLonger": { en: "Try waiting a bit longer", ar: "حاول الانتظار لفترة أطول قليلاً", ur: "تھوڑی دیر اور انتظار کرنے کی کوشش کریں" },
   "browser.securityNotice": { en: "You are browsing within the secure CareInn environment. External links are monitored.", ar: "أنت تتصفح داخل بيئة CareInn الآمنة. يتم مراقبة الروابط الخارجية.", ur: "آپ CareInn کے محفوظ ماحول میں براؤز کر رہے ہیں۔ بیرونی لنکس کی نگرانی کی جاتی ہے۔" },
+  // Account / Authentication
+  "settings.account": { en: "My Account", ar: "حسابي" },
+  "settings.account.subtitle.set": { en: "Account Configured", ar: "تم إعداد الحساب" },
+  "settings.account.subtitle.unset": { en: "Tap to set up PIN & NFC", ar: "انقر لإعداد الرمز السري والبطاقة" },
+  "settings.account.overview.changeP": { en: "Change PIN", ar: "تغيير الرمز السري" },
+  "settings.account.overview.changeNfc": { en: "Register New NFC Card", ar: "تسجيل بطاقة جديدة" },
+  "settings.account.overview.remove": { en: "Remove Account", ar: "إزالة الحساب" },
+  "settings.account.overview.removeConfirm": { en: "Are you sure you want to remove your account?", ar: "هل أنت متأكد أنك تريد إزالة حسابك؟" },
+  "settings.account.setPin.title": { en: "Set a 4-Digit PIN", ar: "قم بتعيين رمز سري من 4 أرقام" },
+  "settings.account.setPin.subtitle": { en: "This PIN will be used to unlock your screen.", ar: "سيتم استخدام هذا الرمز لفتح شاشتك." },
+  "settings.account.confirmPin.title": { en: "Confirm your PIN", ar: "تأكيد الرمز السري" },
+  "settings.account.pin.mismatch": { en: "PINs do not match. Please try again.", ar: "الرموز غير متطابقة. يرجى المحاولة مرة أخرى." },
+  "settings.account.nfc.prompt.title": { en: "Register an NFC Card?", ar: "هل تريد تسجيل بطاقة NFC؟" },
+  "settings.account.nfc.prompt.body": { en: "You can tap a compatible NFC card or wristband to unlock the screen without entering your PIN.", ar: "يمكنك لمس بطاقة أو سوار متوافق لفتح الشاشة دون إدخال الرمز السري." },
+  "settings.account.nfc.skip": { en: "Skip for now", ar: "تخطي الآن" },
+  "settings.account.nfc.register": { en: "Register Card", ar: "تسجيل البطاقة" },
+  "settings.account.nfc.tap1.title": { en: "Tap Your Card Now", ar: "قم بتمرير بطاقتك الآن" },
+  "settings.account.nfc.tap1.body": { en: "Hold your NFC card or wristband near the reader.", ar: "ضع بطاقتك أو سوارك بالقرب من القارئ." },
+  "settings.account.nfc.tap2.title": { en: "Tap Again to Confirm", ar: "قم بتمريرها مرة أخرى للتأكيد" },
+  "settings.account.nfc.mismatch": { en: "Cards do not match. Please try again.", ar: "البطاقات غير متطابقة. يرجى المحاولة مرة أخرى." },
+  "settings.account.success.set": { en: "Account successfully set up!", ar: "تم إعداد الحساب بنجاح!" },
+  "settings.account.success.updated": { en: "Account updated successfully!", ar: "تم تحديث الحساب بنجاح!" },
+  "settings.account.cancel": { en: "Cancel", ar: "إلغاء" },
+
+  // Lock Screen
+  "lock.title": { en: "Enter PIN", ar: "أدخل الرمز السري" },
+  "lock.nfc.hint": { en: "or tap your NFC card to unlock", ar: "أو قم بتمرير بطاقتك لفتح الشاشة" },
+  "lock.wrongPin": { en: "Incorrect PIN", ar: "الرمز السري غير صحيح" }
 };
 
 /* ── Number Localization ── */

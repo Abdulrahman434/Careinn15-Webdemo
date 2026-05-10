@@ -56,6 +56,8 @@ import { RoomControl } from "./components/RoomControl";
 
 import { getPrayerStatus, PRAYER_NAMES, formatPrayerTime } from "./utils/prayerUtils";
 import { Prayer } from "adhan";
+import { isAccountSet } from "./lib/accountAuth";
+import { AccountLockScreen } from "./components/AccountLockScreen";
 
 const DESIGN_W = 1920;
 const DESIGN_H = 1080;
@@ -107,6 +109,7 @@ function BedsideScreen() {
     }
   });
   const [showConfigurator, setShowConfigurator] = useState(false);
+  const [showAccountLock, setShowAccountLock] = useState(false);
 
   const [showCareMeExpanded, setShowCareMeExpanded] = useState(false);
   const [showCall, setShowCall] = useState(false);
@@ -917,7 +920,12 @@ function BedsideScreen() {
 
         {/* Tasbih Screen Saver */}
         {showTasbih && (
-          <TasbihScreenSaver onClose={() => setShowTasbih(false)} />
+          <TasbihScreenSaver onClose={() => {
+            setShowTasbih(false);
+            if (isAccountSet()) {
+              setShowAccountLock(true);
+            }
+          }} />
         )}
 
         {/* Hospital Broadcast Overlay */}
@@ -981,6 +989,12 @@ function BedsideScreen() {
       {showSurvey && (
         <SurveyModal onClose={() => setShowSurvey(false)} />
       )}
+
+      {/* Account Lock Screen Overlay */}
+      <AccountLockScreen
+        visible={showAccountLock}
+        onUnlock={() => setShowAccountLock(false)}
+      />
 
       <style>{`
         @keyframes spin {

@@ -42,6 +42,7 @@ import {
   Minimize,
   Stethoscope,
   Users,
+  UserCircle,
 } from "lucide-react";
 import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
@@ -50,6 +51,8 @@ import { NurseInterface } from "./nurse/NurseInterface";
 import type { Locale } from "./i18n";
 import imgMosque from "../../assets/b51acb5e2ec4a2c930572c53103b020b12e76ee2.png";
 import { getPrayerStatus, getCountdown, formatPrayerTime, PRAYER_NAMES } from "../utils/prayerUtils";
+import { MyAccountDialog } from "./MyAccountDialog";
+import { isAccountSet } from "../lib/accountAuth";
 
 /* ═══════════════════════════════════════════════════════════════
  * All colors/fonts/radii in this file come from ThemeContext.
@@ -1810,6 +1813,7 @@ export function SettingsPanel({
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showLangDialog, setShowLangDialog] = useState(false);
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
+  const [showAccountDialog, setShowAccountDialog] = useState(false);
 
   // Listen for CareMe "Nurse View" button event
   useEffect(() => {
@@ -2068,6 +2072,20 @@ export function SettingsPanel({
             />
           </div>
 
+          <div className="flex items-center gap-2.5 mt-2.5">
+            <ActionButton
+              icon={<UserCircle size={20} style={{ color: t.primary }} />}
+              label={tr("settings.account")}
+              subtitle={
+                isAccountSet() 
+                  ? tr("settings.account.subtitle.set") 
+                  : tr("settings.account.subtitle.unset")
+              }
+              variant="primary"
+              onClick={() => setShowAccountDialog(true)}
+            />
+          </div>
+
           {/* Spacer */}
           <div className="flex-1" />
 
@@ -2186,6 +2204,13 @@ export function SettingsPanel({
           onClose={() => setShowLangDialog(false)}
           selected={selectedLang}
           onSelect={(lang) => { setSelectedLang(lang); setLocale(lang); }}
+        />
+      )}
+
+      {showAccountDialog && (
+        <MyAccountDialog
+          open={showAccountDialog}
+          onClose={() => setShowAccountDialog(false)}
         />
       )}
 
