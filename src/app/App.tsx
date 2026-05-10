@@ -175,8 +175,9 @@ function BedsideScreen() {
     lockActiveRef.current = 
       isLocked || 
       showCareMePinDialog || 
-      !!lockMenuApp;
-  }, [isLocked, showCareMePinDialog, lockMenuApp]);
+      !!lockMenuApp ||
+      (showTasbih && isAccountSet());
+  }, [isLocked, showCareMePinDialog, lockMenuApp, showTasbih]);
 
   // Initialize history state once on mount
   useEffect(() => {
@@ -187,9 +188,14 @@ function BedsideScreen() {
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
       if (lockActiveRef.current) {
-        // Lock is active — push state back immediately to 
-        // prevent navigation. The back button is neutralized.
+        // Lock is active — push state back immediately
         window.history.pushState({ careinnLock: true }, "");
+
+        // If on Tasbih with an account set, transition to lock screen instead of home
+        if (showTasbih && isAccountSet()) {
+          setIsLocked(true);
+          setShowTasbih(false);
+        }
         return;
       }
       
