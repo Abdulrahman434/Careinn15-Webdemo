@@ -323,15 +323,26 @@ export const KNOWN_APPS = {
   iptv: 'com.bitsarabia.bedsideterminalsolution/.careinn.iptvStreamActivity',
 } as const;
 
-/* ─── IPTV ─── */
+// ── Module-level IPTV state ─────────────────────────────────────────
+// Persists across component mounts/unmounts so channel switching 
+// works even when IptvChannels UI is not mounted.
 
-export type IptvChannel = {
-  id: number;
-  name: string;
-  nameAr: string;
-  url: string;
-  logo: string;
-};
+let _iptvChannels: IptvChannel[] = [];
+let _iptvPlayingId: number | null = null;
+
+/** Called by useIptvChannels when channels load */
+export function _setIptvChannels(channels: IptvChannel[]) {
+  _iptvChannels = channels;
+}
+
+/** Called by IptvChannels when playing state changes */
+export function _setIptvPlayingId(id: number | null) {
+  _iptvPlayingId = id;
+}
+
+export function _getIptvChannels() { return _iptvChannels; }
+export function _getIptvPlayingId() { return _iptvPlayingId; }
+// ───────────────────────────────────────────────────────────────────
 
 export const iptv = {
   /**
@@ -359,9 +370,15 @@ export const iptv = {
     catch { return false; }
   },
 
-  channelNext(channels: IptvChannel[], currentId: number | null): void {
-    if (!channels.length) return;
+  channelNext(): void {
+    const channels = _iptvChannels;
+    const currentId = _iptvPlayingId;
+    if (!channels.length) {
+      console.warn('[iptv] No channels loaded yet');
+      return;
+    }
     if (currentId === null) {
+      // Nothing playing — start from first channel
       iptv.play(channels[0]);
       return;
     }
@@ -370,8 +387,13 @@ export const iptv = {
     iptv.play(next);
   },
 
-  channelPrev(channels: IptvChannel[], currentId: number | null): void {
-    if (!channels.length) return;
+  channelPrev(): void {
+    const channels = _iptvChannels;
+    const currentId = _iptvPlayingId;
+    if (!channels.length) {
+      console.warn('[iptv] No channels loaded yet');
+      return;
+    }
     if (currentId === null) {
       iptv.play(channels[channels.length - 1]);
       return;
@@ -446,7 +468,9 @@ export function useIptvChannels() {
         arr = d.channels;
       }
 
-      setChannels(Array.isArray(arr) ? arr : []);
+      const parsed: IptvChannel[] = Array.isArray(arr) ? arr : [];
+      setChannels(parsed);
+      _setIptvChannels(parsed); // sync to module store
       setLoading(false);
       setError(null);
     } catch (e) {

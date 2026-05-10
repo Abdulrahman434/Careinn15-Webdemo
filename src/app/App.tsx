@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { ThemeProvider, useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "./components/ThemeContext";
 import { IptvChannels } from "./components/IptvChannels";
-import { isAndroidApp, useSipCallState } from "./utils/androidBridge";
+import { useSipCallState } from "./utils/androidBridge";
 import { useLocale } from "./components/i18n";
 import { TopBar } from "./components/TopBar";
 import { NewsTicker } from "./components/NewsTicker";
@@ -62,7 +62,7 @@ import { useGuestMode, guestModeStore } from "./lib/guestMode";
 import { CareMePinDialog } from "./components/CareMePinDialog";
 import { Lock } from "lucide-react";
 import { matchBinding } from "./lib/handsetConfig";
-import { sip } from "./utils/androidBridge";
+import { sip, iptv, _getIptvChannels, _getIptvPlayingId, isAndroidApp, IptvChannel } from "./utils/androidBridge";
 
 
 const DESIGN_W = 1920;
@@ -144,6 +144,31 @@ function BedsideScreen() {
     activeGame || activeTool || showIptv
   );
   const anyOverlayOpen = anyOtherOverlayOpen || showTasbih;
+  
+  const [iptvOsd, setIptvOsd] = useState<{
+    name: string; 
+    nameAr: string;
+    logo: string;
+    index: number;   // e.g. "Channel 5 of 55"
+    total: number;
+  } | null>(null);
+  const osdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showChannelOsd = useCallback((channel: IptvChannel) => {
+    if (osdTimerRef.current) clearTimeout(osdTimerRef.current);
+    const channels = _getIptvChannels();
+    const idx = channels.findIndex(c => c.id === channel.id);
+    setIptvOsd({
+      name: channel.name,
+      nameAr: channel.nameAr,
+      logo: channel.logo,
+      index: idx + 1,
+      total: channels.length,
+    });
+    osdTimerRef.current = setTimeout(() => {
+      setIptvOsd(null);
+    }, 2500);
+  }, []);
 
 
   const handleGoHome = useCallback(() => {
@@ -287,6 +312,14 @@ function BedsideScreen() {
       setShowCall(true);
     }
   }, [sipCallState, showCall]);
+
+  useEffect(() => {
+    // Pre-fetch IPTV channels so handset channel switching works 
+    // immediately without the user having to open the TV page first
+    if (isAndroidApp()) {
+      iptv.fetchChannels();
+    }
+  }, []);
 
   /* ── CMS Integration ── */
   const cmsHospital = useCmsHospital();
@@ -672,15 +705,26 @@ function BedsideScreen() {
           }
 
           case "channel_next": {
-            if (typeof (window as any).__handsetChannelNext === "function") {
-              (window as any).__handsetChannelNext();
+            const before = _getIptvPlayingId();
+            iptv.channelNext();
+            // Show OSD for the new channel (next in list from before)
+            const channels = _getIptvChannels();
+            if (channels.length) {
+              const idx = before === null ? 0 
+                : (channels.findIndex(c => c.id === before) + 1) % channels.length;
+              showChannelOsd(channels[idx]);
             }
             return;
           }
 
           case "channel_prev": {
-            if (typeof (window as any).__handsetChannelPrev === "function") {
-              (window as any).__handsetChannelPrev();
+            const before = _getIptvPlayingId();
+            iptv.channelPrev();
+            const channels = _getIptvChannels();
+            if (channels.length) {
+              const idx = before === null ? channels.length - 1
+                : (channels.findIndex(c => c.id === before) - 1 + channels.length) % channels.length;
+              showChannelOsd(channels[idx]);
             }
             return;
           }
@@ -1261,28 +1305,114 @@ function BedsideScreen() {
         />
       )}
 
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes castPulse {
-          0%, 100% { box-shadow: 0 0 0 0 var(--hbs-primary-subtle); }
-          50% { box-shadow: 0 0 0 6px transparent; }
-        }
-        [data-nav="true"]:focus {
-          outline: 5px solid #008BAE !important;
-          outline-offset: 4px !important;
-          box-shadow: 0 0 20px rgba(0, 139, 174, 0.6) !important;
-          transform: scale(1.02) !important;
-          z-index: 50 !important;
-          border-color: transparent !important;
-        }
-        * {
-          -webkit-tap-highlight-color: transparent;
-          -webkit-touch-callout: none;
-        }
-      `}</style>
+        {/* IPTV Channel OSD Overlay */}
+        {iptvOsd && (
+          <div
+            style={{
+              position: "fixed",
+              bottom: "48px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 8888,
+              display: "flex",
+              alignItems: "center",
+              gap: "16px",
+              padding: "14px 24px",
+              borderRadius: "16px",
+              backgroundColor: "rgba(0,0,0,0.82)",
+              backdropFilter: "blur(12px)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+              animation: "iptvOsdIn 0.2s ease-out",
+              minWidth: "320px",
+              maxWidth: "480px",
+            }}
+          >
+            {/* Channel logo */}
+            {iptvOsd.logo && (
+              <img
+                src={iptvOsd.logo}
+                alt=""
+                style={{
+                  width: "44px",
+                  height: "44px",
+                  borderRadius: "8px",
+                  objectFit: "contain",
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  flexShrink: 0,
+                }}
+              />
+            )}
+
+            {/* Channel info */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{
+                color: "#fff",
+                fontSize: "17px",
+                fontWeight: 700,
+                margin: 0,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                fontFamily: fontFamily,
+              }}>
+                {locale === "ar" ? iptvOsd.nameAr : iptvOsd.name}
+              </p>
+              <p style={{
+                color: "rgba(255,255,255,0.5)",
+                fontSize: "13px",
+                fontWeight: 500,
+                margin: 0,
+                fontFamily: fontFamily,
+              }}>
+                {iptvOsd.index} / {iptvOsd.total}
+              </p>
+            </div>
+
+            {/* Channel number badge */}
+            <div style={{
+              backgroundColor: theme.primary,
+              borderRadius: "8px",
+              padding: "4px 12px",
+              flexShrink: 0,
+            }}>
+              <span style={{
+                color: "#fff",
+                fontSize: "15px",
+                fontWeight: 700,
+                fontFamily: theme.fontFamilyMono,
+              }}>
+                {iptvOsd.index}
+              </span>
+            </div>
+          </div>
+        )}
+
+        <style>{`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          @keyframes iptvOsdIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+          }
+          @keyframes castPulse {
+            0%, 100% { box-shadow: 0 0 0 0 var(--hbs-primary-subtle); }
+            50% { box-shadow: 0 0 0 6px transparent; }
+          }
+          [data-nav="true"]:focus {
+            outline: 5px solid #008BAE !important;
+            outline-offset: 4px !important;
+            box-shadow: 0 0 20px rgba(0, 139, 174, 0.6) !important;
+            transform: scale(1.02) !important;
+            z-index: 50 !important;
+            border-color: transparent !important;
+          }
+          * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+          }
+        `}</style>
       <RippleStyles />
     </div>
   );

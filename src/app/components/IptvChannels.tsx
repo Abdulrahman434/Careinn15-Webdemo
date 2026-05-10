@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { Tv, ArrowLeft, RefreshCw, AlertCircle, Square } from "lucide-react";
-import { useIptvChannels, iptv, isAndroidApp, useAndroidEvent, IptvChannel } from "../utils/androidBridge";
+import { useIptvChannels, iptv, isAndroidApp, useAndroidEvent, IptvChannel, _setIptvPlayingId } from "../utils/androidBridge";
 
 export function IptvChannels({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
@@ -15,24 +15,17 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
     'iptv-playing',
     (d) => {
       const ch = channels.find(c => c.url === d.url);
-      setPlayingId(ch?.id ?? null);
+      const id = ch?.id ?? null;
+      setPlayingId(id);
+      _setIptvPlayingId(id);
     }
   );
   
-  useAndroidEvent('iptv-stopped', () => setPlayingId(null));
+  useAndroidEvent('iptv-stopped', () => {
+    setPlayingId(null);
+    _setIptvPlayingId(null);
+  });
 
-  useEffect(() => {
-    (window as any).__handsetChannelNext = () => {
-      iptv.channelNext(channels, playingId);
-    };
-    (window as any).__handsetChannelPrev = () => {
-      iptv.channelPrev(channels, playingId);
-    };
-    return () => {
-      delete (window as any).__handsetChannelNext;
-      delete (window as any).__handsetChannelPrev;
-    };
-  }, [channels, playingId]);
 
   const handlePlay = (channel: IptvChannel) => {
     if (playingId === channel.id) {
