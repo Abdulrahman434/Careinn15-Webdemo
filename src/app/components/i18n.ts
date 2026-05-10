@@ -399,7 +399,9 @@ const translations: Record<string, TranslationEntry> = {
   "settings.clearData.signOut": { en: "Sign out of all apps", ar: "تسجيل الخروج من جميع التطبيقات", ur: "تمام ایپس سے سائن آؤٹ کریں" },
   "settings.clearData.history": { en: "Clear browsing history & cache", ar: "مسح سجل التصفح والتخزين المؤقت", ur: "براؤزنگ ہسٹری اور کیشے کو صاف کریں" },
   "settings.clearData.passwords": { en: "Remove saved passwords", ar: "إزالة كلمات المرور المحفوظة", ur: "محفوظ کردہ پاس ورڈز ہٹائیں" },
-  "settings.clearData.reset": { en: "Reset custom settings", ar: "إعادة تعيين الإعدادات", ur: "حسب ضرورت ترتیبات دوبارہ ترتیب دیں" },
+  "settings.clearData.lockedApps": { en: "App lock settings cleared", ar: "مسح إعدادات قفل التطبيقات", ur: "ایپ لاک سیٹنگز صاف" },
+  "settings.clearData.preferences": { en: "Language & preferences reset", ar: "إعادة تعيين اللغة والتفضيلات", ur: "زبان اور ترجیحات ری سیٹ" },
+  "settings.clearData.reset": { en: "Return to login screen", ar: "العودة إلى شاشة تسجيل الدخول", ur: "لاگ ان اسکرین پر واپس جائیں" },
   "settings.clearData.question": { en: "Are you sure you want to clear all data?", ar: "هل أنت متأكد من مسح جميع البيانات؟", ur: "کیا آپ واقعی تمام ڈیٹا صاف کرنا چاہتے ہیں؟" },
   "settings.clearData.desc": { en: "This action cannot be undone. It will prepare the terminal for the next patient.", ar: "لا يمكن التراجع عن هذا الإجراء. سيقوم بإعداد الشاشة للمريض التالي.", ur: "اس کارروائی کو واپس نہیں کیا جا سکتا۔ یہ اگلے مریض کے لیے ٹرمینل تیار کرے گا۔" },
 

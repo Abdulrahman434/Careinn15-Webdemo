@@ -68,6 +68,9 @@ interface AndroidSystemInterface {
   sipGetCallState(): string;
   sipGetRegistrationState(): string;
   sipGetLocalExtension(): string;
+
+  // Clear All Data
+  clearAllDataAndReload?(): void;
 }
 /* ─── CustomEvent detail shapes dispatched by the Android side ─── */
 export interface BrightnessChangedDetail {

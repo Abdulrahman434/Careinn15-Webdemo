@@ -47,6 +47,7 @@ import {
 import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useAuth } from "./AuthContext";
+import { clearAllDataAndReload } from "../lib/clearAllData";
 import { NurseInterface } from "./nurse/NurseInterface";
 import type { Locale } from "./i18n";
 import imgMosque from "../../assets/b51acb5e2ec4a2c930572c53103b020b12e76ee2.png";
@@ -1107,10 +1108,12 @@ function ClearDataDialog({
   const { theme: t } = useTheme();
   const { t: tr } = useLocale();
   const items = [
-    tr("settings.clearData.signOut"),
-    tr("settings.clearData.history"),
-    tr("settings.clearData.passwords"),
-    tr("settings.clearData.reset"),
+    tr("settings.clearData.signOut"),      // "Sign out"
+    tr("settings.clearData.history"),       // "Call history"
+    tr("settings.clearData.passwords"),     // "Saved passwords & PIN"
+    tr("settings.clearData.lockedApps"),    // "App lock settings"
+    tr("settings.clearData.preferences"),   // "Preferences & language"
+    tr("settings.clearData.reset"),         // "Return to login screen"
   ];
 
   const DANGER = "#D10044";
@@ -2200,9 +2203,11 @@ export function SettingsPanel({
       {showClearConfirm && (
         <ClearDataDialog
           onClose={() => setShowClearConfirm(false)}
-          onConfirm={() => {
+          onConfirm={async () => {
             setShowClearConfirm(false);
-            logout();
+            // clearAllDataAndReload() handles logout implicitly by 
+            // wiping all auth state and reloading — no need to call logout()
+            await clearAllDataAndReload();
           }}
         />
       )}
