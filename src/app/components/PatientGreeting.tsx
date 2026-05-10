@@ -5,6 +5,7 @@ import { useRipple } from "./useRipple";
 import { HelpCircle } from "lucide-react";
 import { AutoCarousel } from "./AutoCarousel";
 import { useNurseStore } from "./NurseDataStore";
+import { useGuestMode } from "../lib/guestMode";
 import svgPaths from "../../imports/svg-ca68x68c4i";
 
 function AboutUsIcon({ color }: { color?: string }) {
@@ -42,8 +43,9 @@ export function PatientGreeting({
   const [pressed, setPressed] = useState(false);
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
-  const { onPointerDown, rippleElements } = useRipple(theme.primarySubtle);
+  const rippleElements = useRipple(theme.primarySubtle).rippleElements;
   const nurseStore = useNurseStore();
+  const { isGuest } = useGuestMode();
 
   return (
     <div
@@ -91,16 +93,18 @@ export function PatientGreeting({
         >
           {t("general.hello")}
         </p>
-        <p
-          style={{
-            fontFamily: fontFamily,
-            ...TEXT_STYLE.display,
-            fontWeight: WEIGHT.extrabold,
-            color: theme.textHeading,
-          }}
-        >
-          {nurseStore.patient.nameKey ? t(nurseStore.patient.nameKey) : nurseStore.patient.name}
-        </p>
+        {!isGuest && (
+          <p
+            style={{
+              fontFamily: fontFamily,
+              ...TEXT_STYLE.display,
+              fontWeight: WEIGHT.extrabold,
+              color: theme.textHeading,
+            }}
+          >
+            {nurseStore.patient.nameKey ? t(nurseStore.patient.nameKey) : nurseStore.patient.name}
+          </p>
+        )}
         <div style={{ paddingTop: SPACE[1] }}>
           <p
             style={{
@@ -113,50 +117,52 @@ export function PatientGreeting({
         </div>
 
         {/* Badges */}
-        <div className="flex items-center flex-wrap gap-2" style={{ paddingTop: SPACE[2] }}>
-          <div
-            className="flex items-center px-3 py-1.5"
-            style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
-          >
-            <span
-              style={{
-                fontFamily: fontFamily,
-                ...TEXT_STYLE.pill,
-                color: theme.primary,
-              }}
+        {!isGuest && (
+          <div className="flex items-center flex-wrap gap-2" style={{ paddingTop: SPACE[2] }}>
+            <div
+              className="flex items-center px-3 py-1.5"
+              style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
             >
-              {t("greeting.mrn")} {nurseStore.patient.mrn}
-            </span>
-          </div>
-          <div
-            className="flex items-center px-3 py-1.5"
-            style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
-          >
-            <span
-              style={{
-                fontFamily: fontFamily,
-                ...TEXT_STYLE.pill,
-                color: theme.primary,
-              }}
+              <span
+                style={{
+                  fontFamily: fontFamily,
+                  ...TEXT_STYLE.pill,
+                  color: theme.primary,
+                }}
+              >
+                {t("greeting.mrn")} {nurseStore.patient.mrn}
+              </span>
+            </div>
+            <div
+              className="flex items-center px-3 py-1.5"
+              style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
             >
-              {t("greeting.room", nurseStore.patient.room)}
-            </span>
-          </div>
-          <div
-            className="flex items-center px-3 py-1.5"
-            style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
-          >
-            <span
-              style={{
-                fontFamily: fontFamily,
-                ...TEXT_STYLE.pill,
-                color: theme.primary,
-              }}
+              <span
+                style={{
+                  fontFamily: fontFamily,
+                  ...TEXT_STYLE.pill,
+                  color: theme.primary,
+                }}
+              >
+                {t("greeting.room", nurseStore.patient.room)}
+              </span>
+            </div>
+            <div
+              className="flex items-center px-3 py-1.5"
+              style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
             >
-              {t("greeting.ext", nurseStore.patient.extension)}
-            </span>
+              <span
+                style={{
+                  fontFamily: fontFamily,
+                  ...TEXT_STYLE.pill,
+                  color: theme.primary,
+                }}
+              >
+                {t("greeting.ext", nurseStore.patient.extension)}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Hospital image */}

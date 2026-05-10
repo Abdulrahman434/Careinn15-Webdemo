@@ -5,6 +5,7 @@ import { getAccount, verifyPin, verifyNfcUid } from "../lib/accountAuth";
 import { useNfcTap } from "../utils/nfc";
 import { Lock, Smartphone } from "lucide-react";
 import { PinKeypad } from "./MyAccountDialog";
+import { guestModeStore } from "../lib/guestMode";
 
 interface Props {
   visible: boolean;
@@ -23,6 +24,7 @@ export function AccountLockScreen({ visible, onUnlock }: Props) {
   useNfcTap((uid) => {
     if (visible && account?.nfcCardUid) {
       if (verifyNfcUid(uid)) {
+        guestModeStore.exitGuestMode();
         setPin("");
         setError(false);
         onUnlock();
@@ -42,6 +44,7 @@ export function AccountLockScreen({ visible, onUnlock }: Props) {
   const handlePinComplete = async (completedPin: string) => {
     const isCorrect = await verifyPin(completedPin);
     if (isCorrect) {
+      guestModeStore.exitGuestMode();
       setPin("");
       setError(false);
       onUnlock();
@@ -52,6 +55,11 @@ export function AccountLockScreen({ visible, onUnlock }: Props) {
         setError(false);
       }, 1000); // 1s shake/error display
     }
+  };
+
+  const handleSkipAsGuest = () => {
+    guestModeStore.enterGuestMode();
+    onUnlock();
   };
 
   if (!visible) return null;
@@ -103,6 +111,27 @@ export function AccountLockScreen({ visible, onUnlock }: Props) {
 
         <div style={{ marginTop: "16px", width: "100%" }}>
           <PinKeypad pin={pin} setPin={setPin} error={error} onComplete={handlePinComplete} />
+        </div>
+
+        <div className="flex flex-col items-center w-full mt-6 gap-2">
+          <button
+            onClick={handleSkipAsGuest}
+            className="flex items-center justify-center w-full cursor-pointer active:scale-[0.98] transition-transform"
+            style={{
+              height: "48px",
+              borderRadius: t.radiusLg,
+              backgroundColor: "transparent",
+              border: `1.5px solid ${t.borderDefault}`,
+              outline: "none",
+            }}
+          >
+            <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 600, color: t.textMuted }}>
+              {tr("lock.guest.button")}
+            </span>
+          </button>
+          <span style={{ fontFamily: t.fontFamily, fontSize: "11px", fontWeight: 500, color: t.textMuted, textAlign: "center", opacity: 0.8 }}>
+            {tr("lock.guest.subtitle")}
+          </span>
         </div>
       </div>
     </div>

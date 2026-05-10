@@ -750,7 +750,48 @@ const translations: Record<string, TranslationEntry> = {
   // Lock Screen
   "lock.title": { en: "Enter PIN", ar: "أدخل الرمز السري" },
   "lock.nfc.hint": { en: "or tap your NFC card to unlock", ar: "أو قم بتمرير بطاقتك لفتح الشاشة" },
-  "lock.wrongPin": { en: "Incorrect PIN", ar: "الرمز السري غير صحيح" }
+  "lock.wrongPin": { en: "Incorrect PIN", ar: "الرمز السري غير صحيح" },
+
+  "lock.guest.button": {
+    en: "Continue as Guest",
+    ar: "متابعة كضيف",
+    ur: "بطور مہمان جاری رکھیں"
+  },
+  "lock.guest.subtitle": {
+    en: "Limited access — name and medical info hidden",
+    ar: "وصول محدود — الاسم والمعلومات الطبية مخفية",
+    ur: "محدود رسائی — نام اور طبی معلومات پوشیدہ"
+  },
+  "guest.careMe.locked.title": {
+    en: "CareMe locked",
+    ar: "بياناتي الطبية مقفلة",
+    ur: "میری دیکھ بھال مقفل ہے"
+  },
+  "guest.careMe.locked.subtitle": {
+    en: "Tap to enter your PIN and view your medical info",
+    ar: "اضغط لإدخال رمز PIN وعرض معلوماتك الطبية",
+    ur: "اپنا PIN درج کرنے اور طبی معلومات دیکھنے کے لیے ٹیپ کریں"
+  },
+  "guest.careMe.unlock.button": {
+    en: "Unlock",
+    ar: "فتح",
+    ur: "کھولیں"
+  },
+  "guest.careMe.dialog.title": {
+    en: "Unlock CareMe",
+    ar: "فتح بياناتي الطبية",
+    ur: "میری دیکھ بھال کھولیں"
+  },
+  "guest.careMe.dialog.enterPin": {
+    en: "Enter your PIN",
+    ar: "أدخل رمز PIN",
+    ur: "اپنا PIN درج کریں"
+  },
+  "guest.careMe.dialog.incorrect": {
+    en: "Incorrect PIN",
+    ar: "رمز غير صحيح",
+    ur: "غلط PIN"
+  }
 };
 
 /* ── Number Localization ── */

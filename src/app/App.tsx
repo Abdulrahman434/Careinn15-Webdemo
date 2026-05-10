@@ -58,6 +58,10 @@ import { getPrayerStatus, PRAYER_NAMES, formatPrayerTime } from "./utils/prayerU
 import { Prayer } from "adhan";
 import { isAccountSet } from "./lib/accountAuth";
 import { AccountLockScreen } from "./components/AccountLockScreen";
+import { useGuestMode, guestModeStore } from "./lib/guestMode";
+import { CareMePinDialog } from "./components/CareMePinDialog";
+import { Lock } from "lucide-react";
+
 
 const DESIGN_W = 1920;
 const DESIGN_H = 1080;
@@ -112,6 +116,8 @@ function BedsideScreen() {
   const [showAccountLock, setShowAccountLock] = useState(false);
 
   const [showCareMeExpanded, setShowCareMeExpanded] = useState(false);
+  const [showCareMePinDialog, setShowCareMePinDialog] = useState(false);
+  const { isGuest, careMeUnlocked } = useGuestMode();
   const [showCall, setShowCall] = useState(false);
   const [showFoodOrder, setShowFoodOrder] = useState(false);
   const [activeCareRole, setActiveCareRole] = useState<"nurse" | "doctor" | null>(null);
@@ -207,6 +213,14 @@ function BedsideScreen() {
       clearTimeout(idleTimer);
     };
   }, [anyOtherOverlayOpen]);
+
+  // Re-lock CareMe whenever the screensaver appears in guest mode
+  useEffect(() => {
+    if (showTasbih) {
+      guestModeStore.relockCareMe();
+    }
+  }, [showTasbih]);
+
 
 
   // Dismiss screen saver if any other overlay opens (e.g. call or broadcast)
@@ -723,7 +737,11 @@ function BedsideScreen() {
                       />
                     </div>
                     <div className="flex-1 min-w-0 min-h-0 flex flex-col">
-                      <CareMe onExpand={() => setShowCareMeExpanded(true)} />
+                      {(!isGuest || careMeUnlocked) ? (
+                        <CareMe onExpand={() => setShowCareMeExpanded(true)} />
+                      ) : (
+                        <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />
+                      )}
                     </div>
                   </div>
                   {/* Bottom: Service cards row */}
@@ -745,7 +763,11 @@ function BedsideScreen() {
                     showAboutUs={v.show_about_us}
                   />
                   <div className="flex-1 min-h-0 flex flex-col">
-                    <CareMe onExpand={() => setShowCareMeExpanded(true)} />
+                    {(!isGuest || careMeUnlocked) ? (
+                      <CareMe onExpand={() => setShowCareMeExpanded(true)} />
+                    ) : (
+                      <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />
+                    )}
                   </div>
                 </div>
 
@@ -773,7 +795,11 @@ function BedsideScreen() {
                 <div className="flex flex-col gap-5 shrink-0 min-h-0 h-full" style={{ width: "400px" }}>
                   <PatientGreeting onOpenAboutUs={() => setShowAboutUs(true)} onOpenTour={() => setShowTour(true)} />
                   <div className="flex-1 min-h-0 flex flex-col">
-                    <CareMe onExpand={() => setShowCareMeExpanded(true)} />
+                    {(!isGuest || careMeUnlocked) ? (
+                      <CareMe onExpand={() => setShowCareMeExpanded(true)} />
+                    ) : (
+                      <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />
+                    )}
                   </div>
                 </div>
 
@@ -904,7 +930,7 @@ function BedsideScreen() {
         )}
 
         {/* CareMe Expanded Overlay */}
-        {showCareMeExpanded && (
+        {showCareMeExpanded && (!isGuest || careMeUnlocked) && (
           <CareMeExpanded onClose={() => setShowCareMeExpanded(false)} />
         )}
 
@@ -990,11 +1016,17 @@ function BedsideScreen() {
         <SurveyModal onClose={() => setShowSurvey(false)} />
       )}
 
-      {/* Account Lock Screen Overlay */}
       <AccountLockScreen
         visible={showAccountLock}
         onUnlock={() => setShowAccountLock(false)}
       />
+
+      {showCareMePinDialog && (
+        <CareMePinDialog
+          onClose={() => setShowCareMePinDialog(false)}
+          onSuccess={() => guestModeStore.unlockCareMe()}
+        />
+      )}
 
       <style>{`
         @keyframes spin {
@@ -1022,6 +1054,63 @@ function BedsideScreen() {
     </div>
   );
 }
+
+function CareMeLockedPlaceholder({ onTap }: { onTap: () => void }) {
+  const { theme } = useTheme();
+  const { t, fontFamily } = useLocale();
+  return (
+    <button
+      onClick={onTap}
+      className="flex flex-col items-center justify-center gap-3 
+                 w-full h-full cursor-pointer active:scale-[0.99] 
+                 transition-transform"
+      style={{
+        backgroundColor: theme.surface,
+        borderRadius: theme.radiusCard,
+        boxShadow: SHADOW.md,
+        border: theme.cardBorder,
+        padding: "24px",
+        minHeight: "100%",
+        outline: "none",
+      }}
+    >
+      <div 
+        className="flex items-center justify-center"
+        style={{
+          width: "56px", height: "56px",
+          borderRadius: theme.radiusLg,
+          backgroundColor: theme.primarySubtle,
+        }}
+      >
+        <Lock size={26} style={{ color: theme.primary }} />
+      </div>
+      <span style={{
+        fontFamily, fontSize: "16px", fontWeight: 700,
+        color: theme.textHeading, textAlign: "center",
+      }}>
+        {t("guest.careMe.locked.title")}
+      </span>
+      <span style={{
+        fontFamily, fontSize: "13px", fontWeight: 500,
+        color: theme.textMuted, textAlign: "center",
+        maxWidth: "240px", lineHeight: "18px",
+      }}>
+        {t("guest.careMe.locked.subtitle")}
+      </span>
+      <div style={{
+        marginTop: "4px",
+        padding: "10px 24px",
+        borderRadius: theme.radiusFull,
+        backgroundColor: theme.primary,
+        color: "#fff",
+        fontFamily, fontSize: "13px", fontWeight: 700,
+      }}>
+        {t("guest.careMe.unlock.button")}
+      </div>
+    </button>
+  );
+}
+
 
 import { Component, ReactNode } from "react";
 
