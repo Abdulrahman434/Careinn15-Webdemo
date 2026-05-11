@@ -106,7 +106,7 @@ type CategoryKey = string;
 
 /* ── App data with accurate branding ────────────────────────── */
 
-function getCategories(theme: any, locale: string = "en"): Record<string, CategoryConfig> {
+function getCategories(theme: any, locale: string = "en", t: any): Record<string, CategoryConfig> {
   return {
     Media: {
       label: "Media",
@@ -1196,6 +1196,27 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
               </div>
             ),
           }))
+        : theme.id === "burjeel"
+        ? /* ── Burjeel Hospital educational materials ── */
+          [
+            { id: "bj-edu-trust", name: "burjeel.edu.fertility", url: "https://trustfertility.com/patients-educational-material/" },
+            { id: "bj-edu-video", name: "burjeel.edu.guide", url: "https://www.youtube.com/watch?v=ifnyskCCV0g", isVideo: true },
+          ].map((item) => ({
+            id: item.id,
+            name: t(item.name),
+            bg: "transparent",
+            mark: "",
+            textColor: "#333",
+            url: item.url,
+            customRender: () => (
+              <div className="flex flex-col items-center justify-center text-center" style={{ width: 150, height: 150, padding: 12, background: "#fff", borderRadius: theme.radiusXl }}>
+                <div className="flex items-center justify-center mb-1.5" style={{ width: 64, height: 64, backgroundColor: item.isVideo ? "#E8453C" : theme.primary, borderRadius: theme.radiusLg }}>
+                  {item.isVideo ? <PlayCircle size={32} color="#fff" /> : <BookOpenText size={32} color="#fff" />}
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 800, color: item.isVideo ? "#E8453C" : theme.primary, letterSpacing: 0.5 }}>{item.isVideo ? "VIDEO" : "LINK"}</span>
+              </div>
+            ),
+          }))
         : theme.id === "dallah"
         ? /* ── Dallah Hospital official educational materials ── */
           (locale === "ar"
@@ -1418,7 +1439,7 @@ export function AppLauncher({
   const { t, locale, isRTL } = useLocale();
   const lockedIds = useLockedApps();
   const [activeKey, setActiveKey] = useState(categoryKey);
-  const allCategories = getCategories(theme, locale);
+  const allCategories = getCategories(theme, locale, t);
   const category = allCategories[activeKey];
   const [launchedApp, setLaunchedApp] = useState<string | null>(null);
   const [showPdf, setShowPdf] = useState(false);

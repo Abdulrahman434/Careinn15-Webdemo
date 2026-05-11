@@ -29,6 +29,11 @@ import careinnParticipations from "../../assets/careinn-participations.png";
 import careinnCertifications from "../../assets/careinn-certifications.png";
 import careinnClients from "../../assets/careinn-clients.jpg";
 
+import burjeelDna from "../../assets/BurjeelDNA.png";
+import burjeelNumbers from "../../assets/BurjeelNumbers.png";
+import burjeelServices from "../../assets/BurjeelServices.png";
+import burjeelAccreds from "../../assets/burjeelaccreds.png";
+
 interface AboutSection {
   id: string;
   title: string;
@@ -96,26 +101,27 @@ const getSections = (themeId: string, isRTL: boolean, locale: string): AboutSect
     id: "hospital",
     title: themeId === "dallah" ? "About Dallah" : "Our Hospital",
     titleKey: themeId === "dallah" ? "about.aboutDallah" : "about.ourHospital",
-    video: themeId === "imc" ? imcVideo : themeId === "careinn" ? (locale === "ar" ? "5ZQofr0sVn4" : "pbnYEIewk6Q") : themeId === "caremed" ? "HW7Od_8C3_I" : themeId === "dallah" ? "JPgxKaOQf3s" : "4VXy7_qn608",
+    video: themeId === "burjeel" ? "OH71A4YxCG4" : themeId === "imc" ? imcVideo : themeId === "careinn" ? (locale === "ar" ? "5ZQofr0sVn4" : "pbnYEIewk6Q") : themeId === "caremed" ? "HW7Od_8C3_I" : themeId === "dallah" ? "JPgxKaOQf3s" : "4VXy7_qn608",
   },
   {
     id: "dna",
     title: themeId === "caremed" ? "CareMed InBrief" : themeId === "dallah" ? "Dallah DNA" : "Fakeeh Care DNA",
     titleKey: themeId === "caremed" ? "about.caremedInBrief" : themeId === "dallah" ? "about.dallahDna" : "about.dna",
-    image: themeId === "careinn" ? (isRTL ? careinnDnaAr : careinnDna) : themeId === "imc" ? imcDna : themeId === "dallah" ? dallahDna : themeId === "caremed" ? (isRTL ? careMedInBriefAr : careMedInBriefEn) : dnaImg,
+    image: themeId === "burjeel" ? burjeelDna : themeId === "careinn" ? (isRTL ? careinnDnaAr : careinnDna) : themeId === "imc" ? imcDna : themeId === "dallah" ? dallahDna : themeId === "caremed" ? (isRTL ? careMedInBriefAr : careMedInBriefEn) : dnaImg,
   },
   ...(themeId === "careinn" ? [] : [{
     id: "numbers",
     title: themeId === "imc" ? "IMC History" : themeId === "caremed" ? "CareMed In Numbers" : themeId === "dallah" ? "Accreditations" : "Fakeeh In Numbers",
     titleKey: themeId === "imc" ? "about.imcHistory" : themeId === "dallah" ? "about.accreditations" : "about.numbers",
-    image: themeId === "imc" ? imcHistory : themeId === "dallah" ? (isRTL ? dallahAccredsAr : dallahAccredsEn) : themeId === "caremed" ? (isRTL ? numbersAr : numbersEn) : numbersImg,
+    image: themeId === "burjeel" ? burjeelNumbers : themeId === "imc" ? imcHistory : themeId === "dallah" ? (isRTL ? dallahAccredsAr : dallahAccredsEn) : themeId === "caremed" ? (isRTL ? numbersAr : numbersEn) : numbersImg,
     content: themeId === "dallah" ? undefined : undefined,
   }]),
   {
     id: "services",
     title: "Services",
     titleKey: "about.services",
-    content: themeId === "careinn"
+    image: themeId === "burjeel" ? burjeelServices : undefined,
+    content: themeId === "burjeel" ? undefined : themeId === "careinn"
       ? (locale === "ar" ? `• CareInn15
 شاشة تفاعلية بجانب السرير تتيح للمرضى سهولة الوصول إلى خدمات المستشفى والترفيه والطلبات والمعلومات الأساسية أثناء إقامتهم. توفر تجربة أكثر تواصلاً وراحة داخل الغرفة.
 
@@ -173,7 +179,7 @@ Support Services
     id: "accreditations",
     title: themeId === "careinn" ? "Certifications" : themeId === "dallah" ? "Awards" : "Accreditations",
     titleKey: themeId === "careinn" ? "about.certifications" : themeId === "dallah" ? "about.awards" : "about.accreditations",
-    image: themeId === "careinn" ? careinnCertifications : themeId === "imc" ? imcAccreds : themeId === "dallah" ? (isRTL ? dallahAwardsAr : dallahAwardsEn) : themeId === "caremed" ? accredsImg : accreditationsImg,
+    image: themeId === "burjeel" ? burjeelAccreds : themeId === "careinn" ? careinnCertifications : themeId === "imc" ? imcAccreds : themeId === "dallah" ? (isRTL ? dallahAwardsAr : dallahAwardsEn) : themeId === "caremed" ? accredsImg : accreditationsImg,
   },
   {
     id: "digital",

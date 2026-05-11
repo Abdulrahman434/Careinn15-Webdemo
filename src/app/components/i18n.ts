@@ -108,7 +108,14 @@ const translations: Record<string, TranslationEntry> = {
   "news.imc.2": { en: "Expansion Plans: IMC to open new Wellcare Clinics in Obhur and Makkah regions.", ar: "خطط التوسع: المركز الطبي الدولي يفتتح عيادات ويل كير الجديدة في منطقتي أبحر ومكة المكرمة.", ur: "توسیع کے منصوبے: آئی ایم سی ابحر اور مکہ مکرمہ کے علاقوں میں نئے ویل کیئر کلینکس کھولے گا۔" },
   "news.imc.3": { en: "New Obhur Hospital: A full-service medical facility under development in North Jeddah.", ar: "مستشفى أبحر الجديد: مرفق طبي متكامل الخدمات قيد التطوير في شمال جدة.", ur: "نیا ابحر ہسپتال: شمالی جدہ میں ایک مکمل سروس والی طبی سہولت زیر تعمیر ہے۔" },
   "news.imc.4": { en: "Mayo Clinic Partnership: IMC continues its global collaboration for specialized healthcare.", ar: "شراكة مايو كلينك: المركز الطبي الدولي يواصل تعاونه العالمي للرعاية الصحية المتخصصة.", ur: "میو کلینک پارٹنرشپ: آئی ایم سی خصوصی صحت کی دیکھ بھال کے لیے اپنا عالمی تعاون جاری رکھے ہوئے ہے۔" },
-  "news.imc.5": { en: "Digital Door Strategy: IMC enhances patient journey through advanced digital transformation.", ar: "استراتيجية الباب الرقمي: المركز الطبي الدولي يعزز رحلة المريض من خلال التحول الرقمي المتقدم.", ur: "ڈیجیٹل ڈور اسٹریٹیجی: آئی ایم سی جدید ڈیجیٹل تبدیلی کے ذریعے مریض کے سفر کو بہتر بناتا ہے۔" },
+  "news.imc.5": { en: "Digital Door Strategy: IMC enhances patient journey through advanced digital transformation.", ar: "استراتيجية الباب الرقمي: المركز الطبي الدولي يعزز رحلة المريض من خلال التحول الرقمي المتقدم.", ur: "ڈیجیٹل ڈور اسٹریٹیجی: آئی ایم سي جدید ڈیجیٹل تبدیلی کے ذریعے مریض کے سفر کو بہتر بناتا ہے۔" },
+
+  /* ─── Burjeel News ─── */
+  "news.burjeel.1": { en: "Burjeel unveils major integrated healthcare project in MBZ City, Abu Dhabi.", ar: "برجيل تكشف عن مشروع رعاية صحية متكامل ضخم في مدينة محمد بن زايد بأبوظبي.", ur: "برجیل نے ابوظبی کے محمد بن زاید سٹی میں بڑے مربوط ہیلتھ کیئر پروجیکٹ کی نقاب کشائی کی۔" },
+  "news.burjeel.2": { en: "Burjeel Medical City launches specialized Sleep Clinic for advanced sleep medicine.", ar: "مدينة برجيل الطبية تطلق عيادة نوم متخصصة لطب النوم المتقدم.", ur: "برجیل میڈیکل سٹی نے جدید سلیپ میڈیسن کے لیے خصوصی سلیپ کلینک کا آغاز کیا۔" },
+  "news.burjeel.3": { en: "Burjeel Hospital Abu Dhabi opens new Korean Pavilion for specialized expertise.", ar: "مستشفى برجيل أبوظبي يفتتح الجناح الكوري الجديد للخبرات المتخصصة.", ur: "برجیل اسپتال ابوظبی نے خصوصی مہارت کے لیے نیا کورین پویلین کھولا۔" },
+  "news.burjeel.4": { en: "Burjeel Holdings reports strong profit growth for Q1 2026, up 44.5%.", ar: "برجيل القابضة تعلن عن نمو قوي في الأرباح للربع الأول من 2026 بنسبة 44.5%.", ur: "برجیل ہولڈنگز نے 2026 کی پہلی سہ ماہی کے لیے 44.5 فیصد منافع میں اضافے کی اطلاع دی۔" },
+  "news.burjeel.5": { en: "New specialized centers for oncology and cardiology launched at Burjeel facilities.", ar: "إطلاق مراكز متخصصة جديدة للأورام وأمراض القلب في مرافق برجيل.", ur: "برجیل کی سہولیات میں آنکولوجی اور کارڈیالوجی کے لیے نئے خصوصی مراکز کا آغاز کیا گیا۔" },
 
   /* ─── Hub Items ─── */
   "hub.media": { en: "Media", ar: "الوسائط", ur: "میڈیا" },
@@ -156,6 +163,7 @@ const translations: Record<string, TranslationEntry> = {
   "shortcut.patientPortal": { en: "Patient Portal", ar: "بوابة المريض", ur: "پیشنٹ پورٹل" },
   "shortcut.podcast": { en: "Podcast", ar: "بودكاست", ur: "پوڈکاسٹ" },
   "shortcut.dallahPodcast": { en: "Dallah Podcast", ar: "بودكاست دله", ur: "دلہ پوڈکاسٹ" },
+  "shortcut.burjeelPodcast": { en: "Burjeel Podcast", ar: "بودكاست برجيل", ur: "برجیل پوڈکاسٹ" },
   "shortcut.academy": { en: "Academy", ar: "الأكاديمية", ur: "اکیڈمی" },
   "shortcut.adminPortal": { en: "Admin Portal", ar: "بوابة الإدارة", ur: "ایڈمن پورٹل" },
   "shortcut.roomControl": { en: "Room Control", ar: "التحكم بالغرفة", ur: "کمرے کا کنٹرول" },
@@ -207,6 +215,10 @@ const translations: Record<string, TranslationEntry> = {
   "caremed.edu.falls": { en: "Common Causes\nof Falls", ar: "أسباب السقوط\nالشائعة", ur: "گرنے کی عام وجوہات" },
   "caremed.edu.generalHealth": { en: "General Health\nQuestions", ar: "أسئلة عن\nالصحة العامة", ur: "عام صحت کے متعلق سوالات" },
   "caremed.edu.medications": { en: "Questions About\nMedications", ar: "أسئلة بخصوص\nالأدوية", ur: "ادویات کے متعلق سوالات" },
+
+  /* ─── Burjeel Education Items ─── */
+  "burjeel.edu.fertility": { en: "Trust Fertility Education", ar: "تثقيف الخصوبة - ترست", ur: "ٹرسٹ فرٹیلٹی ایجوکیشن" },
+  "burjeel.edu.guide": { en: "Patient Education Video", ar: "فيديو تثقيف المرضى", ur: "مریض کی تعلیم کی ویڈیو" },
 
   /* ─── CareMe Slides ─── */
   "care.title": { en: "CareMe", ar: "رعايتي", ur: "میری دیکھ بھال" },

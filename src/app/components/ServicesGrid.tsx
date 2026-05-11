@@ -11,6 +11,7 @@ import podcastIcon from "@/assets/5513479d879a8c3fcdd1f6832dd30ce350c81789.png";
 import caremedicalicon from "@/assets/caremedicalicon.png";
 import dallahPodcastIcon from "@/assets/dallah-podcast.png";
 import patientPortalIcon from "@/assets/patient-portal.png";
+import burjeelLogo from "@/assets/c8626cd3ed1ce90e9b3bab4a5f97a7315203f204.png";
 import careinnAdminPortalIcon from "@/assets/careinn-admin-icon.png";
 import { Lock } from "lucide-react";
 import { useLockedApps } from "../lib/lockedApps";
@@ -52,13 +53,17 @@ const getShortcutItems = (hospitalId: string): ShortcutItem[] => {
     podcastData = { labelKey: "shortcut.podcast", icon: caremedicalicon, url: "https://www.youtube.com/playlist?list=PLbWY8VfHuoBSK7XeJJtutBSTeY_e7Kut3" };
   } else if (hospitalId === "dallah") {
     podcastData = { labelKey: "shortcut.dallahPodcast", icon: dallahPodcastIcon, url: "https://www.youtube.com/watch?v=FTacFGIn8aA&list=PLptiCCjrXsQt5lExxVzvUx61Hd65Tsefg" };
+  } else if (hospitalId === "burjeel") {
+    podcastData = { labelKey: "shortcut.burjeelPodcast", icon: burjeelLogo, url: "https://www.youtube.com/watch?v=OH71A4YxCG4&list=PL6o7wstkQMs50lz5esnwetX5fbgP7G8im" };
   } else {
     podcastData = { labelKey: "shortcut.podcast", icon: podcastIcon, url: "https://www.youtube.com/watch?v=1WKyerFH34U&list=PL_JVZV-KlG7oFe-fUAMnbYsWyTU9k8ljF" };
   }
 
   return [
     { labelKey: "shortcut.roomControl", icon: roomControlIcon, url: "roomcontrol" },
-    { labelKey: "shortcut.quran", icon: quranIcon, url: "https://app.quranflash.com/book/Medina1?ar#/reader/chapter/3" },
+    hospitalId === "burjeel"
+      ? { labelKey: "shortcut.patientPortal", icon: patientPortalIcon, url: "https://patientportal.vpshealth.com/home/login" }
+      : { labelKey: "shortcut.quran", icon: quranIcon, url: "https://app.quranflash.com/book/Medina1?ar#/reader/chapter/3" },
     hospitalId === "caremed"
       ? { labelKey: "shortcut.academy", icon: caremedicalicon, url: "https://care.classera.com/explore/courses?lang=en" }
       : hospitalId === "dallah"
@@ -479,12 +484,12 @@ function ShortcutTile({ item, contained, onTap, onLongPress, isLocked }: { item:
       aria-label={t(item.labelKey)}
     >
       {isLocked && <LockBadge />}
-      {item.labelKey === "shortcut.patientPortal" || item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.adminPortal" ? (
+      {item.labelKey === "shortcut.patientPortal" || item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.burjeelPodcast" || item.labelKey === "shortcut.adminPortal" ? (
         <div 
           style={{
             width: SPACE[12],
             height: SPACE[12],
-            backgroundColor: item.labelKey === "shortcut.dallahPodcast" ? "#00A3C1" : item.labelKey === "shortcut.adminPortal" ? "#4EBEE3" : "#fff",
+            backgroundColor: (item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.burjeelPodcast") ? "#00A3C1" : item.labelKey === "shortcut.adminPortal" ? "#4EBEE3" : "#fff",
             borderRadius: theme.radiusXl,
             display: "flex",
             alignItems: "center",
@@ -500,7 +505,7 @@ function ShortcutTile({ item, contained, onTap, onLongPress, isLocked }: { item:
               maxWidth: "100%",
               maxHeight: "100%",
               objectFit: "contain",
-              filter: (item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.adminPortal") ? "brightness(0) invert(1)" : "none",
+              filter: (item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.burjeelPodcast" || item.labelKey === "shortcut.adminPortal") ? "brightness(0) invert(1)" : "none",
             }}
           />
         </div>
@@ -560,12 +565,12 @@ function ShortcutTileCompact({ item, onTap, onLongPress, isLocked }: { item: Sho
       aria-label={t(item.labelKey)}
     >
       {isLocked && <LockBadge />}
-      {item.labelKey === "shortcut.patientPortal" || item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.adminPortal" ? (
+      {item.labelKey === "shortcut.patientPortal" || item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.burjeelPodcast" || item.labelKey === "shortcut.adminPortal" ? (
         <div 
           style={{
             width: "88px",
             height: "88px",
-            backgroundColor: item.labelKey === "shortcut.dallahPodcast" ? "#00A3C1" : item.labelKey === "shortcut.adminPortal" ? "#4EBEE3" : "#fff",
+            backgroundColor: (item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.burjeelPodcast") ? "#00A3C1" : item.labelKey === "shortcut.adminPortal" ? "#4EBEE3" : "#fff",
             borderRadius: theme.radiusLg,
             display: "flex",
             alignItems: "center",
@@ -581,7 +586,7 @@ function ShortcutTileCompact({ item, onTap, onLongPress, isLocked }: { item: Sho
               maxWidth: "100%",
               maxHeight: "100%",
               objectFit: "contain",
-              filter: (item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.adminPortal") ? "brightness(0) invert(1)" : "none",
+              filter: (item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.burjeelPodcast" || item.labelKey === "shortcut.adminPortal") ? "brightness(0) invert(1)" : "none",
             }}
           />
         </div>

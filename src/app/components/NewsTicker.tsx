@@ -34,6 +34,14 @@ export function NewsTicker() {
         `🤝  ${t("news.imc.4")}`,
         `📱  ${t("news.imc.5")}`,
       ]
+    : theme.id === "burjeel"
+    ? [
+        `🏆  ${t("news.burjeel.1")}`,
+        `🌍  ${t("news.burjeel.2")}`,
+        `🔬  ${t("news.burjeel.3")}`,
+        `💹  ${t("news.burjeel.4")}`,
+        `🏥  ${t("news.burjeel.5")}`,
+      ]
     : theme.id === "careinn"
     ? [
         `🏆  ${t("news.careinn.1")}`,
