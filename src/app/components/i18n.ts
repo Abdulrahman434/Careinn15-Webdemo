@@ -307,6 +307,9 @@ const translations: Record<string, TranslationEntry> = {
   "careplan.overallTitle": { en: "Overall Plan", ar: "خطة شاملة", ur: "مجموعی منصوبہ" },
   "careplan.overallDesc": { en: "Here is our treatment plan, it will be updated regularly", ar: "هذه هي خطتنا العلاجية، وسيتم تحديثها بانتظام", ur: "یہ ہمارا علاج کا منصوبہ ہے، اسے باقاعدگی سے اپ ڈیٹ کیا جائے گا" },
 
+  "settings.room": { en: "Room", ar: "غرفة", ur: "کمرہ" },
+  "settings.deviceId": { en: "Device ID", ar: "معرف الجهاز", ur: "ڈیوائس ID" },
+
   /* ─── Admission / Discharge Labels ─── */
   "care.admitted": { en: "Admitted", ar: "تاريخ الدخول", ur: "داخلہ" },
   "care.discharge": { en: "Discharge", ar: "الخروج المتوقع", ur: "ڈسچارج" },

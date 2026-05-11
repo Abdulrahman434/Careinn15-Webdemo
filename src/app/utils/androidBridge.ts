@@ -404,6 +404,49 @@ export const iptv = {
   },
 };
 
+/* ─── Device Info ─── */
+
+export interface DeviceInfo {
+  serial: string;       // ro.serialno e.g. "mt15pwjn896694018"
+  androidId: string;    // e.g. "a190325536d38954"
+  ipAddress: string;    // e.g. "10.32.0.51"
+  model: string;        // e.g. "MT15"
+  manufacturer: string; // e.g. "Queclink"
+}
+
+export function getDeviceInfo(): DeviceInfo | null {
+  try {
+    const json = sys()?.getDeviceInfo?.();
+    if (!json) return null;
+    return JSON.parse(json);
+  } catch { return null; }
+}
+
+/**
+ * Reactive hook — reads device info once on mount.
+ * Refreshes when the bridge becomes available.
+ */
+export function useDeviceInfo(): DeviceInfo | null {
+  const [info, setInfo] = useState<DeviceInfo | null>(null);
+
+  useEffect(() => {
+    // Try immediately
+    const d = getDeviceInfo();
+    if (d) {
+      setInfo(d);
+      return;
+    }
+
+    // If bridge not ready yet, retry after 1s (WebView load timing)
+    const t = setTimeout(() => {
+      setInfo(getDeviceInfo());
+    }, 1000);
+    return () => clearTimeout(t);
+  }, []);
+
+  return info;
+}
+
 /**
  * React hook: triggers a channel fetch on mount, parses the result, 
  * exposes loading / error state. Returns [] in regular browsers.

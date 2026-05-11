@@ -71,6 +71,9 @@ interface AndroidSystemInterface {
 
   // Clear All Data
   clearAllDataAndReload?(): void;
+
+  // Device Info
+  getDeviceInfo?(): string;           // returns JSON string
 }
 /* ─── CustomEvent detail shapes dispatched by the Android side ─── */
 export interface BrightnessChangedDetail {

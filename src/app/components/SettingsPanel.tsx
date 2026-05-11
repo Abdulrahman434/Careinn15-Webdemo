@@ -9,7 +9,9 @@ import {
   dnd as dndBridge,
   nightLight as nightLightBridge,
   useAndroidEvent,
+  useDeviceInfo,
 } from "../utils/androidBridge";
+import { useNurseStore } from "./NurseDataStore";
 import {
   X,
   Sun,
@@ -1722,8 +1724,26 @@ export function SettingsPanel({
   const { theme: t, darkMode, setDarkMode, castDevice, setCastDevice, locale: currentLocale, setLocale, prayerAlarm, setPrayerAlarm } = useTheme();
   const { t: tr, isRTL, fontFamily, locale } = useLocale();
   const { logout } = useAuth();
+  const deviceInfo = useDeviceInfo();
+  const nurseState = useNurseStore();
 
   const isNative = isAndroidApp();
+
+  // Room: from NurseDataStore (set by nurse in CareMe)
+  // Fallback: hardcoded "412"
+  const roomDisplay = nurseState.patient.room || "412";
+
+  // Device serial: from Android bridge
+  const serialDisplay = deviceInfo?.serial || null;
+
+  // Device ID shown: use serial if available, else old format
+  const deviceIdDisplay = serialDisplay
+    ? serialDisplay
+    : `${t.hospitalShortName}-BT-${roomDisplay}A`;
+
+  // IP address: from Android bridge
+  // Fallback: hardcoded
+  const ipDisplay = deviceInfo?.ipAddress || "10.10.42.118";
 
   // ── Brightness: init from bridge, sync via event ──
   const [brightnessVal, setBrightnessState] = useState(() =>
@@ -2131,6 +2151,7 @@ export function SettingsPanel({
             className="flex flex-col items-center gap-1"
             style={{ padding: "8px 0 4px 0" }}
           >
+            {/* Line 1: Room number (from NurseDataStore) */}
             <span
               style={{
                 fontFamily: t.fontFamily,
@@ -2139,8 +2160,10 @@ export function SettingsPanel({
                 color: t.textMuted,
               }}
             >
-              Room 412 &middot; Bed A
+              {tr("settings.room")} {roomDisplay}
             </span>
+
+            {/* Line 2: Device serial / ID */}
             <span
               style={{
                 fontFamily: t.fontFamily,
@@ -2149,8 +2172,10 @@ export function SettingsPanel({
                 color: t.textDisabled,
               }}
             >
-              Device ID: {t.hospitalShortName}-BT-412A &middot; v2.4.1
+              {tr("settings.deviceId")}: {deviceIdDisplay}
             </span>
+
+            {/* Line 3: IP address */}
             <span
               style={{
                 fontFamily: t.fontFamily,
@@ -2159,8 +2184,23 @@ export function SettingsPanel({
                 color: t.textDisabled,
               }}
             >
-              IP: 10.10.42.118
+              IP: {ipDisplay}
             </span>
+
+            {/* Line 4: Android model (only show on kiosk, not browser) */}
+            {isAndroidApp() && deviceInfo?.model && (
+              <span
+                style={{
+                  fontFamily: t.fontFamily,
+                  fontSize: "10px",
+                  fontWeight: 400,
+                  color: t.textDisabled,
+                  opacity: 0.7,
+                }}
+              >
+                {deviceInfo.manufacturer} {deviceInfo.model}
+              </span>
+            )}
           </div>
         </div>
       </div>
