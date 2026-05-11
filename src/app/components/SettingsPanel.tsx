@@ -54,7 +54,7 @@ import { NurseInterface } from "./nurse/NurseInterface";
 import type { Locale } from "./i18n";
 import imgMosque from "../../assets/b51acb5e2ec4a2c930572c53103b020b12e76ee2.png";
 import { getPrayerStatus, getCountdown, formatPrayerTime, PRAYER_NAMES } from "../utils/prayerUtils";
-import { MyAccountDialog } from "./MyAccountDialog";
+import { MyPreferencesDialog } from "./MyAccountDialog";
 import { isAccountSet } from "../lib/accountAuth";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2106,11 +2106,11 @@ export function SettingsPanel({
           <div className="flex items-center gap-2.5 mt-2.5">
             <ActionButton
               icon={<UserCircle size={20} style={{ color: t.primary }} />}
-              label={tr("settings.account")}
+              label={tr("settings.preferences")}
               subtitle={
                 isAccountSet() 
-                  ? tr("settings.account.subtitle.set") 
-                  : tr("settings.account.subtitle.unset")
+                  ? tr("settings.preferences.subtitle.set") 
+                  : tr("settings.preferences.subtitle.unset")
               }
               variant="primary"
               onClick={() => setShowAccountDialog(true)}
@@ -2261,7 +2261,7 @@ export function SettingsPanel({
       )}
 
       {showAccountDialog && (
-        <MyAccountDialog
+        <MyPreferencesDialog
           open={showAccountDialog}
           onClose={() => setShowAccountDialog(false)}
         />

@@ -74,6 +74,11 @@ interface AndroidSystemInterface {
 
   // Device Info
   getDeviceInfo?(): string;           // returns JSON string
+
+  // API Config
+  getApiConfig?(): string;
+  updateApiConfig?(serverIp: string, apiKey: string): void;
+  resetApiConfig?(): void;
 }
 /* ─── CustomEvent detail shapes dispatched by the Android side ─── */
 export interface BrightnessChangedDetail {

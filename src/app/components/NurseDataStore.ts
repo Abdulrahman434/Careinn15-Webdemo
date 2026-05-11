@@ -299,11 +299,31 @@ function createDefaultState(): NurseStoreState {
 
 type StoreListener = (state: NurseStoreState) => void;
 
+const NURSE_STORE_CACHE_KEY = 'careinn-nurse-store';
+
+function loadCachedState(): Partial<NurseStoreState> {
+  try {
+    const raw = localStorage.getItem(NURSE_STORE_CACHE_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw);
+  } catch { return {}; }
+}
+
 const nurseStore = (() => {
-  let state = createDefaultState();
+  let state = {
+    ...createDefaultState(),
+    ...loadCachedState(),
+  };
   const listeners = new Set<StoreListener>();
 
+  function persistState() {
+    try {
+      localStorage.setItem(NURSE_STORE_CACHE_KEY, JSON.stringify(state));
+    } catch {}
+  }
+
   function notify() {
+    persistState();
     listeners.forEach((l) => l({ ...state }));
   }
 

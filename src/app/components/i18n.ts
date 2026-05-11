@@ -825,7 +825,12 @@ const translations: Record<string, TranslationEntry> = {
   "appLock.noPinSetup.button": { en: "Set up PIN", ar: "إعداد PIN", ur: "PIN ترتیب دیں" },
   "appLock.locked": { en: "Locked", ar: "مقفل", ur: "مقفل" },
   "appLock.unlocked": { en: "Unlocked", ar: "تم الفتح", ur: "کھل گیا" },
-  "appLock.cancel": { en: "Cancel", ar: "إلغاء", ur: "منسوخ کریں" }
+  "appLock.cancel": { en: "Cancel", ar: "إلغاء", ur: "منسوخ کریں" },
+
+  /* ── My Preferences ── */
+  "settings.preferences": { en: "My Preferences", ar: "تفضيلاتي", ur: "میری ترجیحات" },
+  "settings.preferences.subtitle.set": { en: "PIN & server configured", ar: "تم ضبط الرمز والخادم", ur: "PIN اور سرور ترتیب دیا گیا" },
+  "settings.preferences.subtitle.unset": { en: "Set up your preferences", ar: "اضبط تفضيلاتك", ur: "اپنی ترجیحات ترتیب دیں" }
 };
 
 /* ── Number Localization ── */
@@ -836,6 +841,8 @@ export function localizeNumber(n: number | string, locale: Locale): string {
   }
   return s;
 }
+
+
 
 /* ── Translator function factory ── */
 function createT(locale: Locale) {
