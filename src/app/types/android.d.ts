@@ -79,6 +79,10 @@ interface AndroidSystemInterface {
   getApiConfig?(): string;
   updateApiConfig?(serverIp: string, apiKey: string): void;
   resetApiConfig?(): void;
+
+  // Image proxy — fetches http:// image, returns base64 data URL
+  // Used to bypass mixed content restrictions in HTTPS WebView
+  fetchImageAsBase64?(url: string): string;
 }
 /* ─── CustomEvent detail shapes dispatched by the Android side ─── */
 export interface BrightnessChangedDetail {
@@ -157,7 +161,11 @@ export type AndroidEventName =
   | "sip-registration-state"
   | "sip-call-state"
   | "sip-contacts-updated"
-  | "sip-credentials-updated";
+  | "sip-credentials-updated"
+  | "api-config-updated"
+  | "update-available"
+  | "update-progress"
+  | "update-installed";
 
 /* ─── Augment the global Window type ─── */
 declare global {

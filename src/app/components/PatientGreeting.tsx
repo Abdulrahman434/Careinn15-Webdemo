@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchPatientForDevice } from "../lib/hospitalApi";
+import { isAndroidApp, getDeviceInfo } from "../utils/androidBridge";
 import { useTheme, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
@@ -9,6 +11,7 @@ import { ConfirmDialog } from "./ConfirmDialog";
 import { useGuestMode } from "../lib/guestMode";
 import { useAuth } from "./AuthContext";
 import svgPaths from "../../imports/svg-ca68x68c4i";
+import { getSavedHeroImage, isSlideshowEnabled } from "../lib/backgroundPrefs";
 
 function AboutUsIcon({ color }: { color?: string }) {
   const { theme } = useTheme();
@@ -50,6 +53,83 @@ export function PatientGreeting({
   const nurseStore = useNurseStore();
   const { isGuest } = useGuestMode();
   const { logout } = useAuth();
+
+  const [apiName,   setApiName]   = useState<string | null>(null);
+  const [apiMrn,    setApiMrn]    = useState<string | null>(null);
+  const [apiRoom,   setApiRoom]   = useState<string | null>(null);
+  const [apiBed,    setApiBed]    = useState<string | null>(null);
+  const [apiAdmit,  setApiAdmit]  = useState<string | null>(null);
+
+  const doFetch = () => {
+    if (!isAndroidApp()) return;
+    const info = getDeviceInfo();
+    if (!info?.serial) return;
+
+    fetchPatientForDevice(info.serial)
+      .then(result => {
+        if (!result) return;
+        const p = result.patient;
+        setApiName(p.name  || null);
+        setApiMrn(p.mrn    || null);
+        setApiRoom(p.room  || null);
+        setApiBed(p.bed    || null);
+        setApiAdmit(p.admissionDate || null);
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    doFetch();
+    // Re-fetch when server IP/key changes in My Preferences
+    window.addEventListener("api-config-changed", doFetch);
+    return () => window.removeEventListener(
+      "api-config-changed", doFetch);
+  }, []);
+
+  // Name: API → i18n demo key → nurse manual entry
+  const displayName = apiName
+    || (nurseStore.patient.nameKey
+        ? t(nurseStore.patient.nameKey)
+        : nurseStore.patient.name);
+
+  // MRN: API → store
+  const displayMrn = apiMrn || nurseStore.patient.mrn;
+
+  // Room: API → store
+  const displayRoom = apiRoom || nurseStore.patient.room;
+
+  // Bed: API only (not in store default)
+  const displayBed = apiBed || nurseStore.patient.bed || "";
+
+  // Admission: API → store
+  const displayAdmit = apiAdmit || nurseStore.patient.admissionDate;
+
+  // Hero image fallback chain:
+  // 1. User-saved image from Backgrounds preferences
+  // 2. theme.heroImageUrls (hardcoded per hospital brand)
+  const [heroImages, setHeroImages] = useState<string[]>(() => {
+    const saved = getSavedHeroImage();
+    if (saved && !isSlideshowEnabled()) return [saved];
+    return theme.heroImageUrls ?? [];
+  });
+
+  useEffect(() => {
+    const onHeroChange = (e: Event) => {
+      const url = (e as CustomEvent<string | null>).detail;
+      if (url) setHeroImages([url]);
+      else setHeroImages(theme.heroImageUrls ?? []);
+    };
+    const onSlideshowChange = (e: Event) => {
+      const enabled = (e as CustomEvent<boolean>).detail;
+      if (enabled) setHeroImages(theme.heroImageUrls ?? []);
+    };
+    window.addEventListener("hero-image-changed",  onHeroChange);
+    window.addEventListener("slideshow-changed",    onSlideshowChange);
+    return () => {
+      window.removeEventListener("hero-image-changed",  onHeroChange);
+      window.removeEventListener("slideshow-changed",    onSlideshowChange);
+    };
+  }, [theme.heroImageUrls]);
 
   return (
     <div
@@ -106,7 +186,7 @@ export function PatientGreeting({
               color: theme.textHeading,
             }}
           >
-            {nurseStore.patient.nameKey ? t(nurseStore.patient.nameKey) : nurseStore.patient.name}
+            {displayName}
           </p>
         )}
         <div style={{ paddingTop: SPACE[1] }}>
@@ -134,9 +214,57 @@ export function PatientGreeting({
                   color: theme.primary,
                 }}
               >
-                {t("greeting.room", nurseStore.patient.room)}
+                {t("greeting.mrn")} {displayMrn}
               </span>
             </div>
+            <div
+              className="flex items-center px-3 py-1.5"
+              style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
+            >
+              <span
+                style={{
+                  fontFamily: fontFamily,
+                  ...TEXT_STYLE.pill,
+                  color: theme.primary,
+                }}
+              >
+                {t("greeting.room", displayRoom)}
+              </span>
+            </div>
+            {displayBed && (
+              <div
+                className="flex items-center px-3 py-1.5"
+                style={{
+                  backgroundColor: theme.primarySubtle,
+                  borderRadius: theme.radiusFull,
+                }}
+              >
+                <span style={{
+                  fontFamily,
+                  ...TEXT_STYLE.pill,
+                  color: theme.primary,
+                }}>
+                  {t("greeting.bed")} {displayBed}
+                </span>
+              </div>
+            )}
+            {displayAdmit && (
+              <div
+                className="flex items-center px-3 py-1.5"
+                style={{
+                  backgroundColor: theme.primarySubtle,
+                  borderRadius: theme.radiusFull,
+                }}
+              >
+                <span style={{
+                  fontFamily,
+                  ...TEXT_STYLE.pill,
+                  color: theme.primary,
+                }}>
+                  {t("greeting.admitted")} {displayAdmit}
+                </span>
+              </div>
+            )}
             <div
               className="flex items-center px-3 py-1.5"
               style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
@@ -185,7 +313,7 @@ export function PatientGreeting({
         }}
       >
         <AutoCarousel
-          images={theme.heroImageUrls}
+          images={heroImages}
           objectPosition={theme.heroCropPosition || "50% 15%"}
           objectFit="cover"
           intervalSeconds={theme.slideshowInterval}

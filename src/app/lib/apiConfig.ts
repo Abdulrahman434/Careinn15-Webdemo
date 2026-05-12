@@ -44,7 +44,9 @@ export function isCustomConfig(): boolean {
 /** Build a full URL — mirrors the Android ApiConfig.url() */
 export function apiUrl(path: string): string {
   const cfg = getApiConfig();
-  const base = `http://${cfg.serverIp}/api`;
+  const base = cfg.serverIp.startsWith("http")
+    ? `${cfg.serverIp}/api`
+    : `http://${cfg.serverIp}/api`;
   const sep  = path.includes('?') ? '&' : '?';
   const p    = path.startsWith('/') ? path : '/' + path;
   return `${base}${p}${sep}apikey=${cfg.apiKey}`;

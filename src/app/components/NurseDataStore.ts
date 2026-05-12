@@ -24,6 +24,9 @@ export interface PatientProfile {
   age: string;
   mrn: string;
   room: string;
+  bed:           string;
+  sex:           string;
+  dob:           string;
   admissionDate: string;
   dischargeDate: string;
   contact: string;
@@ -205,6 +208,9 @@ function createDefaultState(): NurseStoreState {
       age: "32",
       mrn: "00-284619",
       room: "412",
+      bed:           "",
+      sex:           "",
+      dob:           "",
       admissionDate: "10 Mar 2026",
       dischargeDate: "12 Mar 2026",
       contact: "050 123 4567",
@@ -512,14 +518,6 @@ const nurseStore = (() => {
     },
     addDischargePlanItem: (item: CarePlanItem) => {
       state = { ...state, dischargePlan: [...state.dischargePlan, item] };
-      notify();
-    },
-    updateDischargePlanItem: (id: string, updates: Partial<CarePlanItem>) => {
-      state = { ...state, dischargePlan: state.dischargePlan.map((i) => i.id === id ? { ...i, ...updates } : i) };
-      notify();
-    },
-    deleteDischargePlanItem: (id: string) => {
-      state = { ...state, dischargePlan: state.dischargePlan.filter((i) => i.id !== id) };
       notify();
     },
 

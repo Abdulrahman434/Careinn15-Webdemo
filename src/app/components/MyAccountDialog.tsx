@@ -3,8 +3,14 @@ import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { setAccount, getAccount, updateNfcCard, clearAccount, verifyPin } from "../lib/accountAuth";
 import { useNfcTap } from "../utils/nfc";
-import { X, CheckCircle, Shield, AlertCircle, Trash2, ChevronRight, Globe, Layout, Settings } from "lucide-react";
+import { X, CheckCircle, Shield, AlertCircle, Trash2, ChevronRight, Globe, Layout, Settings, Image, Check } from "lucide-react";
 import { getApiConfig, saveApiConfig, isCustomConfig, resetApiConfig } from "../lib/apiConfig";
+import { fetchAllWallpapers, WallpaperGroup } from "../lib/hospitalApi";
+import { proxyImageUrls } from "../lib/imageProxy";
+import {
+  getSavedHeroImage, saveHeroImage, clearSavedHeroImage,
+  isSlideshowEnabled, setSlideshowEnabled,
+} from "../lib/backgroundPrefs";
 
 type Step =
   | 'menu'
@@ -21,7 +27,8 @@ type Step =
   | 'success'
   | 'server'
   | 'admin-login'
-  | 'admin-controls';
+  | 'admin-controls'
+  | 'backgrounds';
 
 type PendingAction = 'reset-pin' | 'reset-nfc' | 'remove-account' | 'admin-login' | null;
 
@@ -374,7 +381,27 @@ export function MyPreferencesDialog({
                 <ChevronRight size={20} style={{ color: t.textMuted, transform: isRTL ? 'rotate(180deg)' : '' }} />
               </button>
 
-              {/* SECTION 3: Layout Mode */}
+              {/* SECTION 3: Backgrounds */}
+              <button
+                onClick={() => setStep('backgrounds')}
+                className="flex items-center gap-3 w-full text-left cursor-pointer active:scale-[0.98] transition-transform"
+                style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none" }}
+              >
+                <div style={{ padding: "8px", borderRadius: t.radiusMd, backgroundColor: t.primarySubtle }}>
+                  <Image size={20} style={{ color: t.primary }} />
+                </div>
+                <div className="flex flex-col flex-1">
+                  <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: t.textHeading }}>
+                    {tr("prefs.backgrounds")}
+                  </span>
+                  <span style={{ fontFamily: t.fontFamily, fontSize: "13px", color: t.textMuted }}>
+                    {getSavedHeroImage() ? tr("prefs.backgrounds.custom") : (isSlideshowEnabled() ? tr("prefs.backgrounds.slideshow") : tr("prefs.backgrounds.default"))}
+                  </span>
+                </div>
+                <ChevronRight size={20} style={{ color: t.textMuted, transform: isRTL ? 'rotate(180deg)' : '' }} />
+              </button>
+
+              {/* SECTION 4: Layout Mode */}
               <div
                 className="flex items-center gap-3 w-full text-left"
                 style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, opacity: 0.5 }}
@@ -392,7 +419,7 @@ export function MyPreferencesDialog({
                 </div>
               </div>
 
-              {/* SECTION 4: Admin Settings */}
+              {/* SECTION 5: Admin Settings */}
               <button
                 onClick={() => {
                   if (isAdminUnlocked) {
@@ -835,6 +862,9 @@ export function MyPreferencesDialog({
             </span>
           </div>
         );
+
+      case 'backgrounds':
+        return <BackgroundsPanel />;
     }
   };
 
@@ -853,15 +883,17 @@ export function MyPreferencesDialog({
         return pendingAction === 'admin-login' ? "Admin Login" : "Password";
       case 'remove-confirm':
         return "Password";
+      case 'backgrounds': return tr("prefs.backgrounds");
       default: return tr("settings.preferences");
     }
   };
 
   const showHeader = step !== 'success' && step !== 'setup-pin-mismatch' && step !== 'nfc-mismatch';
   const canGoBack = step !== 'menu' && step !== 'success';
+  const dialogWidth = step === 'backgrounds' ? 420 : 340;
 
   return (
-    <CenteredDialog onClose={onClose} width={340}>
+    <CenteredDialog onClose={onClose} width={dialogWidth}>
       {showHeader && (
         <DialogHeader
           title={getTitle()}
@@ -871,5 +903,184 @@ export function MyPreferencesDialog({
       )}
       {renderContent()}
     </CenteredDialog>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * BACKGROUNDS PANEL
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+function BackgroundsPanel() {
+  const { theme: t } = useTheme();
+  const { t: tr } = useLocale();
+
+  const [groups,      setGroups]      = useState<WallpaperGroup[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [proxied,     setProxied]     = useState<Map<string,string>>(new Map());
+  const [selectedUrl, setSelectedUrl] = useState<string>(
+    getSavedHeroImage() ?? "");
+  const [slideshow,   setSlideshow]   = useState(isSlideshowEnabled());
+
+  const doFetch = async () => {
+    setLoading(true);
+    const data = await fetchAllWallpapers();
+    setGroups(data);
+
+    // Proxy all http:// images through Android bridge
+    const allUrls = data.flatMap(g => g.images.map(i => i.imageUrl));
+    const map = await proxyImageUrls(allUrls);
+    setProxied(map);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    doFetch();
+    window.addEventListener("api-config-changed", doFetch);
+    return () => window.removeEventListener("api-config-changed", doFetch);
+  }, []);
+
+  const handleSelect = (originalUrl: string) => {
+    const displayUrl = proxied.get(originalUrl) ?? originalUrl;
+    setSelectedUrl(originalUrl);
+    saveHeroImage(displayUrl);
+    setSlideshowEnabled(false);
+    setSlideshow(false);
+  };
+
+  const handleSlideshow = (enabled: boolean) => {
+    setSlideshow(enabled);
+    setSlideshowEnabled(enabled);
+    if (enabled) {
+      setSelectedUrl("");
+      clearSavedHeroImage();
+    }
+  };
+
+  // Hardcoded theme images (always available as fallback)
+  const themeImages: string[] = (t as any).heroImageUrls ?? [];
+
+  return (
+    <div style={{ padding: "16px 20px 24px", display: "flex", flexDirection: "column", gap: "12px" }}>
+
+      {/* Slideshow toggle */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "12px 16px", backgroundColor: t.tileInactiveBg,
+        borderRadius: t.radiusMd, border: `1px solid ${t.borderSubtle}`,
+      }}>
+        <div>
+          <p style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 600, color: t.textHeading, margin: 0 }}>
+            {tr("prefs.backgrounds.slideshow.label")}
+          </p>
+          <p style={{ fontFamily: t.fontFamily, fontSize: "12px", color: t.textMuted, margin: "2px 0 0 0" }}>
+            {tr("prefs.backgrounds.slideshow.hint")}
+          </p>
+        </div>
+        <div
+          onClick={() => handleSlideshow(!slideshow)}
+          style={{
+            width: 44, height: 24, borderRadius: 12, cursor: "pointer",
+            backgroundColor: slideshow ? t.primary : t.borderDefault,
+            position: "relative", transition: "background-color 0.2s",
+          }}
+        >
+          <div style={{
+            width: 20, height: 20, borderRadius: "50%", backgroundColor: "#fff",
+            position: "absolute", top: 2,
+            left: slideshow ? 22 : 2,
+            transition: "left 0.2s",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+          }} />
+        </div>
+      </div>
+
+      {loading && (
+        <p style={{ fontFamily: t.fontFamily, color: t.textMuted, fontSize: "14px", textAlign: "center", padding: "16px 0" }}>
+          {tr("prefs.backgrounds.loading")}
+        </p>
+      )}
+
+      {/* API wallpaper groups */}
+      {!loading && groups.map(group => (
+        <div key={group.id}>
+          <p style={{
+            fontFamily: t.fontFamily, fontSize: "12px", fontWeight: 700, color: t.textMuted,
+            textTransform: "uppercase", letterSpacing: "0.5px", margin: "0 0 8px 0",
+          }}>
+            {group.title}
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(88px, 1fr))", gap: "8px", marginBottom: "16px" }}>
+            {group.images.map(img => {
+              const displayUrl = proxied.get(img.imageUrl) ?? img.imageUrl;
+              const isSelected = selectedUrl === img.imageUrl && !slideshow;
+              return (
+                <button
+                  key={img.id}
+                  onClick={() => handleSelect(img.imageUrl)}
+                  style={{
+                    position: "relative", width: "100%", aspectRatio: "16/9",
+                    borderRadius: t.radiusMd, overflow: "hidden", cursor: "pointer", padding: 0,
+                    border: isSelected ? `3px solid ${t.primary}` : `2px solid ${t.borderSubtle}`,
+                    background: t.tileInactiveBg,
+                  }}
+                >
+                  <img src={displayUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    onError={e => { (e.target as HTMLImageElement).style.opacity = "0.3"; }} />
+                  {isSelected && (
+                    <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Check size={22} color="#fff" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+
+      {/* Hardcoded theme images */}
+      {themeImages.length > 0 && (
+        <div>
+          <p style={{
+            fontFamily: t.fontFamily, fontSize: "12px", fontWeight: 700, color: t.textMuted,
+            textTransform: "uppercase", letterSpacing: "0.5px", margin: "0 0 8px 0",
+          }}>
+            {tr("prefs.backgrounds.default")}
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(88px, 1fr))", gap: "8px", marginBottom: "16px" }}>
+            {themeImages.map((url, i) => {
+              const isSelected = selectedUrl === url && !slideshow;
+              return (
+                <button
+                  key={i}
+                  onClick={() => handleSelect(url)}
+                  style={{
+                    position: "relative", width: "100%", aspectRatio: "16/9",
+                    borderRadius: t.radiusMd, overflow: "hidden", cursor: "pointer", padding: 0,
+                    border: isSelected ? `3px solid ${t.primary}` : `2px solid ${t.borderSubtle}`,
+                    background: t.tileInactiveBg,
+                  }}
+                >
+                  <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    onError={e => { (e.target as HTMLImageElement).style.opacity = "0.3"; }} />
+                  {isSelected && (
+                    <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Check size={22} color="#fff" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* No images at all */}
+      {!loading && groups.length === 0 && themeImages.length === 0 && (
+        <p style={{ fontFamily: t.fontFamily, color: t.textMuted, fontSize: "14px", textAlign: "center", padding: "16px 0" }}>
+          {tr("prefs.backgrounds.empty")}
+        </p>
+      )}
+    </div>
   );
 }

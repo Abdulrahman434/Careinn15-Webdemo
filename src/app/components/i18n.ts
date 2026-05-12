@@ -55,6 +55,8 @@ const translations: Record<string, TranslationEntry> = {
   "greeting.mrn": { en: "MRN", ar: "رقم الملف", ur: "ایم آر این" },
   "greeting.room": { en: "Room {0}", ar: "غرفة {0}", ur: "کمرہ {0}" },
   "greeting.ext": { en: "Ext. {0}", ar: "تحويلة {0}", ur: "ایکسٹینشن {0}" },
+  "greeting.bed": { en: "Bed", ar: "سرير", ur: "بستر" },
+  "greeting.admitted": { en: "Admitted", ar: "تاريخ الدخول", ur: "داخلہ" },
 
   /* ─── Top Bar ─── */
   "topbar.am": { en: "AM", ar: "ص", ur: "AM" },
@@ -830,7 +832,17 @@ const translations: Record<string, TranslationEntry> = {
   /* ── My Preferences ── */
   "settings.preferences": { en: "My Preferences", ar: "تفضيلاتي", ur: "میری ترجیحات" },
   "settings.preferences.subtitle.set": { en: "PIN & server configured", ar: "تم ضبط الرمز والخادم", ur: "PIN اور سرور ترتیب دیا گیا" },
-  "settings.preferences.subtitle.unset": { en: "Set up your preferences", ar: "اضبط تفضيلاتك", ur: "اپنی ترجیحات ترتیب دیں" }
+  "settings.preferences.subtitle.unset": { en: "Set up your preferences", ar: "اضبط تفضيلاتك", ur: "اپنی ترجیحات ترتیب دیں" },
+
+  /* ── Backgrounds Preferences ── */
+  "prefs.backgrounds": { en: "Backgrounds", ar: "الخلفيات", ur: "پس منظر" },
+  "prefs.backgrounds.slideshow": { en: "Slideshow", ar: "عرض شرائح", ur: "سلائیڈ شو" },
+  "prefs.backgrounds.custom": { en: "Custom", ar: "مخصص", ur: "حسب ضرورت" },
+  "prefs.backgrounds.slideshow.label": { en: "Show as slideshow", ar: "عرض كشرائح", ur: "سلائیڈ شو دکھائیں" },
+  "prefs.backgrounds.slideshow.hint": { en: "Cycles through all images automatically", ar: "يتنقل بين جميع الصور تلقائياً", ur: "تمام تصاویر کے درمیان خودبخود چلتا ہے" },
+  "prefs.backgrounds.loading": { en: "Loading images...", ar: "جار تحميل الصور...", ur: "تصاویر لوڈ ہو رہی ہیں..." },
+  "prefs.backgrounds.default": { en: "Default", ar: "افتراضي", ur: "ڈیفالٹ" },
+  "prefs.backgrounds.empty": { en: "No images available", ar: "لا توجد صور متاحة", ur: "کوئی تصویر دستیاب نہیں" }
 };
 
 /* ── Number Localization ── */
