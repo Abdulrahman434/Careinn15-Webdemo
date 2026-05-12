@@ -248,23 +248,6 @@ export function PatientGreeting({
                 </span>
               </div>
             )}
-            {displayAdmit && (
-              <div
-                className="flex items-center px-3 py-1.5"
-                style={{
-                  backgroundColor: theme.primarySubtle,
-                  borderRadius: theme.radiusFull,
-                }}
-              >
-                <span style={{
-                  fontFamily,
-                  ...TEXT_STYLE.pill,
-                  color: theme.primary,
-                }}>
-                  {t("greeting.admitted")} {displayAdmit}
-                </span>
-              </div>
-            )}
             <div
               className="flex items-center px-3 py-1.5"
               style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}

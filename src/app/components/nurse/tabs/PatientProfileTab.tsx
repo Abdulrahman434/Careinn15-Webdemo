@@ -29,6 +29,7 @@ export function PatientProfileTab({ role }: { role: "nurse" | "doctor" }) {
     { key: "age", label: "Age" },
     { key: "mrn", label: "MRN" },
     { key: "room", label: "Room" },
+    { key: "bed", label: "Bed" },
     { key: "extension", label: "Extension" },
     { key: "admissionDate", label: "Admission Date" },
     { key: "dischargeDate", label: "Expected Discharge" },

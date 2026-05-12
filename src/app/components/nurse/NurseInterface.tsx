@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
   X, ClipboardList, Stethoscope, User, Heart, DollarSign,
   FlaskConical, Image as ImageIcon, Baby, LogOut, Activity,
-  Hash, DoorOpen, Clock, Plus,
+  Hash, DoorOpen, Clock, Plus, Bed,
 } from "lucide-react";
 import { useTheme } from "../ThemeContext";
 import { useLocale } from "../i18n";
@@ -111,7 +111,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
             { label: "MRN", value: patient.mrn, icon: <Hash size={15} /> },
             { label: "Patient", value: `${patient.name} (${patient.age}y)`, icon: <User size={15} /> },
             { label: "Room", value: patient.room, icon: <DoorOpen size={15} /> },
-            { label: "Admitted", value: patient.admissionDate, icon: <Clock size={15} /> },
+            { label: "Bed", value: patient.bed || "—", icon: <Bed size={15} /> },
           ].map((item, i) => (
             <div key={i} className="flex relative items-center justify-center">
               {i > 0 && (
