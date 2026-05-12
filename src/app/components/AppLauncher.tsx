@@ -34,6 +34,7 @@ import { useRipple } from "./useRipple";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { PdfReaderModal } from "./PdfReaderModal";
 import { apps, isAndroidApp, KNOWN_APPS } from "../utils/androidBridge";
+import { useApiPdfApps, API_CATEGORY_MAP } from "../lib/hospitalApi";
 import edgeLogo from "../../assets/edge_logo.png";
 import chromeIcon from "../../assets/272d9a4c809b16af18cfbe153fa4edc5816536b3.png";
 import saudiGazetteLogo from "../../assets/5a0099c6364ba06a603226f636904e61c8e17c07.png";
@@ -1440,7 +1441,12 @@ export function AppLauncher({
   const lockedIds = useLockedApps();
   const [activeKey, setActiveKey] = useState(categoryKey);
   const allCategories = getCategories(theme, locale, t);
-  const category = allCategories[activeKey];
+  const apiPdfApps = useApiPdfApps(activeKey);
+  const baseCategory = allCategories[activeKey];
+  const category = baseCategory ? {
+    ...baseCategory,
+    apps: [...baseCategory.apps, ...apiPdfApps],
+  } : baseCategory;
   const [launchedApp, setLaunchedApp] = useState<string | null>(null);
   const [showPdf, setShowPdf] = useState(false);
   const [pdfSource, setPdfSource] = useState<string | undefined>(undefined);

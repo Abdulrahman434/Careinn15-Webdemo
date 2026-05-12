@@ -55,6 +55,7 @@ import { WaterTrackerTool } from "./components/tools/WaterTrackerTool";
 import { MoodTrackerTool } from "./components/tools/MoodTrackerTool";
 import { DailyQuotesTool } from "./components/tools/DailyQuotesTool";
 import { getPrayerStatus, PRAYER_NAMES, formatPrayerTime } from "./utils/prayerUtils";
+import { fetchAppPackages, invalidatePackagesCache } from "./lib/hospitalApi";
 import { Prayer } from "adhan";
 // In adhan v4, Prayer is an object value. We derive the type from its values.
 type PrayerType = typeof Prayer[keyof typeof Prayer];
@@ -86,6 +87,19 @@ function BedsideScreen() {
   const { t, isRTL, dir, fontFamily } = useLocale();
   const scale = useScreenScale();
   const [openCategory, setOpenCategory] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Pre-fetch packages on startup so AppLauncher loads instantly
+    fetchAppPackages();
+
+    // Re-fetch when server changes
+    const handler = () => {
+      invalidatePackagesCache();
+      fetchAppPackages();
+    };
+    window.addEventListener("api-config-changed", handler);
+    return () => window.removeEventListener("api-config-changed", handler);
+  }, []);
 
   /* ── Auto-switch hospital config based on login password ── */
   const hasAppliedConfig = useRef(false);

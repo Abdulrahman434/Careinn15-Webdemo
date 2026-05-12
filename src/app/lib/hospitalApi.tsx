@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+import { FileText } from "lucide-react";
 import { apiUrl } from "./apiConfig";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -285,3 +287,191 @@ export async function fetchLatestNews(): Promise<NewsItem[]> {
 //
 // export async function fetchScreenSavers(): Promise<string[]> { ... }
 //   GET /cdn/resource/screen_savers/...
+
+// ═══════════════════════════════════════════════════════════════════════════
+// APPS (APK, URL, PDF)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface AppPackage {
+  id:          number;
+  packageName: string | null;
+  versionName: string | null;
+  imageUrl:    string;
+  nameEn:      string;
+  nameAr:      string;
+  categoryId:  number;
+  category:    string;   // "Entertainment", "Social", etc.
+  type:        "APK" | "URL" | "PDF";
+  url:         string | null;
+  apkUrl:      string | null;
+  pdfUrl:      string | null;  // cdn URL for PDF
+}
+
+// ── Module-level cache — persists across component mounts ────────────────
+
+let _packagesCache: AppPackage[] | null = null;
+let _packagesFetching: Promise<AppPackage[]> | null = null;
+
+/**
+ * Fetch packages once and cache. Subsequent calls return cache instantly.
+ * Pass force=true to bypass cache (e.g. after server config change).
+ */
+export async function fetchAppPackages(
+  force = false
+): Promise<AppPackage[]> {
+  if (_packagesCache && !force) return _packagesCache;
+
+  // Deduplicate concurrent calls — if already fetching, 
+  // return the same promise
+  if (_packagesFetching && !force) return _packagesFetching;
+
+  _packagesFetching = (async () => {
+    try {
+      const res = await fetch(apiUrl("/apps/packages/"));
+      if (!res.ok) return _packagesCache ?? [];
+      const data: any[] = await res.json();
+      _packagesCache = data.map(item => ({
+        id:          item.id,
+        packageName: item.package_name  ?? null,
+        versionName: item.version_name  ?? null,
+        imageUrl:    item.image         ?? "",
+        nameEn:      item.package_locale?.find(
+          (l: any) => l.language_id === 1)?.locale_name ?? "",
+        nameAr:      item.package_locale?.find(
+          (l: any) => l.language_id === 2)?.locale_name ?? "",
+        categoryId:  item.category_id,
+        category:    item.category_title ?? "",
+        type:        item.type as "APK" | "URL" | "PDF",
+        url:         item.url     ?? null,
+        apkUrl:      item.package ?? null,
+        pdfUrl:      item.pdf     ?? null,
+      }));
+      return _packagesCache;
+    } catch (e) {
+      console.warn("[hospitalApi] fetchAppPackages:", e);
+      return _packagesCache ?? [];
+    } finally {
+      _packagesFetching = null;
+    }
+  })();
+
+  return _packagesFetching;
+}
+
+/** Call this when server config changes to force re-fetch */
+export function invalidatePackagesCache(): void {
+  _packagesCache = null;
+}
+
+/**
+ * Maps API category_title to AppLauncher category key.
+ * Add new mappings here when new categories are added to the API.
+ */
+export const API_CATEGORY_MAP: Record<string, string> = {
+  "Entertainment":      "Media",
+  "Social":             "Social",
+  "Call":               "Meeting",
+  "Games":              "Games",
+  "Tools":              "Tools",
+  "Religion":           "Reading",
+  "Shortcut Services":  "Shortcuts",  // ServicesGrid shortcuts
+  "I-Services":         "Internet",
+};
+
+export interface ApiAppItem {
+  id: string;
+  name: string;
+  nameAr?: string;
+  bg: string;
+  mark?: string;
+  textColor?: string;
+  pdfSource?: string;
+  customRender?: () => React.ReactNode;
+}
+
+/**
+ * Hook — fetches all packages once, returns only PDF items
+ * mapped to AppItem shape for a specific AppLauncher category key.
+ * Re-fetches when api-config-changed fires.
+ */
+function mapPackagesToAppItems(packages: AppPackage[], categoryKey: string): ApiAppItem[] {
+  // Find which API category maps to this launcher key
+  const apiCategory = Object.entries(API_CATEGORY_MAP)
+    .find(([, v]) => v === categoryKey)?.[0];
+  
+  if (!apiCategory) return [];
+
+  const pdfItems = packages.filter(
+    p => p.type === "PDF" && 
+         p.category === apiCategory &&
+         p.pdfUrl
+  );
+
+  return pdfItems.map(p => ({
+    id:       `api-pdf-${p.id}`,
+    name:     p.nameEn || `PDF ${p.id}`,
+    nameAr:   p.nameAr || p.nameEn,
+    bg:       "#E8453C",      // PDF red
+    mark:     "PDF",
+    textColor: "#fff",
+    pdfSource: p.pdfUrl!,    // cdn URL — opens in PdfReaderModal
+    customRender: () => (
+      <div style={{
+        display:        "flex",
+        flexDirection:  "column",
+        alignItems:     "center",
+        justifyContent: "center",
+        width:          "100%",
+        height:         "100%",
+        background:     "linear-gradient(135deg,#E8453C,#C0392B)",
+        borderRadius:   "12px",
+        gap:            "6px",
+        padding:        "8px",
+      }}>
+        <FileText size={32} color="#fff" strokeWidth={1.5} />
+        <span style={{
+          fontSize:   10,
+          fontWeight: 700,
+          color:      "#fff",
+          textAlign:  "center",
+          lineHeight: 1.2,
+          overflow:   "hidden",
+          display:    "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+        }}>
+          {p.nameEn || "PDF"}
+        </span>
+      </div>
+    ),
+  }));
+}
+
+/**
+ * Hook — fetches all packages once, returns only PDF items
+ * mapped to AppItem shape for a specific AppLauncher category key.
+ * Re-fetches when api-config-changed fires.
+ */
+export function useApiPdfApps(categoryKey: string): ApiAppItem[] {
+  const [apps, setApps] = useState<ApiAppItem[]>(() => {
+    // Read from cache immediately — no loading delay
+    return mapPackagesToAppItems(_packagesCache ?? [], categoryKey);
+  });
+
+  useEffect(() => {
+    // If cache was empty on mount, fetch then update
+    fetchAppPackages().then(packages => {
+      setApps(mapPackagesToAppItems(packages, categoryKey));
+    });
+
+    const handler = () => {
+      fetchAppPackages(true).then(packages => {
+        setApps(mapPackagesToAppItems(packages, categoryKey));
+      });
+    };
+    window.addEventListener("api-config-changed", handler);
+    return () => window.removeEventListener("api-config-changed", handler);
+  }, [categoryKey]);
+
+  return apps;
+}
