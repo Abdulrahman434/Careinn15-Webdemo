@@ -494,3 +494,103 @@ export function useApiPdfApps(categoryKey: string): ApiAppItem[] {
 
   return apps;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DEVICE ALERTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface DeviceAlert {
+  id:             number;
+  titleEn:        string;
+  titleAr:        string;
+  titleUr:        string;
+  bodyEn:         string;
+  bodyAr:         string;
+  bodyUr:         string;
+  sendImmediately: boolean;
+  scheduledAt:    string;
+  status:         "scheduled" | "completed" | "cancelled";
+  lastSentAt:     string | null;
+  groupIds:       number[];
+}
+
+function getAlertLocale(
+  locales: any[], languageId: number, field: string
+): string {
+  return locales?.find(
+    l => l.language_id === languageId)?.[field] ?? "";
+}
+
+export async function fetchDeviceAlerts(): Promise<DeviceAlert[]> {
+  try {
+    const res = await fetch(apiUrl("/push/device/alerts/"));
+    if (!res.ok) return [];
+    const data: any[] = await res.json();
+
+    return data.map(item => ({
+      id:              item.id,
+      titleEn:         getAlertLocale(item.device_alert_locale, 1, "locale_header")
+                       || item.title || "",
+      titleAr:         getAlertLocale(item.device_alert_locale, 2, "locale_header")
+                       || item.title || "",
+      titleUr:         getAlertLocale(item.device_alert_locale, 3, "locale_header")
+                       || item.title || "",
+      bodyEn:          getAlertLocale(item.device_alert_locale, 1, "locale_body"),
+      bodyAr:          getAlertLocale(item.device_alert_locale, 2, "locale_body"),
+      bodyUr:          getAlertLocale(item.device_alert_locale, 3, "locale_body"),
+      sendImmediately: item.metadata?.send_immediately ?? false,
+      scheduledAt:     item.metadata?.scheduled_at    ?? "",
+      status:          item.metadata?.status          ?? "scheduled",
+      lastSentAt:      item.metadata?.last_sent_at    ?? null,
+      groupIds:        item.metadata?.group_ids       ?? [],
+    }));
+  } catch (e) {
+    console.warn("[hospitalApi] fetchDeviceAlerts:", e);
+    return [];
+  }
+}
+
+const SEEN_ALERTS_KEY = "careinn-seen-alerts";
+
+export function getSeenAlertIds(): Set<number> {
+  try {
+    const raw = localStorage.getItem(SEEN_ALERTS_KEY);
+    return new Set(JSON.parse(raw ?? "[]"));
+  } catch { return new Set(); }
+}
+
+export function markAlertSeen(id: number): void {
+  const seen = getSeenAlertIds();
+  seen.add(id);
+  localStorage.setItem(SEEN_ALERTS_KEY,
+    JSON.stringify([...seen]));
+}
+
+export function markAllAlertsSeen(ids: number[]): void {
+  const seen = getSeenAlertIds();
+  ids.forEach(id => seen.add(id));
+  localStorage.setItem(SEEN_ALERTS_KEY,
+    JSON.stringify([...seen]));
+}
+
+const HIDDEN_ALERTS_KEY = "careinn-hidden-alerts";
+
+export function getHiddenAlertIds(): Set<number> {
+  try {
+    const raw = localStorage.getItem(HIDDEN_ALERTS_KEY);
+    return new Set(JSON.parse(raw ?? "[]"));
+  } catch { return new Set(); }
+}
+
+export function markAlertHidden(id: number): void {
+  const hidden = getHiddenAlertIds();
+  hidden.add(id);
+  localStorage.setItem(HIDDEN_ALERTS_KEY, JSON.stringify([...hidden]));
+}
+
+export function markAllAlertsHidden(ids: number[]): void {
+  const hidden = getHiddenAlertIds();
+  ids.forEach(id => hidden.add(id));
+  localStorage.setItem(HIDDEN_ALERTS_KEY, JSON.stringify([...hidden]));
+}
+

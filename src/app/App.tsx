@@ -61,7 +61,13 @@ import { AccountLockScreen } from "./components/AccountLockScreen";
 import { useGuestMode, guestModeStore } from "./lib/guestMode";
 import { CareMePinDialog } from "./components/CareMePinDialog";
 import { Lock } from "lucide-react";
-import { fetchAppPackages, invalidatePackagesCache, fetchPatientForDevice } from "./lib/hospitalApi";
+import { Toaster } from "./components/ui/sonner";
+import { toast } from "sonner";
+import { 
+  fetchAppPackages, invalidatePackagesCache, fetchPatientForDevice,
+  fetchDeviceAlerts, getSeenAlertIds, markAlertSeen,
+  markAllAlertsSeen, DeviceAlert
+} from "./lib/hospitalApi";
 import { nurseActions } from "./components/NurseDataStore";
 import { getDeviceInfo } from "./utils/androidBridge";
 import { matchBinding } from "./lib/handsetConfig";
@@ -92,7 +98,7 @@ function useScreenScale() {
 function BedsideScreen() {
   const { patientAdmitted, setPatientAdmitted, theme, darkMode, switchConfig, prayerAlarm } = useTheme();
   const { isFullAccess, lockedHospitalId } = useAuth();
-  const { t, isRTL, dir, fontFamily } = useLocale();
+  const { t, locale, isRTL, dir, fontFamily } = useLocale();
   const scale = useScreenScale();
   const [openCategory, setOpenCategory] = useState<string | null>(null);
 
@@ -120,6 +126,11 @@ function BedsideScreen() {
         .then(result => {
           if (result) {
             const p = result.patient;
+            
+            // Store device group for alert filtering
+            deviceGroupRef.current = result.location.group?.id || null;
+            fetchAlerts();
+
             nurseActions.updatePatientFromApi({
               name:          p.name          || undefined,
               nameAr:        p.nameAr        || undefined,
@@ -189,6 +200,88 @@ function BedsideScreen() {
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [showBlankPage, setShowBlankPage] = useState(false);
   const [showIptv, setShowIptv] = useState(false);
+
+  // Queue of immediate alerts to show as broadcast popups
+  const [broadcastQueue, setBroadcastQueue] = useState<BroadcastNotification[]>([]);
+
+  // API alerts shown in NotificationsPanel
+  const [apiNotifications, setApiNotifications] = useState<DeviceAlert[]>([]);
+
+  const deviceGroupRef = useRef<number | null>(null);
+
+  const fetchAlerts = useCallback(async () => {
+    const alerts = await fetchDeviceAlerts();
+    if (!alerts.length) {
+      setApiNotifications([]);
+      return;
+    }
+
+    const seen = getSeenAlertIds();
+    const deviceGroupId = deviceGroupRef.current ?? 1;
+
+    const relevant = alerts.filter(a =>
+      a.groupIds.length === 0 ||
+      a.groupIds.includes(deviceGroupId)
+    );
+
+    setApiNotifications(relevant);
+
+    const unseen = relevant.filter(a => !seen.has(a.id));
+
+    // Immediate alerts
+    const immediate = unseen.filter(a => a.sendImmediately);
+
+    if (immediate.length > 0) {
+      const broadcasts: BroadcastNotification[] = immediate.map(a => ({
+        id:       `alert-${a.id}`,
+        type:     "announcement" as const,
+        priority: "urgent" as const,
+        title:    { en: a.titleEn, ar: a.titleAr },
+        body:     { en: a.bodyEn,  ar: a.bodyAr  },
+        icon:     "megaphone",
+      }));
+      setBroadcastQueue(prev => [...prev, ...broadcasts]);
+      markAllAlertsSeen(immediate.map(a => a.id));
+    }
+
+    // Scheduled alerts that are due or overdue
+    const now = new Date();
+    const dueSoon = unseen.filter(a => {
+      if (a.status !== "scheduled" || !a.scheduledAt) return false;
+      const scheduledTime = new Date(a.scheduledAt);
+      const diffMs = now.getTime() - scheduledTime.getTime();
+      // Show if scheduled time has reached or passed
+      return diffMs >= 0;
+    });
+
+    if (dueSoon.length > 0) {
+      dueSoon.forEach(a => {
+        const title = locale === "ar" ? a.titleAr : a.titleEn;
+        const body = locale === "ar" ? a.bodyAr : a.bodyEn;
+        
+        toast(title, {
+          description: body,
+          duration: 10000,
+          icon: <Megaphone size={18} />,
+        });
+      });
+      markAllAlertsSeen(dueSoon.map(a => a.id));
+    }
+  }, [locale]);
+
+  useEffect(() => {
+    fetchAlerts();
+    const interval = setInterval(fetchAlerts, 60_000);
+    return () => clearInterval(interval);
+  }, [fetchAlerts]);
+
+  useEffect(() => {
+    if (!activeBroadcast && broadcastQueue.length > 0) {
+      const [next, ...rest] = broadcastQueue;
+      setActiveBroadcast(next);
+      setBroadcastQueue(rest);
+    }
+  }, [activeBroadcast, broadcastQueue]);
   const anyOtherOverlayOpen = !!(
     openCategory || showSurvey || showAboutUs || showSettings ||
     showNotifications || showTour || showConfigurator ||
@@ -542,6 +635,31 @@ function BedsideScreen() {
   }, []);
 
   const handleNotificationClick = useCallback((notif: any) => {
+    // 1. API Notifications
+    if (notif.id.startsWith("api-")) {
+      const alertId = parseInt(notif.id.replace("api-", ""));
+      markAlertSeen(alertId);
+      
+      // Show as broadcast popup
+      setActiveBroadcast({
+        id:       notif.id,
+        type:     "announcement",
+        priority: "info",
+        title:    { 
+          en: notif.titleText ?? "", 
+          ar: notif.titleText ?? "" 
+        },
+        body:     { 
+          en: notif.bodyText  ?? "", 
+          ar: notif.bodyText  ?? "" 
+        },
+        icon:     "megaphone",
+      });
+      setShowNotifications(false);
+      return;
+    }
+
+    // 2. Hardcoded Notifications
     // Map textKey to realistic broadcast content
     const contentMap: Record<string, { title: { en: string, ar: string }, body: { en: string, ar: string }, priority: "info" | "warning" | "urgent" }> = {
       "notif.mriReady": {
@@ -954,6 +1072,7 @@ function BedsideScreen() {
           onWeatherTap={() => setLayoutVersion((v) => (v === 1 ? 2 : 1))}
           onSettingsTap={() => setShowSettings(true)}
           onBellTap={() => setShowNotifications(true)}
+          unreadCount={3 + apiNotifications.filter(a => !getSeenAlertIds().has(a.id)).length}
         />
 
         {/* News Ticker */}
@@ -1219,6 +1338,8 @@ function BedsideScreen() {
             onClose={() => setShowNotifications(false)} 
             acknowledgedBroadcasts={acknowledgedBroadcasts} 
             onNotificationClick={handleNotificationClick}
+            apiAlerts={apiNotifications}
+            onClearAll={() => setAcknowledgedBroadcasts([])}
           />
         )}
 

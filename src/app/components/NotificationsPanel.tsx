@@ -1,6 +1,6 @@
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW } from "./ThemeContext";
 import { useLocale } from "./i18n";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   X,
   Bell,
@@ -21,11 +21,14 @@ import {
 import { useOrders } from "./OrderStore";
 import type { OrderStatus } from "./OrderStore";
 import type { BroadcastNotification } from "./HospitalBroadcast";
+import { DeviceAlert, getSeenAlertIds, markAlertSeen, getHiddenAlertIds, markAlertHidden, markAllAlertsHidden } from "../lib/hospitalApi";
 
 interface Notification {
   id: string;
   iconType: string;
   textKey: string;
+  titleText?: string; // Optional — for API alerts
+  bodyText?:  string; // Optional — for API alerts
   time: string;
   read: boolean;
 }
@@ -224,7 +227,7 @@ function SwipeableRow({
             textOverflow: "ellipsis",
           }}
         >
-          {t(notification.textKey)}
+          {notification.titleText || t(notification.textKey)}
         </span>
 
         {/* Time */}
@@ -257,28 +260,79 @@ export function NotificationsPanel({
   onClose, 
   acknowledgedBroadcasts = [],
   onNotificationClick,
+  apiAlerts = [],
 }: { 
   onClose: () => void; 
   acknowledgedBroadcasts?: BroadcastNotification[];
   onNotificationClick: (notif: Notification) => void;
+  apiAlerts?: DeviceAlert[];
+  onClearAll?: () => void;
 }) {
-  const [notifications, setNotifications] = useState(initialNotifications);
   const { theme } = useTheme();
-  const { t, isRTL, fontFamily } = useLocale();
+  const { t, locale, isRTL, fontFamily } = useLocale();
   const { activeOrders } = useOrders();
+  const [showHistory, setShowHistory] = useState(false);
+
+  const mapApiAlerts = useCallback((alerts: DeviceAlert[], historyMode: boolean): Notification[] => {
+    const hidden = getHiddenAlertIds();
+    const filtered = historyMode ? alerts : alerts.filter(a => !hidden.has(a.id));
+
+    return filtered.map(a => ({
+      id:        `api-${a.id}`,
+      iconType:  "megaphone",
+      textKey:   "",
+      titleText: locale === "ar" ? a.titleAr : locale === "ur" ? a.titleUr : a.titleEn,
+      bodyText:  locale === "ar" ? a.bodyAr  : locale === "ur" ? a.bodyUr : a.bodyEn,
+      time:      a.lastSentAt
+        ? new Date(a.lastSentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : new Date(a.scheduledAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      read:      getSeenAlertIds().has(a.id),
+    }));
+  }, [locale]);
+
+  const [notifications, setNotifications] = useState<Notification[]>(() => [
+    ...mapApiAlerts(apiAlerts, false),
+    ...initialNotifications,
+  ]);
+
+  // Sync when API alerts, locale or history mode change
+  useEffect(() => {
+    const apiMapped = mapApiAlerts(apiAlerts, showHistory);
+    setNotifications(prev => {
+      const hardcoded = prev.filter(n => !n.id.startsWith("api-"));
+      return [...apiMapped, ...hardcoded];
+    });
+  }, [apiAlerts, mapApiAlerts, showHistory]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const markAllRead = () => {
+    notifications.forEach(n => {
+      if (n.id.startsWith("api-")) {
+        const alertId = parseInt(n.id.replace("api-", ""));
+        markAlertSeen(alertId);
+      }
+    });
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
   const dismissNotification = useCallback((id: string) => {
+    if (id.startsWith("api-")) {
+      const alertId = parseInt(id.replace("api-", ""));
+      markAlertHidden(alertId);
+    }
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   }, []);
 
   const clearAll = () => {
+    notifications.forEach(n => {
+      if (n.id.startsWith("api-")) {
+        const alertId = parseInt(n.id.replace("api-", ""));
+        markAlertHidden(alertId);
+      }
+    });
     setNotifications([]);
+    onClearAll?.();
   };
 
   return (
@@ -375,6 +429,44 @@ export function NotificationsPanel({
             }}
           >
             <X size={22} style={{ color: theme.iconDefault }} />
+          </button>
+        </div>
+
+        {/* View Toggle (New vs All) */}
+        <div style={{ padding: "0 16px 12px 16px" }}>
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className="flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+            style={{
+              padding: "4px 10px",
+              borderRadius: "8px",
+              backgroundColor: showHistory ? theme.primary : `${theme.primary}12`,
+              border: "none",
+              outline: "none",
+            }}
+          >
+            <div 
+              style={{ 
+                width: "6px", 
+                height: "6px", 
+                borderRadius: "50%", 
+                backgroundColor: showHistory ? theme.textInverse : theme.primary 
+              }} 
+            />
+            <span
+              style={{
+                fontFamily,
+                ...TEXT_STYLE.micro,
+                fontWeight: WEIGHT.bold,
+                color: showHistory ? theme.textInverse : theme.primary,
+                letterSpacing: "0.5px",
+              }}
+            >
+              {showHistory 
+                ? (isRTL ? "عرض الإشعارات الجديدة" : "BACK TO NEW") 
+                : (isRTL ? "عرض كل الإشعارات" : "VIEW ALL HISTORY")
+              }
+            </span>
           </button>
         </div>
 
