@@ -12,7 +12,7 @@ export function PatientProfileTab({ role }: { role: "nurse" | "doctor" }) {
   const isReadOnly = role === "doctor";
 
   const handleSave = () => {
-    nurseActions.updatePatient(draft);
+    nurseActions.updatePatientFromNurse(draft);
     setSaved(true);
     setEditing(false);
     setTimeout(() => setSaved(false), 2000);

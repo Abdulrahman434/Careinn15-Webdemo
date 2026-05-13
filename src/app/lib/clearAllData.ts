@@ -11,6 +11,9 @@ export async function clearAllDataAndReload(): Promise<void> {
   // 1. Clear all localStorage keys
   localStorage.clear();
 
+  // 1.1 Clear patient overrides
+  nurseActions.clearPatientOverrides();
+
   // 2. Clear sessionStorage
   sessionStorage.clear();
 

@@ -113,9 +113,25 @@ function BedsideScreen() {
       if (!isAndroidApp()) return;
       const info = getDeviceInfo();
       if (!info?.serial) return;
+      
+      nurseActions.clearPatientOverrides();
+      
       fetchPatientForDevice(info.serial)
         .then(result => {
-          if (result) nurseActions.syncWithApi(result.patient);
+          if (result) {
+            const p = result.patient;
+            nurseActions.updatePatientFromApi({
+              name:          p.name          || undefined,
+              nameAr:        p.nameAr        || undefined,
+              mrn:           p.mrn           || undefined,
+              room:          p.room          || undefined,
+              bed:           p.bed           || undefined,
+              sex:           p.sex           || undefined,
+              dob:           p.dob           || undefined,
+              admissionDate: p.admissionDate || undefined,
+              dischargeDate: p.dischargeDate || undefined,
+            });
+          }
         })
         .catch(() => {});
     };
@@ -820,16 +836,7 @@ function BedsideScreen() {
       const cx = cur.left + cur.width / 2;
       const cy = cur.top + cur.height / 2;
 
-      // Check if the layout is RTL
-      const rootDir = document.querySelector("[dir]")?.getAttribute("dir");
-      const isRtl = rootDir === "rtl";
-
-      let dir = e.key as string;
-      // Swap left/right for RTL
-      if (isRtl) {
-        if (dir === "ArrowLeft") dir = "ArrowRight";
-        else if (dir === "ArrowRight") dir = "ArrowLeft";
-      }
+      const dir = e.key;
 
       let best: HTMLElement | null = null;
       let bestDist = Infinity;

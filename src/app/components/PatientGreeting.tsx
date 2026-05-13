@@ -212,20 +212,7 @@ export function PatientGreeting({
                 </span>
               </div>
             )}
-            <div
-              className="flex items-center px-3 py-1.5"
-              style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
-            >
-              <span
-                style={{
-                  fontFamily: fontFamily,
-                  ...TEXT_STYLE.pill,
-                  color: theme.primary,
-                }}
-              >
-                {t("greeting.ext", nurseStore.patient.extension)}
-              </span>
-            </div>
+
             <button
               onClick={() => setShowLogoutConfirm(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer active:scale-95 transition-transform border-none outline-none"
