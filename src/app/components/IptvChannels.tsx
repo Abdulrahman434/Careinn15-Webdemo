@@ -3,6 +3,7 @@ import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { Tv, ArrowLeft, RefreshCw, AlertCircle, Square } from "lucide-react";
 import { useIptvChannels, iptv, isAndroidApp, useAndroidEvent, IptvChannel, _setIptvPlayingId } from "../utils/androidBridge";
+import { ApiImage } from "./ApiImage";
 
 export function IptvChannels({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
@@ -237,13 +238,15 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
                   style={{ backgroundColor: "#f8fafc" }}
                 >
                   {channel.logo ? (
-                    <img 
+                    <ApiImage 
                       src={channel.logo} 
                       alt={channel.name} 
                       className="max-w-full max-h-full object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
+                      fallback={
+                        <div className="flex items-center justify-center">
+                          <Tv size={48} color={theme.textMuted} strokeWidth={1} />
+                        </div>
+                      }
                     />
                   ) : (
                     <div 

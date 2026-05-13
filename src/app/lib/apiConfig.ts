@@ -20,8 +20,18 @@ export function getApiConfig(): ApiConfigData {
   } catch { return { ...DEFAULTS }; }
 }
 
+import { clearImageCache } from "./imageProxy";
+
 export function saveApiConfig(cfg: ApiConfigData): void {
+  const previous = getApiConfig();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+
+  // Server changed — clear image cache so new server's
+  // images are fetched fresh
+  if (cfg.serverIp !== previous.serverIp) {
+    clearImageCache();
+  }
+
   // Notify Android bridge if available
   try {
     window.AndroidSystem?.updateApiConfig?.(cfg.serverIp, cfg.apiKey);
@@ -44,10 +54,9 @@ export function isCustomConfig(): boolean {
 /** Build a full URL — mirrors the Android ApiConfig.url() */
 export function apiUrl(path: string): string {
   const cfg = getApiConfig();
-  const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'https:' : 'http:';
   const base = cfg.serverIp.startsWith("http")
     ? `${cfg.serverIp}/api`
-    : `${protocol}//${cfg.serverIp}/api`;
+    : `http://${cfg.serverIp}/api`;
   const sep  = path.includes('?') ? '&' : '?';
   const p    = path.startsWith('/') ? path : '/' + path;
   return `${base}${p}${sep}apikey=${cfg.apiKey}`;

@@ -1,4 +1,5 @@
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, primaryRgba, TEXT_STYLE, SPACE } from "./ThemeContext";
+import { ApiImage } from "./ApiImage";
 import { useLocale } from "./i18n";
 import { useNurseStore, type SectionKey } from "./NurseDataStore";
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
@@ -340,7 +341,7 @@ function CareOverviewSlide({ theme, isExpanded = false }: { theme: any, isExpand
                   borderRadius: theme.radiusFull
                 }}
               >
-                <img src={m.img} alt={t(m.nameKey)} className="w-full h-full object-cover" />
+                <ApiImage src={m.img} alt={t(m.nameKey)} className="w-full h-full object-cover" />
               </div>
               <div className="flex flex-col">
                 <p style={{ fontFamily: theme.fontFamily, fontSize: labelSize, color: theme.primary, fontWeight: 700, lineHeight: 1.2 }}>{t(m.roleKey)}</p>
@@ -1043,7 +1044,7 @@ function BabyCameraSlide({ isExpanded = false }: { isExpanded?: boolean }) {
         }}
         onClick={() => setFullscreen(true)}
       >
-        <img
+        <ApiImage
           src={cameraImage}
           alt="Baby Camera Feed"
           className="w-full h-full object-cover absolute inset-0 transition-transform duration-500 group-hover:scale-105"
@@ -1137,7 +1138,7 @@ function BabyCameraFullscreen({ onClose, cameraImage }: { onClose: () => void, c
       onClick={onClose}
     >
       <div className="relative w-full h-full flex items-center justify-center">
-        <img
+        <ApiImage
           src={cameraImage}
           alt="Baby Camera Feed — Full Screen"
           className="w-full h-full object-contain"
@@ -1293,7 +1294,7 @@ function HospitalInvoiceOverlay({ theme, onClose }: { theme: any, onClose: () =>
         {/* Invoice Header */}
         <div className="p-10 border-b flex justify-between items-start" style={{ borderColor: theme.borderSubtle }}>
           <div className="flex flex-col gap-6">
-            <img src={theme.logoUrl} alt="Hospital Logo" className="h-16 object-contain self-start" />
+            <ApiImage src={theme.logoUrl} alt="Hospital Logo" className="h-16 object-contain self-start" />
             <div>
               <h1 style={{ fontFamily: theme.fontFamily, fontSize: "28px", fontWeight: WEIGHT.extrabold, color: theme.textHeading }}>
                 {t("care.billing.invoiceTitle")}
@@ -2088,7 +2089,7 @@ export function CareMeExpanded({ onClose }: { onClose: () => void }) {
       }}
     >
       {/* Subtle background texture */}
-      <img
+      <ApiImage
         src={theme.heroImageUrl}
         alt=""
         aria-hidden

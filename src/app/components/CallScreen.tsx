@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { ApiImage } from "./ApiImage";
 import { sip, useSipCallState, useSipRegistration, useSipContacts, useSipAvailable, useSipLocalExtension, isAndroidApp } from "../utils/androidBridge";
 import { 
   loadHistory, saveEntry, formatDuration, formatCallTime,
@@ -817,7 +818,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
       }}
     >
       {/* Subtle hero texture */}
-      <img
+      <ApiImage
         src={theme.heroImageUrl}
         alt="" aria-hidden
         className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"

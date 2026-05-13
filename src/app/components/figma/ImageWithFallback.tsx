@@ -10,12 +10,7 @@ export function ImageWithFallback(props: React.ImgHTMLAttributes<HTMLImageElemen
     setDidError(true)
   }
 
-  let { src, alt, style, className, ...rest } = props
-
-  // Force HTTPS if page is HTTPS
-  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && src?.startsWith("http://")) {
-    src = src.replace("http://", "https://");
-  }
+  const { src, alt, style, className, ...rest } = props
 
   return didError ? (
     <div

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { ApiImage } from "./ApiImage";
 import {
   X,
   Plus,
@@ -301,7 +302,7 @@ function ImageUploadField({
             padding: previewHeight === "60px" ? "8px" : "0",
           }}
         >
-          <img
+          <ApiImage
             src={value}
             alt="Preview"
             style={{
@@ -310,9 +311,6 @@ function ImageUploadField({
               objectFit: previewHeight === "60px" ? "contain" : "cover",
               width: previewHeight === "60px" ? "auto" : "100%",
               height: "100%",
-            }}
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
             }}
           />
         </div>
@@ -422,7 +420,7 @@ function HeroCropPicker({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
-        <img
+        <ApiImage
           src={imageUrl}
           alt="Crop source"
           draggable={false}
@@ -515,7 +513,7 @@ function HeroCropPicker({
             backgroundColor: "rgba(0,0,0,0.03)",
           }}
         >
-          <img
+          <ApiImage
             src={imageUrl}
             alt="Crop preview"
             style={{

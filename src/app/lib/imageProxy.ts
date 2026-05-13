@@ -1,59 +1,42 @@
 import { isAndroidApp } from "../utils/androidBridge";
 import { getApiConfig } from "./apiConfig";
 
-// In-memory cache: original http:// URL → base64 data URL
 const cache = new Map<string, string>();
 
-/**
- * Proxy an http:// image URL through the Android bridge.
- * Returns a base64 data URL safe for use in an HTTPS WebView.
- * Falls back to original URL in browser (for development).
- */
 export async function proxyImageUrl(url: string): Promise<string> {
   if (!url) return "";
 
-  // Force HTTPS if page is HTTPS
-  let finalUrl = url;
-  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && finalUrl.startsWith("http://")) {
-    finalUrl = finalUrl.replace("http://", "https://");
-  }
+  // Already a data URL or relative path — use as-is
+  if (url.startsWith("data:") || url.startsWith("/") ||
+      url.startsWith("blob:")) return url;
 
-  // Append apikey if it's a CDN URL from our server
+  // Append apikey if it's a CDN URL missing auth
   const { apiKey } = getApiConfig();
-  const authenticatedUrl = finalUrl.includes("apikey=") 
-    ? finalUrl 
-    : `${finalUrl}${finalUrl.includes('?') ? '&' : '?'}apikey=${apiKey}`;
+  const authenticated = url.includes("apikey=")
+    ? url
+    : `${url}${url.includes("?") ? "&" : "?"}apikey=${apiKey}`;
 
-  if (cache.has(authenticatedUrl)) return cache.get(authenticatedUrl)!;
-  if (!isAndroidApp()) return authenticatedUrl; // browser — return with key
-  
-  // Android — proxy as base64
+  // Return from cache if already proxied
+  if (cache.has(authenticated)) return cache.get(authenticated)!;
+
+  // In browser (dev/demo) — return authenticated URL as-is
+  // Will show mixed content warning in browser but works fine
+  if (!isAndroidApp()) return authenticated;
+
+  // On Android — fetch via native bridge → base64 data URL
   try {
     const base64 = (window as any).AndroidSystem
-      ?.fetchImageAsBase64?.(authenticatedUrl);
-    const result = base64 || authenticatedUrl;
-    if (base64) cache.set(authenticatedUrl, result);
-    return result;
-  } catch { return authenticatedUrl; }
+      ?.fetchImageAsBase64?.(authenticated);
+    if (base64 && base64.startsWith("data:")) {
+      cache.set(authenticated, base64);
+      return base64;
+    }
+  } catch {}
+
+  // Bridge failed — return authenticated URL as fallback
+  return authenticated;
 }
 
-/**
- * Proxy multiple URLs in parallel.
- * Returns a Map of original URL → proxied URL.
- */
-export async function proxyImageUrls(
-  urls: string[]
-): Promise<Map<string, string>> {
-  const entries = await Promise.all(
-    urls.map(async url => {
-      const proxied = await proxyImageUrl(url);
-      return [url, proxied] as [string, string];
-    })
-  );
-  return new Map(entries);
-}
-
-/** Clear the in-memory cache (call after server config changes) */
 export function clearImageCache(): void {
   cache.clear();
 }

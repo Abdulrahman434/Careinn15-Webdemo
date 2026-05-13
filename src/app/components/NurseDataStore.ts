@@ -431,14 +431,6 @@ const nurseStore = (() => {
         const hasOverride = _nurseOverrides.has(field);
         const apiChanged  = apiValue !== lastApiValue;
 
-        // IMMUTABILITY LOCK: Once name/nameAr is set for a patient, don't allow API to overwrite it
-        // unless it's a completely new MRN (new patient admission).
-        const isNameField = field === "name" || field === "nameAr";
-        const existingValue = state.patient[field as keyof PatientProfile];
-        if (isNameField && existingValue && (updates.mrn === state.patient.mrn || !updates.mrn)) {
-           continue;
-        }
-
         if (hasOverride && !apiChanged) {
           // Nurse edited this field AND API hasn't changed → keep nurse value
           continue;
@@ -490,13 +482,8 @@ const nurseStore = (() => {
       }
       saveOverrides();
 
-      // IMMUTABILITY LOCK: If names are already set, don't allow nurse to override them
-      const safeUpdates = { ...updates };
-      if (state.patient.name)   delete safeUpdates.name;
-      if (state.patient.nameAr) delete safeUpdates.nameAr;
-
       // Apply nurse update normally
-      let nextPatient = { ...state.patient, ...safeUpdates };
+      let nextPatient = { ...state.patient, ...updates };
       if (updates.name && updates.name !== state.patient.name) {
         nextPatient.nameKey = "";
       }

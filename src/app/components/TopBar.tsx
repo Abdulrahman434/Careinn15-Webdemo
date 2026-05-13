@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ApiImage } from "./ApiImage";
 import { Settings, Globe, Bell, Cast } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
@@ -105,7 +106,7 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
         rel="noopener noreferrer" 
         className="flex items-center justify-start h-full transition-opacity hover:opacity-80 active:opacity-60"
       >
-        <img
+        <ApiImage
           alt={theme.hospitalName}
           src={theme.logoUrl}
           style={{ height: SPACE[10], width: "auto", maxWidth: "300px", objectFit: "contain" }}

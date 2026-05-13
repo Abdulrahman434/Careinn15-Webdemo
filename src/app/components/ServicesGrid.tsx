@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ApiImage } from "./ApiImage";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
@@ -498,7 +499,7 @@ function ShortcutTile({ item, contained, onTap, onLongPress, isLocked }: { item:
             border: "1px solid #eeeeee",
           }}
         >
-          <img
+          <ApiImage
             src={item.icon}
             alt={t(item.labelKey)}
             style={{
@@ -510,7 +511,7 @@ function ShortcutTile({ item, contained, onTap, onLongPress, isLocked }: { item:
           />
         </div>
       ) : (
-        <img
+        <ApiImage
           src={item.icon}
           alt={t(item.labelKey)}
           style={{
@@ -579,7 +580,7 @@ function ShortcutTileCompact({ item, onTap, onLongPress, isLocked }: { item: Sho
             border: "1px solid #eeeeee",
           }}
         >
-          <img
+          <ApiImage
             src={item.icon}
             alt={t(item.labelKey)}
             style={{
@@ -591,7 +592,7 @@ function ShortcutTileCompact({ item, onTap, onLongPress, isLocked }: { item: Sho
           />
         </div>
       ) : (
-        <img
+        <ApiImage
           src={item.icon}
           alt={t(item.labelKey)}
           style={{
@@ -647,7 +648,7 @@ function ShortcutTileBare({ item, onTap, onLongPress, isLocked }: { item: Shortc
       aria-label={t(item.labelKey)}
     >
       {isLocked && <LockBadge />}
-      <img
+      <ApiImage
         src={item.icon}
         alt={t(item.labelKey)}
         style={{

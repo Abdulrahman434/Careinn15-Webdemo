@@ -4,6 +4,7 @@ import { useTheme, TYPE_SCALE, WEIGHT } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { useCmsHospital, useCmsAboutUs } from '../../lib/useCmsContent';
+import { ApiImage } from "./ApiImage";
 import logoImg from "../../assets/496960c397c9050764df477822163c6970cb738d.png";
 import dnaImg from "../../assets/7d25bcb72cca7f6efa0a0c3b850e8605d6d73401.png";
 import numbersImg from "../../assets/f59e36074e912058a9f8c7099b196139f6e61a09.png";
@@ -261,7 +262,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
       }}
     >
       {/* Hospital background image */}
-      <img
+      <ApiImage
         src={theme.heroImageUrl}
         alt=""
         aria-hidden
@@ -358,7 +359,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
               textDecoration: "none",
             }}
           >
-            <img
+            <ApiImage
               src={theme.logoUrl}
               alt={theme.hospitalName}
               style={{
@@ -448,7 +449,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
             {/* Section Image (if exists) */}
             {currentSection.image && (
               <div className="flex-1 rounded-2xl overflow-hidden flex items-center justify-center">
-                <img
+                <ApiImage
                   src={currentSection.image}
                   alt={currentSection.title}
                   className="w-full h-full object-contain"
@@ -467,7 +468,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                     style={{ border: "none", padding: 0, background: "none" }}
                     aria-label="Play video"
                   >
-                    <img
+                    <ApiImage
                       src={theme.heroImageUrl}
                       alt={currentSection.title}
                       className="absolute inset-0 w-full h-full object-cover"
@@ -541,7 +542,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
               <div className="flex-1 overflow-y-auto about-scrollable-content flex flex-col gap-6 pt-2">
                 {/* Achievement Banner */}
                 <div className="shrink-0 rounded-3xl overflow-hidden shadow-sm border border-gray-100" style={{ height: "240px" }}>
-                  <img 
+                  <ApiImage 
                     src={dsfhAchievementBanner} 
                     alt="Latest achievements"
                     className="w-full h-full object-cover"

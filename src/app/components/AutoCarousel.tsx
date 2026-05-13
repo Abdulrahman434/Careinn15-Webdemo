@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ApiImage } from "./ApiImage";
 
 /**
  * AutoCarousel — fills its nearest `position: relative` parent completely.
@@ -38,7 +39,7 @@ export function AutoCarousel({
   // Single image — no animation, just a plain fill
   if (validImages.length === 1) {
     return (
-      <img
+      <ApiImage
         src={validImages[0]}
         alt=""
         aria-hidden="true"
@@ -74,7 +75,7 @@ export function AutoCarousel({
       }}
     >
       {validImages.map((img, i) => (
-        <img
+        <ApiImage
           key={i}
           src={img}
           alt=""

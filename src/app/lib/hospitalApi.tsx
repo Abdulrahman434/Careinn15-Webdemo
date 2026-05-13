@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { FileText } from "lucide-react";
+import { FileText, Smartphone } from "lucide-react";
 import { apiUrl } from "./apiConfig";
+import { ApiImage } from "../components/ApiImage";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -389,6 +390,7 @@ export interface ApiAppItem {
   packageName?: string; // Android package — for install/launch
   apkUrl?: string;      // CDN APK download URL
   url?: string;         // Web fallback URL
+  imageUrl?: string;
   customRender?: () => React.ReactNode;
 }
 
@@ -462,6 +464,19 @@ function mapPackagesToAppItems(packages: AppPackage[], categoryKey: string): Api
       packageName: p.packageName ?? undefined,
       apkUrl:      p.apkUrl      ?? undefined,
       url:         p.url         ?? undefined,
+      imageUrl:    p.imageUrl    ?? undefined,
+      customRender: p.imageUrl ? () => (
+        <ApiImage 
+          src={p.imageUrl!} 
+          alt={p.nameEn || "App"} 
+          className="w-full h-full object-cover"
+          fallback={
+            <div className="flex flex-col items-center justify-center w-full h-full bg-slate-800">
+              <Smartphone size={40} color="#fff" opacity={0.5} />
+            </div>
+          }
+        />
+      ) : undefined,
     };
   });
 }

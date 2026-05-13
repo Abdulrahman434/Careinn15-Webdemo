@@ -4,6 +4,7 @@ import { useLocale } from "./i18n";
 import { setAccount, getAccount, updateNfcCard, clearAccount, verifyPin } from "../lib/accountAuth";
 import { useNfcTap } from "../utils/nfc";
 import { X, CheckCircle, Shield, AlertCircle, Trash2, ChevronRight, Globe, Layout, Settings, Image, Check } from "lucide-react";
+import { ApiImage } from "./ApiImage";
 import { getApiConfig, saveApiConfig, isCustomConfig, resetApiConfig } from "../lib/apiConfig";
 import { fetchAllWallpapers, WallpaperGroup } from "../lib/hospitalApi";
 import { proxyImageUrls } from "../lib/imageProxy";
@@ -916,7 +917,6 @@ function BackgroundsPanel() {
 
   const [groups,      setGroups]      = useState<WallpaperGroup[]>([]);
   const [loading,     setLoading]     = useState(true);
-  const [proxied,     setProxied]     = useState<Map<string,string>>(new Map());
   const [selectedUrl, setSelectedUrl] = useState<string>(
     getSavedHeroImage() ?? "");
   const [slideshow,   setSlideshow]   = useState(isSlideshowEnabled());
@@ -925,11 +925,6 @@ function BackgroundsPanel() {
     setLoading(true);
     const data = await fetchAllWallpapers();
     setGroups(data);
-
-    // Proxy all http:// images through Android bridge
-    const allUrls = data.flatMap(g => g.images.map(i => i.imageUrl));
-    const map = await proxyImageUrls(allUrls);
-    setProxied(map);
     setLoading(false);
   };
 
@@ -940,9 +935,8 @@ function BackgroundsPanel() {
   }, []);
 
   const handleSelect = (originalUrl: string) => {
-    const displayUrl = proxied.get(originalUrl) ?? originalUrl;
     setSelectedUrl(originalUrl);
-    saveHeroImage(displayUrl);
+    saveHeroImage(originalUrl);
     setSlideshowEnabled(false);
     setSlideshow(false);
   };
@@ -1011,7 +1005,6 @@ function BackgroundsPanel() {
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(88px, 1fr))", gap: "8px", marginBottom: "16px" }}>
             {group.images.map(img => {
-              const displayUrl = proxied.get(img.imageUrl) ?? img.imageUrl;
               const isSelected = selectedUrl === img.imageUrl && !slideshow;
               return (
                 <button
@@ -1024,8 +1017,7 @@ function BackgroundsPanel() {
                     background: t.tileInactiveBg,
                   }}
                 >
-                  <img src={displayUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    onError={e => { (e.target as HTMLImageElement).style.opacity = "0.3"; }} />
+                  <ApiImage src={img.imageUrl} alt="" className="w-full h-full object-cover" />
                   {isSelected && (
                     <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <Check size={22} color="#fff" />
@@ -1061,8 +1053,7 @@ function BackgroundsPanel() {
                     background: t.tileInactiveBg,
                   }}
                 >
-                  <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    onError={e => { (e.target as HTMLImageElement).style.opacity = "0.3"; }} />
+                  <ApiImage src={url} alt="" className="w-full h-full object-cover" />
                   {isSelected && (
                     <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <Check size={22} color="#fff" />

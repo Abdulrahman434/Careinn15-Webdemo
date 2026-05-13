@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { ApiImage } from "./ApiImage";
 import {
   isAndroidApp,
   brightness as brightnessBridge,
@@ -1508,7 +1509,7 @@ function PrayerCard({
                 overflow: "hidden",
               }}
             >
-              <img
+              <ApiImage
                 src={imgMosque}
                 alt=""
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}

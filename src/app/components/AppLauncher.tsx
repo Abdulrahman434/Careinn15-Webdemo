@@ -21,6 +21,7 @@ import {
   X,
   Lock,
 } from "lucide-react";
+import { ApiImage } from "./ApiImage";
 
 import { useLockedApps } from "../lib/lockedApps";
 import { useLongPress } from "../lib/useLongPress";
@@ -123,7 +124,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={iptvIcon} alt="Live TV" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={iptvIcon} alt="Live TV" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -134,7 +135,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           textColor: "#fff",
           url: "https://www.youtube.com/",
           customRender: () => (
-            <img src={youtubeIcon} alt="YouTube" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={youtubeIcon} alt="YouTube" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -145,7 +146,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           textColor: "#E50914",
           url: "https://www.netflix.com/",
           customRender: () => (
-            <img src={netflixIcon} alt="Netflix" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={netflixIcon} alt="Netflix" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -156,7 +157,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           textColor: "#333",
           url: "https://www.primevideo.com/",
           customRender: () => (
-            <img src={primeVideoIcon} alt="Prime Video" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={primeVideoIcon} alt="Prime Video" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -167,7 +168,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           textColor: "#333",
           url: "https://shahid.mbc.net/ar",
           customRender: () => (
-            <img src={mbcIcon} alt="Shahid" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={mbcIcon} alt="Shahid" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -326,7 +327,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           textColor: "#333",
           url: "https://app.quranflash.com/book/Medina1?ar#/reader/chapter/3",
           customRender: () => (
-            <img src={quranBookIcon} alt="Quran" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={quranBookIcon} alt="Quran" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
       ],
@@ -344,7 +345,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           textColor: "#fff",
           url: "https://web.whatsapp.com/",
           customRender: () => (
-            <img src={whatsappIcon} alt="WhatsApp" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={whatsappIcon} alt="WhatsApp" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -355,7 +356,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           textColor: "#333",
           url: "https://www.facebook.com/",
           customRender: () => (
-            <img src={facebookIcon} alt="Facebook" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={facebookIcon} alt="Facebook" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -366,7 +367,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           textColor: "#fff",
           url: "https://www.instagram.com/",
           customRender: () => (
-            <img src={instagramIcon} alt="Instagram" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={instagramIcon} alt="Instagram" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -387,7 +388,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           textColor: "#333",
           url: "https://www.snapchat.com/",
           customRender: () => (
-            <img src={snapchatIcon} alt="Snapchat" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={snapchatIcon} alt="Snapchat" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -398,7 +399,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           textColor: "#333",
           url: "https://www.tiktok.com/",
           customRender: () => (
-            <img src={tiktokIcon} alt="TikTok" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={tiktokIcon} alt="TikTok" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
       ],
@@ -719,7 +720,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={teamsIcon} alt="Teams" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={teamsIcon} alt="Teams" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -729,7 +730,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={webexIcon} alt="Webex" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={webexIcon} alt="Webex" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -739,7 +740,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={skypeIcon} alt="Skype" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={skypeIcon} alt="Skype" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -749,7 +750,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={zoomIcon} alt="Zoom" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={zoomIcon} alt="Zoom" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -759,7 +760,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={meetIcon} alt="Google Meet" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={meetIcon} alt="Google Meet" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
       ],
@@ -778,7 +779,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           textColor: "#333",
           url: "https://www.google.com/search?igu=1",
           customRender: () => (
-            <img src={chromeIcon} alt="Chrome" style={{ width: 90, height: 90, objectFit: "contain" }} />
+            <ApiImage src={chromeIcon} alt="Chrome" style={{ width: 90, height: 90, objectFit: "contain" }} />
           ),
         },
         {
@@ -789,7 +790,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           textColor: "#fff",
           url: "https://saudigazette.com.sa",
           customRender: () => (
-            <img src={saudiGazetteLogo} alt="Saudi Gazette" style={{ width: 110, height: 110, objectFit: "contain" }} />
+            <ApiImage src={saudiGazetteLogo} alt="Saudi Gazette" style={{ width: 110, height: 110, objectFit: "contain" }} />
           ),
         },
         {
@@ -843,7 +844,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           textColor: "#fff",
           customRender: () => (
             <div className="flex flex-col items-center justify-center w-full h-full">
-              <img src={edgeLogo} alt="Browser" style={{ width: 120, height: 120, objectFit: "contain" }} />
+              <ApiImage src={edgeLogo} alt="Browser" style={{ width: 120, height: 120, objectFit: "contain" }} />
             </div>
           ),
         },
@@ -855,7 +856,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           textColor: "#333",
           url: "https://okaz.com.sa",
           customRender: () => (
-            <img src={okazIcon} alt="Okaz" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={okazIcon} alt="Okaz" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
       ],
@@ -872,7 +873,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={calculatorIcon} alt="Calculator" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={calculatorIcon} alt="Calculator" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
           isInteractive: true,
         },
@@ -897,7 +898,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={alarmIcon} alt="Reminders" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={alarmIcon} alt="Reminders" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
           isInteractive: true,
         },
@@ -1074,7 +1075,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={mirrorIcon} alt="Mirror" style={{ width: 130, height: 130, objectFit: "contain" }} />
+            <ApiImage src={mirrorIcon} alt="Mirror" style={{ width: 130, height: 130, objectFit: "contain" }} />
           ),
           isInteractive: true,
         },
@@ -1704,7 +1705,7 @@ export function AppLauncher({
       }}
     >
       {/* Hospital background image — subtle, blue-dominant */}
-      <img
+      <ApiImage
         src={theme.heroImageUrl}
         alt=""
         aria-hidden

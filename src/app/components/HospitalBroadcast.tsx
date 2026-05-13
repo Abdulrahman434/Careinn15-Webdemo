@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW } from "./ThemeContext";
 import { useLocale } from "./i18n";
+import { ApiImage } from "./ApiImage";
 import { CheckCircle2, AlertTriangle, Info, Megaphone, ShieldCheck } from "lucide-react";
 import imgMosque from "../../assets/b51acb5e2ec4a2c930572c53103b020b12e76ee2.png";
 
@@ -79,7 +80,7 @@ function PriorityIcon({ priority, type, size = 28, color }: { priority: Broadcas
   if (type === "prayer") {
     return (
       <div style={{ width: size + 4, height: size + 4, borderRadius: "50%", overflow: "hidden" }}>
-        <img src={imgMosque} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        <ApiImage src={imgMosque} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       </div>
     );
   }

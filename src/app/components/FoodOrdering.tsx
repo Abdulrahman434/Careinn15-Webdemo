@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
+import { ApiImage } from "./ApiImage";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowLeft,
@@ -836,7 +837,7 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
       }}
     >
       {/* Subtle hospital bg */}
-      <img
+      <ApiImage
         src={theme.heroImageUrl}
         alt=""
         aria-hidden
@@ -1405,7 +1406,7 @@ function FoodCard({
     >
       {/* Image — bigger area */}
       <div className="relative w-full overflow-hidden" style={{ aspectRatio: "1 / 0.85" }}>
-        <ImageWithFallback
+        <ApiImage
           src={item.image}
           alt={loc(item.name)}
           className="w-full h-full object-cover"
@@ -1754,7 +1755,7 @@ function OrderPreviewPanel({
               border: `1px solid ${theme.borderDefault}`,
             }}
           >
-            <ImageWithFallback
+            <ApiImage
               src={ci.menuItem.image}
               alt={loc(ci.menuItem.name)}
               style={{

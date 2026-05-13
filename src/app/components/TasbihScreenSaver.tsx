@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { ApiImage } from "./ApiImage";
 import { motion, AnimatePresence } from "motion/react";
 import { RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 import { useTheme, WEIGHT, TYPE_SCALE } from "./ThemeContext";
@@ -607,7 +608,7 @@ export function TasbihScreenSaver({ onClose }: TasbihScreenSaverProps) {
     >
       <style>{scrollbarCSS}</style>
       {/* ── Background image ── */}
-      <img
+      <ApiImage
         src={islamicBg}
         alt=""
         className="absolute inset-0 w-full h-full object-cover pointer-events-none"
