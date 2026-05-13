@@ -440,7 +440,11 @@ export function TasbihScreenSaver({ onClose }: TasbihScreenSaverProps) {
   };
 
   const currentSlot = getCurrentSlot(now.getHours());
-  const [phraseIdx, setPhraseIdx] = useState(() => _persistedPhraseIdx);
+  const [phraseIdx, setPhraseIdx] = useState(() => {
+    // Safety: Ensure initial index is within bounds of the current slot's phrases
+    if (_persistedPhraseIdx >= (currentSlot?.phrases?.length || 0)) return 0;
+    return _persistedPhraseIdx;
+  });
 
   // Sync to module-level variable on every change
   useEffect(() => {
@@ -1032,7 +1036,7 @@ export function TasbihScreenSaver({ onClose }: TasbihScreenSaverProps) {
                   marginBottom: "8px",
                   letterSpacing: "1px",
                 }}>
-                  {isRTL ? currentSlot.label.ar : currentSlot.label.en}
+                  {isRTL ? currentSlot?.label?.ar : currentSlot?.label?.en}
                 </p>
 
                 <AnimatePresence mode="wait">
@@ -1055,7 +1059,7 @@ export function TasbihScreenSaver({ onClose }: TasbihScreenSaverProps) {
                         lineHeight: "46px",
                       }}
                     >
-                      {currentSlot.phrases[phraseIdx].ar}
+                      {currentSlot?.phrases[phraseIdx]?.ar || ""}
                     </p>
                     <p style={{
                       fontFamily: theme.fontFamily,
@@ -1065,7 +1069,7 @@ export function TasbihScreenSaver({ onClose }: TasbihScreenSaverProps) {
                       margin: 0,
                       fontStyle: "italic",
                     }}>
-                      {currentSlot.phrases[phraseIdx].en}
+                      {currentSlot?.phrases[phraseIdx]?.en || ""}
                     </p>
                   </motion.div>
                 </AnimatePresence>

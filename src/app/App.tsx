@@ -61,6 +61,9 @@ import { AccountLockScreen } from "./components/AccountLockScreen";
 import { useGuestMode, guestModeStore } from "./lib/guestMode";
 import { CareMePinDialog } from "./components/CareMePinDialog";
 import { Lock } from "lucide-react";
+import { fetchAppPackages, invalidatePackagesCache, fetchPatientForDevice } from "./lib/hospitalApi";
+import { nurseActions } from "./components/NurseDataStore";
+import { getDeviceInfo } from "./utils/androidBridge";
 import { matchBinding } from "./lib/handsetConfig";
 import { sip, iptv, _getIptvChannels, _getIptvPlayingId, isAndroidApp, IptvChannel } from "./utils/androidBridge";
 
@@ -101,6 +104,32 @@ function BedsideScreen() {
       hasAppliedConfig.current = true;
     }
   }, [lockedHospitalId, switchConfig]);
+
+  useEffect(() => {
+    // Pre-fetch packages on startup so AppLauncher loads instantly
+    fetchAppPackages();
+
+    const syncPatient = () => {
+      if (!isAndroidApp()) return;
+      const info = getDeviceInfo();
+      if (!info?.serial) return;
+      fetchPatientForDevice(info.serial)
+        .then(result => {
+          if (result) nurseActions.syncWithApi(result.patient);
+        })
+        .catch(() => {});
+    };
+    syncPatient();
+
+    // Re-fetch when server changes
+    const handler = () => {
+      invalidatePackagesCache();
+      fetchAppPackages();
+      syncPatient();
+    };
+    window.addEventListener("api-config-changed", handler);
+    return () => window.removeEventListener("api-config-changed", handler);
+  }, []);
   const [showSurvey, setShowSurvey] = useState(false);
   const [showAboutUs, setShowAboutUs] = useState(false);
   const [showSettings, setShowSettings] = useState(false);

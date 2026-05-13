@@ -300,13 +300,13 @@ export function MyPreferencesDialog({
     }
   }, [step]);
 
-  function isValidIp(s: string): boolean {
-    return /^(\d{1,3}\.){3}\d{1,3}$/.test(s) &&
-      s.split('.').every(p => parseInt(p) <= 255);
+  function isValidServerUrl(s: string): boolean {
+    // Allows IP, DNS, and optional http/https prefix. Also rejects empty spaces.
+    return s.trim().length > 0 && !/\s/.test(s) && /^(https?:\/\/)?([a-zA-Z0-9.-]+)(:[0-9]+)?(\/.*)?$/.test(s);
   }
 
   const handleSaveServer = () => {
-    if (!isValidIp(serverIp) || !apiKey.trim()) {
+    if (!isValidServerUrl(serverIp) || !apiKey.trim()) {
       setError(true);
       setTimeout(() => setError(false), 2000);
       return;
@@ -462,7 +462,7 @@ export function MyPreferencesDialog({
               onChange={(e) => setServerIp(e.target.value)}
               placeholder="10.32.0.86"
               style={{
-                width: "100%", padding: "12px", borderRadius: t.radiusMd, border: `1px solid ${error && !isValidIp(serverIp) ? '#EF4444' : t.borderDefault}`,
+                width: "100%", padding: "12px", borderRadius: t.radiusMd, border: `1px solid ${error && !isValidServerUrl(serverIp) ? '#EF4444' : t.borderDefault}`,
                 backgroundColor: t.surfaceElevated, fontFamily: t.fontFamily, fontSize: "15px", marginBottom: "16px", outline: "none",
               }}
             />

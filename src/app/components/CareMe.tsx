@@ -283,9 +283,9 @@ function PatientProfileSlide({ theme, isExpanded = false }: { theme: any, isExpa
             {infoRow(Hash, t("greeting.mrn"), <span dir="ltr">{p.mrn}</span>)}
             {infoRow(Shield, t("care.insurance"), t("care.insurance.tawuniya"))}
             {infoRow(CalendarDays, t("care.age"), t("care.ageUnits", localizeNumber(Number(p.age) || 0)))}
-            {infoRow(GendersIcon, t("care.gender"), t("care.gender.female"))}
-            {infoRow(Clock, t("care.dob"), t("care.birthDateVal"))}
-            {infoRow(DoorOpen, t("care.room") + " / " + t("care.bed"), `${p.room} / A`)}
+            {infoRow(GendersIcon, t("care.gender"), p.sex ? t(`care.gender.${p.sex.toLowerCase()}`) : t("care.gender.female"))}
+            {infoRow(Clock, t("care.dob"), p.dob || t("care.birthDateVal"))}
+            {infoRow(DoorOpen, t("care.room") + " / " + t("care.bed"), `${p.room} / ${p.bed || 'A'}`)}
           </div>
         </div>
       </SectionContainer>

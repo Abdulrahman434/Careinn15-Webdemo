@@ -109,7 +109,11 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
         <div className="flex-1 grid grid-cols-4 gap-0">
           {[
             { label: "MRN", value: patient.mrn, icon: <Hash size={15} /> },
-            { label: "Patient", value: `${patient.name} (${patient.age}y)`, icon: <User size={15} /> },
+            { 
+              label: "Patient", 
+              value: `${(tr("direction") === "rtl" && patient.nameAr) ? patient.nameAr : patient.name} (${patient.age}y)`, 
+              icon: <User size={15} /> 
+            },
             { label: "Room", value: patient.room, icon: <DoorOpen size={15} /> },
             { label: "Bed", value: patient.bed || "—", icon: <Bed size={15} /> },
           ].map((item, i) => (

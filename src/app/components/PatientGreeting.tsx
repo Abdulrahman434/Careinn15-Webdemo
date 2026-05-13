@@ -54,55 +54,19 @@ export function PatientGreeting({
   const { isGuest } = useGuestMode();
   const { logout } = useAuth();
 
-  const [apiName,   setApiName]   = useState<string | null>(null);
-  const [apiMrn,    setApiMrn]    = useState<string | null>(null);
-  const [apiRoom,   setApiRoom]   = useState<string | null>(null);
-  const [apiBed,    setApiBed]    = useState<string | null>(null);
-  const [apiAdmit,  setApiAdmit]  = useState<string | null>(null);
+  // Data now comes from NurseDataStore (synchronized at App level)
+  const p = nurseStore.patient;
 
-  const doFetch = () => {
-    if (!isAndroidApp()) return;
-    const info = getDeviceInfo();
-    if (!info?.serial) return;
+  // Name: i18n demo key → manual/API name (with RTL/Arabic support)
+  const displayName = t("direction") === "rtl" && p.nameAr
+    ? p.nameAr
+    : (p.nameKey ? t(p.nameKey) : p.name);
 
-    fetchPatientForDevice(info.serial)
-      .then(result => {
-        if (!result) return;
-        const p = result.patient;
-        setApiName(p.name  || null);
-        setApiMrn(p.mrn    || null);
-        setApiRoom(p.room  || null);
-        setApiBed(p.bed    || null);
-        setApiAdmit(p.admissionDate || null);
-      })
-      .catch(() => {});
-  };
-
-  useEffect(() => {
-    doFetch();
-    // Re-fetch when server IP/key changes in My Preferences
-    window.addEventListener("api-config-changed", doFetch);
-    return () => window.removeEventListener(
-      "api-config-changed", doFetch);
-  }, []);
-
-  // Name: API → i18n demo key → nurse manual entry
-  const displayName = apiName
-    || (nurseStore.patient.nameKey
-        ? t(nurseStore.patient.nameKey)
-        : nurseStore.patient.name);
-
-  // MRN: API → store
-  const displayMrn = apiMrn || nurseStore.patient.mrn;
-
-  // Room: API → store
-  const displayRoom = apiRoom || nurseStore.patient.room;
-
-  // Bed: API only (not in store default)
-  const displayBed = apiBed || nurseStore.patient.bed || "";
-
-  // Admission: API → store
-  const displayAdmit = apiAdmit || nurseStore.patient.admissionDate;
+  // Other fields
+  const displayMrn    = p.mrn;
+  const displayRoom   = p.room;
+  const displayBed    = p.bed;
+  const displayAdmit  = p.admissionDate;
 
   // Hero image fallback chain:
   // 1. User-saved image from Backgrounds preferences

@@ -358,6 +358,27 @@ const nurseStore = (() => {
       notify();
     },
 
+    syncWithApi: (apiPatient: any) => {
+      if (!apiPatient) return;
+      state = {
+        ...state,
+        patient: {
+          ...state.patient,
+          name:          apiPatient.name          || state.patient.name,
+          mrn:           apiPatient.mrn           || state.patient.mrn,
+          room:          apiPatient.room          || state.patient.room,
+          bed:           apiPatient.bed           || state.patient.bed,
+          sex:           apiPatient.sex           || state.patient.sex,
+          dob:           apiPatient.dob           || state.patient.dob,
+          admissionDate: apiPatient.admissionDate || state.patient.admissionDate,
+          dischargeDate: apiPatient.dischargeDate || state.patient.dischargeDate,
+          // Clear nameKey if we have a real API name to avoid it being overridden by i18n
+          nameKey:       apiPatient.name ? "" : state.patient.nameKey,
+        }
+      };
+      notify();
+    },
+
     // ── Care Team ──
     addCareTeamMember: (member: CareTeamMember) => {
       state = { ...state, careTeam: [...state.careTeam, member] };
