@@ -842,7 +842,11 @@ const translations: Record<string, TranslationEntry> = {
   "prefs.backgrounds.slideshow.hint": { en: "Cycles through all images automatically", ar: "يتنقل بين جميع الصور تلقائياً", ur: "تمام تصاویر کے درمیان خودبخود چلتا ہے" },
   "prefs.backgrounds.loading": { en: "Loading images...", ar: "جار تحميل الصور...", ur: "تصاویر لوڈ ہو رہی ہیں..." },
   "prefs.backgrounds.default": { en: "Default", ar: "افتراضي", ur: "ڈیفالٹ" },
-  "prefs.backgrounds.empty": { en: "No images available", ar: "لا توجد صور متاحة", ur: "کوئی تصویر دستیاب نہیں" }
+  "prefs.backgrounds.empty": { en: "No images available", ar: "لا توجد صور متاحة", ur: "کوئی تصویر دستیاب نہیں" },
+
+  /* ─── App Install ─── */
+  "appInstall.installing": { en: "Installing", ar: "جار تثبيت", ur: "انسٹال ہو رہا ہے" },
+  "appInstall.hint":       { en: "This only happens once", ar: "يحدث هذا مرة واحدة فقط", ur: "یہ صرف ایک بار ہوتا ہے" }
 };
 
 /* ── Number Localization ── */

@@ -94,6 +94,8 @@ interface AppItem {
   isInteractive?: boolean;
   url?: string;
   pdfSource?: string;
+  packageName?: string;  // Android package name — checked for install state
+  apkUrl?: string;       // CDN URL to download APK if not installed
 }
 
 interface CategoryConfig {
@@ -1423,6 +1425,7 @@ export function AppLauncher({
   onLaunchGame,
   onLaunchTool,
   onLaunchIptv,
+  onOpenUrl,
   onRequestPinSetup,
   lockMenu,
   onLockMenuChange: setLockMenu = () => {}
@@ -1432,6 +1435,7 @@ export function AppLauncher({
   onLaunchGame?: (gameId: string) => void;
   onLaunchTool?: (toolId: string) => void;
   onLaunchIptv?: () => void;
+  onOpenUrl?: (url: string) => void;
   onRequestPinSetup?: () => void;
   lockMenu?: string | null;
   onLockMenuChange?: (val: string | null) => void;
@@ -1456,6 +1460,50 @@ export function AppLauncher({
   const [isSwiping, setIsSwiping] = useState(false);
   const swipeStartX = useRef<number | null>(null);
   const touchOffset = useRef<number>(0);
+
+  // APK install progress state
+  const [installingApp, setInstallingApp] = useState<{
+    packageName: string;
+    name: string;
+    apkUrl: string;
+    progress?: number;
+  } | null>(null);
+
+  // Listen for install progress/success/error events from Android
+  useEffect(() => {
+    const onProgress = (e: Event) => {
+      const { packageName, percent } = (e as CustomEvent).detail;
+      setInstallingApp(prev =>
+        prev?.packageName === packageName
+          ? { ...prev, progress: percent }
+          : prev
+      );
+    };
+    const onSuccess = (e: Event) => {
+      const { packageName } = (e as CustomEvent).detail;
+      window.AndroidSystem?.launchApp?.(packageName);
+      setInstallingApp(null);
+    };
+    const onError = (e: Event) => {
+      const { packageName } = (e as CustomEvent).detail;
+      setInstallingApp(prev => {
+        if (prev?.packageName === packageName) {
+          window.AndroidSystem?.showToast?.(
+            "Installation failed. Opening web version.", false);
+          return null;
+        }
+        return prev;
+      });
+    };
+    window.addEventListener("apk-install-progress", onProgress);
+    window.addEventListener("apk-install-success",  onSuccess);
+    window.addEventListener("apk-install-error",    onError);
+    return () => {
+      window.removeEventListener("apk-install-progress", onProgress);
+      window.removeEventListener("apk-install-success",  onSuccess);
+      window.removeEventListener("apk-install-error",    onError);
+    };
+  }, []);
 
   // Internet Browser States (hidden for now, might be used later)
   // const [showBrowser, setShowBrowser] = useState(false);
@@ -1557,8 +1605,32 @@ export function AppLauncher({
       return;
     }
 
+    // 1a. Native APK app
+    if (app.packageName && isAndroidApp()) {
+      const installed = window.AndroidSystem?.isAppInstalled?.(app.packageName) ?? false;
+      if (installed) {
+        window.AndroidSystem?.launchApp?.(app.packageName);
+        return;
+      }
+      if (app.apkUrl) {
+        setInstallingApp({
+          packageName: app.packageName,
+          name: app.name,
+          apkUrl: app.apkUrl,
+        });
+        window.AndroidSystem?.installApk?.(app.apkUrl, app.packageName);
+        return;
+      }
+      // Has package name but no APK URL — fall through to URL
+    }
+
+    // 1b. URL fallback
     if (app.url) {
-      window.open(app.url, "_blank", "noopener,noreferrer");
+      if (isAndroidApp() && onOpenUrl) {
+        onOpenUrl(app.url);
+      } else {
+        window.open(app.url, "_blank", "noopener,noreferrer");
+      }
       return;
     }
 
@@ -1932,6 +2004,88 @@ export function AppLauncher({
             if (targetApp) handleAppTap(targetApp);
           } : undefined}
         />
+      )}
+
+      {/* APK Install Progress Overlay */}
+      {installingApp && (
+        <div style={{
+          position:       "fixed",
+          inset:          0,
+          zIndex:         9998,
+          background:     "rgba(0,0,0,0.75)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+          display:        "flex",
+          flexDirection:  "column",
+          alignItems:     "center",
+          justifyContent: "center",
+        }}>
+          <div style={{
+            backgroundColor: theme.surface,
+            borderRadius:    theme.radiusXl,
+            padding:         "36px 48px",
+            display:         "flex",
+            flexDirection:   "column",
+            alignItems:      "center",
+            gap:             "20px",
+            minWidth:        "320px",
+            boxShadow:       "0 24px 64px rgba(0,0,0,0.5)",
+          }}>
+            {/* Pulsing icon */}
+            <div style={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              backgroundColor: theme.primarySubtle,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              animation: "breathePulse 1.6s ease-in-out infinite",
+            }}>
+              <Download size={28} style={{ color: theme.primary }} />
+            </div>
+
+            {/* App name */}
+            <p style={{
+              fontFamily: theme.fontFamily,
+              fontSize: "17px",
+              fontWeight: 700,
+              color: theme.textHeading,
+              margin: 0,
+              textAlign: "center",
+            }}>
+              {t("appInstall.installing")} {installingApp.name}
+            </p>
+
+            {/* Progress bar */}
+            <div style={{
+              width:           "100%",
+              height:          "8px",
+              borderRadius:    "4px",
+              backgroundColor: theme.borderDefault ?? "rgba(0,0,0,0.1)",
+              overflow:        "hidden",
+            }}>
+              <div style={{
+                height:          "100%",
+                width:           `${installingApp.progress ?? 0}%`,
+                borderRadius:    "4px",
+                backgroundColor: theme.primary,
+                transition:      "width 0.3s ease",
+              }} />
+            </div>
+
+            {/* Percentage + hint */}
+            <p style={{
+              fontFamily: theme.fontFamily,
+              fontSize: "13px",
+              color: theme.textMuted,
+              margin: 0,
+              textAlign: "center",
+            }}>
+              {installingApp.progress ?? 0}% · {t("appInstall.hint")}
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );

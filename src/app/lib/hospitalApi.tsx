@@ -386,6 +386,9 @@ export interface ApiAppItem {
   mark?: string;
   textColor?: string;
   pdfSource?: string;
+  packageName?: string; // Android package — for install/launch
+  apkUrl?: string;      // CDN APK download URL
+  url?: string;         // Web fallback URL
   customRender?: () => React.ReactNode;
 }
 
@@ -401,50 +404,66 @@ function mapPackagesToAppItems(packages: AppPackage[], categoryKey: string): Api
 
   if (!apiCategory) return [];
 
-  const pdfItems = packages.filter(
-    p => p.type === "PDF" &&
-      p.category === apiCategory &&
-      p.pdfUrl
+  const items = packages.filter(
+    p => p.category === apiCategory && (p.pdfUrl || p.apkUrl || p.url)
   );
 
-  return pdfItems.map(p => ({
-    id: `api-pdf-${p.id}`,
-    name: p.nameEn || `PDF ${p.id}`,
-    nameAr: p.nameAr || p.nameEn,
-    bg: "#E8453C",      // PDF red
-    mark: "PDF",
-    textColor: "#fff",
-    pdfSource: p.pdfUrl!,    // cdn URL — opens in PdfReaderModal
-    customRender: () => (
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "100%",
-        height: "100%",
-        background: "linear-gradient(135deg,#E8453C,#C0392B)",
-        borderRadius: "12px",
-        gap: "6px",
-        padding: "8px",
-      }}>
-        <FileText size={32} color="#fff" strokeWidth={1.5} />
-        <span style={{
-          fontSize: 10,
-          fontWeight: 700,
-          color: "#fff",
-          textAlign: "center",
-          lineHeight: 1.2,
-          overflow: "hidden",
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-        }}>
-          {p.nameEn || "PDF"}
-        </span>
-      </div>
-    ),
-  }));
+  return items.map(p => {
+    // ── PDF type ──
+    if (p.type === "PDF" && p.pdfUrl) {
+      return {
+        id: `api-pdf-${p.id}`,
+        name: p.nameEn || `PDF ${p.id}`,
+        nameAr: p.nameAr || p.nameEn,
+        bg: "#E8453C",
+        mark: "PDF",
+        textColor: "#fff",
+        pdfSource: p.pdfUrl,
+        customRender: () => (
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: "100%",
+            background: "linear-gradient(135deg,#E8453C,#C0392B)",
+            borderRadius: "12px",
+            gap: "6px",
+            padding: "8px",
+          }}>
+            <FileText size={32} color="#fff" strokeWidth={1.5} />
+            <span style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: "#fff",
+              textAlign: "center",
+              lineHeight: 1.2,
+              overflow: "hidden",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+            }}>
+              {p.nameEn || "PDF"}
+            </span>
+          </div>
+        ),
+      };
+    }
+
+    // ── APK / URL type ──
+    return {
+      id: `api-app-${p.id}`,
+      name: p.nameEn || `App ${p.id}`,
+      nameAr: p.nameAr || p.nameEn,
+      bg: "linear-gradient(135deg, #1a73e8, #0d47a1)",
+      mark: (p.nameEn || "?").charAt(0).toUpperCase(),
+      textColor: "#fff",
+      packageName: p.packageName ?? undefined,
+      apkUrl:      p.apkUrl      ?? undefined,
+      url:         p.url         ?? undefined,
+    };
+  });
 }
 
 /**

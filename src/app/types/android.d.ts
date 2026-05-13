@@ -51,6 +51,8 @@ interface AndroidSystemInterface {
   // Apps
   launchApp(componentName: string): void;
   isAppInstalled(packageName: string): boolean;
+  installApk?(apkUrl: string, packageName: string): void;
+  showToast?(message: string, longDuration: boolean): void;
 
   // IPTV
   fetchIptvChannels(): void;
@@ -165,7 +167,11 @@ export type AndroidEventName =
   | "api-config-updated"
   | "update-available"
   | "update-progress"
-  | "update-installed";
+  | "update-installed"
+  | "apk-install-progress"
+  | "apk-install-success"
+  | "apk-install-error"
+  | "kiosk-resumed";
 
 /* ─── Augment the global Window type ─── */
 declare global {

@@ -146,6 +146,13 @@ function BedsideScreen() {
     window.addEventListener("api-config-changed", handler);
     return () => window.removeEventListener("api-config-changed", handler);
   }, []);
+
+  // Close AppLauncher when kiosk app returns to foreground
+  useEffect(() => {
+    const handler = () => setOpenCategory(null);
+    window.addEventListener("kiosk-resumed", handler);
+    return () => window.removeEventListener("kiosk-resumed", handler);
+  }, []);
   const [showSurvey, setShowSurvey] = useState(false);
   const [showAboutUs, setShowAboutUs] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
