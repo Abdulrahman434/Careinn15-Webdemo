@@ -210,6 +210,8 @@ function BedsideScreen() {
   const deviceGroupRef = useRef<number | null>(null);
 
   const fetchAlerts = useCallback(async () => {
+    if (showTour) return;
+
     const alerts = await fetchDeviceAlerts();
     if (!alerts.length) {
       setApiNotifications([]);
@@ -267,13 +269,20 @@ function BedsideScreen() {
       });
       markAllAlertsSeen(dueSoon.map(a => a.id));
     }
-  }, [locale]);
+  }, [locale, showTour]);
 
   useEffect(() => {
     fetchAlerts();
     const interval = setInterval(fetchAlerts, 60_000);
     return () => clearInterval(interval);
   }, [fetchAlerts]);
+
+  // Immediately check for alerts when tour finishes
+  useEffect(() => {
+    if (!showTour) {
+      fetchAlerts();
+    }
+  }, [showTour, fetchAlerts]);
 
   useEffect(() => {
     if (!activeBroadcast && broadcastQueue.length > 0) {
