@@ -58,7 +58,7 @@ export function PatientGreeting({
   const p = nurseStore.patient;
 
   // Name: i18n demo key → manual/API name (with RTL/Arabic support)
-  const displayName = t("direction") === "rtl" && p.nameAr
+  const displayName = isRTL && p.nameAr
     ? p.nameAr
     : (p.nameKey ? t(p.nameKey) : p.name);
 

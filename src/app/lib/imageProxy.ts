@@ -12,11 +12,17 @@ const cache = new Map<string, string>();
 export async function proxyImageUrl(url: string): Promise<string> {
   if (!url) return "";
 
+  // Force HTTPS if page is HTTPS
+  let finalUrl = url;
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && finalUrl.startsWith("http://")) {
+    finalUrl = finalUrl.replace("http://", "https://");
+  }
+
   // Append apikey if it's a CDN URL from our server
   const { apiKey } = getApiConfig();
-  const authenticatedUrl = url.includes("apikey=") 
-    ? url 
-    : `${url}${url.includes('?') ? '&' : '?'}apikey=${apiKey}`;
+  const authenticatedUrl = finalUrl.includes("apikey=") 
+    ? finalUrl 
+    : `${finalUrl}${finalUrl.includes('?') ? '&' : '?'}apikey=${apiKey}`;
 
   if (cache.has(authenticatedUrl)) return cache.get(authenticatedUrl)!;
   if (!isAndroidApp()) return authenticatedUrl; // browser — return with key

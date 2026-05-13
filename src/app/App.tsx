@@ -120,7 +120,6 @@ function BedsideScreen() {
       const info = getDeviceInfo();
       if (!info?.serial) return;
       
-      nurseActions.clearPatientOverrides();
       
       fetchPatientForDevice(info.serial)
         .then(result => {

@@ -213,7 +213,7 @@ function GendersIcon({ size = 14, style }: { size?: number, style?: any }) {
 }
 
 function PatientProfileSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: boolean }) {
-  const { t, localizeNumber } = useLocale();
+  const { t, isRTL, localizeNumber } = useLocale();
   const nurseStore = useNurseStore();
   const p = nurseStore.patient;
 
@@ -274,7 +274,7 @@ function PatientProfileSlide({ theme, isExpanded = false }: { theme: any, isExpa
             <div className="flex flex-col pt-0.5">
               <p style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "16px" : "13px", color: theme.textMuted, lineHeight: "1.2" }}>{t("care.fullName")}</p>
               <p style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "18px" : "15.5px", fontWeight: WEIGHT.bold, color: theme.textHeading, lineHeight: "1.4", marginTop: "2px" }}>
-                {t("direction") === "rtl" && p.nameAr ? p.nameAr : (p.nameKey ? t(p.nameKey) : p.name)}
+                {isRTL && p.nameAr ? p.nameAr : (p.nameKey ? t(p.nameKey) : p.name)}
               </p>
             </div>
           </div>
@@ -656,7 +656,7 @@ function TimelineSlide({
                   color: step.active ? theme.primary : theme.textHeading,
                   textDecoration: "none",
                 }}>
-                  {t("direction") === "rtl" && step.labelAr ? step.labelAr : (step.label || (step.labelKey ? t(step.labelKey) : ""))}
+                  {isRTL && step.labelAr ? step.labelAr : (step.label || (step.labelKey ? t(step.labelKey) : ""))}
                 </span>
                 <span
                   className="flex items-center gap-1 shrink-0 ml-2 px-2 py-0.5"
