@@ -48,6 +48,7 @@ import {
   Wind,
   ChevronLeft,
   ChevronRight,
+  ArrowLeftRight,
 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import svgPaths from "../../imports/svg-ca68x68c4i";
@@ -110,12 +111,12 @@ const ALL_SLIDES: SlideConfig[] = [
   { key: "profile", title: "Patient Profile", titleKey: "care.profile.title", icon: IdCard },
   { key: "overview", title: "Care Overview", titleKey: "care.overview.title", icon: Activity },
   { key: "plan", title: "My Care Plan", titleKey: "care.plan.title", icon: ClipboardList },
-  { key: "billing", title: "Financial Summary", titleKey: "care.billing.title", icon: CreditCard },
+  { key: "observations", title: "Observations", titleKey: "care.observations.title", icon: Activity },
   { key: "labs", title: "Lab Results", titleKey: "care.labs.title", icon: FlaskConical },
   { key: "imaging", title: "Scans & Imaging", titleKey: "care.imaging.title", icon: ImageIcon },
   { key: "baby", title: "Baby Camera", titleKey: "care.baby.title", icon: Baby },
   { key: "discharge", title: "Discharge Plan", titleKey: "care.discharge.title", icon: LogOut },
-  { key: "observations", title: "Observations", titleKey: "care.observations.title", icon: Activity },
+  { key: "billing", title: "Financial Summary", titleKey: "care.billing.title", icon: CreditCard },
 ];
 
 /** Map CareMe slide keys → NurseDataStore SectionKey */
@@ -1844,6 +1845,29 @@ export function CareMe({ onExpand }: { onExpand?: () => void }) {
               <Stethoscope size={13} style={{ color: theme.primary }} />
               <span style={{ fontFamily: theme.fontFamily, fontSize: "11px", fontWeight: 700, color: theme.primary }}>
                 Nurse View
+              </span>
+            </button>
+          )}
+          {(activeSlide.key === "billing" || activeSlide.key === "observations") && (
+            <button
+              data-nav="true"
+              onClick={() => {
+                const targetKey = activeSlide.key === "billing" ? "observations" : "billing";
+                const targetIdx = slides.findIndex(s => s.key === targetKey);
+                if (targetIdx >= 0) handleManualNav(targetIdx + 1);
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 cursor-pointer active:scale-95 transition-all"
+              style={{
+                borderRadius: theme.radiusMd,
+                outline: "none",
+                backgroundColor: theme.primarySubtle,
+                border: `1px solid ${theme.primary}25`,
+              }}
+              aria-label={`Switch to ${activeSlide.key === "billing" ? "Observations" : "Billing"}`}
+            >
+              <ArrowLeftRight size={13} style={{ color: theme.primary }} />
+              <span style={{ fontFamily: theme.fontFamily, fontSize: "11px", fontWeight: 700, color: theme.primary }}>
+                {activeSlide.key === "billing" ? t("care.observations.title") : t("care.billing.title")}
               </span>
             </button>
           )}

@@ -7,49 +7,49 @@ import { apiUrl } from "./apiConfig";
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface HospitalGroup {
-  id:           number;
-  group_title:  string;
+  id: number;
+  group_title: string;
   organization: number;
 }
 
 export interface WallpaperImage {
-  id:         number;
-  imageUrl:   string;   // raw http:// from API — proxy before display
-  groupId:    number;
+  id: number;
+  imageUrl: string;   // raw http:// from API — proxy before display
+  groupId: number;
   groupTitle: string;
 }
 
 export interface WallpaperGroup {
-  id:     number;
-  title:  string;
+  id: number;
+  title: string;
   images: WallpaperImage[];
 }
 
 export interface DeviceLocation {
-  room_no:    string;
-  bed_no:     string;
+  room_no: string;
+  bed_no: string;
   patient_id: string;
   admit_data: string;   // reference_id for HL7 lookup
-  group:      { id: number; group_title: string } | null;
+  group: { id: number; group_title: string } | null;
 }
 
 export interface Hl7Patient {
-  name:          string;
-  mrn:           string;
-  room:          string;
-  bed:           string;
-  sex:           string;
-  dob:           string;
+  name: string;
+  mrn: string;
+  room: string;
+  bed: string;
+  sex: string;
+  dob: string;
   admissionDate: string;
   dischargeDate: string;
-  admitRefId:    number;
+  admitRefId: number;
 }
 
 export interface NewsItem {
-  id:      number;
-  title:   string;
+  id: number;
+  title: string;
   logoUrl: string;
-  feeds:   { language: string; url: string }[];
+  feeds: { language: string; url: string }[];
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -59,12 +59,12 @@ export interface NewsItem {
 /** Parse HL7 datetime "20260402170358" → "02 Apr 2026" */
 function parseHl7Date(raw: string): string {
   if (!raw || raw.length < 8) return "";
-  const year  = raw.slice(0, 4);
+  const year = raw.slice(0, 4);
   const month = parseInt(raw.slice(4, 6), 10);
-  const day   = raw.slice(6, 8);
+  const day = raw.slice(6, 8);
   const months = [
-    "Jan","Feb","Mar","Apr","May","Jun",
-    "Jul","Aug","Sep","Oct","Nov","Dec",
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
   ];
   if (month < 1 || month > 12) return "";
   return `${day} ${months[month - 1]} ${year}`;
@@ -110,14 +110,14 @@ async function fetchWallpapersForGroup(
     if (!data?.length) return null;
 
     return {
-      id:     group.id,
-      title:  group.group_title,
+      id: group.id,
+      title: group.group_title,
       images: data
         .filter(item => item?.image)
         .map(item => ({
-          id:         item.id,
-          imageUrl:   item.image,   // http:// — proxy on Android
-          groupId:    group.id,
+          id: item.id,
+          imageUrl: item.image,   // http:// — proxy on Android
+          groupId: group.id,
           groupTitle: group.group_title,
         })),
     };
@@ -165,16 +165,16 @@ export async function fetchDeviceLocation(
     if (!res.ok) return null;
     const devices: any[] = await res.json();
 
-    const device = devices.find(d => d.device_id === serial);
+    const device = devices.find(d => d.device_id.toLowerCase() === serial.toLowerCase());
     if (!device?.device_location) return null;
 
     const loc = device.device_location;
     return {
-      room_no:    loc.room_no    ?? "",
-      bed_no:     loc.bed_no     ?? "",
+      room_no: loc.room_no ?? "",
+      bed_no: loc.bed_no ?? "",
       patient_id: loc.patient_id ?? "",
       admit_data: loc.admit_data ?? "",
-      group:      loc.group      ?? null,
+      group: loc.group ?? null,
     };
   } catch (e) {
     console.warn("[hospitalApi] fetchDeviceLocation:", e);
@@ -198,23 +198,23 @@ export async function fetchPatientByRefId(
     const d = await res.json();
 
     const pid = d.patient_identification ?? {};
-    const pv  = d.patient_visit          ?? {};
+    const pv = d.patient_visit ?? {};
 
-    const firstName = pid.pid_patient_name?.given_name  ?? "";
-    const lastName  = pid.pid_patient_name?.family_name ?? "";
-    const name      = `${firstName} ${lastName}`.trim();
+    const firstName = pid.pid_patient_name?.given_name ?? "";
+    const lastName = pid.pid_patient_name?.family_name ?? "";
+    const name = `${firstName} ${lastName}`.trim();
     if (!name) return null;
 
     return {
       name,
-      mrn:           pid.pid_patient_identifier_list?.id_number ?? "",
-      room:          pv.pv_assigned_patient_location?.room      ?? "",
-      bed:           pv.pv_assigned_patient_location?.bed       ?? "",
-      sex:           pid.pid_administrative_sex                 ?? "",
-      dob:           parseHl7Date(pid.pid_date_time_of_birth?.time ?? ""),
-      admissionDate: parseHl7Date(pv.pv_admit_date_time?.time      ?? ""),
-      dischargeDate: parseHl7Date(pv.pv_discharge_date_time?.time  ?? ""),
-      admitRefId:    Number(referenceId),
+      mrn: pid.pid_patient_identifier_list?.id_number ?? "",
+      room: pv.pv_assigned_patient_location?.room ?? "",
+      bed: pv.pv_assigned_patient_location?.bed ?? "",
+      sex: pid.pid_administrative_sex ?? "",
+      dob: parseHl7Date(pid.pid_date_time_of_birth?.time ?? ""),
+      admissionDate: parseHl7Date(pv.pv_admit_date_time?.time ?? ""),
+      dischargeDate: parseHl7Date(pv.pv_discharge_date_time?.time ?? ""),
+      admitRefId: Number(referenceId),
     };
   } catch (e) {
     console.warn("[hospitalApi] fetchPatientByRefId:", e);
@@ -228,7 +228,7 @@ export async function fetchPatientByRefId(
  */
 export async function fetchPatientForDevice(serial: string): Promise<{
   location: DeviceLocation;
-  patient:  Hl7Patient;
+  patient: Hl7Patient;
 } | null> {
   const location = await fetchDeviceLocation(serial);
   if (!location?.admit_data) return null;
@@ -238,7 +238,7 @@ export async function fetchPatientForDevice(serial: string): Promise<{
 
   // Prefer room/bed from device_location (more up-to-date than HL7)
   patient.room = location.room_no || patient.room;
-  patient.bed  = location.bed_no  || patient.bed;
+  patient.bed = location.bed_no || patient.bed;
 
   return { location, patient };
 }
@@ -258,12 +258,12 @@ export async function fetchLatestNews(): Promise<NewsItem[]> {
     const data: any[] = await res.json();
 
     return data.map(item => ({
-      id:      item.id,
-      title:   item.title ?? "",
+      id: item.id,
+      title: item.title ?? "",
       logoUrl: item.logo_url ?? "",
-      feeds:   (item.latestnews_desc_locale ?? []).map((l: any) => ({
+      feeds: (item.latestnews_desc_locale ?? []).map((l: any) => ({
         language: l.language_name ?? "",
-        url:      l.locale_description ?? "",
+        url: l.locale_description ?? "",
       })),
     }));
   } catch (e) {
@@ -293,18 +293,18 @@ export async function fetchLatestNews(): Promise<NewsItem[]> {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface AppPackage {
-  id:          number;
+  id: number;
   packageName: string | null;
   versionName: string | null;
-  imageUrl:    string;
-  nameEn:      string;
-  nameAr:      string;
-  categoryId:  number;
-  category:    string;   // "Entertainment", "Social", etc.
-  type:        "APK" | "URL" | "PDF";
-  url:         string | null;
-  apkUrl:      string | null;
-  pdfUrl:      string | null;  // cdn URL for PDF
+  imageUrl: string;
+  nameEn: string;
+  nameAr: string;
+  categoryId: number;
+  category: string;   // "Entertainment", "Social", etc.
+  type: "APK" | "URL" | "PDF";
+  url: string | null;
+  apkUrl: string | null;
+  pdfUrl: string | null;  // cdn URL for PDF
 }
 
 // ── Module-level cache — persists across component mounts ────────────────
@@ -331,20 +331,20 @@ export async function fetchAppPackages(
       if (!res.ok) return _packagesCache ?? [];
       const data: any[] = await res.json();
       _packagesCache = data.map(item => ({
-        id:          item.id,
-        packageName: item.package_name  ?? null,
-        versionName: item.version_name  ?? null,
-        imageUrl:    item.image         ?? "",
-        nameEn:      item.package_locale?.find(
+        id: item.id,
+        packageName: item.package_name ?? null,
+        versionName: item.version_name ?? null,
+        imageUrl: item.image ?? "",
+        nameEn: item.package_locale?.find(
           (l: any) => l.language_id === 1)?.locale_name ?? "",
-        nameAr:      item.package_locale?.find(
+        nameAr: item.package_locale?.find(
           (l: any) => l.language_id === 2)?.locale_name ?? "",
-        categoryId:  item.category_id,
-        category:    item.category_title ?? "",
-        type:        item.type as "APK" | "URL" | "PDF",
-        url:         item.url     ?? null,
-        apkUrl:      item.package ?? null,
-        pdfUrl:      item.pdf     ?? null,
+        categoryId: item.category_id,
+        category: item.category_title ?? "",
+        type: item.type as "APK" | "URL" | "PDF",
+        url: item.url ?? null,
+        apkUrl: item.package ?? null,
+        pdfUrl: item.pdf ?? null,
       }));
       return _packagesCache;
     } catch (e) {
@@ -368,14 +368,14 @@ export function invalidatePackagesCache(): void {
  * Add new mappings here when new categories are added to the API.
  */
 export const API_CATEGORY_MAP: Record<string, string> = {
-  "Entertainment":      "Media",
-  "Social":             "Social",
-  "Call":               "Meeting",
-  "Games":              "Games",
-  "Tools":              "Tools",
-  "Religion":           "Reading",
-  "Shortcut Services":  "Shortcuts",  // ServicesGrid shortcuts
-  "I-Services":         "Internet",
+  "Entertainment": "Media",
+  "Social": "Social",
+  "Call": "Meeting",
+  "Games": "Games",
+  "Tools": "Tools",
+  "Religion": "Reading",
+  "Shortcut Services": "Shortcuts",  // ServicesGrid shortcuts
+  "I-Services": "Internet",
 };
 
 export interface ApiAppItem {
@@ -398,45 +398,45 @@ function mapPackagesToAppItems(packages: AppPackage[], categoryKey: string): Api
   // Find which API category maps to this launcher key
   const apiCategory = Object.entries(API_CATEGORY_MAP)
     .find(([, v]) => v === categoryKey)?.[0];
-  
+
   if (!apiCategory) return [];
 
   const pdfItems = packages.filter(
-    p => p.type === "PDF" && 
-         p.category === apiCategory &&
-         p.pdfUrl
+    p => p.type === "PDF" &&
+      p.category === apiCategory &&
+      p.pdfUrl
   );
 
   return pdfItems.map(p => ({
-    id:       `api-pdf-${p.id}`,
-    name:     p.nameEn || `PDF ${p.id}`,
-    nameAr:   p.nameAr || p.nameEn,
-    bg:       "#E8453C",      // PDF red
-    mark:     "PDF",
+    id: `api-pdf-${p.id}`,
+    name: p.nameEn || `PDF ${p.id}`,
+    nameAr: p.nameAr || p.nameEn,
+    bg: "#E8453C",      // PDF red
+    mark: "PDF",
     textColor: "#fff",
     pdfSource: p.pdfUrl!,    // cdn URL — opens in PdfReaderModal
     customRender: () => (
       <div style={{
-        display:        "flex",
-        flexDirection:  "column",
-        alignItems:     "center",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
         justifyContent: "center",
-        width:          "100%",
-        height:         "100%",
-        background:     "linear-gradient(135deg,#E8453C,#C0392B)",
-        borderRadius:   "12px",
-        gap:            "6px",
-        padding:        "8px",
+        width: "100%",
+        height: "100%",
+        background: "linear-gradient(135deg,#E8453C,#C0392B)",
+        borderRadius: "12px",
+        gap: "6px",
+        padding: "8px",
       }}>
         <FileText size={32} color="#fff" strokeWidth={1.5} />
         <span style={{
-          fontSize:   10,
+          fontSize: 10,
           fontWeight: 700,
-          color:      "#fff",
-          textAlign:  "center",
+          color: "#fff",
+          textAlign: "center",
           lineHeight: 1.2,
-          overflow:   "hidden",
-          display:    "-webkit-box",
+          overflow: "hidden",
+          display: "-webkit-box",
           WebkitLineClamp: 2,
           WebkitBoxOrient: "vertical",
         }}>
