@@ -1,4 +1,5 @@
 import { isAndroidApp } from "../utils/androidBridge";
+import { nurseActions } from "../components/NurseDataStore";
 
 /**
  * Performs a full data wipe of all stored kiosk data, then 

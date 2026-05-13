@@ -208,9 +208,13 @@ function BedsideScreen() {
   const [apiNotifications, setApiNotifications] = useState<DeviceAlert[]>([]);
 
   const deviceGroupRef = useRef<number | null>(null);
+  const appStartRef = useRef(Date.now());
 
   const fetchAlerts = useCallback(async () => {
-    if (showTour) return;
+    // Prevent fetching during tour or for the first minute of a fresh entry
+    const isFirstEntry = !tourDismissed;
+    const timeSinceStart = Date.now() - appStartRef.current;
+    if (showTour || (isFirstEntry && timeSinceStart < 60000)) return;
 
     const alerts = await fetchDeviceAlerts();
     if (!alerts.length) {
@@ -285,12 +289,13 @@ function BedsideScreen() {
   }, [showTour, fetchAlerts]);
 
   useEffect(() => {
-    if (!activeBroadcast && broadcastQueue.length > 0) {
+    // Only process the queue if the tour is NOT active AND the user has at least seen/skipped the tour once
+    if (!showTour && tourDismissed && !activeBroadcast && broadcastQueue.length > 0) {
       const [next, ...rest] = broadcastQueue;
       setActiveBroadcast(next);
       setBroadcastQueue(rest);
     }
-  }, [activeBroadcast, broadcastQueue]);
+  }, [activeBroadcast, broadcastQueue, showTour, tourDismissed]);
   const anyOtherOverlayOpen = !!(
     openCategory || showSurvey || showAboutUs || showSettings ||
     showNotifications || showTour || showConfigurator ||
@@ -531,8 +536,8 @@ function BedsideScreen() {
     const prayerNameEn = t(PRAYER_NAMES[pKey], "en");
     const prayerNameAr = t(PRAYER_NAMES[pKey], "ar");
 
-    // 1. Show Broadcast
-    setActiveBroadcast({
+    // 1. Queue Broadcast (will show after tour if active)
+    setBroadcastQueue(prev => [...prev, {
       id: "prayer-" + Date.now(),
       type: "prayer",
       title: {
@@ -545,7 +550,7 @@ function BedsideScreen() {
       },
       priority: "info",
       timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
-    });
+    }]);
 
     // 2. Play Azan if alarm enabled
     if (prayerAlarm && azanAudioRef.current) {
@@ -575,7 +580,7 @@ function BedsideScreen() {
             const catEmoji =
               r.category === "medication" ? "💊" : r.category === "appointment" ? "🏥" : "📌";
 
-            setActiveBroadcast({
+            setBroadcastQueue(prev => [...prev, {
               id: "reminder-" + r.id + "-" + Date.now(),
               type: "general",
               title: {
@@ -592,7 +597,7 @@ function BedsideScreen() {
                 minute: "2-digit",
                 hour12: true,
               }),
-            });
+            }]);
 
             return { ...r, notified: true };
           }
@@ -636,11 +641,11 @@ function BedsideScreen() {
   }, []);
 
   const handleMaghribTap = useCallback(() => {
-    setActiveBroadcast({
+    setBroadcastQueue(prev => [...prev, {
       ...SAMPLE_BROADCAST,
       id: "broadcast-" + Date.now(),
       timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
-    });
+    }]);
   }, []);
 
   const handleNotificationClick = useCallback((notif: any) => {
@@ -650,7 +655,7 @@ function BedsideScreen() {
       markAlertSeen(alertId);
       
       // Show as broadcast popup
-      setActiveBroadcast({
+      setBroadcastQueue(prev => [...prev, {
         id:       notif.id,
         type:     "announcement",
         priority: "info",
@@ -663,7 +668,7 @@ function BedsideScreen() {
           ar: notif.bodyText  ?? "" 
         },
         icon:     "megaphone",
-      });
+      }]);
       setShowNotifications(false);
       return;
     }
@@ -719,13 +724,13 @@ function BedsideScreen() {
       priority: "info"
     };
 
-    setActiveBroadcast({
+    setBroadcastQueue(prev => [...prev, {
       id: "notif-popup-" + notif.id,
       title: details.title,
       body: details.body,
       priority: details.priority,
       timestamp: notif.time,
-    });
+    }]);
     setShowNotifications(false); // Close panel to focus on broadcast
   }, []);
 
