@@ -458,25 +458,14 @@ function mapPackagesToAppItems(packages: AppPackage[], categoryKey: string): Api
       id: `api-app-${p.id}`,
       name: p.nameEn || `App ${p.id}`,
       nameAr: p.nameAr || p.nameEn,
-      bg: "linear-gradient(135deg, #1a73e8, #0d47a1)",
-      mark: (p.nameEn || "?").charAt(0).toUpperCase(),
+      bg: "#1e293b",
+      mark: "",
       textColor: "#fff",
       packageName: p.packageName ?? undefined,
-      apkUrl:      p.apkUrl      ?? undefined,
-      url:         p.url         ?? undefined,
-      imageUrl:    p.imageUrl    ?? undefined,
-      customRender: p.imageUrl ? () => (
-        <ApiImage 
-          src={p.imageUrl!} 
-          alt={p.nameEn || "App"} 
-          className="w-full h-full object-cover"
-          fallback={
-            <div className="flex flex-col items-center justify-center w-full h-full bg-slate-800">
-              <Smartphone size={40} color="#fff" opacity={0.5} />
-            </div>
-          }
-        />
-      ) : undefined,
+      apkUrl: p.apkUrl ?? undefined,
+      url: p.url ?? undefined,
+      imageUrl: p.imageUrl || "?",
+      appType: p.type ? (p.type.toLowerCase() as "apk" | "url" | "pdf") : "url",
     };
   });
 }

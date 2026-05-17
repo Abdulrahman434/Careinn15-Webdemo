@@ -27,6 +27,7 @@ import { useLockedApps } from "../lib/lockedApps";
 import { useLongPress } from "../lib/useLongPress";
 import { AppLockMenu } from "./AppLockMenu";
 import { LockBadge } from "./LockBadge";
+import { AppIconPlaceholder } from "./figma/AppIconPlaceholder";
 
 // import { InternetBrowser } from "./InternetBrowser";
 import { useTheme } from "./ThemeContext";
@@ -97,6 +98,8 @@ interface AppItem {
   pdfSource?: string;
   packageName?: string;  // Android package name — checked for install state
   apkUrl?: string;       // CDN URL to download APK if not installed
+  imageUrl?: string;     // API image URL
+  appType?: "apk" | "url" | "pdf";
 }
 
 interface CategoryConfig {
@@ -1385,6 +1388,13 @@ function AppTile({ app, onTap, onLongPress, isLocked }: { app: AppItem; onTap: (
           <div className="absolute inset-0 flex items-center justify-center overflow-hidden" style={{ borderRadius: theme.radiusXl }}>
             {app.customRender()}
           </div>
+        ) : app.imageUrl ? (
+          <ImageWithFallbackInTile
+            src={app.imageUrl}
+            name={app.nameKey ? t(app.nameKey) : app.name}
+            type={app.appType ?? "url"}
+            tileRadius={theme.radiusXl}
+          />
         ) : (
           <span
             className="relative z-10"
@@ -1415,6 +1425,55 @@ function AppTile({ app, onTap, onLongPress, isLocked }: { app: AppItem; onTap: (
         {displayName}
       </span>
     </button>
+  );
+}
+
+function ImageWithFallbackInTile({
+  src, name, type, tileRadius,
+}: {
+  src: string;
+  name: string;
+  type: "apk" | "url" | "pdf";
+  tileRadius: string;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed || !src || src === "?") {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center" style={{ borderRadius: tileRadius }}>
+        <AppIconPlaceholder
+          name={name}
+          type={type === "pdf" ? "url" : type}
+          size={120}
+          borderRadius={20}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <ApiImage
+      src={src}
+      alt={name}
+      onError={() => setFailed(true)}
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        borderRadius: tileRadius,
+      }}
+      showFallbackWhileLoading
+      fallback={
+        <div className="absolute inset-0 flex items-center justify-center" style={{ borderRadius: tileRadius }}>
+          <AppIconPlaceholder
+            name={name}
+            type={type === "pdf" ? "url" : type}
+            size={120}
+            borderRadius={20}
+          />
+        </div>
+      }
+    />
   );
 }
 
