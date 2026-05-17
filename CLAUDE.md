@@ -98,4 +98,4 @@ Two singleton pub/sub stores live next to components and are shared via hooks ra
 
 - Persistent UI state is generally keyed under `hbs-*` or `careinn-*` in `localStorage`. Search for the key before adding new ones to avoid collisions.
 - Sibling top-level folders `CT/`, `CT-Snajjar/`, `CT-Snajjar_backup/`, `Snajjar/`, plus `*.cjs` / `fix_layout.js` / `translate.py` are scratch/backup material — not part of the active build. The live source is `src/`.
-- `guidelines/Guidelines.md` is currently a template stub with no project-specific rules.
+- `guidelines/Guidelines.md` holds the binding multi-agent coordination rules (scope boundaries, design-system enforcement, locking around shared files). Read it before editing.

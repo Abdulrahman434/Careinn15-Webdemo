@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { isTvDevice } from "./utils/deviceDetect";
 import { ThemeProvider, useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "./components/ThemeContext";
 import { IptvChannels } from "./components/IptvChannels";
 import { useSipCallState } from "./utils/androidBridge";
@@ -79,17 +80,52 @@ const DESIGN_H = 1080;
 
 function useScreenScale() {
   const getScale = useCallback(() => {
-    const sx = window.innerWidth / DESIGN_W;
-    const sy = window.innerHeight / DESIGN_H;
-    return Math.min(sx, sy);
+    const isTV = isTvDevice();
+
+    if (!isTV) {
+      // Standard laptop/desktop browser or touch tablet kiosk:
+      // Exactly scale to the available inner window dimensions
+      const sx = window.innerWidth / DESIGN_W;
+      const sy = window.innerHeight / DESIGN_H;
+      return Math.min(sx, sy);
+    }
+
+    // TV set-top boxes (STBs running Android kiosk app with DPR=2 viewport bugs)
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.max(
+      window.innerWidth,
+      window.innerWidth * dpr,
+      window.screen?.width || 0,
+      document.documentElement?.clientWidth || 0
+    );
+    const h = Math.max(
+      window.innerHeight,
+      window.innerHeight * dpr,
+      window.screen?.height || 0,
+      document.documentElement?.clientHeight || 0
+    );
+
+    const sx = w / DESIGN_W;
+    const sy = h / DESIGN_H;
+    const scale = Math.min(sx, sy);
+    return Math.max(0.5, Math.min(2.0, scale));
   }, []);
 
   const [scale, setScale] = useState(getScale);
 
   useEffect(() => {
+    const t1 = setTimeout(() => setScale(getScale()), 100);
+    const t2 = setTimeout(() => setScale(getScale()), 500);
+    const t3 = setTimeout(() => setScale(getScale()), 1500);
+
     const onResize = () => setScale(getScale());
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      window.removeEventListener("resize", onResize);
+    };
   }, [getScale]);
 
   return scale;
@@ -100,6 +136,7 @@ function BedsideScreen() {
   const { isFullAccess, lockedHospitalId } = useAuth();
   const { t, locale, isRTL, dir, fontFamily } = useLocale();
   const scale = useScreenScale();
+  const isTV = isTvDevice();
   const [openCategory, setOpenCategory] = useState<string | null>(null);
 
   /* ── Auto-switch hospital config based on login password ── */
@@ -1034,7 +1071,7 @@ function BedsideScreen() {
           background: theme.gradientCanvas,
           fontFamily: fontFamily,
         }}
-        className="flex flex-col overflow-hidden relative shrink-0"
+        className={`flex flex-col overflow-hidden relative shrink-0 ${isTV ? "careinn-tv" : "careinn-kiosk"}`}
       >
         {/* Decorative hospital background photo — subtle texture */}
         <AutoCarousel
@@ -1092,11 +1129,11 @@ function BedsideScreen() {
         <NewsTicker />
 
         {/* Main Content — 32px gap below ticker */}
-        <div className="flex-1 flex gap-[40px] px-8 pt-8 pb-6 min-h-0" style={{ position: "relative", zIndex: 1 }}>
+        <div className="flex-1 flex flex-row gap-[40px] px-8 pt-8 pb-6 min-h-0" style={{ position: "relative", zIndex: 1 }}>
           {patientAdmitted ? (
             layoutVersion === 3 ? (
               /* ─── V3 Layout: HubCards left, Greeting+CareMe center, Shortcuts right ─── */
-              <div className="flex-1 flex gap-[40px] min-w-0 min-h-0">
+              <div className="flex-1 flex flex-row gap-[40px] min-w-0 min-h-0">
                 {/* Left — 2×4 Hub Grid */}
                 <div className="flex flex-col shrink-0 min-h-0" style={{ width: "400px" }}>
                   <HubGridCompact 
@@ -1112,7 +1149,7 @@ function BedsideScreen() {
                 {/* Center — Greeting + CareMe side by side, Services below */}
                 <div className="flex-1 flex flex-col gap-5 min-w-0 min-h-0">
                   {/* Top: Greeting + CareMe horizontally */}
-                  <div className="flex-1 flex gap-5 min-h-0">
+                  <div className="flex-1 flex flex-row gap-5 min-h-0">
                     <div className="flex-1 min-w-0 min-h-0 flex flex-col">
                       <PatientGreeting 
                         onOpenAboutUs={() => setShowAboutUs(true)} 
@@ -1171,7 +1208,7 @@ function BedsideScreen() {
                 </div>
 
                 {/* Center + Right Column */}
-                <div className="flex-1 flex gap-[40px] min-w-0 min-h-0">
+                <div className="flex-1 flex flex-row gap-[40px] min-w-0 min-h-0">
                   {/* Center — Engagement Grid */}
                   <div className="flex-1 min-w-0 flex flex-col gap-5 min-h-0">
                     <ServicesGrid 
@@ -1215,7 +1252,7 @@ function BedsideScreen() {
                   </div>
                 </div>
 
-                <div className="flex-1 flex gap-[40px] min-w-0 min-h-0">
+                <div className="flex-1 flex flex-row gap-[40px] min-w-0 min-h-0">
                   {/* Center — Hub grid with shortcuts at bottom */}
                   <div className="flex-1 min-w-0 flex flex-col gap-5 min-h-0">
                     <ServicesGrid 
