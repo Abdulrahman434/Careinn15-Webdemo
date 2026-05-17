@@ -57,6 +57,7 @@ interface AndroidSystemInterface {
   // IPTV
   fetchIptvChannels(): void;
   playIptv(url: string, channelName: string): void;
+  playChannelList?(channelsJson: string, startIndex: number): void;
   stopIptv(): void;
   isIptvPlaying(): boolean;
 

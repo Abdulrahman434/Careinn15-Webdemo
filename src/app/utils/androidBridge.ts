@@ -355,11 +355,38 @@ export const iptv = {
   },
   
   play(channel: IptvChannel): void {
-    try { 
-      sys()?.playIptv(channel.url, channel.name); 
+    try {
+      sys()?.playIptv(channel.url, channel.name);
     } catch (e) { console.warn('[androidBridge] iptv.play failed:', e); }
   },
-  
+
+  /**
+   * Hand the entire channel list to the native overlay and start at `startIndex`.
+   * Falls back to single-channel `playIptv` on old APKs without `playChannelList`.
+   * JSON shape matches SystemBridge.playChannelList: { channel_url, name_en, name_ar, channel_image }.
+   */
+  playList(channels: IptvChannel[], startIndex: number): void {
+    try {
+      if (!channels.length) return;
+      const start = Math.max(0, Math.min(startIndex, channels.length - 1));
+      if (typeof sys()?.playChannelList === 'function') {
+        const json = JSON.stringify(channels.map(ch => ({
+          channel_url:   ch.url,
+          name_en:       ch.name,
+          name_ar:       ch.nameAr || ch.name,
+          channel_image: ch.logo   || "",
+        })));
+        sys()!.playChannelList!(json, start);
+      } else {
+        // Old APK fallback — single channel
+        const ch = channels[start];
+        if (ch) sys()?.playIptv(ch.url, ch.name);
+      }
+    } catch (e) {
+      console.warn("[androidBridge] iptv.playList failed:", e);
+    }
+  },
+
   stop(): void {
     try { sys()?.stopIptv(); } 
     catch (e) { console.warn('[androidBridge] iptv.stop failed:', e); }

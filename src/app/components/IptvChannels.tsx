@@ -11,28 +11,36 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
   const { channels, loading, error, reload } = useIptvChannels();
   const [playingId, setPlayingId] = useState<number | null>(null);
 
-  // Sync playingId with native events
-  useAndroidEvent<{ url: string; channel: string }>(
+  // Sync playingId with native events. The playChannelList path emits
+  // `index` + `total`; the legacy playIptv path emits only `url` + `channel`.
+  useAndroidEvent<{ url: string; channel: string; index?: number; total?: number }>(
     'iptv-playing',
     (d) => {
-      const ch = channels.find(c => c.url === d.url);
-      const id = ch?.id ?? null;
+      let id: number | null = null;
+      if (typeof d.index === 'number' && channels[d.index]) {
+        id = channels[d.index].id;
+      } else {
+        const ch = channels.find(c => c.url === d.url);
+        id = ch?.id ?? null;
+      }
       setPlayingId(id);
       _setIptvPlayingId(id);
     }
   );
-  
+
   useAndroidEvent('iptv-stopped', () => {
     setPlayingId(null);
     _setIptvPlayingId(null);
   });
 
 
-  const handlePlay = (channel: IptvChannel) => {
+  const handlePlayList = (startIndex: number) => {
+    const channel = channels[startIndex];
+    if (!channel) return;
     if (playingId === channel.id) {
       iptv.stop();
     } else {
-      iptv.play(channel);
+      iptv.playList(channels, startIndex);
     }
   };
 
@@ -217,12 +225,12 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
             pointerEvents: isAndroid ? "auto" : "none"
           }}
         >
-          {channels.map((channel) => {
+          {channels.map((channel, i) => {
             const isPlaying = playingId === channel.id;
             return (
               <button
                 key={channel.id}
-                onClick={() => handlePlay(channel)}
+                onClick={() => handlePlayList(i)}
                 className="group relative flex flex-col items-center p-6 transition-all duration-300 active:scale-95"
                 style={{
                   backgroundColor: theme.surface,
