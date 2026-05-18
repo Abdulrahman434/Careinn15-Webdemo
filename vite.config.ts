@@ -14,7 +14,10 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,svg,woff,woff2}'],
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB limit
+        skipWaiting: true,
+        clientsClaim: true,
         // Hospital API is http:// — service workers can only cache HTTPS,
         // so it's implicitly excluded from runtime caching.
         runtimeCaching: [
@@ -23,6 +26,7 @@ export default defineConfig({
             handler: 'NetworkFirst',
             options: {
               cacheName: 'careinn-app-shell',
+              networkTimeoutSeconds: 4,
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 7 * 24 * 60 * 60,
