@@ -81,6 +81,7 @@ import theSecretIcon from "../../assets/0020d69d075db3cf35e4a115636a15027a1101fe
 interface AppItem {
   id: string;
   name: string;
+  nameAr?: string;
   nameKey?: string;
   /** CSS background (can be gradient) */
   bg: string;
@@ -1346,12 +1347,14 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
 
 function AppTile({ app, onTap, onLongPress, isLocked }: { app: AppItem; onTap: () => void; onLongPress: () => void; isLocked: boolean }) {
   const { theme } = useTheme();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [pressed, setPressed] = useState(false);
   const { onPointerDown, rippleElements } = useRipple("rgba(255,255,255,0.15)");
 
   const { handlers, handleClick } = useLongPress(onLongPress, 600);
-  const displayName = app.nameKey ? t(app.nameKey) : app.name;
+  const displayName = app.nameKey
+    ? t(app.nameKey)
+    : (locale === "ar" && app.nameAr ? app.nameAr : app.name);
 
   return (
     <button
@@ -1746,7 +1749,9 @@ export function AppLauncher({
     }
 
     // 7. General Toast feedback for other apps
-    const displayName = app.nameKey ? t(app.nameKey) : app.name;
+    const displayName = app.nameKey
+      ? t(app.nameKey)
+      : (locale === "ar" && app.nameAr ? app.nameAr : app.name);
     setLaunchedApp(displayName);
     setTimeout(() => setLaunchedApp(null), 2000);
   };

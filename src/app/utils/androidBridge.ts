@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { AndroidEventName } from "../types/android";
 import { Bluetooth } from "lucide-react";
+import { rewriteImageUrl } from "../lib/apiConfig";
 
 /* ─── Re-exported helper types for components ─── */
 
@@ -538,9 +539,26 @@ export function useIptvChannels() {
         arr = d.channels;
       }
 
-      const parsed: IptvChannel[] = Array.isArray(arr) ? arr : [];
-      setChannels(parsed);
-      _setIptvChannels(parsed); // sync to module store
+      const mapped: IptvChannel[] = (Array.isArray(arr) ? arr : [])
+        .map((ch: any, idx: number) => {
+          const locales = ch.channel_locale ?? [];
+          const nameEn = locales.find(
+            (l: any) => l.language_id === 1)?.locale_name
+            ?? ch.name ?? `Channel ${idx + 1}`;
+          const nameAr = locales.find(
+            (l: any) => l.language_id === 2)?.locale_name
+            ?? nameEn;
+          return {
+            id:     ch.id ?? idx,
+            name:   nameEn,
+            nameAr: nameAr,
+            url:    ch.channel_url ?? ch.url ?? "",
+            logo:   rewriteImageUrl(ch.channel_image ?? ch.logo ?? ""),
+          };
+        })
+        .filter((ch: IptvChannel) => ch.url); // skip channels with no URL
+      setChannels(mapped);
+      _setIptvChannels(mapped); // sync to module store
       setLoading(false);
       setError(null);
     } catch (e) {

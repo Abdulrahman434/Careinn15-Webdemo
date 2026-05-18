@@ -1,7 +1,58 @@
 import { useState, useEffect } from "react";
 import { FileText, Smartphone } from "lucide-react";
-import { apiUrl } from "./apiConfig";
+import { apiUrl, rewriteImageUrl } from "./apiConfig";
 import { ApiImage } from "../components/ApiImage";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LOCALE HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// API returns localized strings as arrays of:
+//   { language_id, language_name, locale_name, locale_header, locale_body, ... }
+// where language_id: 1 = English, 2 = Arabic, 3 = Urdu.
+
+type LocaleEntry = {
+  language_id:        number;
+  locale_name?:       string;
+  locale_header?:     string;
+  locale_body?:       string;
+  locale_description?: string;
+  [key: string]: any;
+};
+
+/**
+ * Extract a field from a locale array based on current app locale.
+ * Falls back: requested locale → English → first available → "".
+ */
+export function getLocalized(
+  locales: LocaleEntry[] | null | undefined,
+  locale:  string,
+  field:   string = "locale_name"
+): string {
+  if (!locales?.length) return "";
+  const langId = locale === "ar" ? 2 : locale === "ur" ? 3 : 1;
+
+  const exact = locales.find(l => l.language_id === langId);
+  if (exact?.[field]) return exact[field] as string;
+
+  // Fallback to English
+  const en = locales.find(l => l.language_id === 1);
+  if (en?.[field]) return en[field] as string;
+
+  // Fallback to first non-empty entry for the field
+  const first = locales.find(l => l[field]);
+  return (first?.[field] as string) ?? "";
+}
+
+/** Convenience: pull EN + AR `locale_name` out of a locale array in one call. */
+export function getBilingualNames(
+  locales: LocaleEntry[] | null | undefined,
+  field:   string = "locale_name"
+): { nameEn: string; nameAr: string } {
+  const nameEn = getLocalized(locales, "en", field);
+  const nameAr = getLocalized(locales, "ar", field) || nameEn;
+  return { nameEn, nameAr };
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -117,7 +168,7 @@ async function fetchWallpapersForGroup(
         .filter(item => item?.image)
         .map(item => ({
           id: item.id,
-          imageUrl: item.image,   // http:// — proxy on Android
+          imageUrl: rewriteImageUrl(item.image ?? ""),
           groupId: group.id,
           groupTitle: group.group_title,
         })),
@@ -261,7 +312,7 @@ export async function fetchLatestNews(): Promise<NewsItem[]> {
     return data.map(item => ({
       id: item.id,
       title: item.title ?? "",
-      logoUrl: item.logo_url ?? "",
+      logoUrl: rewriteImageUrl(item.logo_url ?? ""),
       feeds: (item.latestnews_desc_locale ?? []).map((l: any) => ({
         language: l.language_name ?? "",
         url: l.locale_description ?? "",
@@ -335,11 +386,8 @@ export async function fetchAppPackages(
         id: item.id,
         packageName: item.package_name ?? null,
         versionName: item.version_name ?? null,
-        imageUrl: item.image ?? "",
-        nameEn: item.package_locale?.find(
-          (l: any) => l.language_id === 1)?.locale_name ?? "",
-        nameAr: item.package_locale?.find(
-          (l: any) => l.language_id === 2)?.locale_name ?? "",
+        imageUrl: rewriteImageUrl(item.image ?? ""),
+        ...getBilingualNames(item.package_locale),
         categoryId: item.category_id,
         category: item.category_title ?? "",
         type: item.type as "APK" | "URL" | "PDF",

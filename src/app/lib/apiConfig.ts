@@ -63,28 +63,36 @@ export function apiUrl(path: string): string {
 }
 
 /**
- * Rewrite an image URL from the API response to use the correct protocol.
- * API responses sometimes return http:// even when the server supports https.
- * This rewrites them to match the configured server protocol.
+ * Rewrite an image URL from the API response so it's safe to display:
+ *   1. Force protocol to match the configured server (http ↔ https).
+ *   2. Append `apikey=` when missing so authenticated CDN URLs work directly.
+ *
+ * Callers must pre-filter `data:`, `blob:`, and relative URLs — this helper
+ * only handles absolute http(s) URLs.
  */
 export function rewriteImageUrl(imageUrl: string): string {
   if (!imageUrl) return "";
 
-  const { serverIp } = getApiConfig();
+  const { serverIp, apiKey } = getApiConfig();
   const base = resolveBaseUrl(serverIp);
+  const isHttpsServer = base.startsWith("https://");
 
-  // Extract protocol from resolved base (http or https)
-  const protocol = base.startsWith("https://") ? "https" : "http";
-
-  // If image URL uses wrong protocol — fix it
-  if (imageUrl.startsWith("http://") && protocol === "https") {
-    return imageUrl.replace("http://", "https://");
+  // Step 1 — fix protocol to match server config
+  let url = imageUrl;
+  if (isHttpsServer && url.startsWith("http://")) {
+    url = url.replace("http://", "https://");
+  } else if (!isHttpsServer && url.startsWith("https://")) {
+    // On-prem http server — keep http
+    url = url.replace("https://", "http://");
   }
-  if (imageUrl.startsWith("https://") && protocol === "http") {
-    return imageUrl.replace("https://", "http://");
+
+  // Step 2 — append apikey if missing
+  if (!url.includes("apikey=")) {
+    const sep = url.includes("?") ? "&" : "?";
+    url = `${url}${sep}apikey=${apiKey}`;
   }
 
-  return imageUrl;
+  return url;
 }
 
 // ── Write ──────────────────────────────────────────────────────────────────

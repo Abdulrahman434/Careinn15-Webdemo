@@ -1,5 +1,5 @@
 import { isAndroidApp } from "../utils/androidBridge";
-import { getApiConfig } from "./apiConfig";
+import { rewriteImageUrl } from "./apiConfig";
 
 const cache = new Map<string, string>();
 
@@ -10,31 +10,35 @@ export async function proxyImageUrl(url: string): Promise<string> {
   if (url.startsWith("data:") || url.startsWith("/") ||
       url.startsWith("blob:")) return url;
 
-  // Append apikey if it's a CDN URL missing auth
-  const { apiKey } = getApiConfig();
-  const authenticated = url.includes("apikey=")
-    ? url
-    : `${url}${url.includes("?") ? "&" : "?"}apikey=${apiKey}`;
+  // Fix protocol + append apikey FIRST so everything downstream is consistent
+  const rewritten = rewriteImageUrl(url);
 
   // Return from cache if already proxied
-  if (cache.has(authenticated)) return cache.get(authenticated)!;
+  if (cache.has(url)) return cache.get(url)!;
 
-  // In browser (dev/demo) — return authenticated URL as-is
-  // Will show mixed content warning in browser but works fine
-  if (!isAndroidApp()) return authenticated;
+  // Already https — safe everywhere, use directly
+  if (rewritten.startsWith("https://")) {
+    cache.set(url, rewritten);
+    return rewritten;
+  }
 
-  // On Android — fetch via native bridge → base64 data URL
-  try {
-    const base64 = (window as any).AndroidSystem
-      ?.fetchImageAsBase64?.(authenticated);
-    if (base64 && base64.startsWith("data:")) {
-      cache.set(authenticated, base64);
-      return base64;
-    }
-  } catch {}
+  // http:// — Android WebView handles it via the native base64 bridge
+  if (isAndroidApp()) {
+    try {
+      const base64 = (window as any).AndroidSystem
+        ?.fetchImageAsBase64?.(rewritten);
+      if (base64 && base64.startsWith("data:")) {
+        cache.set(url, base64);
+        return base64;
+      }
+    } catch {}
+    // Bridge failed — return rewritten URL as fallback
+    cache.set(url, rewritten);
+    return rewritten;
+  }
 
-  // Bridge failed — return authenticated URL as fallback
-  return authenticated;
+  // Browser + http:// → mixed content; let caller decide what to render
+  return "";
 }
 
 export function clearImageCache(): void {
