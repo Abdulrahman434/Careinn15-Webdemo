@@ -8,6 +8,11 @@ export interface ApiConfigData {
 }
 
 const DEFAULTS: ApiConfigData = {
+  serverIp: 'https://admin.careinn.com/api',
+  apiKey: 'efc9bcbf-6951-436a-8694-c13cc6f30913',
+};
+
+export const SECONDARY_OPTION: ApiConfigData = {
   serverIp: '10.32.0.86',
   apiKey: '20b91694-7ea1-4a44-91a6-2878664428b3',
 };
@@ -31,6 +36,14 @@ export function isCustomConfig(): boolean {
 }
 
 // ── URL builder ────────────────────────────────────────────────────────────
+
+export function resolveBaseUrl(ipOrUrl: string): string {
+  if (!ipOrUrl) return DEFAULTS.serverIp;
+  if (ipOrUrl.startsWith("http://") || ipOrUrl.startsWith("https://")) {
+    return ipOrUrl.endsWith("/") ? ipOrUrl.slice(0, -1) : ipOrUrl;
+  }
+  return `http://${ipOrUrl}/api`;
+}
 
 /**
  * Build a full authenticated URL for any API path.

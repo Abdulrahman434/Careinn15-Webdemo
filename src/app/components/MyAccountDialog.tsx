@@ -5,7 +5,7 @@ import { setAccount, getAccount, updateNfcCard, clearAccount, verifyPin } from "
 import { useNfcTap } from "../utils/nfc";
 import { X, CheckCircle, Shield, AlertCircle, Trash2, ChevronRight, Globe, Layout, Settings, Image, Check } from "lucide-react";
 import { ApiImage } from "./ApiImage";
-import { getApiConfig, saveApiConfig, isCustomConfig, resetApiConfig } from "../lib/apiConfig";
+import { getApiConfig, saveApiConfig, isCustomConfig, resetApiConfig, SECONDARY_OPTION } from "../lib/apiConfig";
 import { fetchAllWallpapers, WallpaperGroup } from "../lib/hospitalApi";
 import { proxyImageUrls } from "../lib/imageProxy";
 import {
@@ -313,14 +313,12 @@ export function MyPreferencesDialog({
       return;
     }
     saveApiConfig({ serverIp, apiKey });
-    setStep('menu');
+    window.location.reload();
   };
 
   const handleResetServer = () => {
     resetApiConfig();
-    const config = getApiConfig();
-    setServerIp(config.serverIp);
-    setApiKey(config.apiKey);
+    window.location.reload();
   };
 
   if (!open) return null;
@@ -476,9 +474,32 @@ export function MyPreferencesDialog({
               placeholder="20b91694-..."
               style={{
                 width: "100%", padding: "12px", borderRadius: t.radiusMd, border: `1px solid ${error && !apiKey.trim() ? '#EF4444' : t.borderDefault}`,
-                backgroundColor: t.surfaceElevated, fontFamily: t.fontFamily, fontSize: "15px", marginBottom: "24px", outline: "none",
+                backgroundColor: t.surfaceElevated, fontFamily: t.fontFamily, fontSize: "15px", marginBottom: "16px", outline: "none",
               }}
             />
+
+            <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1">
+              <button
+                onClick={() => {
+                  setServerIp("https://admin.careinn.com/api");
+                  setApiKey("efc9bcbf-6951-436a-8694-c13cc6f30913");
+                }}
+                className="px-3 py-1.5 rounded-full font-bold cursor-pointer transition-all active:scale-95 shrink-0"
+                style={{ backgroundColor: t.primarySubtle, color: t.primary, fontSize: "12px", border: "none" }}
+              >
+                Default Cloud
+              </button>
+              <button
+                onClick={() => {
+                  setServerIp(SECONDARY_OPTION.serverIp);
+                  setApiKey(SECONDARY_OPTION.apiKey);
+                }}
+                className="px-3 py-1.5 rounded-full font-bold cursor-pointer transition-all active:scale-95 shrink-0"
+                style={{ backgroundColor: t.tileInactiveBg, color: t.textMuted, fontSize: "12px", border: `1px solid ${t.borderDefault}` }}
+              >
+                Secondary Local (10.32.x)
+              </button>
+            </div>
 
             <div className="flex flex-col gap-3">
               <button
