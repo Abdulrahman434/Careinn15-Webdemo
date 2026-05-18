@@ -644,6 +644,20 @@ const translations: Record<string, TranslationEntry> = {
   "call.history": { en: "Call History", ar: "سجل المكالمات", ur: "کال کی تاریخ" },
   "call.all": { en: "All", ar: "الكل", ur: "تمام" },
   "call.noHistory": { en: "No call history", ar: "لا يوجد سجل مكالمات", ur: "کال کی کوئی تاریخ نہیں" },
+
+  /* ─── NFC Manager ─── */
+  "nfc.title": { en: "NFC Cards", ar: "بطاقات NFC", ur: "این ایف سی کارڈز" },
+  "nfc.description": { en: "Manage physical cards assigned to this terminal.", ar: "إدارة البطاقات المخصصة لهذه الشاشة.", ur: "اس ٹرمینل کے لیے تفویض کردہ فزیکل کارڈز کا نظم کریں۔" },
+  "nfc.patientCard": { en: "Patient Login Card", ar: "بطاقة دخول المريض", ur: "مریض کا لاگ ان کارڈ" },
+  "nfc.nurseCard": { en: "Nurse Override Card", ar: "بطاقة التمريض", ur: "نرس کا اوور رائیڈ کارڈ" },
+  "nfc.custom": { en: "CUSTOM", ar: "مخصص", ur: "اپنی مرضی کے مطابق" },
+  "nfc.registerCard": { en: "Register Card", ar: "تسجيل بطاقة", ur: "کارڈ رجسٹر کریں" },
+  "nfc.replaceCard": { en: "Replace Card", ar: "تغيير البطاقة", ur: "کارڈ تبدیل کریں" },
+  "nfc.resetToDefault": { en: "Reset to default", ar: "استعادة الافتراضي", ur: "پہلے سے طے شدہ پر ری سیٹ کریں" },
+  "nfc.resetAll": { en: "Reset All", ar: "إعادة تعيين الكل", ur: "سب ری سیٹ کریں" },
+  "nfc.tapCard": { en: "Tap card to terminal now...", ar: "مرر البطاقة على الشاشة الآن...", ur: "اب کارڈ کو ٹرمینل پر ٹیپ کریں..." },
+  "nfc.cancel": { en: "Cancel", ar: "إلغاء", ur: "منسوخ" },
+  "nfc.saved": { en: "Card Registered!", ar: "تم تسجيل البطاقة!", ur: "کارڈ رجسٹر ہو گیا!" },
 };
 
 /* ── Number Localization ── */

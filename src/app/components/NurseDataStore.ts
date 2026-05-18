@@ -170,7 +170,8 @@ export type SectionKey =
   | "imaging"
   | "baby"
   | "discharge"
-  | "observations";
+  | "observations"
+  | "nfc";
 
 /* ═══════════════════════════════════════════════════════════════
  * STORE STATE
@@ -245,6 +246,7 @@ function createDefaultState(): NurseStoreState {
       baby: true,
       discharge: true,
       observations: true,
+      nfc: false, // Not a patient-facing CareMe slide
     },
 
     patient: {

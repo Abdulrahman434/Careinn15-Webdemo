@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { getAuthorizedCards, getNurseCardUid } from "./utils/nfc";
 import { isTvDevice } from "./utils/deviceDetect";
 import { ThemeProvider, useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "./components/ThemeContext";
 import { IptvChannels } from "./components/IptvChannels";
@@ -1744,9 +1745,42 @@ function AuthenticatedApp() {
   );
 }
 
+function GlobalNfcListener() {
+  const { login } = useAuth();
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    const handler = (event: any) => {
+      const uid = event.detail as string;
+
+      // Check patient card
+      const cards = getAuthorizedCards();
+      if (cards[uid]) {
+        login(cards[uid].password);
+      }
+
+      // Check nurse card
+      if (uid === getNurseCardUid()) {
+        (window as any).__openCareTeam?.("nurse");
+      }
+    };
+    window.addEventListener("nfc-card-tap", handler);
+    return () => window.removeEventListener("nfc-card-tap", handler);
+  }, [login]);
+
+  useEffect(() => {
+    const handler = () => forceUpdate(n => n + 1);
+    window.addEventListener("nfc-cards-updated", handler);
+    return () => window.removeEventListener("nfc-cards-updated", handler);
+  }, []);
+
+  return null;
+}
+
 export default function App() {
   return (
     <AuthProvider>
+      <GlobalNfcListener />
       <AuthenticatedApp />
     </AuthProvider>
   );
