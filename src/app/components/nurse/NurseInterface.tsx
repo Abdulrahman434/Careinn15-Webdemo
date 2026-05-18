@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
   X, ClipboardList, Stethoscope, User, Heart, DollarSign,
   FlaskConical, Image as ImageIcon, Baby, LogOut, Activity,
-  Hash, DoorOpen, Clock, Plus, Bed, CreditCard,
+  Hash, DoorOpen, Clock, Plus, Bed, CreditCard, ExternalLink,
 } from "lucide-react";
 import { useTheme } from "../ThemeContext";
 import { useLocale } from "../i18n";
@@ -186,6 +186,22 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
           {renderTab()}
         </div>
       </div>
+
+      {/* ── Footer Link ── */}
+      {role === "nurse" && (
+        <div className="flex justify-end px-8 pb-4 shrink-0">
+          <a
+            href="https://client.careinn.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 hover:underline font-semibold flex items-center gap-1.5 cursor-pointer"
+            style={{ color: t.primary }}
+          >
+            <ExternalLink size={14} />
+            {tr("careteam.gotoEmr")}
+          </a>
+        </div>
+      )}
 
       <style>{`
         .nurse-card {

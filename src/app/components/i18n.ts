@@ -431,6 +431,7 @@ const translations: Record<string, TranslationEntry> = {
   "careteam.del": { en: "DEL", ar: "حذف", ur: "حذف" },
   "careteam.history": { en: "Clinical History", ar: "السجل السريري", ur: "طبی تاریخ" },
   "careteam.addRecord": { en: "Add New Observation", ar: "إضافة ملاحظة جديدة", ur: "نیا مشاہدہ شامل کریں" },
+  "careteam.gotoEmr": { en: "go to hospital EMR", ar: "الذهاب إلى السجل الطبي الإلكتروني", ur: "ہسپتال کے ای ایم آر پر جائیں" },
   "patient.attached": { en: "Attached Documents", ar: "المستندات المرفقة", ur: "منسلک دستاویزات" },
 
   /* ─── Clinical Interface ─── */
