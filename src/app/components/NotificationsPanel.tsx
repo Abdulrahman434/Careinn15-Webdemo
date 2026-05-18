@@ -135,7 +135,7 @@ function SwipeableRow({
 
   return (
     <div
-      className="relative overflow-hidden"
+      className="relative overflow-hidden shrink-0"
       style={{
         height: dismissed ? "0px" : "auto",
         opacity: dismissed ? 0 : 1,
@@ -635,7 +635,7 @@ export function NotificationsPanel({
         >
           {/* Hospital Broadcasts Section */}
           {acknowledgedBroadcasts.length > 0 && (
-            <div className="flex flex-col gap-2" style={{ marginBottom: "8px" }}>
+            <div className="flex flex-col gap-2 shrink-0" style={{ marginBottom: "8px" }}>
               <span
                 style={{
                   fontFamily: theme.fontFamily,
@@ -656,7 +656,7 @@ export function NotificationsPanel({
                 return (
                   <div
                     key={bc.id}
-                    className="flex items-start gap-3"
+                    className="flex items-start gap-3 shrink-0"
                     style={{
                       padding: "14px 16px",
                       borderRadius: "14px",
