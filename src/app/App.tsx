@@ -58,7 +58,9 @@ import { RoomControl } from "./components/RoomControl";
 import { getPrayerStatus, PRAYER_NAMES, formatPrayerTime } from "./utils/prayerUtils";
 import { Prayer } from "adhan";
 import { isAccountSet } from "./lib/accountAuth";
+import { useNetworkStatus } from "./lib/networkStatus";
 import { AccountLockScreen } from "./components/AccountLockScreen";
+import { OfflineBanner } from "./components/OfflineBanner";
 import { useGuestMode, guestModeStore } from "./lib/guestMode";
 import { CareMePinDialog } from "./components/CareMePinDialog";
 import { Lock } from "lucide-react";
@@ -136,6 +138,7 @@ function BedsideScreen() {
   const { isFullAccess, lockedHospitalId } = useAuth();
   const { t, locale, isRTL, dir, fontFamily } = useLocale();
   const scale = useScreenScale();
+  const isOnline = useNetworkStatus();
   const isTV = isTvDevice();
   const [openCategory, setOpenCategory] = useState<string | null>(null);
 
@@ -1490,6 +1493,8 @@ function BedsideScreen() {
       {showSurvey && (
         <SurveyModal onClose={() => setShowSurvey(false)} />
       )}
+
+      <OfflineBanner visible={!isOnline} />
 
       <AccountLockScreen
         visible={isLocked}

@@ -846,7 +846,15 @@ const translations: Record<string, TranslationEntry> = {
 
   /* ─── App Install ─── */
   "appInstall.installing": { en: "Installing", ar: "جار تثبيت", ur: "انسٹال ہو رہا ہے" },
-  "appInstall.hint":       { en: "This only happens once", ar: "يحدث هذا مرة واحدة فقط", ur: "یہ صرف ایک بار ہوتا ہے" }
+  "appInstall.hint":       { en: "This only happens once", ar: "يحدث هذا مرة واحدة فقط", ur: "یہ صرف ایک بار ہوتا ہے" },
+
+  /* ─── Offline Banner ─── */
+  "offline.title":     { en: "No Internet Connection", ar: "لا يوجد اتصال بالإنترنت", ur: "انٹرنیٹ کنکشن نہیں" },
+  "offline.subtitle":  { en: "Showing last saved content. Connect to WiFi to refresh.", ar: "يتم عرض المحتوى المحفوظ. اتصل بالواي فاي للتحديث.", ur: "آخری محفوظ مواد دکھایا جا رہا ہے۔" },
+  "offline.openWifi":  { en: "Open WiFi Settings", ar: "فتح إعدادات الواي فاي", ur: "وائی فائی سیٹنگز کھولیں" },
+  "offline.adminPin":  { en: "Admin Access", ar: "وصول المسؤول", ur: "ایڈمن رسائی" },
+  "offline.enterPin":  { en: "Enter admin PIN", ar: "أدخل رمز PIN للمسؤول", ur: "ایڈمن PIN درج کریں" },
+  "offline.cancel":    { en: "Cancel", ar: "إلغاء", ur: "منسوخ" }
 };
 
 /* ── Number Localization ── */
