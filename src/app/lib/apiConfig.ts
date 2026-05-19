@@ -107,11 +107,14 @@ export function saveApiConfig(cfg: ApiConfigData): void {
   }));
 
   // Clear image cache when server changes
-  if (cfg.serverIp !== previous.serverIp) {
+  /*if (cfg.serverIp !== previous.serverIp) {
     try {
       const { clearImageCache } = require("./imageProxy");
       clearImageCache();
     } catch { }
+  }*/
+  if (cfg.serverIp !== previous.serverIp) {
+    window.dispatchEvent(new CustomEvent("careinn-clear-image-cache"));
   }
 
   // Notify Android bridge
