@@ -18,6 +18,12 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB limit
         skipWaiting: true,
         clientsClaim: true,
+        // Prevent service worker from hijacking static HTML page loads inside iframes
+        navigateFallbackDenylist: [
+          /^\/reports\//,
+          /^\/nfc-login\//,
+          /CareInn Welcome Slideshow\.html$/
+        ],
         // Hospital API is http:// — service workers can only cache HTTPS,
         // so it's implicitly excluded from runtime caching.
         runtimeCaching: [
@@ -65,8 +71,11 @@ export default defineConfig({
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
-  build: {
+build: {
     chunkSizeWarningLimit: 2000,
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
     rollupOptions: {
       output: {
         manualChunks: {
@@ -75,6 +84,9 @@ export default defineConfig({
         },
       },
     },
+  },
+  optimizeDeps: {
+    include: ['@emotion/is-prop-valid'],
   },
   server: {
     headers: {

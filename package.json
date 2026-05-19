@@ -11,6 +11,7 @@
     "dev": "vite"
   },
   "dependencies": {
+    "@emotion/is-prop-valid": "^1.4.0",
     "@emotion/react": "11.14.0",
     "@mui/icons-material": "7.3.5",
     "@mui/material": "7.3.5",
