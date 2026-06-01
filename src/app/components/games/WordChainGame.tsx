@@ -6,7 +6,7 @@ import { GAME_TRANSLATIONS } from './gameTranslations';
 
 type Category = 'animals' | 'countries' | 'foods';
 
-const DICTIONARIES: Record<Category, string[]> = {
+const DICTIONARIES_EN: Record<Category, string[]> = {
   animals: [
     'cat', 'dog', 'tiger', 'lion', 'elephant', 'giraffe', 'zebra', 'panda', 'kangaroo', 'koala', 'hippo', 'rhino', 'monkey', 'gorilla', 'chimpanzee', 'baboon', 'lemur', 'sloth', 'bear', 'wolf', 'fox', 'coyote', 'hyena', 'leopard', 'cheetah', 'jaguar', 'panther', 'deer', 'moose', 'elk', 'reindeer', 'camel', 'llama', 'alpaca', 'horse', 'donkey', 'mule', 'zebra', 'pig', 'cow', 'sheep', 'goat', 'chicken', 'duck', 'goose', 'turkey', 'peacock', 'eagle', 'hawk', 'falcon', 'owl', 'parrot', 'penguin', 'ostrich', 'emu', 'flamingo', 'swan', 'stork', 'pelican', 'seagull', 'whale', 'dolphin', 'shark', 'octopus', 'squid', 'crab', 'lobster', 'shrimp', 'turtle', 'tortoise', 'snake', 'lizard', 'crocodile', 'alligator', 'frog', 'toad', 'salamander', 'newt', 'bee', 'wasp', 'ant', 'butterfly', 'moth', 'spider', 'scorpion', 'beetle', 'ladybug', 'mosquito', 'fly', 'dragonfly', 'bat', 'rabbit', 'hare', 'squirrel', 'chipmunk', 'beaver', 'otter', 'seal', 'walrus', 'penguin', 'polar bear', 'panda', 'koala', 'sloth', 'armadillo', 'hedgehog', 'mole', 'rat', 'mouse', 'hamster', 'guinea pig', 'gerbil'
   ],
@@ -17,6 +17,62 @@ const DICTIONARIES: Record<Category, string[]> = {
     'apple', 'banana', 'orange', 'strawberry', 'grape', 'watermelon', 'pineapple', 'mango', 'peach', 'pear', 'plum', 'cherry', 'blueberry', 'raspberry', 'blackberry', 'kiwi', 'lemon', 'lime', 'coconut', 'avocado', 'tomato', 'potato', 'onion', 'garlic', 'carrot', 'broccoli', 'cauliflower', 'spinach', 'lettuce', 'cucumber', 'pepper', 'corn', 'pea', 'bean', 'lentil', 'rice', 'bread', 'pasta', 'noodle', 'pizza', 'burger', 'sandwich', 'taco', 'sushi', 'steak', 'chicken', 'fish', 'shrimp', 'egg', 'milk', 'cheese', 'butter', 'yogurt', 'ice cream', 'cake', 'cookie', 'pie', 'candy', 'chocolate', 'honey', 'sugar', 'salt', 'pepper', 'olive', 'oil', 'vinegar', 'soup', 'salad', 'toast', 'cereal', 'pancake', 'waffle', 'coffee', 'tea', 'juice', 'soda', 'water', 'wine', 'beer', 'nut', 'almond', 'walnut', 'peanut', 'cashew', 'pistachio', 'ham', 'bacon', 'sausage', 'salami'
   ]
 };
+
+const DICTIONARIES_AR: Record<Category, string[]> = {
+  animals: [
+    'قط', 'كلب', 'نمر', 'اسد', 'فيل', 'زرافة', 'حمار وحشي', 'باندا', 'كنغر', 'كوالا',
+    'فرس النهر', 'وحيد القرن', 'قرد', 'غوريلا', 'دب', 'ذئب', 'ثعلب', 'ضبع', 'فهد',
+    'غزال', 'جمل', 'حصان', 'حمار', 'خروف', 'ماعز', 'دجاجة', 'بطة', 'اوزة', 'ديك رومي',
+    'طاووس', 'نسر', 'صقر', 'بومة', 'ببغاء', 'بطريق', 'نعامة', 'بجعة', 'لقلق',
+    'حوت', 'دلفين', 'قرش', 'اخطبوط', 'سلطعون', 'سلحفاة', 'ثعبان', 'سحلية',
+    'تمساح', 'ضفدع', 'نحلة', 'نملة', 'فراشة', 'عنكبوت', 'عقرب', 'خنفساء',
+    'بعوضة', 'ذبابة', 'خفاش', 'ارنب', 'سنجاب', 'قندس', 'فقمة', 'قنفذ',
+    'فار', 'هامستر', 'حرباء', 'يمامة', 'هدهد', 'حبارى', 'وعل', 'ظبي',
+    'جاموس', 'بقرة', 'ثور', 'عصفور', 'حمامة', 'غراب', 'صرصور', 'دودة',
+    'سمكة', 'روبيان', 'محار', 'حلزون', 'سلمون', 'طائر', 'حية', 'وزغة'
+  ],
+  countries: [
+    'مصر', 'سوريا', 'لبنان', 'الاردن', 'العراق', 'فلسطين', 'اليمن', 'ليبيا',
+    'تونس', 'الجزائر', 'المغرب', 'السودان', 'عمان', 'قطر', 'البحرين', 'الكويت',
+    'السعودية', 'الامارات', 'موريتانيا', 'جيبوتي', 'الصومال', 'جزر القمر',
+    'تركيا', 'ايران', 'باكستان', 'افغانستان', 'الهند', 'الصين', 'اليابان',
+    'كوريا', 'تايلاند', 'ماليزيا', 'اندونيسيا', 'فيتنام', 'بنغلاديش',
+    'فرنسا', 'المانيا', 'بريطانيا', 'ايطاليا', 'اسبانيا', 'البرتغال',
+    'هولندا', 'بلجيكا', 'سويسرا', 'النمسا', 'بولندا', 'رومانيا',
+    'اليونان', 'السويد', 'النرويج', 'الدنمارك', 'فنلندا', 'روسيا',
+    'اوكرانيا', 'البرازيل', 'الارجنتين', 'المكسيك', 'كندا', 'امريكا',
+    'كولومبيا', 'تشيلي', 'بيرو', 'كوبا', 'نيجيريا', 'كينيا',
+    'اثيوبيا', 'تنزانيا', 'جنوب افريقيا', 'غانا', 'الكاميرون', 'السنغال',
+    'استراليا', 'نيوزيلندا'
+  ],
+  foods: [
+    'تفاح', 'موز', 'برتقال', 'فراولة', 'عنب', 'بطيخ', 'اناناس', 'مانجو',
+    'خوخ', 'كمثرى', 'برقوق', 'كرز', 'توت', 'ليمون', 'جوز هند', 'افوكادو',
+    'طماطم', 'بطاطس', 'بصل', 'ثوم', 'جزر', 'بروكلي', 'قرنبيط', 'سبانخ',
+    'خس', 'خيار', 'فلفل', 'ذرة', 'بازلاء', 'فاصوليا', 'عدس', 'ارز',
+    'خبز', 'معكرونة', 'بيتزا', 'برغر', 'ساندويتش', 'سوشي', 'دجاج',
+    'سمك', 'روبيان', 'بيض', 'حليب', 'جبن', 'زبدة', 'زبادي',
+    'ايس كريم', 'كيك', 'بسكويت', 'فطيرة', 'حلوى', 'شوكولاتة',
+    'عسل', 'سكر', 'ملح', 'زيتون', 'زيت', 'خل', 'شوربة',
+    'سلطة', 'توست', 'فشار', 'قهوة', 'شاي', 'عصير', 'ماء',
+    'لوز', 'جوز', 'فول سوداني', 'كاجو', 'فستق', 'تمر', 'رطب',
+    'كبسة', 'مندي', 'فول', 'حمص', 'فلافل', 'شاورما', 'كنافة',
+    'بقلاوة', 'مهلبية', 'رز', 'لحم', 'كباب', 'سمبوسة', 'ورق عنب'
+  ]
+};
+
+// Helper to get the last meaningful Arabic letter (skipping diacritics/marks)
+function getLastArabicLetter(word: string): string {
+  // Strip trailing spaces
+  const trimmed = word.trim();
+  // Return last character
+  return trimmed.charAt(trimmed.length - 1);
+}
+
+function getFirstArabicLetter(word: string): string {
+  const trimmed = word.trim();
+  return trimmed.charAt(0);
+}
 
 export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
@@ -94,6 +150,9 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
       saveGameState();
     }
   }, [gameState, category, chain, currentPlayer, timeLeft, scores, turnsPlayed]);
+
+  const isArabic = locale === 'ar';
+  const DICTIONARIES = isArabic ? DICTIONARIES_AR : DICTIONARIES_EN;
 
   const startGame = (selectedCategory: Category) => {
     setCategory(selectedCategory);
@@ -173,18 +232,18 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
     if (!word) return;
 
     const lastWord = chain[chain.length - 1];
-    const lastLetter = lastWord.charAt(lastWord.length - 1).toLowerCase();
-    const firstLetter = word.charAt(0).toLowerCase();
+    const lastLetter = isArabic ? getLastArabicLetter(lastWord) : lastWord.charAt(lastWord.length - 1).toLowerCase();
+    const firstLetter = isArabic ? getFirstArabicLetter(word) : word.charAt(0).toLowerCase();
 
     setErrorFeedback(null);
     let error = null;
 
     if (word.length < 2) {
       error = gt.wordTooShort;
-    } else if (!/^[a-z\s\-]+$/.test(word)) {
+    } else if (isArabic ? !/^[\u0600-\u06FF\s]+$/.test(word) : !/^[a-z\s\-]+$/.test(word)) {
       error = gt.onlyLetters;
     } else if (firstLetter !== lastLetter) {
-      error = gt.mustStartWith(lastLetter.toUpperCase());
+      error = gt.mustStartWith(isArabic ? lastLetter : lastLetter.toUpperCase());
     } else if (chain.some(c => c.toLowerCase() === word)) {
       error = gt.alreadyUsed;
     } else {
