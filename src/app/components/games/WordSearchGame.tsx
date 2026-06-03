@@ -251,17 +251,35 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
     
     const selectedWord = newSelection.map(cell => grid[cell.r][cell.c]).join("");
     const reversedSelectedWord = [...newSelection].reverse().map(cell => grid[cell.r][cell.c]).join("");
-    
-    const matchedWord = targetWords.find(w => w === selectedWord || w === reversedSelectedWord);
-    
+
+    let matchedWord = targetWords.find(w => w === selectedWord || w === reversedSelectedWord);
+
+    // If not matched by string (ordering may differ or RTL issues), try coordinate-based match
+    if (!matchedWord) {
+      const selSet = new Set(newSelection.map(cell => `${cell.r},${cell.c}`));
+      for (const w of targetWords) {
+        const coords = wordLocations[w];
+        if (!coords || coords.length !== newSelection.length) continue;
+        const coordSet = new Set(coords.map(c => `${c.r},${c.c}`));
+        let allMatch = true;
+        for (const k of coordSet) {
+          if (!selSet.has(k)) { allMatch = false; break; }
+        }
+        if (allMatch) {
+          matchedWord = w;
+          break;
+        }
+      }
+    }
+
     if (matchedWord && !foundWords.includes(matchedWord)) {
       setFoundWords(prev => [...prev, matchedWord]);
       setFoundCellsMap(prev => ({
         ...prev,
-        [matchedWord]: newSelection
+        [matchedWord]: wordLocations[matchedWord] || newSelection
       }));
       setSelectedCells([]);
-      
+
       if (foundWords.length + 1 === targetWords.length) {
         setIsActive(false);
         clearGameState();
