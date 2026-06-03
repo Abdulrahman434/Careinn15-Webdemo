@@ -41,6 +41,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
   const [category, setCategory] = useState<Category>('Nature');
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [imageUrl, setImageUrl] = useState("");
+  const [imageAspectRatio, setImageAspectRatio] = useState<number>(1);
   const [pieces, setPieces] = useState<number[]>([]); // Simple array of IDs
   const [selectedPiece, setSelectedPiece] = useState<number | null>(null);
   const [timer, setTimer] = useState(0);
@@ -141,6 +142,17 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
       setShowResumeModal(false);
     }
   };
+
+  useEffect(() => {
+    if (!imageUrl) return;
+    const img = new Image();
+    img.src = imageUrl;
+    img.onload = () => {
+      if (img.naturalHeight > 0) {
+        setImageAspectRatio(img.naturalWidth / img.naturalHeight);
+      }
+    };
+  }, [imageUrl]);
 
   const clearGameState = (diff?: Difficulty) => {
     const targetDiff = diff || difficulty;
@@ -368,10 +380,10 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
         {gameState === "playing" && (
           <>
             <div
-              className="absolute top-8 left-8 w-[200px] h-[200px] rounded-xl overflow-hidden shadow-md z-10 pointer-events-none"
-              style={{ border: `2px solid ${theme.textMuted || '#ccc'}` }}
+              className="absolute top-8 left-8 w-[200px] rounded-xl overflow-hidden shadow-md z-10 pointer-events-none"
+              style={{ border: `2px solid ${theme.textMuted || '#ccc'}`, aspectRatio: imageAspectRatio || 1 }}
             >
-              <img src={imageUrl} alt="Puzzle preview" className="w-full h-full object-cover" />
+              <img src={imageUrl} alt="Puzzle preview" className="w-full h-full object-contain bg-gray-100" />
             </div>
             <div className="relative flex flex-col items-center gap-8">
               <div
@@ -380,7 +392,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
                   direction: "ltr",
                   gridTemplateColumns: `repeat(${difficulty}, 1fr)`,
                   width: "min(80vw, 600px)",
-                  aspectRatio: "1/1"
+                  aspectRatio: imageAspectRatio || 1
                 }}
               >
                 {pieces.map((id, i) => {
@@ -435,8 +447,10 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
         {gameState === "complete" && (
           <div className="flex flex-col items-center gap-8 max-w-md text-center">
             <div className="relative">
-              <div className="w-64 h-64 rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
-                <img src={imageUrl} alt="Complete" className="w-full h-full object-cover" />
+              <div className="w-full max-w-[600px] rounded-3xl overflow-hidden shadow-2xl border-4 border-white"
+                style={{ aspectRatio: imageAspectRatio || 1 }}
+              >
+                <img src={imageUrl} alt="Complete" className="w-full h-full object-contain bg-gray-100" />
               </div>
               <div className="absolute -bottom-4 -right-4 bg-green-500 text-white p-4 rounded-full shadow-lg">
                 <Trophy size={32} />
