@@ -471,6 +471,7 @@ const translations: Record<string, TranslationEntry> = {
 
   /* ─── Notifications Panel ─── */
   "notif.title": { en: "Notifications", ar: "الإشعارات", ur: "اطلاعات" },
+  "notif.missed": { en: "Missed", ar: "فائت", ur: "چھوٹ گیا" },
   "notif.markAllRead": { en: "Mark all as read", ar: "تحديد الكل كمقروء", ur: "تمام کو پڑھا ہوا قرار دیں" },
   "notif.clearAll": { en: "Clear all", ar: "مسح الكل", ur: "تمام مٹائیں" },
   "notif.swipeHint": { en: "Swipe left to dismiss", ar: "اسحب لليمين للحذف", ur: "مٹانے کے لیے بائیں جانب سوائپ کریں" },
@@ -478,6 +479,11 @@ const translations: Record<string, TranslationEntry> = {
   "notif.noNew": { en: "No new notifications at the moment.", ar: "لا توجد إشعارات في الوقت الحالي.", ur: "اس وقت کوئی نئی اطلاع نہیں ہے۔" },
 
   /* ─── Notification Items ─── */
+  "notif.ctaSurvey": { en: "Hospital Feedback Survey", ar: "استطلاع الرأي للمستشفى", ur: "ہسپتال کا سروے" },
+  "notif.ctaPdf": { en: "Patient Guide Guidebook", ar: "دليل إرشادات المريض", ur: "مریض کی گائیڈ بک" },
+  "notif.ctaImage": { en: "Daily Healthy Diet Chart", ar: "مخطط النظام الغذائي الصحي اليومي", ur: "روزمرہ کی خوراک کا چارٹ" },
+  "notif.ctaVideo": { en: "CareInn Presentation Video", ar: "فيديو تعريفي لكيرإن", ur: "کیر ان تعریفی ویڈیو" },
+  "notif.ctaUrl": { en: "Hospital Medical Portal", ar: "بوابة المريض الطبية", ur: "مریض کا پورٹل" },
   "notif.labsReady": { en: "Lab results are ready", ar: "نتائج المختبر جاهزة", ur: "لیب کے نتائج تیار ہیں" },
   "notif.surveyRequest": { en: "We value your feedback", ar: "نحن نقدر ملاحظاتك", ur: "ہم آپ کی رائے کی قدر کرتے ہیں" },
   "notif.mriReady": { en: "MRI results ready for review", ar: "نتائج الرنين المغناطيسي جاهزة للمراجعة", ur: "ایم آر آئی کے نتائج معائنے کے لیے تیار ہیں" },

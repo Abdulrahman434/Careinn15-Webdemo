@@ -15,6 +15,8 @@ import { IdleScreen } from "./components/IdleScreen";
 import { RippleStyles } from "./components/useRipple";
 import { AppLauncher } from "./components/AppLauncher";
 import { SurveyModal } from "./components/SurveyModal";
+import { PdfReaderModal } from "./components/PdfReaderModal";
+import { MediaViewerModal } from "./components/MediaViewerModal";
 import { AboutUs } from "./components/AboutUs";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { NotificationsPanel } from "./components/NotificationsPanel";
@@ -23,6 +25,7 @@ import { CallScreen } from "./components/CallScreen";
 import { AutoCarousel } from "./components/AutoCarousel";
 import fakeehSymbol from "../assets/7b9b440667ca2ce8678111ec37e1fb104ae88026.png";
 import caremedicalicon from "../assets/caremedicalicon.png";
+import careinnliteVideo from "../assets/careinnlite.mp4";
 import { HospitalConfigurator } from "./components/HospitalConfigurator";
 import { TasbihScreenSaver } from "./components/TasbihScreenSaver";
 import { FoodOrdering } from "./components/FoodOrdering";
@@ -67,7 +70,7 @@ import { CareMePinDialog } from "./components/CareMePinDialog";
 import { Lock } from "lucide-react";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
-import { 
+import {
   fetchAppPackages, invalidatePackagesCache, fetchPatientForDevice,
   fetchDeviceAlerts, getSeenAlertIds, markAlertSeen,
   markAllAlertsSeen, DeviceAlert
@@ -134,6 +137,27 @@ function useScreenScale() {
   return scale;
 }
 
+const isToday = (dateStr: string | null | undefined): boolean => {
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return false;
+
+  const today = new Date();
+  return d.getDate() === today.getDate() &&
+    d.getMonth() === today.getMonth() &&
+    d.getFullYear() === today.getFullYear();
+};
+
+const isBeforeToday = (dateStr: string | null | undefined): boolean => {
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // start of today
+  return d.getTime() < today.getTime();
+};
+
 function BedsideScreen() {
   const { patientAdmitted, setPatientAdmitted, theme, darkMode, switchConfig, prayerAlarm } = useTheme();
   const { isFullAccess, lockedHospitalId } = useAuth();
@@ -160,31 +184,31 @@ function BedsideScreen() {
       if (!isAndroidApp()) return;
       const info = getDeviceInfo();
       if (!info?.serial) return;
-      
-      
+
+
       fetchPatientForDevice(info.serial)
         .then(result => {
           if (result) {
             const p = result.patient;
-            
+
             // Store device group for alert filtering
             deviceGroupRef.current = result.location.group?.id || null;
             fetchAlerts();
 
             nurseActions.updatePatientFromApi({
-              name:          p.name          || undefined,
-              nameAr:        p.nameAr        || undefined,
-              mrn:           p.mrn           || undefined,
-              room:          p.room          || undefined,
-              bed:           p.bed           || undefined,
-              sex:           p.sex           || undefined,
-              dob:           p.dob           || undefined,
+              name: p.name || undefined,
+              nameAr: p.nameAr || undefined,
+              mrn: p.mrn || undefined,
+              room: p.room || undefined,
+              bed: p.bed || undefined,
+              sex: p.sex || undefined,
+              dob: p.dob || undefined,
               admissionDate: p.admissionDate || undefined,
               dischargeDate: p.dischargeDate || undefined,
             });
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     };
     syncPatient();
 
@@ -205,9 +229,13 @@ function BedsideScreen() {
     return () => window.removeEventListener("kiosk-resumed", handler);
   }, []);
   const [showSurvey, setShowSurvey] = useState(false);
+  const [surveyInitialPath, setSurveyInitialPath] = useState<"hub" | "survey" | "concern" | "appreciation">("hub");
+  const [ctaPdfConfig, setCtaPdfConfig] = useState<{ url: string; title: string } | null>(null);
+  const [ctaMediaConfig, setCtaMediaConfig] = useState<{ type: "image" | "video"; url: string; title: string } | null>(null);
   const [showAboutUs, setShowAboutUs] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notifTrigger, setNotifTrigger] = useState(0);
   const [showTour, setShowTour] = useState(false);
   const [showTasbih, setShowTasbih] = useState(false);
   const [tourDismissed, setTourDismissed] = useState(() => {
@@ -244,8 +272,36 @@ function BedsideScreen() {
   // Queue of immediate alerts to show as broadcast popups
   const [broadcastQueue, setBroadcastQueue] = useState<BroadcastNotification[]>([]);
 
-  // API alerts shown in NotificationsPanel
   const [apiNotifications, setApiNotifications] = useState<DeviceAlert[]>([]);
+
+  const getHardcodedUnreadCount = useCallback(() => {
+    try {
+      const seenRaw = localStorage.getItem("careinn-seen-hardcoded");
+      const hiddenRaw = localStorage.getItem("careinn-hidden-hardcoded");
+      const seen = new Set(JSON.parse(seenRaw ?? "[]"));
+      const hidden = new Set(JSON.parse(hiddenRaw ?? "[]"));
+
+      const initialUnreadIds = ["cta-survey", "cta-pdf", "cta-image", "cta-video", "cta-url"];
+      return initialUnreadIds.filter(id => !seen.has(id) && !hidden.has(id)).length;
+    } catch {
+      return 5;
+    }
+  }, [notifTrigger]);
+
+  const getUnreadCount = useCallback(() => {
+    const seen = getSeenAlertIds();
+    const activeUnseenApi = apiNotifications.filter(a => !seen.has(a.id));
+
+    const activeApiCount = activeUnseenApi.filter(a => {
+      const createdBeforeToday = isBeforeToday(a.createdAt);
+      const modifiedToday = isToday(a.updatedAt);
+      return !(createdBeforeToday && !modifiedToday);
+    }).length;
+
+    const laterCount = acknowledgedBroadcasts.filter(b => b.isLater && !b.acknowledgedAt && !b.isMissed).length;
+
+    return getHardcodedUnreadCount() + activeApiCount + laterCount;
+  }, [apiNotifications, notifTrigger, getHardcodedUnreadCount, acknowledgedBroadcasts]);
 
   const deviceGroupRef = useRef<number | null>(null);
   const appStartRef = useRef(Date.now());
@@ -274,17 +330,35 @@ function BedsideScreen() {
 
     const unseen = relevant.filter(a => !seen.has(a.id));
 
+    // Auto-mark outdated alerts as seen so they never trigger and don't clutter the unseen count
+    const outdatedAlerts = unseen.filter(a => {
+      const createdBeforeToday = isBeforeToday(a.createdAt);
+      const modifiedToday = isToday(a.updatedAt);
+      return createdBeforeToday && !modifiedToday;
+    });
+
+    if (outdatedAlerts.length > 0) {
+      const outdatedIds = outdatedAlerts.map(a => a.id);
+      markAllAlertsSeen(outdatedIds);
+      outdatedIds.forEach(id => seen.add(id));
+    }
+
+    // Now re-filter unseen so we only work with the valid ones
+    const activeUnseen = unseen.filter(a => !seen.has(a.id));
+
     // Immediate alerts
-    const immediate = unseen.filter(a => a.sendImmediately);
+    const immediate = activeUnseen.filter(a => a.sendImmediately);
 
     if (immediate.length > 0) {
       const broadcasts: BroadcastNotification[] = immediate.map(a => ({
-        id:       `alert-${a.id}`,
-        type:     "announcement" as const,
+        id: `alert-${a.id}`,
+        type: "announcement" as const,
         priority: "urgent" as const,
-        title:    { en: a.titleEn, ar: a.titleAr },
-        body:     { en: a.bodyEn,  ar: a.bodyAr  },
-        icon:     "megaphone",
+        title: { en: a.titleEn, ar: a.titleAr },
+        body: { en: a.bodyEn, ar: a.bodyAr },
+        icon: "megaphone",
+        timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
+        createdAt: Date.now(),
       }));
       setBroadcastQueue(prev => [...prev, ...broadcasts]);
       markAllAlertsSeen(immediate.map(a => a.id));
@@ -292,7 +366,7 @@ function BedsideScreen() {
 
     // Scheduled alerts that are due or overdue
     const now = new Date();
-    const dueSoon = unseen.filter(a => {
+    const dueSoon = activeUnseen.filter(a => {
       if (a.status !== "scheduled" || !a.scheduledAt) return false;
       const scheduledTime = new Date(a.scheduledAt);
       const diffMs = now.getTime() - scheduledTime.getTime();
@@ -304,7 +378,7 @@ function BedsideScreen() {
       dueSoon.forEach(a => {
         const title = locale === "ar" ? a.titleAr : a.titleEn;
         const body = locale === "ar" ? a.bodyAr : a.bodyEn;
-        
+
         toast(title, {
           description: body,
           duration: 10000,
@@ -336,16 +410,70 @@ function BedsideScreen() {
       setBroadcastQueue(rest);
     }
   }, [activeBroadcast, broadcastQueue, showTour, tourDismissed]);
+
+  // Check for expired/missed notifications every 2 seconds
+  useEffect(() => {
+    const checkExpiredNotifications = () => {
+      const now = Date.now();
+      const TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+
+      // 1. Check active broadcast
+      if (activeBroadcast && activeBroadcast.createdAt) {
+        if (now - activeBroadcast.createdAt > TIMEOUT_MS) {
+          if (azanAudioRef.current) {
+            azanAudioRef.current.pause();
+            azanAudioRef.current.currentTime = 0;
+          }
+          const missedNotif: BroadcastNotification = {
+            ...activeBroadcast,
+            isMissed: true,
+            missedAt: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
+          };
+          setActiveBroadcast(null);
+          setAcknowledgedBroadcasts(prev => [missedNotif, ...prev]);
+        }
+      }
+
+      // 2. Check queue
+      setBroadcastQueue(prevQueue => {
+        const expired: BroadcastNotification[] = [];
+        const active: BroadcastNotification[] = [];
+
+        prevQueue.forEach(item => {
+          if (item.createdAt && now - item.createdAt > TIMEOUT_MS) {
+            expired.push({
+              ...item,
+              isMissed: true,
+              missedAt: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
+            });
+          } else {
+            active.push(item);
+          }
+        });
+
+        if (expired.length > 0) {
+          setAcknowledgedBroadcasts(prev => [...expired, ...prev]);
+        }
+
+        return active;
+      });
+    };
+
+    const interval = setInterval(checkExpiredNotifications, 2000);
+    return () => clearInterval(interval);
+  }, [activeBroadcast]);
+
   const anyOtherOverlayOpen = !!(
     openCategory || showSurvey || showAboutUs || showSettings ||
     showNotifications || showTour || showConfigurator ||
     showCareMeExpanded || showCall || showFoodOrder || activeBroadcast ||
-    activeGame || activeTool || showIptv
+    showTasbih || showIptv || showCareMePinDialog || lockMenuApp ||
+    ctaPdfConfig || ctaMediaConfig || activeGame || activeTool
   );
   const anyOverlayOpen = anyOtherOverlayOpen || showTasbih;
-  
+
   const [iptvOsd, setIptvOsd] = useState<{
-    name: string; 
+    name: string;
     nameAr: string;
     logo: string;
     index: number;   // e.g. "Channel 5 of 55"
@@ -398,9 +526,9 @@ function BedsideScreen() {
   }, []);
 
   useEffect(() => {
-    lockActiveRef.current = 
-      isLocked || 
-      showCareMePinDialog || 
+    lockActiveRef.current =
+      isLocked ||
+      showCareMePinDialog ||
       !!lockMenuApp ||
       (showTasbih && isAccountSet());
   }, [isLocked, showCareMePinDialog, lockMenuApp, showTasbih]);
@@ -424,7 +552,7 @@ function BedsideScreen() {
         }
         return;
       }
-      
+
       // If no lock, but an overlay is open, close it (existing logic)
       if (anyOverlayOpen) {
         isPopping.current = true;
@@ -473,7 +601,7 @@ function BedsideScreen() {
 
     // Removed 'click' and 'keypress' (keydown is sufficient) to prevent bubbling issues
     const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
-    
+
     events.forEach(evt => window.addEventListener(evt, handleUserActivity));
 
     // Initial start
@@ -536,7 +664,7 @@ function BedsideScreen() {
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
   const [reminders, setReminders] = useState<Reminder[]>(DEFAULT_REMINDERS);
 
-  
+
   /* ── Prayer Monitoring / Azan Alarm ── */
   const lastPrayerRef = useRef<Prayer>(Prayer.None);
   const azanAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -555,7 +683,7 @@ function BedsideScreen() {
     const interval = setInterval(() => {
       const now = new Date();
       const status = getPrayerStatus(now, theme.location);
-      
+
       // Check if a prayer has just started
       if (status.current !== Prayer.None && status.current !== lastPrayerRef.current) {
         // TRICK: Only trigger if the previous one wasn't None (prevents double trigger on load)
@@ -590,6 +718,7 @@ function BedsideScreen() {
       },
       priority: "info",
       timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
+      createdAt: Date.now(),
     }]);
 
     // 2. Play Azan if alarm enabled
@@ -637,6 +766,7 @@ function BedsideScreen() {
                 minute: "2-digit",
                 hour12: true,
               }),
+              createdAt: Date.now(),
             }]);
 
             return { ...r, notified: true };
@@ -659,7 +789,7 @@ function BedsideScreen() {
     return () => document.removeEventListener("fullscreenchange", handleFsChange);
   }, []);
 
-  const handleBroadcastAcknowledge = useCallback((id: string) => {
+  const handleBroadcastAcknowledge = useCallback((id: string, actionType: "read" | "later" | "skip" = "read") => {
     if (azanAudioRef.current) {
       azanAudioRef.current.pause();
       azanAudioRef.current.currentTime = 0;
@@ -667,13 +797,65 @@ function BedsideScreen() {
 
     setActiveBroadcast((prev) => {
       if (prev && prev.id === id) {
+        const nowStr = new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
         const acknowledged = {
           ...prev,
-          acknowledgedAt: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
+          isLater: actionType === "later",
+          acknowledgedAt: actionType === "later" ? undefined : nowStr,
         };
         // Schedule outside state updater
         setTimeout(() => {
           setAcknowledgedBroadcasts((list) => [acknowledged, ...list]);
+          setNotifTrigger((p) => p + 1);
+
+          // Handle CTA Actions if present and user clicked "read" (main CTA button)
+          if (actionType === "read" && (prev.ctaAction || prev.ctaUrl)) {
+            const url = prev.ctaUrl || "";
+            let action = prev.ctaAction;
+
+            // Auto-detect CTA action based on file extensions if set to open-url
+            if (!action || action === "open-url") {
+              const lowerUrl = url.toLowerCase();
+              if (lowerUrl.endsWith(".pdf")) {
+                action = "open-pdf";
+              } else if (
+                lowerUrl.endsWith(".png") ||
+                lowerUrl.endsWith(".jpg") ||
+                lowerUrl.endsWith(".jpeg") ||
+                lowerUrl.endsWith(".gif") ||
+                lowerUrl.endsWith(".webp")
+              ) {
+                action = "open-image";
+              } else if (
+                lowerUrl.endsWith(".mp4") ||
+                lowerUrl.endsWith(".webm") ||
+                lowerUrl.endsWith(".ogg") ||
+                lowerUrl.endsWith(".mov")
+              ) {
+                action = "open-video";
+              } else {
+                action = "open-url";
+              }
+            }
+
+            const titleText = prev.title.en || "View Media";
+
+            if (action === "open-pdf" && url) {
+              setCtaPdfConfig({ url, title: titleText });
+            } else if (action === "open-image" && url) {
+              setCtaMediaConfig({ type: "image", url, title: titleText });
+            } else if (action === "open-video" && url) {
+              setCtaMediaConfig({ type: "video", url, title: titleText });
+            } else if (action === "open-survey") {
+              const initialPath = (prev.ctaSurveyId === "survey" || prev.ctaSurveyId === "concern" || prev.ctaSurveyId === "appreciation")
+                ? (prev.ctaSurveyId as any)
+                : "hub";
+              setSurveyInitialPath(initialPath);
+              setShowSurvey(true);
+            } else if (action === "open-url" && url) {
+              window.open(url, "_blank", "noopener,noreferrer");
+            }
+          }
         }, 0);
       }
       return null;
@@ -685,76 +867,122 @@ function BedsideScreen() {
       ...SAMPLE_BROADCAST,
       id: "broadcast-" + Date.now(),
       timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
+      createdAt: Date.now(),
     }]);
   }, []);
 
   const handleNotificationClick = useCallback((notif: any) => {
+    // 0. Hospital Broadcast Notifications (acknowledged or read later)
+    if (notif.priority && notif.title && notif.body) {
+      setAcknowledgedBroadcasts(prev => prev.filter(b => b.id !== notif.id));
+      setActiveBroadcast(notif);
+      setShowNotifications(false);
+      setNotifTrigger(prev => prev + 1);
+      return;
+    }
+
     // 1. API Notifications
     if (notif.id.startsWith("api-")) {
       const alertId = parseInt(notif.id.replace("api-", ""));
       markAlertSeen(alertId);
-      
+      setNotifTrigger(prev => prev + 1);
+
       // Show as broadcast popup
       setBroadcastQueue(prev => [...prev, {
-        id:       notif.id,
-        type:     "announcement",
+        id: notif.id,
+        type: "announcement",
         priority: "info",
-        title:    { 
-          en: notif.titleText ?? "", 
-          ar: notif.titleText ?? "" 
+        title: {
+          en: notif.titleText ?? "",
+          ar: notif.titleText ?? ""
         },
-        body:     { 
-          en: notif.bodyText  ?? "", 
-          ar: notif.bodyText  ?? "" 
+        body: {
+          en: notif.bodyText ?? "",
+          ar: notif.bodyText ?? ""
         },
-        icon:     "megaphone",
+        icon: "megaphone",
+        timestamp: notif.time || new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
+        createdAt: Date.now(),
       }]);
       setShowNotifications(false);
       return;
     }
 
     // 2. Hardcoded Notifications
+    const seenKey = "careinn-seen-hardcoded";
+    try {
+      const raw = localStorage.getItem(seenKey);
+      const seen = new Set(JSON.parse(raw ?? "[]"));
+      seen.add(notif.id);
+      localStorage.setItem(seenKey, JSON.stringify([...seen]));
+      setNotifTrigger(prev => prev + 1);
+    } catch (e) {
+      console.error(e);
+    }
     // Map textKey to realistic broadcast content
-    const contentMap: Record<string, { title: { en: string, ar: string }, body: { en: string, ar: string }, priority: "info" | "warning" | "urgent" }> = {
-      "notif.mriReady": {
-        title: { en: "MRI Study Complete", ar: "اكتملت دراسة الرنين المغناطيسي" },
-        body: { 
-          en: "Your Abdominal MRI study is now ready for review. Your attending physician has been notified and will discuss the results with you during the next ward round.",
-          ar: "دراسة الرنين المغناطيسي للبطن جاهزة الآن للمراجعة. تم إبلاغ طبيبك المعالج وسيناقش النتائج معك خلال جولة القسم القادمة."
+    const contentMap: Record<string, {
+      title: { en: string, ar: string },
+      body: { en: string, ar: string },
+      priority: "info" | "warning" | "urgent",
+      cta?: { en: string; ar: string },
+      ctaAction?: "open-url" | "open-survey" | "open-pdf" | "open-image" | "open-video",
+      ctaUrl?: string,
+      ctaSurveyId?: string
+    }> = {
+      "notif.ctaSurvey": {
+        title: { en: "Feedback Survey", ar: "استطلاع الرأي" },
+        body: {
+          en: "We would love to hear your feedback on our nursing care services. Please tap below to open the survey.",
+          ar: "يسعدنا معرفة رأيكم حول خدمات التمريض. يرجى الضغط أدناه لفتح الاستبيان."
         },
-        priority: "info"
+        priority: "info",
+        cta: { en: "Start Survey", ar: "بدء الاستبيان" },
+        ctaAction: "open-survey",
+        ctaSurveyId: "survey"
       },
-      "notif.labsReady": {
-        title: { en: "Laboratory Results", ar: "نتائج المختبر" },
-        body: { 
-          en: "Your latest laboratory results are now available. You can review the detailed breakdown and clinical status in the 'Care Me' module under Lab Results.",
-          ar: "أنتائج المختبر الأخيرة متاحة الآن. يمكنك مراجعة التفاصيل والحالة السريرية في قسم 'رعاية المريض' (Care Me) تحت نتائج المختبر."
+      "notif.ctaPdf": {
+        title: { en: "Patient Guide PDF", ar: "دليل المريض PDF" },
+        body: {
+          en: "Learn more about our services, hospital rules, and your rights by reading our PDF guide.",
+          ar: "تعرف على المزيد حول خدماتنا وقواعد المستشفى وحقوقك من خلال قراءة دليل PDF."
         },
-        priority: "info"
+        priority: "info",
+        cta: { en: "Open Guide", ar: "افتح الدليل" },
+        ctaAction: "open-pdf",
+        ctaUrl: "/pdfs/CareInn15.pdf"
       },
-      "notif.surveyRequest": {
-        title: { en: "We Value Your Feedback", ar: "نحن نقدر رأيك" },
-        body: { 
-          en: "How are we doing? Please take a moment to share your experience with us through our quick patient survey. Your feedback helps us improve our care.",
-          ar: "كيف كانت خدمتنا؟ يرجى تخصيص لحظة لمشاركة تجربتك معنا من خلال استبيان المريض السريع. ملاحظاتك تساعدنا على تحسين رعايتنا."
+      "notif.ctaImage": {
+        title: { en: "Healthy Meal Options", ar: "خيارات وجبات صحية" },
+        body: {
+          en: "Take a look at today's recommended healthy diet chart prepared by our nutritionists.",
+          ar: "ألقِ نظرة على مخطط النظام الغذائي الصحي الموصى به اليوم والمعد من قبل أخصائيي التغذية لدينا."
         },
-        priority: "info"
+        priority: "info",
+        cta: { en: "View Chart", ar: "عرض المخطط" },
+        ctaAction: "open-image",
+        ctaUrl: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&auto=format&fit=crop"
       },
-      "notif.hygieneScheduled": {
-        title: { en: "Maintenance Alert", ar: "تنبيه الصيانة والنظافة" },
-        body: { 
-          en: "A routine hospital hygiene check is scheduled for your room shortly. This should take approximately 10 minutes. Thank you.",
-          ar: "من المقرر إجراء فحص دوري لنظافة المستشفى في غرفتك قريباً. سيستغرق ذلك حوالي 10 دقائق. شكراً لكم."
+      "notif.ctaVideo": {
+        title: { en: "CareInn Presentation", ar: "عرض كيرإن" },
+        body: {
+          en: "Watch our hospital introductory presentation video highlighting patient care standards.",
+          ar: "شاهد فيديو العرض التعريفي لمستشفانا الذي يسلط الضوء على معايير رعاية المرضى."
         },
-        priority: "warning"
+        priority: "warning",
+        cta: { en: "Play Video", ar: "تشغيل الفيديو" },
+        ctaAction: "open-video",
+        ctaUrl: careinnliteVideo
       },
-      "notif.doctorVisit": {
-        title: { en: "Doctor Update", ar: "تحديث من الطبيب" },
-        body: { 
-          en: "Dr. Al-Ghamdi has reviewed your latest vitals and will visit your bedside during the afternoon rounds.",
-          ar: "قام الدكتور الغامدي بمراجعة علاماتك الحيوية الأخيرة وسيقوم بزيارتك خلال جولات بعد الظهر."
+      "notif.ctaUrl": {
+        title: { en: "Hospital Website", ar: "موقع المستشفى الإلكتروني" },
+        body: {
+          en: "Visit our general medical resource hub on the web for detailed articles and health tips.",
+          ar: "قم بزيارة مركز الموارد الطبية العام الخاص بنا على الويب للحصول على مقالات مفصلة ونصائح صحية."
         },
-        priority: "info"
+        priority: "info",
+        cta: { en: "Visit Website", ar: "زيارة الموقع" },
+        ctaAction: "open-url",
+        ctaUrl: "https://www.google.com"
       }
     };
 
@@ -770,6 +998,11 @@ function BedsideScreen() {
       body: details.body,
       priority: details.priority,
       timestamp: notif.time,
+      createdAt: Date.now(),
+      cta: details.cta,
+      ctaAction: details.ctaAction,
+      ctaUrl: details.ctaUrl,
+      ctaSurveyId: details.ctaSurveyId
     }]);
     setShowNotifications(false); // Close panel to focus on broadcast
   }, []);
@@ -934,7 +1167,7 @@ function BedsideScreen() {
             // Show OSD for the new channel (next in list from before)
             const channels = _getIptvChannels();
             if (channels.length) {
-              const idx = before === null ? 0 
+              const idx = before === null ? 0
                 : (channels.findIndex(c => c.id === before) + 1) % channels.length;
               showChannelOsd(channels[idx]);
             }
@@ -1056,9 +1289,9 @@ function BedsideScreen() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [openCategory, showSurvey, showAboutUs, showSettings,
-      showNotifications, showTour, showTasbih, showConfigurator,
-      showCareMeExpanded, showCall, showFoodOrder, activeBroadcast,
-      activeGame, activeTool, showIptv, matchBinding]);
+    showNotifications, showTour, showTasbih, showConfigurator,
+    showCareMeExpanded, showCall, showFoodOrder, activeBroadcast,
+    activeGame, activeTool, showIptv, matchBinding]);
 
   return (
     <div
@@ -1126,7 +1359,7 @@ function BedsideScreen() {
           onWeatherTap={() => setLayoutVersion((v) => (v === 1 ? 2 : 1))}
           onSettingsTap={() => setShowSettings(true)}
           onBellTap={() => setShowNotifications(true)}
-          unreadCount={3 + apiNotifications.filter(a => !getSeenAlertIds().has(a.id)).length}
+          unreadCount={getUnreadCount()}
         />
 
         {/* News Ticker */}
@@ -1140,9 +1373,9 @@ function BedsideScreen() {
               <div className="flex-1 flex flex-row gap-[40px] min-w-0 min-h-0">
                 {/* Left — 2×4 Hub Grid */}
                 <div className="flex flex-col shrink-0 min-h-0" style={{ width: "400px" }}>
-                  <HubGridCompact 
-                    onOpenCategory={handleOpenCategory} 
-                    visibility={v} 
+                  <HubGridCompact
+                    onOpenCategory={handleOpenCategory}
+                    visibility={v}
                     onRequestPinSetup={() => {
                       setOpenAccountDirectly(true);
                       setShowSettings(true);
@@ -1155,10 +1388,10 @@ function BedsideScreen() {
                   {/* Top: Greeting + CareMe horizontally */}
                   <div className="flex-1 flex flex-row gap-5 min-h-0">
                     <div className="flex-1 min-w-0 min-h-0 flex flex-col">
-                      <PatientGreeting 
-                        onOpenAboutUs={() => setShowAboutUs(true)} 
-                        onOpenTour={() => setShowTour(true)} 
-                        fillImage 
+                      <PatientGreeting
+                        onOpenAboutUs={() => setShowAboutUs(true)}
+                        onOpenTour={() => setShowTour(true)}
+                        fillImage
                         showAboutUs={v.show_about_us}
                       />
                     </div>
@@ -1171,9 +1404,9 @@ function BedsideScreen() {
                     </div>
                   </div>
                   {/* Bottom: Service cards row */}
-                  <ServiceCardsRow 
-                    onOpenCategory={handleOpenCategory} 
-                    visibility={v} 
+                  <ServiceCardsRow
+                    onOpenCategory={handleOpenCategory}
+                    visibility={v}
                     onRequestPinSetup={() => {
                       setOpenAccountDirectly(true);
                       setShowSettings(true);
@@ -1183,9 +1416,9 @@ function BedsideScreen() {
 
                 {/* Right — Shortcuts */}
                 <div className="flex flex-col shrink-0 min-h-0" style={{ width: "280px" }}>
-                  <ShortcutsColumn 
-                    onOpenSurvey={() => setShowSurvey(true)} 
-                    onLaunchTool={(id) => setActiveTool(id as any)} 
+                  <ShortcutsColumn
+                    onOpenSurvey={() => setShowSurvey(true)}
+                    onLaunchTool={(id) => setActiveTool(id as any)}
                     onRequestPinSetup={() => {
                       setOpenAccountDirectly(true);
                       setShowSettings(true);
@@ -1197,9 +1430,9 @@ function BedsideScreen() {
               <>
                 {/* Left Column — PatientGreeting + CareMe */}
                 <div className="flex flex-col gap-5 shrink-0 min-h-0 h-full" style={{ width: "400px" }}>
-                  <PatientGreeting 
-                    onOpenAboutUs={() => setShowAboutUs(true)} 
-                    onOpenTour={() => setShowTour(true)} 
+                  <PatientGreeting
+                    onOpenAboutUs={() => setShowAboutUs(true)}
+                    onOpenTour={() => setShowTour(true)}
                     showAboutUs={v.show_about_us}
                   />
                   <div className="flex-1 min-h-0 flex flex-col">
@@ -1215,9 +1448,9 @@ function BedsideScreen() {
                 <div className="flex-1 flex flex-row gap-[40px] min-w-0 min-h-0">
                   {/* Center — Engagement Grid */}
                   <div className="flex-1 min-w-0 flex flex-col gap-5 min-h-0">
-                    <ServicesGrid 
-                      onOpenCategory={handleOpenCategory} 
-                      onLaunchTool={(id) => setActiveTool(id as any)} 
+                    <ServicesGrid
+                      onOpenCategory={handleOpenCategory}
+                      onLaunchTool={(id) => setActiveTool(id as any)}
                       visibility={v}
                       onRequestPinSetup={() => {
                         setOpenAccountDirectly(true);
@@ -1230,9 +1463,9 @@ function BedsideScreen() {
 
                   {/* Right — Shortcuts */}
                   <div className="flex flex-col shrink-0 min-h-0" style={{ width: "280px" }}>
-                    <ShortcutsColumn 
-                      onOpenSurvey={() => setShowSurvey(true)} 
-                      onLaunchTool={(id) => setActiveTool(id as any)} 
+                    <ShortcutsColumn
+                      onOpenSurvey={() => setShowSurvey(true)}
+                      onLaunchTool={(id) => setActiveTool(id as any)}
                       onRequestPinSetup={() => {
                         setOpenAccountDirectly(true);
                         setShowSettings(true);
@@ -1259,10 +1492,10 @@ function BedsideScreen() {
                 <div className="flex-1 flex flex-row gap-[40px] min-w-0 min-h-0">
                   {/* Center — Hub grid with shortcuts at bottom */}
                   <div className="flex-1 min-w-0 flex flex-col gap-5 min-h-0">
-                    <ServicesGrid 
-                      onOpenCategory={handleOpenCategory} 
-                      swapped 
-                      onLaunchTool={(id) => setActiveTool(id as any)} 
+                    <ServicesGrid
+                      onOpenCategory={handleOpenCategory}
+                      swapped
+                      onLaunchTool={(id) => setActiveTool(id as any)}
                       visibility={v}
                       onRequestPinSetup={() => {
                         setOpenAccountDirectly(true);
@@ -1275,11 +1508,11 @@ function BedsideScreen() {
 
                   {/* Right — Services stacked vertically */}
                   <div className="flex flex-col shrink-0 min-h-0" style={{ width: "280px" }}>
-                    <ShortcutsColumn 
-                      contained 
-                      onOpenSurvey={() => setShowSurvey(true)} 
-                      swapped 
-                      onLaunchTool={(id) => setActiveTool(id as any)} 
+                    <ShortcutsColumn
+                      contained
+                      onOpenSurvey={() => setShowSurvey(true)}
+                      swapped
+                      onLaunchTool={(id) => setActiveTool(id as any)}
                       onRequestPinSetup={() => {
                         setOpenAccountDirectly(true);
                         setShowSettings(true);
@@ -1388,12 +1621,13 @@ function BedsideScreen() {
 
         {/* Notifications Panel — slide-in from right */}
         {showNotifications && (
-          <NotificationsPanel 
-            onClose={() => setShowNotifications(false)} 
-            acknowledgedBroadcasts={acknowledgedBroadcasts} 
+          <NotificationsPanel
+            onClose={() => setShowNotifications(false)}
+            acknowledgedBroadcasts={acknowledgedBroadcasts}
             onNotificationClick={handleNotificationClick}
             apiAlerts={apiNotifications}
             onClearAll={() => setAcknowledgedBroadcasts([])}
+            onNotifChange={() => setNotifTrigger(prev => prev + 1)}
           />
         )}
 
@@ -1476,7 +1710,7 @@ function BedsideScreen() {
 
         {/* Blank Page Overlay */}
         {showBlankPage && (
-          <div 
+          <div
             className="fixed inset-0 z-[100] flex items-center justify-center cursor-none"
             style={{ backgroundColor: "#000000" }}
             onClick={() => setShowBlankPage(false)}
@@ -1492,7 +1726,32 @@ function BedsideScreen() {
 
       {/* Survey Modal */}
       {showSurvey && (
-        <SurveyModal onClose={() => setShowSurvey(false)} />
+        <SurveyModal
+          initialPath={surveyInitialPath}
+          onClose={() => {
+            setShowSurvey(false);
+            setSurveyInitialPath("hub");
+          }}
+        />
+      )}
+
+      {/* PDF Reader Modal from CTA */}
+      {ctaPdfConfig && (
+        <PdfReaderModal
+          onClose={() => setCtaPdfConfig(null)}
+          pdfSource={ctaPdfConfig.url}
+          title={ctaPdfConfig.title}
+        />
+      )}
+
+      {/* Media Viewer Modal from CTA */}
+      {ctaMediaConfig && (
+        <MediaViewerModal
+          onClose={() => setCtaMediaConfig(null)}
+          type={ctaMediaConfig.type}
+          src={ctaMediaConfig.url}
+          title={ctaMediaConfig.title}
+        />
       )}
 
       <OfflineBanner visible={!isOnline} />
@@ -1525,89 +1784,89 @@ function BedsideScreen() {
         />
       )}
 
-        {/* IPTV Channel OSD Overlay */}
-        {iptvOsd && (
-          <div
-            style={{
-              position: "fixed",
-              bottom: "48px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              zIndex: 8888,
-              display: "flex",
-              alignItems: "center",
-              gap: "16px",
-              padding: "14px 24px",
-              borderRadius: "16px",
-              backgroundColor: "rgba(0,0,0,0.82)",
-              backdropFilter: "blur(12px)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-              animation: "iptvOsdIn 0.2s ease-out",
-              minWidth: "320px",
-              maxWidth: "480px",
-            }}
-          >
-            {/* Channel logo */}
-            {iptvOsd.logo && (
-              <img
-                src={iptvOsd.logo}
-                alt=""
-                style={{
-                  width: "44px",
-                  height: "44px",
-                  borderRadius: "8px",
-                  objectFit: "contain",
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  flexShrink: 0,
-                }}
-              />
-            )}
+      {/* IPTV Channel OSD Overlay */}
+      {iptvOsd && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "48px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 8888,
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            padding: "14px 24px",
+            borderRadius: "16px",
+            backgroundColor: "rgba(0,0,0,0.82)",
+            backdropFilter: "blur(12px)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+            animation: "iptvOsdIn 0.2s ease-out",
+            minWidth: "320px",
+            maxWidth: "480px",
+          }}
+        >
+          {/* Channel logo */}
+          {iptvOsd.logo && (
+            <img
+              src={iptvOsd.logo}
+              alt=""
+              style={{
+                width: "44px",
+                height: "44px",
+                borderRadius: "8px",
+                objectFit: "contain",
+                backgroundColor: "rgba(255,255,255,0.1)",
+                flexShrink: 0,
+              }}
+            />
+          )}
 
-            {/* Channel info */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{
-                color: "#fff",
-                fontSize: "17px",
-                fontWeight: 700,
-                margin: 0,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                fontFamily: fontFamily,
-              }}>
-                {locale === "ar" ? iptvOsd.nameAr : iptvOsd.name}
-              </p>
-              <p style={{
-                color: "rgba(255,255,255,0.5)",
-                fontSize: "13px",
-                fontWeight: 500,
-                margin: 0,
-                fontFamily: fontFamily,
-              }}>
-                {iptvOsd.index} / {iptvOsd.total}
-              </p>
-            </div>
-
-            {/* Channel number badge */}
-            <div style={{
-              backgroundColor: theme.primary,
-              borderRadius: "8px",
-              padding: "4px 12px",
-              flexShrink: 0,
+          {/* Channel info */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{
+              color: "#fff",
+              fontSize: "17px",
+              fontWeight: 700,
+              margin: 0,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              fontFamily: fontFamily,
             }}>
-              <span style={{
-                color: "#fff",
-                fontSize: "15px",
-                fontWeight: 700,
-                fontFamily: theme.fontFamilyMono,
-              }}>
-                {iptvOsd.index}
-              </span>
-            </div>
+              {locale === "ar" ? iptvOsd.nameAr : iptvOsd.name}
+            </p>
+            <p style={{
+              color: "rgba(255,255,255,0.5)",
+              fontSize: "13px",
+              fontWeight: 500,
+              margin: 0,
+              fontFamily: fontFamily,
+            }}>
+              {iptvOsd.index} / {iptvOsd.total}
+            </p>
           </div>
-        )}
 
-        <style>{`
+          {/* Channel number badge */}
+          <div style={{
+            backgroundColor: theme.primary,
+            borderRadius: "8px",
+            padding: "4px 12px",
+            flexShrink: 0,
+          }}>
+            <span style={{
+              color: "#fff",
+              fontSize: "15px",
+              fontWeight: 700,
+              fontFamily: theme.fontFamilyMono,
+            }}>
+              {iptvOsd.index}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <style>{`
           @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
@@ -1657,7 +1916,7 @@ function CareMeLockedPlaceholder({ onTap }: { onTap: () => void }) {
         outline: "none",
       }}
     >
-      <div 
+      <div
         className="flex items-center justify-center"
         style={{
           width: "56px", height: "56px",
@@ -1712,10 +1971,10 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
           <h1 className="text-4xl font-black mb-4">System Recovered</h1>
           <p className="text-slate-400 mb-8 max-w-md">An unexpected interface error occurred. The system has automatically rebooted to a stable state.</p>
           <div className="bg-slate-800 p-4 rounded-lg text-left text-xs font-mono text-red-400 mb-8 select-all max-w-xl overflow-auto max-h-[300px]">
-             {this.state.error?.stack}
+            {this.state.error?.stack}
           </div>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="px-8 py-4 bg-blue-600 rounded-2xl font-bold hover:bg-blue-500 transition-colors"
           >
             Refresh Dashboard

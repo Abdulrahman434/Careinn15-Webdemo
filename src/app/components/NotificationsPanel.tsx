@@ -17,6 +17,7 @@ import {
   Megaphone,
   AlertTriangle,
   Info,
+  Clock,
 } from "lucide-react";
 import { useOrders } from "./OrderStore";
 import type { OrderStatus } from "./OrderStore";
@@ -33,13 +34,70 @@ interface Notification {
   read: boolean;
 }
 
+const getTodayAt = (hours: number, minutes: number): string => {
+  const d = new Date();
+  d.setHours(hours, minutes, 0, 0);
+  return d.toISOString();
+};
+
+const getYesterdayAt = (hours: number, minutes: number): string => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  d.setHours(hours, minutes, 0, 0);
+  return d.toISOString();
+};
+
+const getDaysAgoAt = (days: number, hours: number, minutes: number): string => {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  d.setHours(hours, minutes, 0, 0);
+  return d.toISOString();
+};
+
 const initialNotifications: Notification[] = [
-  { id: "1", iconType: "megaphone", textKey: "notif.labsReady", time: "11:20 am", read: false },
-  { id: "2", iconType: "megaphone", textKey: "notif.surveyRequest", time: "10:45 am", read: false },
-  { id: "3", iconType: "megaphone", textKey: "notif.mriReady", time: "09:30 am", read: false },
-  { id: "4", iconType: "megaphone", textKey: "notif.hygieneScheduled", time: "08:15 am", read: true },
-  { id: "5", iconType: "megaphone", textKey: "notif.doctorVisit", time: "Yesterday", read: true },
+  { id: "cta-survey", iconType: "megaphone", textKey: "notif.ctaSurvey", time: getTodayAt(11, 20), read: false },
+  { id: "cta-pdf", iconType: "megaphone", textKey: "notif.ctaPdf", time: getTodayAt(10, 45), read: false },
+  { id: "cta-image", iconType: "megaphone", textKey: "notif.ctaImage", time: getTodayAt(9, 30), read: false },
+  { id: "cta-video", iconType: "megaphone", textKey: "notif.ctaVideo", time: getTodayAt(8, 15), read: false },
+  { id: "cta-url", iconType: "megaphone", textKey: "notif.ctaUrl", time: getTodayAt(7, 0), read: false },
 ];
+
+const isToday = (dateInput: Date | string | number | null | undefined): boolean => {
+  if (!dateInput) return false;
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return false;
+  
+  const today = new Date();
+  return d.getDate() === today.getDate() &&
+         d.getMonth() === today.getMonth() &&
+         d.getFullYear() === today.getFullYear();
+};
+
+const getHardcodedSeen = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem("careinn-seen-hardcoded");
+    return new Set(JSON.parse(raw ?? "[]"));
+  } catch { return new Set(); }
+};
+
+const markHardcodedSeen = (id: string) => {
+  const seen = getHardcodedSeen();
+  seen.add(id);
+  localStorage.setItem("careinn-seen-hardcoded", JSON.stringify([...seen]));
+};
+
+const getHardcodedHidden = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem("careinn-hidden-hardcoded");
+    return new Set(JSON.parse(raw ?? "[]"));
+  } catch { return new Set(); }
+};
+
+const markHardcodedHidden = (id: string) => {
+  const hidden = getHardcodedHidden();
+  hidden.add(id);
+  localStorage.setItem("careinn-hidden-hardcoded", JSON.stringify([...hidden]));
+};
 
 function NotifIcon({ type }: { type: string }) {
   const { theme } = useTheme();
@@ -261,21 +319,61 @@ export function NotificationsPanel({
   acknowledgedBroadcasts = [],
   onNotificationClick,
   apiAlerts = [],
+  onNotifChange,
 }: { 
   onClose: () => void; 
   acknowledgedBroadcasts?: BroadcastNotification[];
   onNotificationClick: (notif: Notification) => void;
   apiAlerts?: DeviceAlert[];
   onClearAll?: () => void;
+  onNotifChange?: () => void;
 }) {
   const { theme } = useTheme();
   const { t, locale, isRTL, fontFamily } = useLocale();
   const { activeOrders } = useOrders();
   const [showHistory, setShowHistory] = useState(false);
 
+  const formatNotificationTime = useCallback((dateInput: Date | string | number | null | undefined): string => {
+    if (!dateInput) return "";
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) {
+      const str = String(dateInput).toLowerCase();
+      if (str === "yesterday") {
+        return locale === "ar" ? "أمس" : locale === "ur" ? "کل" : "Yesterday";
+      }
+      return String(dateInput);
+    }
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+    const itemDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+    if (itemDate.getTime() === today.getTime()) {
+      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    } else if (itemDate.getTime() === yesterday.getTime()) {
+      return locale === "ar" ? "أمس" : locale === "ur" ? "کل" : "Yesterday";
+    } else {
+      return d.toLocaleDateString(locale === "ar" ? "ar-EG" : locale === "ur" ? "ur-PK" : "en-US", {
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+      });
+    }
+  }, [locale]);
+
   const mapApiAlerts = useCallback((alerts: DeviceAlert[], historyMode: boolean): Notification[] => {
     const hidden = getHiddenAlertIds();
-    const filtered = historyMode ? alerts : alerts.filter(a => !hidden.has(a.id));
+    const seen = getSeenAlertIds();
+    let filtered = alerts.filter(a => !hidden.has(a.id));
+
+    // Filter out anything not today if not historyMode
+    if (!historyMode) {
+      filtered = filtered.filter(a => {
+        const dateVal = a.lastSentAt || a.scheduledAt || a.createdAt;
+        return isToday(dateVal);
+      });
+    }
 
     return filtered.map(a => ({
       id:        `api-${a.id}`,
@@ -283,26 +381,38 @@ export function NotificationsPanel({
       textKey:   "",
       titleText: locale === "ar" ? a.titleAr : locale === "ur" ? a.titleUr : a.titleEn,
       bodyText:  locale === "ar" ? a.bodyAr  : locale === "ur" ? a.bodyUr : a.bodyEn,
-      time:      a.lastSentAt
-        ? new Date(a.lastSentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        : new Date(a.scheduledAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      read:      getSeenAlertIds().has(a.id),
+      time:      formatNotificationTime(a.lastSentAt || a.scheduledAt || a.createdAt),
+      read:      seen.has(a.id),
     }));
-  }, [locale]);
+  }, [locale, formatNotificationTime]);
 
-  const [notifications, setNotifications] = useState<Notification[]>(() => [
-    ...mapApiAlerts(apiAlerts, false),
-    ...initialNotifications,
-  ]);
+  const mapHardcodedAlerts = useCallback((historyMode: boolean): Notification[] => {
+    const hidden = getHardcodedHidden();
+    const seen = getHardcodedSeen();
+    let filtered = initialNotifications.filter(n => !hidden.has(n.id));
+
+    // Filter out anything not today if not historyMode
+    if (!historyMode) {
+      filtered = filtered.filter(n => {
+        return isToday(n.time);
+      });
+    }
+
+    return filtered.map(n => ({
+      ...n,
+      time:      formatNotificationTime(n.time),
+      read:      seen.has(n.id),
+    }));
+  }, [formatNotificationTime]);
+
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   // Sync when API alerts, locale or history mode change
   useEffect(() => {
     const apiMapped = mapApiAlerts(apiAlerts, showHistory);
-    setNotifications(prev => {
-      const hardcoded = prev.filter(n => !n.id.startsWith("api-"));
-      return [...apiMapped, ...hardcoded];
-    });
-  }, [apiAlerts, mapApiAlerts, showHistory]);
+    const hardcodedMapped = mapHardcodedAlerts(showHistory);
+    setNotifications([...apiMapped, ...hardcodedMapped]);
+  }, [apiAlerts, mapApiAlerts, mapHardcodedAlerts, showHistory]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -311,28 +421,37 @@ export function NotificationsPanel({
       if (n.id.startsWith("api-")) {
         const alertId = parseInt(n.id.replace("api-", ""));
         markAlertSeen(alertId);
+      } else {
+        markHardcodedSeen(n.id);
       }
     });
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    onNotifChange?.();
   };
 
   const dismissNotification = useCallback((id: string) => {
     if (id.startsWith("api-")) {
       const alertId = parseInt(id.replace("api-", ""));
       markAlertHidden(alertId);
+    } else {
+      markHardcodedHidden(id);
     }
     setNotifications((prev) => prev.filter((n) => n.id !== id));
-  }, []);
+    onNotifChange?.();
+  }, [onNotifChange]);
 
   const clearAll = () => {
     notifications.forEach(n => {
       if (n.id.startsWith("api-")) {
         const alertId = parseInt(n.id.replace("api-", ""));
         markAlertHidden(alertId);
+      } else {
+        markHardcodedHidden(n.id);
       }
     });
     setNotifications([]);
     onClearAll?.();
+    onNotifChange?.();
   };
 
   return (
@@ -653,28 +772,44 @@ export function NotificationsPanel({
               {acknowledgedBroadcasts.map((bc) => {
                 const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
                 const priorityColor = bc.priority === "urgent" ? "#D10044" : bc.priority === "warning" ? "#F59E0B" : "#3B82F6";
+                const isLater = bc.isLater && !bc.acknowledgedAt && !bc.isMissed;
                 return (
                   <div
                     key={bc.id}
-                    className="flex items-start gap-3 shrink-0"
+                    onClick={() => onNotificationClick(bc)}
+                    className="flex items-start gap-3 shrink-0 cursor-pointer active:scale-[0.99] hover:brightness-[0.98] transition-all"
                     style={{
                       padding: "14px 16px",
                       borderRadius: "14px",
-                      backgroundColor: `${priorityColor}08`,
-                      border: `1px solid ${priorityColor}20`,
+                      backgroundColor: isLater ? "rgba(245, 158, 11, 0.05)" : bc.isMissed ? "rgba(209, 0, 68, 0.04)" : `${priorityColor}08`,
+                      border: isLater ? "1px solid rgba(245, 158, 11, 0.25)" : bc.isMissed ? "1px dashed rgba(209, 0, 68, 0.25)" : `1px solid ${priorityColor}20`,
+                      position: "relative",
                     }}
                   >
+                    {/* Unread dot for Read Later */}
+                    {isLater && (
+                      <div
+                        className="absolute top-3.5 right-3.5 w-2 h-2 rounded-full bg-[#F59E0B]"
+                        style={{
+                          boxShadow: "0 0 6px rgba(245, 158, 11, 0.6)",
+                        }}
+                      />
+                    )}
                     <div
                       className="shrink-0 flex items-center justify-center"
                       style={{
                         width: "40px",
                         height: "40px",
                         borderRadius: "12px",
-                        backgroundColor: `${priorityColor}12`,
+                        backgroundColor: isLater ? "rgba(245, 158, 11, 0.1)" : bc.isMissed ? "rgba(209, 0, 68, 0.1)" : `${priorityColor}12`,
                         marginTop: "2px",
                       }}
                     >
-                      <Megaphone size={20} style={{ color: priorityColor }} />
+                      {isLater ? (
+                        <Clock size={20} style={{ color: "#F59E0B" }} />
+                      ) : (
+                        <Megaphone size={20} style={{ color: bc.isMissed ? "#D10044" : priorityColor }} />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <span
@@ -706,17 +841,49 @@ export function NotificationsPanel({
                         {loc(bc.body)}
                       </span>
                       <div className="flex items-center gap-2" style={{ marginTop: "6px" }}>
-                        <Check size={12} style={{ color: theme.success }} />
-                        <span
-                          style={{
-                            fontFamily: fontFamily,
-                            fontSize: "11px",
-                            fontWeight: WEIGHT.medium,
-                            color: theme.textDisabled,
-                          }}
-                        >
-                          {isRTL ? `تم الاطلاع ${bc.acknowledgedAt}` : `Acknowledged ${bc.acknowledgedAt}`}
-                        </span>
+                        {isLater ? (
+                          <>
+                            <Clock size={12} style={{ color: "#F59E0B" }} />
+                            <span
+                              style={{
+                                fontFamily: fontFamily,
+                                fontSize: "11px",
+                                fontWeight: WEIGHT.medium,
+                                color: "#F59E0B",
+                              }}
+                            >
+                              {isRTL ? "الاطلاع لاحقاً" : "Check Later"}
+                            </span>
+                          </>
+                        ) : bc.isMissed ? (
+                          <>
+                            <X size={12} style={{ color: "#D10044" }} />
+                            <span
+                              style={{
+                                fontFamily: fontFamily,
+                                fontSize: "11px",
+                                fontWeight: WEIGHT.medium,
+                                color: "#D10044",
+                              }}
+                            >
+                              {t("notif.missed")} {bc.missedAt}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <Check size={12} style={{ color: theme.success }} />
+                            <span
+                              style={{
+                                fontFamily: fontFamily,
+                                fontSize: "11px",
+                                fontWeight: WEIGHT.medium,
+                                color: theme.textDisabled,
+                              }}
+                            >
+                              {isRTL ? `تم الاطلاع ${bc.acknowledgedAt}` : `Acknowledged ${bc.acknowledgedAt}`}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

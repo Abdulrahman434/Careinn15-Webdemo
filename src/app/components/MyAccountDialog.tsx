@@ -245,7 +245,7 @@ export function MyPreferencesDialog({
   const [nfcUid1, setNfcUid1] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [verifyPinVal, setVerifyPinVal] = useState("");
-  
+
   // Server Config state
   const [serverIp, setServerIp] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -264,7 +264,7 @@ export function MyPreferencesDialog({
       setPendingAction(null);
       setVerifyPinVal("");
       setIsAdminUnlocked(false);
-      
+
       const config = getApiConfig();
       setServerIp(config.serverIp);
       setApiKey(config.apiKey);
@@ -481,7 +481,7 @@ export function MyPreferencesDialog({
             <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1">
               <button
                 onClick={() => {
-                  setServerIp("https://admin.careinn.com/api");
+                  setServerIp("https://control.careinn.com/api");
                   setApiKey("efc9bcbf-6951-436a-8694-c13cc6f30913");
                 }}
                 className="px-3 py-1.5 rounded-full font-bold cursor-pointer transition-all active:scale-95 shrink-0"
@@ -581,14 +581,14 @@ export function MyPreferencesDialog({
             <span style={{ fontFamily: t.fontFamily, fontSize: "13px", fontWeight: 500, color: t.textMuted, marginBottom: "24px" }}>
               Last updated: {account?.setAt ? new Date(account.setAt).toLocaleDateString() : 'Unknown'}
             </span>
-            
+
             <div className="flex flex-col w-full gap-3">
               <button
-                onClick={() => { 
-                  setVerifyPinVal(""); 
+                onClick={() => {
+                  setVerifyPinVal("");
                   setError(false);
                   setPendingAction('reset-pin');
-                  setStep('verify-current-pin'); 
+                  setStep('verify-current-pin');
                 }}
                 className="flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97]"
                 style={{ height: "44px", borderRadius: t.radiusMd, backgroundColor: t.primarySubtle, border: `1px solid ${t.primary}44` }}
@@ -598,11 +598,11 @@ export function MyPreferencesDialog({
                 </span>
               </button>
               <button
-                onClick={() => { 
-                  setVerifyPinVal(""); 
+                onClick={() => {
+                  setVerifyPinVal("");
                   setError(false);
                   setPendingAction('reset-nfc');
-                  setStep('verify-current-pin'); 
+                  setStep('verify-current-pin');
                 }}
                 className="flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97]"
                 style={{ height: "44px", borderRadius: t.radiusMd, backgroundColor: t.tileInactiveBg, border: `1px solid ${t.borderDefault}` }}
@@ -655,10 +655,10 @@ export function MyPreferencesDialog({
                 Confirm your PIN
               </span>
             </div>
-            <PinKeypad 
-              pin={pin2} 
-              setPin={setPin2} 
-              error={error} 
+            <PinKeypad
+              pin={pin2}
+              setPin={setPin2}
+              error={error}
               onComplete={(p) => {
                 if (p === pin1) {
                   setStep('nfc-prompt');
@@ -672,7 +672,7 @@ export function MyPreferencesDialog({
                     setStep('setup-pin1');
                   }, 1500);
                 }
-              }} 
+              }}
             />
           </>
         );
@@ -779,10 +779,10 @@ export function MyPreferencesDialog({
               {pendingAction === 'admin-login' ? "Enter admin password" : "Enter your current PIN to continue"}
             </span>
 
-            <PinKeypad 
-              pin={verifyPinVal} 
-              setPin={setVerifyPinVal} 
-              error={error} 
+            <PinKeypad
+              pin={verifyPinVal}
+              setPin={setVerifyPinVal}
+              error={error}
               onComplete={async (p) => {
                 if (pendingAction === 'admin-login') {
                   if (p === '2580') {
@@ -818,7 +818,7 @@ export function MyPreferencesDialog({
                     setError(false);
                   }, 1000);
                 }
-              }} 
+              }}
             />
           </div>
         );
@@ -936,11 +936,11 @@ function BackgroundsPanel() {
   const { theme: t } = useTheme();
   const { t: tr } = useLocale();
 
-  const [groups,      setGroups]      = useState<WallpaperGroup[]>([]);
-  const [loading,     setLoading]     = useState(true);
+  const [groups, setGroups] = useState<WallpaperGroup[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedUrl, setSelectedUrl] = useState<string>(
     getSavedHeroImage() ?? "");
-  const [slideshow,   setSlideshow]   = useState(isSlideshowEnabled());
+  const [slideshow, setSlideshow] = useState(isSlideshowEnabled());
 
   const doFetch = async () => {
     setLoading(true);

@@ -8,7 +8,7 @@ export interface ApiConfigData {
 }
 
 const DEFAULTS: ApiConfigData = {
-  serverIp: 'https://admin.careinn.com/api',
+  serverIp: 'https://control.careinn.com/api',
   apiKey: 'efc9bcbf-6951-436a-8694-c13cc6f30913',
 };
 

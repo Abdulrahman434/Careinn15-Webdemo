@@ -564,6 +564,8 @@ export interface DeviceAlert {
   status:         "scheduled" | "completed" | "cancelled";
   lastSentAt:     string | null;
   groupIds:       number[];
+  createdAt?:     string;
+  updatedAt?:     string;
 }
 
 function getAlertLocale(
@@ -595,6 +597,8 @@ export async function fetchDeviceAlerts(): Promise<DeviceAlert[]> {
       status:          item.metadata?.status          ?? "scheduled",
       lastSentAt:      item.metadata?.last_sent_at    ?? null,
       groupIds:        item.metadata?.group_ids       ?? [],
+      createdAt:       item.created_at || item.createdAt || item.metadata?.created_at || item.metadata?.createdAt || item.scheduled_at || item.metadata?.scheduled_at || "",
+      updatedAt:       item.updated_at || item.updatedAt || item.modified_at || item.modifiedAt || item.metadata?.updated_at || item.metadata?.updatedAt || item.metadata?.modified_at || item.metadata?.modifiedAt || item.metadata?.last_sent_at || item.lastSentAt || "",
     }));
   } catch (e) {
     console.warn("[hospitalApi] fetchDeviceAlerts:", e);
