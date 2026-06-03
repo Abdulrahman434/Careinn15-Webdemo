@@ -472,42 +472,59 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
         )}
 
         {gameState === "summary" && (
-          <div className="w-full max-w-4xl flex flex-col items-center gap-8 py-8">
+          <div className="w-full max-w-4xl flex flex-col gap-8 py-8 min-h-0" style={{ minHeight: 0 }}>
             <div className="text-center">
               <Trophy size={80} color="#FFD700" className="mx-auto mb-4" />
               <h2 className="text-4xl font-black mb-2" style={{ color: theme.textHeading }}>{gt.quizComplete}</h2>
               <p className="text-2xl font-bold" style={{ color: theme.primary }}>{gt.youScored} {score} {gt.outOf} {questions.length}</p>
             </div>
 
-            <div className="w-full flex flex-col gap-6">
-              {questions.map((q, i) => (
-                <div key={i} className="bg-white p-8 rounded-3xl shadow-md border border-gray-100 flex flex-col gap-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <h4 className="text-xl font-bold" style={{ color: theme.textHeading }}>{q.question}</h4>
-                    {userAnswers[i] === q.correctAnswer ? (
-                      <CheckCircle2 color="#10B981" size={28} className="shrink-0" />
-                    ) : (
-                      <XCircle color="#EF4444" size={28} className="shrink-0" />
-                    )}
+            <div className="overflow-hidden rounded-[40px] border border-gray-100 bg-white shadow-xl flex flex-col" style={{ minHeight: 0, maxHeight: 'calc(100vh - 240px)' }}>
+              <div className="px-8 py-6 border-b border-gray-100">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm uppercase tracking-[0.2em] text-gray-500">{gt.summary}</p>
+                    <h3 className="text-2xl font-bold" style={{ color: theme.textHeading }}>{gt.youScored} {score}</h3>
                   </div>
-                  <div className="p-4 rounded-xl bg-gray-50 flex flex-col gap-2">
-                    <div className="flex gap-2">
-                      <span className="font-bold text-gray-500">{gt.correctAnswerLabel}</span>
-                      <span className="font-bold text-green-600">{q.options[q.correctAnswer]}</span>
-                    </div>
-                    {userAnswers[i] !== q.correctAnswer && (
-                      <div className="flex gap-2">
-                        <span className="font-bold text-gray-500">{gt.yourAnswerLabel}</span>
-                        <span className="font-bold text-red-500">{q.options[userAnswers[i]]}</span>
-                      </div>
-                    )}
-                    <p className="text-sm italic text-gray-600 mt-2">{q.explanation}</p>
+                  <div className="rounded-3xl bg-blue-50 px-4 py-3 text-blue-700 font-semibold">
+                    {questions.length} {gt.questions}
                   </div>
                 </div>
-              ))}
+              </div>
+
+              <div className="overflow-y-auto p-8 flex flex-col gap-6" style={{ minHeight: 0 }}>
+                {questions.map((q, i) => (
+                  <div key={i} className="bg-gray-50 p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <h4 className="text-lg font-bold" style={{ color: theme.textHeading }}>{q.question}</h4>
+                      <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                        {userAnswers[i] === q.correctAnswer ? (
+                          <CheckCircle2 color="#10B981" size={22} className="shrink-0" />
+                        ) : (
+                          <XCircle color="#EF4444" size={22} className="shrink-0" />
+                        )}
+                        <span>{userAnswers[i] === q.correctAnswer ? gt.correct : gt.incorrect}</span>
+                      </div>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-white border border-gray-100 flex flex-col gap-3">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm text-gray-500 font-semibold">{gt.correctAnswerLabel}</span>
+                        <span className="font-bold text-green-600">{q.options[q.correctAnswer]}</span>
+                      </div>
+                      {userAnswers[i] !== q.correctAnswer && (
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm text-gray-500 font-semibold">{gt.yourAnswerLabel}</span>
+                          <span className="font-bold text-red-500">{q.options[userAnswers[i]]}</span>
+                        </div>
+                      )}
+                      <p className="text-sm italic text-gray-600">{q.explanation}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="flex gap-4 w-full max-w-md">
+            <div className="flex flex-col gap-4 w-full max-w-md mx-auto sm:flex-row">
               <button onClick={() => selectCategory(selectedCategory!)} className="flex-1 py-5 bg-blue-600 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-all">{gt.replay}</button>
               <button onClick={reset} className="flex-1 py-5 bg-gray-100 font-bold rounded-2xl active:scale-95 transition-all" style={{ color: theme.textHeading }}>{gt.otherCat}</button>
             </div>
