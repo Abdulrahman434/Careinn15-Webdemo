@@ -14,6 +14,21 @@ const WORD_CATEGORIES = {
   Medical: ["NURSE", "DOCTOR", "XRAY", "BLOOD", "SCAN", "FEVER", "COUGH", "PILLS", "CHEST", "PULSE", "ORGAN", "CELLS", "VIRUS", "GERMS", "CLINIC"]
 };
 
+const WORD_CATEGORIES_AR = {
+  Animals: ["اسد", "نمر", "دب", "ذئب", "زرافة", "فيل", "حمار", "جمل", "ثعبان", "طاووس", "بطريق", "نحلة", "فراشة", "عصفور", "ببغاء"],
+  Food: ["تفاح", "بيتزا", "برغر", "باستا", "سوشي", "دونات", "ستيك", "سلطة", "خبز", "جبن", "موز", "برتقال", "دجاج", "تاكو", "كوكيز"],
+  Sports: ["كرة", "تنس", "ملاكمة", "غولف", "هوكي", "شطرنج", "ركبي", "كريكيت", "تزلج", "غوص", "جودو", "ابحار", "سباحة", "رماية", "دراجات"],
+  Countries: ["السعودية", "مصر", "اليمن", "الكويت", "فرنسا", "البرازيل", "كندا", "اليابان", "إيطاليا", "إسبانيا", "الصين", "الهند", "المكسيك", "اليونان", "تركيا"],
+  BodyParts: ["قلب", "كبد", "دماغ", "رئة", "عين", "يد", "قدم", "أنف", "أذن", "شعر", "جلد", "فم", "أسنان", "ركبة", "معدة"],
+  Colors: ["أحمر", "أزرق", "أخضر", "أصفر", "أسود", "أبيض", "زهري", "بنفسجي", "برتقالي", "بني", "رمادي", "ذهبي", "فضي", "فيروزي", "تركواز"],
+  Medical: ["طبيب", "ممرضة", "مستشفى", "دواء", "فيروس", "بكتيريا", "علاج", "حقنة", "جراحة", "عيادة", "رعاية", "دم", "مرض", "ألم", "نوم"]
+};
+
+const WORD_CATEGORIES_BY_LOCALE = {
+  en: WORD_CATEGORIES,
+  ar: WORD_CATEGORIES_AR
+} as const;
+
 type Difficulty = 'easy' | 'medium' | 'hard';
 
 const DIFFICULTY_CONFIG: Record<Difficulty, { size: number; count: number }> = {
@@ -47,13 +62,15 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
   const gridSize = DIFFICULTY_CONFIG[difficulty].size;
   const wordCount = DIFFICULTY_CONFIG[difficulty].count;
 
-  const clearGameState = useCallback((diff?: Difficulty) => {
+  const clearGameState = useCallback((diff?: Difficulty, localeKey?: string) => {
     const targetDiff = diff || difficulty;
-    localStorage.removeItem(`word-search-${targetDiff}-state`);
-  }, [difficulty]);
+    const localeSuffix = localeKey ?? (locale === 'ar' ? 'ar' : 'en');
+    localStorage.removeItem(`word-search-${targetDiff}-${localeSuffix}-state`);
+  }, [difficulty, locale]);
 
   const saveGameState = useCallback(() => {
     if (!isActive || isComplete) return;
+    const localeSuffix = locale === 'ar' ? 'ar' : 'en';
     const state = {
       difficulty,
       grid,
@@ -65,8 +82,8 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
       timer,
       timestamp: Date.now()
     };
-    localStorage.setItem(`word-search-${difficulty}-state`, JSON.stringify(state));
-  }, [difficulty, grid, foundWords, currentCategory, foundCellsMap, targetWords, timer, isActive, isComplete]);
+    localStorage.setItem(`word-search-${difficulty}-${localeSuffix}-state`, JSON.stringify(state));
+  }, [difficulty, grid, foundWords, currentCategory, foundCellsMap, targetWords, timer, isActive, isComplete, locale]);
 
   const initializeGame = useCallback((newDiff?: Difficulty, newCat?: keyof typeof WORD_CATEGORIES) => {
     const targetDiff = newDiff || difficulty;
@@ -74,7 +91,8 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
 
     // Check for saved game when switching difficulty
     if (newDiff) {
-      const saved = localStorage.getItem(`word-search-${targetDiff}-state`);
+      const localeSuffix = locale === 'ar' ? 'ar' : 'en';
+      const saved = localStorage.getItem(`word-search-${targetDiff}-${localeSuffix}-state`);
       if (saved) {
         setDifficulty(targetDiff);
         setCurrentCategory(targetCat);
@@ -86,7 +104,8 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
     }
 
     const config = DIFFICULTY_CONFIG[targetDiff];
-    const allWords = WORD_CATEGORIES[targetCat];
+    const localeKey = locale === 'ar' ? 'ar' : 'en';
+    const allWords = WORD_CATEGORIES_BY_LOCALE[localeKey][targetCat];
     const words = [...allWords].sort(() => Math.random() - 0.5).slice(0, config.count);
     const newGrid = Array(config.size).fill(null).map(() => Array(config.size).fill(""));
     const newWordLocations: Record<string, { r: number; c: number }[]> = {};
@@ -126,7 +145,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
     });
     
     // Fill empty cells
-    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const letters = localeKey === 'ar' ? "ابتثجحخدذرزسشصضطظعغفقكلمنهويئ" : "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     for (let r = 0; r < config.size; r++) {
       for (let c = 0; c < config.size; c++) {
         if (newGrid[r][c] === "") {
@@ -149,7 +168,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
     setCurrentCategory(targetCat);
     setShowResumeModal(false);
     setHasSavedGame(false);
-  }, [currentCategory, difficulty]);
+  }, [currentCategory, difficulty, locale]);
 
   const handleNewGame = useCallback(() => {
     clearGameState();
@@ -160,7 +179,8 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
 
   const loadGameState = useCallback(() => {
     try {
-      const saved = localStorage.getItem(`word-search-${difficulty}-state`);
+      const localeSuffix = locale === 'ar' ? 'ar' : 'en';
+      const saved = localStorage.getItem(`word-search-${difficulty}-${localeSuffix}-state`);
       if (saved) {
         const state = JSON.parse(saved);
         if (state && state.grid) {
@@ -186,7 +206,8 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
 
   // Initial mount: Check for saved game or auto-start
   useEffect(() => {
-    const saved = localStorage.getItem(`word-search-${difficulty}-state`);
+    const localeSuffix = locale === 'ar' ? 'ar' : 'en';
+    const saved = localStorage.getItem(`word-search-${difficulty}-${localeSuffix}-state`);
     if (saved) {
       setHasSavedGame(true);
       setShowResumeModal(true);
@@ -194,7 +215,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
       initializeGame();
     }
     setIsBootstrapped(true);
-  }, []);
+  }, [locale, initializeGame]);
 
   // Save game state whenever relevant values change
   useEffect(() => {
