@@ -61,17 +61,28 @@ const DICTIONARIES_AR: Record<Category, string[]> = {
   ]
 };
 
+function stripArabicDefiniteArticle(word: string): string {
+  const trimmed = word.trim();
+  if (trimmed.startsWith('ال') && trimmed.length > 2) {
+    return trimmed.slice(2);
+  }
+  return trimmed;
+}
+
 // Helper to get the last meaningful Arabic letter (skipping diacritics/marks)
 function getLastArabicLetter(word: string): string {
-  // Strip trailing spaces
   const trimmed = word.trim();
-  // Return last character
   return trimmed.charAt(trimmed.length - 1);
 }
 
 function getFirstArabicLetter(word: string): string {
-  const trimmed = word.trim();
-  return trimmed.charAt(0);
+  return stripArabicDefiniteArticle(word).charAt(0);
+}
+
+function normalizeWord(word: string, isArabic: boolean): string {
+  const trimmed = word.trim().toLowerCase();
+  if (!isArabic) return trimmed;
+  return stripArabicDefiniteArticle(trimmed);
 }
 
 export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
@@ -248,6 +259,7 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
     const lastWord = chain[chain.length - 1];
     const lastLetter = isArabic ? getLastArabicLetter(lastWord) : lastWord.charAt(lastWord.length - 1).toLowerCase();
     const firstLetter = isArabic ? getFirstArabicLetter(word) : word.charAt(0).toLowerCase();
+    const normalizedWord = normalizeWord(word, isArabic);
 
     setErrorFeedback(null);
     let error = null;
@@ -258,11 +270,15 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
       error = gt.onlyLetters;
     } else if (firstLetter !== lastLetter) {
       error = gt.mustStartWith(isArabic ? lastLetter : lastLetter.toUpperCase());
-    } else if (chain.some(c => c.toLowerCase() === word)) {
+    } else if (chain.some(c => normalizeWord(c, isArabic) === normalizedWord)) {
       error = gt.alreadyUsed;
     } else {
       const dictionary = category ? DICTIONARIES[category] : [];
-      if (!dictionary.some(d => d.toLowerCase() === word)) {
+      const matchesDictionary = dictionary.some(d => {
+        const normalizedDictWord = isArabic ? normalizeWord(d, true) : d.toLowerCase();
+        return normalizedDictWord === normalizedWord || d.toLowerCase() === word;
+      });
+      if (!matchesDictionary) {
         const catLabel = category === 'animals' ? gt.catAnimalsW : category === 'countries' ? gt.catCountries : gt.catFoods;
         error = gt.notInList(catLabel);
       }
