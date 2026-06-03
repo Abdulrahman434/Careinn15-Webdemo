@@ -70,10 +70,13 @@ function stripArabicDefiniteArticle(word: string): string {
   return trimmed;
 }
 
-// Helper to get the last meaningful Arabic letter (skipping diacritics/marks)
+// Helper to get the last meaningful Arabic letter (strip final ة before selecting)
 function getLastArabicLetter(word: string): string {
-  const trimmed = word.trim();
-  return trimmed.charAt(trimmed.length - 1);
+  let normalized = stripArabicDefiniteArticle(word.trim());
+  while (normalized.endsWith('ة')) {
+    normalized = normalized.slice(0, -1);
+  }
+  return normalized.length > 0 ? normalized.charAt(normalized.length - 1) : '';
 }
 
 function getFirstArabicLetter(word: string): string {
@@ -322,38 +325,83 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
 
       <div className="flex-1 flex flex-col items-center justify-center overflow-auto p-8 relative">
         {gameState === 'menu' && (
-          <div className="w-full max-w-2xl flex flex-col items-center gap-8 bg-white p-10 rounded-3xl shadow-xl">
-            <div className="text-center flex flex-col items-center gap-3">
-              <h2 className="text-5xl font-black" style={{ color: theme.primary }}>{gt.wordChain}</h2>
-              <p className="text-lg text-gray-500 font-medium">{gt.wordChainDesc}</p>
-              
-              {/* Best Chain Display Inside the Card */}
-              <div className="flex flex-col items-center gap-1 px-8 py-3 rounded-2xl border-2 border-dashed border-blue-100 bg-blue-50/50">
-                <span className="text-xs font-black text-blue-400 uppercase tracking-widest">{gt.bestChain}</span>
-                <div className="flex items-center gap-2 text-blue-600">
-                  <Trophy size={18} />
-                  <span className="text-xl font-black">{gt.wordsCount(highScore)}</span>
+          <div className="w-full max-w-2xl bg-white p-10 rounded-3xl shadow-xl">
+            {isArabic ? (
+              <div className="space-y-8 text-right">
+                <div className="space-y-3">
+                  <h2 className="text-5xl font-black" style={{ color: theme.primary }}>{gt.wordChain}</h2>
+                  <h3 className="text-2xl font-semibold text-gray-800">{gt.wordChainHowToPlay}</h3>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="text-lg font-bold text-gray-800">{gt.wordChainInstructionsTitle}</div>
+                  <ol className="space-y-3 list-decimal list-inside text-gray-700 text-base leading-8">
+                    <li>{gt.wordChainRule1}</li>
+                    <li>{gt.wordChainRule2}</li>
+                    <li>{gt.wordChainRule3}</li>
+                    <li>{gt.wordChainRule4}</li>
+                  </ol>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="text-lg font-bold text-gray-800">{gt.gameOptionsTitle}</div>
+                  <div className="grid grid-cols-3 gap-3">
+                    {(['animals', 'countries', 'foods'] as Category[]).map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => startGame(cat)}
+                        className="py-4 rounded-2xl font-black text-white transition-all shadow-md active:scale-95 text-base"
+                        style={{ backgroundColor: theme.primary }}
+                      >
+                        {cat === 'animals' ? gt.catAnimalsW : cat === 'countries' ? gt.catCountries : gt.catFoods}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
+            ) : (
+              <div className="space-y-8 text-left">
+                <div className="space-y-3">
+                  <h2 className="text-5xl font-black" style={{ color: theme.primary }}>{gt.wordChain}</h2>
+                  <h3 className="text-2xl font-semibold text-gray-800">{gt.wordChainDesc}</h3>
+                </div>
 
-              <div className="mt-2 px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider" style={{ backgroundColor: theme.primarySubtle, color: theme.primary }}>{gt.twoPlayersLocal}</div>
-            </div>
+                <div className="space-y-4">
+                  <div className="text-lg font-bold text-gray-800">{gt.wordChainInstructionsTitle}</div>
+                  <ol className="space-y-3 list-decimal list-inside text-gray-700 text-base leading-8">
+                    <li>{gt.wordChainRule1}</li>
+                    <li>{gt.wordChainRule2}</li>
+                    <li>{gt.wordChainRule3}</li>
+                  </ol>
+                </div>
 
-            <div className="w-full animate-in fade-in slide-in-from-bottom-4">
-              <h3 className="text-xl font-bold mb-4 text-gray-800 text-center">{gt.selectCategory}</h3>
-              <div className="grid grid-cols-3 gap-4">
-                {(['animals', 'countries', 'foods'] as Category[]).map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => startGame(cat)}
-                    className="p-4 rounded-xl font-bold capitalize text-white active:scale-95 transition-all shadow-md"
-                    style={{ backgroundColor: theme.primary }}
-                  >
-                    {cat === 'animals' ? gt.catAnimalsW : cat === 'countries' ? gt.catCountries : gt.catFoods}
-                  </button>
-                ))}
+                <div className="flex flex-col items-center gap-1 px-8 py-3 rounded-2xl border-2 border-dashed border-blue-100 bg-blue-50/50">
+                  <span className="text-xs font-black text-blue-400 uppercase tracking-widest">{gt.bestChain}</span>
+                  <div className="flex items-center gap-2 text-blue-600">
+                    <Trophy size={18} />
+                    <span className="text-xl font-black">{gt.wordsCount(highScore)}</span>
+                  </div>
+                </div>
+
+                <div className="px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider" style={{ backgroundColor: theme.primarySubtle, color: theme.primary }}>{gt.twoPlayersLocal}</div>
+
+                <div className="w-full animate-in fade-in slide-in-from-bottom-4">
+                  <h3 className="text-xl font-bold mb-4 text-gray-800 text-center">{gt.selectCategory}</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    {(['animals', 'countries', 'foods'] as Category[]).map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => startGame(cat)}
+                        className="p-4 rounded-xl font-bold capitalize text-white active:scale-95 transition-all shadow-md"
+                        style={{ backgroundColor: theme.primary }}
+                      >
+                        {cat === 'animals' ? gt.catAnimalsW : cat === 'countries' ? gt.catCountries : gt.catFoods}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -494,7 +542,7 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
                 <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-50 border border-blue-100">
                   <span className="text-xs font-black text-blue-400 uppercase tracking-widest">{gt.startWith}:</span>
                   <span className="text-2xl font-black text-blue-600 underline underline-offset-4">
-                    {chain[chain.length - 1][chain[chain.length - 1].length - 1].toUpperCase()}
+                    {isArabic ? getLastArabicLetter(chain[chain.length - 1]) : chain[chain.length - 1][chain[chain.length - 1].length - 1].toUpperCase()}
                   </span>
                 </div>
               </div>
@@ -502,7 +550,7 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
               <form onSubmit={handleSubmit} className="flex gap-4">
                 <div className="flex-1 relative group">
                   <div className="absolute left-6 top-1/2 -translate-y-1/2 text-4xl font-black pointer-events-none select-none opacity-10 group-focus-within:opacity-20 transition-opacity" style={{ color: theme.primary }}>
-                    {chain[chain.length - 1][chain[chain.length - 1].length - 1].toUpperCase()}
+                    {isArabic ? getLastArabicLetter(chain[chain.length - 1]) : chain[chain.length - 1][chain[chain.length - 1].length - 1].toUpperCase()}
                   </div>
                   <input
                     ref={inputRef}
