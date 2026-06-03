@@ -3,6 +3,7 @@ import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, Shuffle, ArrowLeft } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
+import GameLanguageToggle from "./GameLanguageToggle";
 
 interface Tile {
   id: number;
@@ -21,7 +22,9 @@ const DIFFICULTY_CONFIG: Record<Difficulty, number> = {
 export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
   const { fontFamily, isRTL, dir, locale } = useLocale();
-  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
+  const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-sliding-puzzle') ?? (locale === 'ar' ? 'ar' : 'en'));
+  const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
+
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [tiles, setTiles] = useState<Tile[]>([]);
   const [moves, setMoves] = useState(0);

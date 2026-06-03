@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, ArrowLeft, Search } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
 
@@ -42,7 +43,8 @@ const HIGHLIGHT_COLORS = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8",
 export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
   const { fontFamily, isRTL, dir, locale } = useLocale();
-  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
+  const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-word-search') ?? (locale === 'ar' ? 'ar' : 'en'));
+  const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [grid, setGrid] = useState<string[][]>([]);
   const [foundWords, setFoundWords] = useState<string[]>([]);
@@ -64,13 +66,13 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
 
   const clearGameState = useCallback((diff?: Difficulty, localeKey?: string) => {
     const targetDiff = diff || difficulty;
-    const localeSuffix = localeKey ?? (locale === 'ar' ? 'ar' : 'en');
+    const localeSuffix = localeKey ?? (gameLang === 'ar' ? 'ar' : 'en');
     localStorage.removeItem(`word-search-${targetDiff}-${localeSuffix}-state`);
-  }, [difficulty, locale]);
+  }, [difficulty, gameLang]);
 
   const saveGameState = useCallback(() => {
     if (!isActive || isComplete) return;
-    const localeSuffix = locale === 'ar' ? 'ar' : 'en';
+    const localeSuffix = gameLang === 'ar' ? 'ar' : 'en';
     const state = {
       difficulty,
       grid,
@@ -104,7 +106,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
     }
 
     const config = DIFFICULTY_CONFIG[targetDiff];
-    const localeKey = locale === 'ar' ? 'ar' : 'en';
+    const localeKey = gameLang === 'ar' ? 'ar' : 'en';
     const allWords = WORD_CATEGORIES_BY_LOCALE[localeKey][targetCat];
     const words = [...allWords].sort(() => Math.random() - 0.5).slice(0, config.count);
     const newGrid = Array(config.size).fill(null).map(() => Array(config.size).fill(""));
@@ -168,7 +170,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
     setCurrentCategory(targetCat);
     setShowResumeModal(false);
     setHasSavedGame(false);
-  }, [currentCategory, difficulty, locale]);
+  }, [currentCategory, difficulty, gameLang]);
 
   const handleNewGame = useCallback(() => {
     clearGameState();
@@ -179,7 +181,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
 
   const loadGameState = useCallback(() => {
     try {
-      const localeSuffix = locale === 'ar' ? 'ar' : 'en';
+      const localeSuffix = gameLang === 'ar' ? 'ar' : 'en';
       const saved = localStorage.getItem(`word-search-${difficulty}-${localeSuffix}-state`);
       if (saved) {
         const state = JSON.parse(saved);
@@ -206,7 +208,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
 
   // Initial mount: Check for saved game or auto-start
   useEffect(() => {
-    const localeSuffix = locale === 'ar' ? 'ar' : 'en';
+    const localeSuffix = gameLang === 'ar' ? 'ar' : 'en';
     const saved = localStorage.getItem(`word-search-${difficulty}-${localeSuffix}-state`);
     if (saved) {
       setHasSavedGame(true);
@@ -215,7 +217,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
       initializeGame();
     }
     setIsBootstrapped(true);
-  }, [locale, initializeGame]);
+  }, [gameLang, initializeGame]);
 
   // Save game state whenever relevant values change
   useEffect(() => {
@@ -341,6 +343,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
             <RotateCcw size={20} color={theme.textInverse} />
             <span style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold, color: theme.textInverse }}>{gt.reset}</span>
           </button>
+          <GameLanguageToggle gameKey="word-search" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
           <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
             <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
           </button>

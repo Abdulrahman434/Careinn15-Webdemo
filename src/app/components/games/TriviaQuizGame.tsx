@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, ArrowLeft, CheckCircle2, XCircle, ChevronRight, HelpCircle, RotateCcw } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
 
@@ -289,6 +290,7 @@ const TRIVIA_DATA_AR: Record<Category, Question[]> = {
 export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
   const { fontFamily, locale, isRTL, dir } = useLocale();
+  const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-trivia-quiz') ?? (locale === 'ar' ? 'ar' : 'en'));
   const [gameState, setGameState] = useState<"category" | "playing" | "summary">("category");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
@@ -296,8 +298,8 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
   const [score, setScore] = useState(0);
   const [roundKey, setRoundKey] = useState(0);
 
-  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
-  const activeData = locale === 'ar' ? TRIVIA_DATA_AR : TRIVIA_DATA;
+  const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
+  const activeData = gameLang === 'ar' ? TRIVIA_DATA_AR : TRIVIA_DATA;
 
   const saveGameState = useCallback(() => {
     if (gameState !== "playing" || !selectedCategory) return;
@@ -406,6 +408,7 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
         </div>
 
         <div className="flex items-center gap-4">
+          <GameLanguageToggle gameKey="trivia-quiz" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
           {gameState === "playing" && (
             <div className="px-4 py-2 bg-blue-50 rounded-full">
               <span className="font-bold text-blue-600">{gt.question} {currentQuestionIdx + 1}/{questions.length}</span>

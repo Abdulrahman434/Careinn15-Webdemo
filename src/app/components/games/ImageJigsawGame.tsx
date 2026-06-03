@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, ArrowLeft, Camera, Image as ImageIcon } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
 
@@ -33,7 +34,8 @@ const IMAGES: Record<Category, string[]> = {
 export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
   const { fontFamily, isRTL, dir, locale } = useLocale();
-  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
+  const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-jigsaw-puzzle') ?? (locale === 'ar' ? 'ar' : 'en'));
+  const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
   const [gameState, setGameState] = useState<"menu" | "playing" | "complete">("menu");
   const [difficulty, setDifficulty] = useState<Difficulty>(3);
   const [category, setCategory] = useState<Category>('Nature');
@@ -271,6 +273,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
               </button>
             </>
           )}
+          <GameLanguageToggle gameKey="jigsaw-puzzle" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
           <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
             <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
           </button>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, ArrowLeft } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
 
@@ -30,7 +31,8 @@ const DIFFICULTY_CONFIG: Record<Difficulty, { grid: number; pairs: number }> = {
 export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
   const { t, fontFamily, isRTL, dir, locale } = useLocale();
-  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
+  const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-memory-match') ?? (locale === 'ar' ? 'ar' : 'en'));
+  const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [currentTheme, setCurrentTheme] = useState<Theme>('animals');
   const [cards, setCards] = useState<Card[]>([]);
@@ -366,6 +368,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
                 {gt.newGame}
               </span>
             </button>
+            <GameLanguageToggle gameKey="memory-match" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
             <button
               onClick={onClose}
               className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"

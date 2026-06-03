@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, User, Trophy, RotateCcw } from 'lucide-react';
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from '../ThemeContext';
 import { useLocale } from '../i18n';
+import GameLanguageToggle from './GameLanguageToggle';
 import { GAME_TRANSLATIONS } from './gameTranslations';
 
 type Category = 'animals' | 'countries' | 'foods';
@@ -88,7 +89,8 @@ function normalizeWord(word: string, isArabic: boolean): string {
 export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
   const { isRTL, dir, locale } = useLocale();
-  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
+  const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-word-chain') ?? (locale === 'ar' ? 'ar' : 'en'));
+  const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
   const [gameState, setGameState] = useState<'menu' | 'playing' | 'gameover'>('menu');
   const [category, setCategory] = useState<Category | null>(null);
   const [chain, setChain] = useState<string[]>([]);
@@ -176,7 +178,7 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
     }
   }, [gameState, category, chain, currentPlayer, timeLeft, scores, turnsPlayed]);
 
-  const isArabic = locale === 'ar';
+  const isArabic = gameLang === 'ar';
   const DICTIONARIES = isArabic ? DICTIONARIES_AR : DICTIONARIES_EN;
 
   const startGame = (selectedCategory: Category) => {
@@ -308,6 +310,7 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
         </div>
 
         <div className="flex items-center gap-4">
+          <GameLanguageToggle gameKey="word-chain" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
           <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
             <div style={{ width: "24px", height: "24px", position: "relative" }}>
               <div style={{ position: "absolute", top: "50%", left: "50%", width: "20px", height: "2px", backgroundColor: theme.textHeading, transform: "translate(-50%, -50%) rotate(45deg)", borderRadius: "2px" }} />

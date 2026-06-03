@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, Timer, ArrowLeft } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
 
@@ -23,7 +24,8 @@ const COLORS: ColorOption[] = [
 export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
   const { fontFamily, isRTL, dir, locale } = useLocale();
-  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
+  const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-color-match') ?? (locale === 'ar' ? 'ar' : 'en'));
+  const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
   const LOCALIZED_COLORS = [
     { color: "#FF6B6B", name: gt.colorRed },
     { color: "#4ECDC4", name: gt.colorCyan },
@@ -181,6 +183,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
         }}
       >
         <div className="flex items-center gap-4">
+          <GameLanguageToggle gameKey="color-match" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
           <button
             onClick={onBackToGames}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"

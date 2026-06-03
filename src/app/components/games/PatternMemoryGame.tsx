@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, ArrowLeft } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
 
@@ -11,7 +12,8 @@ type GameState = "idle" | "showing" | "playing" | "correct" | "wrong" | "gameove
 export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
   const { fontFamily, isRTL, dir, locale } = useLocale();
-  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
+  const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-pattern-memory') ?? (locale === 'ar' ? 'ar' : 'en'));
+  const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
   const [pattern, setPattern] = useState<number[]>([]);
   const [playerPattern, setPlayerPattern] = useState<number[]>([]);
   const [gameState, setGameState] = useState<GameState>("idle");
@@ -196,6 +198,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
         }}
       >
         <div className="flex items-center gap-4">
+          <GameLanguageToggle gameKey="pattern-memory" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
           <button
             onClick={onBackToGames}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"

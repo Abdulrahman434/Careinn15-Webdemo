@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, Circle, X, ArrowLeft } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
 
@@ -24,7 +25,8 @@ function calculateWinner(squares: Player[]): Player {
 export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
   const { fontFamily, isRTL, dir, locale } = useLocale();
-  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
+  const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-tictactoe') ?? (locale === 'ar' ? 'ar' : 'en'));
+  const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
   const [squares, setSquares] = useState<Player[]>(Array(9).fill(null));
   const [xIsNext, setXIsNext] = useState(true);
   const [gameMode, setGameMode] = useState<GameMode>("friend");
@@ -225,6 +227,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
           </h1>
         </div>
         <div className="flex items-center gap-4">
+          <GameLanguageToggle gameKey="tictactoe" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
           <button
             onClick={resetGame}
             className="flex items-center gap-2 px-6 py-3 cursor-pointer active:scale-95 transition-transform"

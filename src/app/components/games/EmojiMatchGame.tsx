@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, Timer, ArrowLeft } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
 
@@ -23,7 +24,8 @@ const CATEGORIES: Record<Category, string[]> = {
 export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
   const { fontFamily, isRTL, dir, locale } = useLocale();
-  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
+  const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-emoji-match') ?? (locale === 'ar' ? 'ar' : 'en'));
+  const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
   const [category, setCategory] = useState<Category>('faces');
   const [leftEmojis, setLeftEmojis] = useState<EmojiPair[]>([]);
   const [rightEmojis, setRightEmojis] = useState<EmojiPair[]>([]);
@@ -297,7 +299,8 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
           boxShadow: SHADOW.lg,
         }}
       >
-        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4">
+            <GameLanguageToggle gameKey="emoji-match" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
           <button
             onClick={onBackToGames}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"

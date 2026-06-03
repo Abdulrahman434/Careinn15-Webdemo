@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, ArrowLeft, Play } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
 
@@ -19,7 +20,8 @@ const SPEED_CONFIG: Record<Speed, number> = {
 export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
   const { fontFamily, isRTL, dir, locale } = useLocale();
-  const gt = GAME_TRANSLATIONS[locale === 'ar' ? 'ar' : 'en'];
+  const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-simon-says') ?? (locale === 'ar' ? 'ar' : 'en'));
+  const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
   const [sequence, setSequence] = useState<number[]>([]);
   const [playerSequence, setPlayerSequence] = useState<number[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -201,7 +203,8 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
           boxShadow: SHADOW.lg,
         }}
       >
-        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4">
+            <GameLanguageToggle gameKey="simon-says" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
           <button
             onClick={onBackToGames}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
