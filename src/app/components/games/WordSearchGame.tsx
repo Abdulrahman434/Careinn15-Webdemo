@@ -34,6 +34,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
   const [selectedCells, setSelectedCells] = useState<{ r: number; c: number }[]>([]);
   const [currentCategory, setCurrentCategory] = useState<keyof typeof WORD_CATEGORIES>("Animals");
   const [foundCellsMap, setFoundCellsMap] = useState<Record<string, { r: number; c: number }[]>>({});
+  const [wordLocations, setWordLocations] = useState<Record<string, { r: number; c: number }[]>>({});
   const [isComplete, setIsComplete] = useState(false);
   const [timer, setTimer] = useState(0);
   const [isActive, setIsActive] = useState(false);
@@ -59,6 +60,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
       foundWords,
       currentCategory,
       foundCellsMap,
+      wordLocations,
       targetWords,
       timer,
       timestamp: Date.now()
@@ -87,6 +89,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
     const allWords = WORD_CATEGORIES[targetCat];
     const words = [...allWords].sort(() => Math.random() - 0.5).slice(0, config.count);
     const newGrid = Array(config.size).fill(null).map(() => Array(config.size).fill(""));
+    const newWordLocations: Record<string, { r: number; c: number }[]> = {};
     
     words.forEach(word => {
       let placed = false;
@@ -110,10 +113,12 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
         }
         
         if (canPlace) {
+          newWordLocations[word] = [];
           for (let i = 0; i < word.length; i++) {
             const r = direction === "V" ? row + i : direction === "D" ? row + i : row;
             const c = direction === "H" ? col + i : direction === "D" ? col + i : col;
             newGrid[r][c] = word[i];
+            newWordLocations[word].push({ r, c });
           }
           placed = true;
         }
@@ -135,6 +140,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
     setFoundWords([]);
     setSelectedCells([]);
     setFoundCellsMap({});
+    setWordLocations(newWordLocations);
     setIsComplete(false);
     setTimer(0);
     setIsActive(false);
@@ -245,18 +251,15 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
 
   const showHint = () => {
     const config = DIFFICULTY_CONFIG[difficulty];
-    const allWords = WORD_CATEGORIES[currentCategory];
-    const wordsToFind = [...allWords].sort(() => Math.random() - 0.5).slice(0, config.count);
-    const wordToHint = wordsToFind.find(w => !foundWords.includes(w));
-    
-    if (wordToHint) {
-      // Find cells for this word
-      // Since we don't store original positions, we have to search the grid
-      // This is complex, but I'll skip storing positions for now and just show a random letter of a word
-      // Alternatively, I'll update initializeGame to store positions.
-      // For simplicity here, I'll just find ONE letter.
-      alert(`${gt.hint}: "${wordToHint}"`);
-    }
+    const remaining = targetWords.filter(w => !foundWords.includes(w));
+    if (remaining.length === 0) return;
+
+    const wordToHint = remaining[Math.floor(Math.random() * remaining.length)];
+    const locations = wordLocations[wordToHint];
+    if (!locations || locations.length === 0) return;
+
+    setHintCells(locations);
+    setTimeout(() => setHintCells(null), 3000);
   };
 
   const formatTime = (seconds: number) => {
@@ -310,6 +313,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
           <div className="grid gap-1 bg-white p-4 rounded-xl shadow-inner" style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }}>
             {grid.map((row, r) => row.map((char, c) => {
               const isSelected = selectedCells.some(cell => cell.r === r && cell.c === c);
+              const isHinted = hintCells?.some(cell => cell.r === r && cell.c === c);
               let foundColor = null;
               foundWords.forEach((word, idx) => {
                 if (foundCellsMap[word]?.some(cell => cell.r === r && cell.c === c)) {
@@ -326,8 +330,8 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
                     width: difficulty === 'hard' ? '24px' : difficulty === 'medium' ? '32px' : '48px',
                     height: difficulty === 'hard' ? '24px' : difficulty === 'medium' ? '32px' : '48px',
                     fontSize: difficulty === 'hard' ? '12px' : difficulty === 'medium' ? '16px' : '20px',
-                    backgroundColor: isSelected ? theme.primary : foundColor || "transparent",
-                    color: isSelected ? theme.textInverse : foundColor ? "#2D3436" : theme.textNormal,
+                    backgroundColor: isSelected ? theme.primary : foundColor || (isHinted ? '#fde68a' : "transparent"),
+                    color: isSelected ? theme.textInverse : foundColor ? "#2D3436" : isHinted ? '#92400e' : theme.textNormal,
                     border: "1px solid rgba(0,0,0,0.05)",
                     transform: isSelected ? "scale(1.1)" : "scale(1)",
                     zIndex: isSelected ? 1 : 0

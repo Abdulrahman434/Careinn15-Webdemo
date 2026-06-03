@@ -98,11 +98,9 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
 
   useEffect(() => {
     const savedScore = localStorage.getItem('wordchain-highscore');
-    console.log('=== LOAD GAME STATE ===', 'wordchain-highscore', savedScore);
     if (savedScore) setHighScore(parseInt(savedScore, 10));
 
     const savedState = localStorage.getItem('wordchain-game-state');
-    console.log('=== LOAD GAME STATE ===', 'wordchain-game-state', savedState);
     if (savedState) {
       setHasSavedGame(true);
       setShowResumeModal(true);
@@ -112,23 +110,29 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
   const saveGameState = () => {
     if (gameState !== 'playing') return;
     const state = {
-      category, chain, currentPlayer, timeLeft,
+      category,
+      chain,
+      currentPlayer,
+      scores,
+      turnsPlayed,
+      timeLeft,
+      inputValue,
       timestamp: Date.now()
     };
     localStorage.setItem('wordchain-game-state', JSON.stringify(state));
-    console.log('=== SAVE ===', state);
-    console.log('=== SAVE GAME STATE ===', 'wordchain-game-state', JSON.stringify(state));
   };
 
   const loadGameState = () => {
     const saved = localStorage.getItem('wordchain-game-state');
-    console.log('=== LOAD GAME STATE ===', 'wordchain-game-state', saved);
     if (saved) {
       const state = JSON.parse(saved);
       setCategory(state.category);
-      setChain(state.chain);
-      setCurrentPlayer(state.currentPlayer);
-      setTimeLeft(state.timeLeft);
+      setChain(state.chain || []);
+      setCurrentPlayer(state.currentPlayer || 1);
+      setScores(state.scores || { 1: 0, 2: 0 });
+      setTurnsPlayed(state.turnsPlayed || 0);
+      setTimeLeft(state.timeLeft || 10);
+      setInputValue(state.inputValue || '');
       setGameState('playing');
       setShowResumeModal(false);
     }
@@ -143,6 +147,16 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
     setHasSavedGame(false);
     setShowResumeModal(false);
     setGameState('menu');
+    setCategory(null);
+    setChain([]);
+    setCurrentPlayer(1);
+    setScores({ 1: 0, 2: 0 });
+    setTurnsPlayed(0);
+    setTimeLeft(10);
+    setInputValue('');
+    setWinner(null);
+    setErrorFeedback(null);
+    setLastAction(null);
   };
 
   useEffect(() => {

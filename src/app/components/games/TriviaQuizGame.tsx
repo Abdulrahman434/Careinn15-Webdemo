@@ -310,8 +310,6 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
       timestamp: Date.now()
     };
     localStorage.setItem('trivia-quiz-game-state', JSON.stringify(state));
-    console.log('=== SAVE ===', state);
-    console.log('=== SAVE GAME STATE ===', 'trivia-quiz-game-state', JSON.stringify(state));
   }, [gameState, selectedCategory, currentQuestionIdx, userAnswers, score, roundKey]);
 
   const loadGameState = () => {
@@ -342,7 +340,6 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
 
   useEffect(() => {
     const saved = localStorage.getItem('trivia-quiz-game-state');
-    console.log('=== LOAD GAME STATE ===', 'trivia-quiz-game-state', saved);
     if (saved) {
       setHasSavedGame(true);
       setShowResumeModal(true);
