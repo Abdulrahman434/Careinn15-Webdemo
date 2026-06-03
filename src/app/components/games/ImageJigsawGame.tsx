@@ -374,6 +374,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
               <div
                 className="grid gap-1 bg-gray-200 p-1 rounded-xl shadow-2xl overflow-hidden"
                 style={{
+                  direction: "ltr",
                   gridTemplateColumns: `repeat(${difficulty}, 1fr)`,
                   width: "min(80vw, 600px)",
                   aspectRatio: "1/1"
