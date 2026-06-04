@@ -14,6 +14,7 @@ export function AutoCarousel({
   objectFit = "cover",
   intervalSeconds = 5,
   style = {},
+  onImageClick,
 }: {
   images: string[];
   opacity?: number;
@@ -22,6 +23,7 @@ export function AutoCarousel({
   intervalSeconds?: number;
   /** Extra inline styles on the container (e.g. zIndex) */
   style?: React.CSSProperties;
+  onImageClick?: (url: string) => void;
 }) {
   const [index, setIndex] = useState(0);
   const validImages = images?.filter(Boolean) ?? [];
@@ -51,10 +53,11 @@ export function AutoCarousel({
           objectFit,
           objectPosition,
           opacity,
-          pointerEvents: "none",
-          userSelect: "none",
+          pointerEvents: onImageClick ? "auto" : "none",
+          cursor: onImageClick ? "pointer" : "default",
           ...style,
         }}
+        onClick={onImageClick ? () => onImageClick(validImages[0]) : undefined}
       />
     );
   }
@@ -69,10 +72,11 @@ export function AutoCarousel({
         width: "100%",
         height: "100%",
         overflow: "hidden",
-        pointerEvents: "none",
-        userSelect: "none",
+        pointerEvents: onImageClick ? "auto" : "none",
+        cursor: onImageClick ? "pointer" : "default",
         ...style,
       }}
+      onClick={onImageClick ? () => onImageClick(validImages[index]) : undefined}
     >
       {validImages.map((img, i) => (
         <ApiImage

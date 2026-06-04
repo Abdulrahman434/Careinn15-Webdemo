@@ -1393,6 +1393,7 @@ function BedsideScreen() {
                         onOpenTour={() => setShowTour(true)}
                         fillImage
                         showAboutUs={v.show_about_us}
+                        onImageTap={(url) => setCtaMediaConfig({ type: "image", url, title: t("general.aboutUs") })}
                       />
                     </div>
                     <div className="flex-1 min-w-0 min-h-0 flex flex-col">
@@ -1434,6 +1435,7 @@ function BedsideScreen() {
                     onOpenAboutUs={() => setShowAboutUs(true)}
                     onOpenTour={() => setShowTour(true)}
                     showAboutUs={v.show_about_us}
+                    onImageTap={(url) => setCtaMediaConfig({ type: "image", url, title: t("general.aboutUs") })}
                   />
                   <div className="flex-1 min-h-0 flex flex-col">
                     {(!isGuest || careMeUnlocked) ? (
@@ -1479,7 +1481,11 @@ function BedsideScreen() {
               <>
                 {/* Left Column — PatientGreeting + CareMe */}
                 <div className="flex flex-col gap-5 shrink-0 min-h-0 h-full" style={{ width: "400px" }}>
-                  <PatientGreeting onOpenAboutUs={() => setShowAboutUs(true)} onOpenTour={() => setShowTour(true)} />
+                  <PatientGreeting
+                    onOpenAboutUs={() => setShowAboutUs(true)}
+                    onOpenTour={() => setShowTour(true)}
+                    onImageTap={(url) => setCtaMediaConfig({ type: "image", url, title: t("general.aboutUs") })}
+                  />
                   <div className="flex-1 min-h-0 flex flex-col">
                     {(!isGuest || careMeUnlocked) ? (
                       <CareMe onExpand={() => setShowCareMeExpanded(true)} />
