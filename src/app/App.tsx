@@ -467,7 +467,7 @@ function BedsideScreen() {
     openCategory || showSurvey || showAboutUs || showSettings ||
     showNotifications || showTour || showConfigurator ||
     showCareMeExpanded || showCall || showFoodOrder || activeBroadcast ||
-    showTasbih || showIptv || showCareMePinDialog || lockMenuApp ||
+    showIptv || showCareMePinDialog || lockMenuApp ||
     ctaPdfConfig || ctaMediaConfig || activeGame || activeTool
   );
   const anyOverlayOpen = anyOtherOverlayOpen || showTasbih;
