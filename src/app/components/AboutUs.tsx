@@ -4,6 +4,7 @@ import { useTheme, TYPE_SCALE, WEIGHT } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { useCmsHospital, useCmsAboutUs } from '../../lib/useCmsContent';
+import { ApiImage } from "./ApiImage";
 import logoImg from "../../assets/496960c397c9050764df477822163c6970cb738d.png";
 import dnaImg from "../../assets/7d25bcb72cca7f6efa0a0c3b850e8605d6d73401.png";
 import numbersImg from "../../assets/f59e36074e912058a9f8c7099b196139f6e61a09.png";
@@ -28,6 +29,11 @@ import careinnDnaAr from "../../assets/careinn-about-dna-ar.png";
 import careinnParticipations from "../../assets/careinn-participations.png";
 import careinnCertifications from "../../assets/careinn-certifications.png";
 import careinnClients from "../../assets/careinn-clients.jpg";
+
+import burjeelDna from "../../assets/BurjeelDNA.png";
+import burjeelNumbers from "../../assets/BurjeelNumbers.png";
+import burjeelServices from "../../assets/BurjeelServices.png";
+import burjeelAccreds from "../../assets/burjeelaccreds.png";
 
 interface AboutSection {
   id: string;
@@ -96,26 +102,27 @@ const getSections = (themeId: string, isRTL: boolean, locale: string): AboutSect
     id: "hospital",
     title: themeId === "dallah" ? "About Dallah" : "Our Hospital",
     titleKey: themeId === "dallah" ? "about.aboutDallah" : "about.ourHospital",
-    video: themeId === "imc" ? imcVideo : themeId === "careinn" ? (locale === "ar" ? "5ZQofr0sVn4" : "pbnYEIewk6Q") : themeId === "caremed" ? "HW7Od_8C3_I" : themeId === "dallah" ? "JPgxKaOQf3s" : "4VXy7_qn608",
+    video: themeId === "burjeel" ? "OH71A4YxCG4" : themeId === "imc" ? imcVideo : themeId === "careinn" ? (locale === "ar" ? "5ZQofr0sVn4" : "pbnYEIewk6Q") : themeId === "caremed" ? "HW7Od_8C3_I" : themeId === "dallah" ? "JPgxKaOQf3s" : "4VXy7_qn608",
   },
   {
     id: "dna",
     title: themeId === "caremed" ? "CareMed InBrief" : themeId === "dallah" ? "Dallah DNA" : "Fakeeh Care DNA",
     titleKey: themeId === "caremed" ? "about.caremedInBrief" : themeId === "dallah" ? "about.dallahDna" : "about.dna",
-    image: themeId === "careinn" ? (isRTL ? careinnDnaAr : careinnDna) : themeId === "imc" ? imcDna : themeId === "dallah" ? dallahDna : themeId === "caremed" ? (isRTL ? careMedInBriefAr : careMedInBriefEn) : dnaImg,
+    image: themeId === "burjeel" ? burjeelDna : themeId === "careinn" ? (isRTL ? careinnDnaAr : careinnDna) : themeId === "imc" ? imcDna : themeId === "dallah" ? dallahDna : themeId === "caremed" ? (isRTL ? careMedInBriefAr : careMedInBriefEn) : dnaImg,
   },
   ...(themeId === "careinn" ? [] : [{
     id: "numbers",
     title: themeId === "imc" ? "IMC History" : themeId === "caremed" ? "CareMed In Numbers" : themeId === "dallah" ? "Accreditations" : "Fakeeh In Numbers",
     titleKey: themeId === "imc" ? "about.imcHistory" : themeId === "dallah" ? "about.accreditations" : "about.numbers",
-    image: themeId === "imc" ? imcHistory : themeId === "dallah" ? (isRTL ? dallahAccredsAr : dallahAccredsEn) : themeId === "caremed" ? (isRTL ? numbersAr : numbersEn) : numbersImg,
+    image: themeId === "burjeel" ? burjeelNumbers : themeId === "imc" ? imcHistory : themeId === "dallah" ? (isRTL ? dallahAccredsAr : dallahAccredsEn) : themeId === "caremed" ? (isRTL ? numbersAr : numbersEn) : numbersImg,
     content: themeId === "dallah" ? undefined : undefined,
   }]),
   {
     id: "services",
     title: "Services",
     titleKey: "about.services",
-    content: themeId === "careinn"
+    image: themeId === "burjeel" ? burjeelServices : undefined,
+    content: themeId === "burjeel" ? undefined : themeId === "careinn"
       ? (locale === "ar" ? `• CareInn15
 شاشة تفاعلية بجانب السرير تتيح للمرضى سهولة الوصول إلى خدمات المستشفى والترفيه والطلبات والمعلومات الأساسية أثناء إقامتهم. توفر تجربة أكثر تواصلاً وراحة داخل الغرفة.
 
@@ -173,7 +180,7 @@ Support Services
     id: "accreditations",
     title: themeId === "careinn" ? "Certifications" : themeId === "dallah" ? "Awards" : "Accreditations",
     titleKey: themeId === "careinn" ? "about.certifications" : themeId === "dallah" ? "about.awards" : "about.accreditations",
-    image: themeId === "careinn" ? careinnCertifications : themeId === "imc" ? imcAccreds : themeId === "dallah" ? (isRTL ? dallahAwardsAr : dallahAwardsEn) : themeId === "caremed" ? accredsImg : accreditationsImg,
+    image: themeId === "burjeel" ? burjeelAccreds : themeId === "careinn" ? careinnCertifications : themeId === "imc" ? imcAccreds : themeId === "dallah" ? (isRTL ? dallahAwardsAr : dallahAwardsEn) : themeId === "caremed" ? accredsImg : accreditationsImg,
   },
   {
     id: "digital",
@@ -255,7 +262,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
       }}
     >
       {/* Hospital background image */}
-      <img
+      <ApiImage
         src={theme.heroImageUrl}
         alt=""
         aria-hidden
@@ -352,7 +359,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
               textDecoration: "none",
             }}
           >
-            <img
+            <ApiImage
               src={theme.logoUrl}
               alt={theme.hospitalName}
               style={{
@@ -442,7 +449,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
             {/* Section Image (if exists) */}
             {currentSection.image && (
               <div className="flex-1 rounded-2xl overflow-hidden flex items-center justify-center">
-                <img
+                <ApiImage
                   src={currentSection.image}
                   alt={currentSection.title}
                   className="w-full h-full object-contain"
@@ -461,7 +468,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                     style={{ border: "none", padding: 0, background: "none" }}
                     aria-label="Play video"
                   >
-                    <img
+                    <ApiImage
                       src={theme.heroImageUrl}
                       alt={currentSection.title}
                       className="absolute inset-0 w-full h-full object-cover"
@@ -535,7 +542,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
               <div className="flex-1 overflow-y-auto about-scrollable-content flex flex-col gap-6 pt-2">
                 {/* Achievement Banner */}
                 <div className="shrink-0 rounded-3xl overflow-hidden shadow-sm border border-gray-100" style={{ height: "240px" }}>
-                  <img 
+                  <ApiImage 
                     src={dsfhAchievementBanner} 
                     alt="Latest achievements"
                     className="w-full h-full object-cover"

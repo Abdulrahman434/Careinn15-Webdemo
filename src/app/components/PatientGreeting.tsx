@@ -1,11 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchPatientForDevice } from "../lib/hospitalApi";
+import { isAndroidApp, getDeviceInfo } from "../utils/androidBridge";
 import { useTheme, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, LogOut } from "lucide-react";
 import { AutoCarousel } from "./AutoCarousel";
 import { useNurseStore } from "./NurseDataStore";
+import { ConfirmDialog } from "./ConfirmDialog";
+import { useGuestMode } from "../lib/guestMode";
+import { useAuth } from "./AuthContext";
 import svgPaths from "../../imports/svg-ca68x68c4i";
+import { getSavedHeroImage, isSlideshowEnabled } from "../lib/backgroundPrefs";
 
 function AboutUsIcon({ color }: { color?: string }) {
   const { theme } = useTheme();
@@ -32,18 +38,64 @@ export function PatientGreeting({
   onOpenAboutUs, 
   onOpenTour, 
   fillImage,
-  showAboutUs = true 
+  showAboutUs = true,
+  onImageTap
 }: { 
   onOpenAboutUs?: () => void; 
   onOpenTour?: () => void; 
   fillImage?: boolean;
   showAboutUs?: boolean;
+  onImageTap?: (url: string) => void;
 }) {
   const [pressed, setPressed] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
-  const { onPointerDown, rippleElements } = useRipple(theme.primarySubtle);
+  const rippleElements = useRipple(theme.primarySubtle).rippleElements;
   const nurseStore = useNurseStore();
+  const { isGuest } = useGuestMode();
+  const { logout } = useAuth();
+
+  // Data now comes from NurseDataStore (synchronized at App level)
+  const p = nurseStore.patient;
+
+  // Name: i18n demo key → manual/API name (with RTL/Arabic support)
+  const displayName = isRTL && p.nameAr
+    ? p.nameAr
+    : (p.nameKey ? t(p.nameKey) : p.name);
+
+  // Other fields
+  const displayMrn    = p.mrn;
+  const displayRoom   = p.room;
+  const displayBed    = p.bed;
+  const displayAdmit  = p.admissionDate;
+
+  // Hero image fallback chain:
+  // 1. User-saved image from Backgrounds preferences
+  // 2. theme.heroImageUrls (hardcoded per hospital brand)
+  const [heroImages, setHeroImages] = useState<string[]>(() => {
+    const saved = getSavedHeroImage();
+    if (saved && !isSlideshowEnabled()) return [saved];
+    return theme.heroImageUrls ?? [];
+  });
+
+  useEffect(() => {
+    const onHeroChange = (e: Event) => {
+      const url = (e as CustomEvent<string | null>).detail;
+      if (url) setHeroImages([url]);
+      else setHeroImages(theme.heroImageUrls ?? []);
+    };
+    const onSlideshowChange = (e: Event) => {
+      const enabled = (e as CustomEvent<boolean>).detail;
+      if (enabled) setHeroImages(theme.heroImageUrls ?? []);
+    };
+    window.addEventListener("hero-image-changed",  onHeroChange);
+    window.addEventListener("slideshow-changed",    onSlideshowChange);
+    return () => {
+      window.removeEventListener("hero-image-changed",  onHeroChange);
+      window.removeEventListener("slideshow-changed",    onSlideshowChange);
+    };
+  }, [theme.heroImageUrls]);
 
   return (
     <div
@@ -91,16 +143,18 @@ export function PatientGreeting({
         >
           {t("general.hello")}
         </p>
-        <p
-          style={{
-            fontFamily: fontFamily,
-            ...TEXT_STYLE.display,
-            fontWeight: WEIGHT.extrabold,
-            color: theme.textHeading,
-          }}
-        >
-          {nurseStore.patient.nameKey ? t(nurseStore.patient.nameKey) : nurseStore.patient.name}
-        </p>
+        {!isGuest && (
+          <p
+            style={{
+              fontFamily: fontFamily,
+              ...TEXT_STYLE.display,
+              fontWeight: WEIGHT.extrabold,
+              color: theme.textHeading,
+            }}
+          >
+            {displayName}
+          </p>
+        )}
         <div style={{ paddingTop: SPACE[1] }}>
           <p
             style={{
@@ -112,56 +166,84 @@ export function PatientGreeting({
           >{t("general.welcome", theme.hospitalShortName)}</p>
         </div>
 
-        {/* Badges */}
-        <div className="flex items-center flex-wrap gap-2" style={{ paddingTop: SPACE[2] }}>
-          <div
-            className="flex items-center px-3 py-1.5"
-            style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
-          >
-            <span
-              style={{
-                fontFamily: fontFamily,
-                ...TEXT_STYLE.pill,
-                color: theme.primary,
+        {/* Badges: [Room] [Ext] [Logout] */}
+        {!isGuest && (
+          <div className="flex items-center flex-wrap gap-2" style={{ paddingTop: SPACE[2] }}>
+            <div
+              className="flex items-center px-3 py-1.5"
+              style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
+            >
+              <span
+                style={{
+                  fontFamily: fontFamily,
+                  ...TEXT_STYLE.pill,
+                  color: theme.primary,
+                }}
+              >
+                {t("greeting.mrn")} {displayMrn}
+              </span>
+            </div>
+            <div
+              className="flex items-center px-3 py-1.5"
+              style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
+            >
+              <span
+                style={{
+                  fontFamily: fontFamily,
+                  ...TEXT_STYLE.pill,
+                  color: theme.primary,
+                }}
+              >
+                {t("greeting.room", displayRoom)}
+              </span>
+            </div>
+            {displayBed && (
+              <div
+                className="flex items-center px-3 py-1.5"
+                style={{
+                  backgroundColor: theme.primarySubtle,
+                  borderRadius: theme.radiusFull,
+                }}
+              >
+                <span style={{
+                  fontFamily,
+                  ...TEXT_STYLE.pill,
+                  color: theme.primary,
+                }}>
+                  {t("greeting.bed")} {displayBed}
+                </span>
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowLogoutConfirm(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer active:scale-95 transition-transform border-none outline-none"
+              style={{ 
+                backgroundColor: "#FEE2E2", 
+                borderRadius: theme.radiusFull,
               }}
             >
-              {t("greeting.mrn")} {nurseStore.patient.mrn}
-            </span>
+              <LogOut size={12} style={{ color: "#EF4444" }} />
+              <span
+                style={{
+                  fontFamily: fontFamily,
+                  ...TEXT_STYLE.pill,
+                  color: "#EF4444",
+                  fontWeight: WEIGHT.bold,
+                }}
+              >
+                {t("general.logout")}
+              </span>
+            </button>
           </div>
-          <div
-            className="flex items-center px-3 py-1.5"
-            style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
-          >
-            <span
-              style={{
-                fontFamily: fontFamily,
-                ...TEXT_STYLE.pill,
-                color: theme.primary,
-              }}
-            >
-              {t("greeting.room", nurseStore.patient.room)}
-            </span>
-          </div>
-          <div
-            className="flex items-center px-3 py-1.5"
-            style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
-          >
-            <span
-              style={{
-                fontFamily: fontFamily,
-                ...TEXT_STYLE.pill,
-                color: theme.primary,
-              }}
-            >
-              {t("greeting.ext", nurseStore.patient.extension)}
-            </span>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Hospital image */}
       <div
-        className={`overflow-hidden mx-4 mb-4 ${fillImage ? "flex-1 min-h-[120px]" : "shrink-0"}`}
+        className={`overflow-hidden mx-4 mb-4 ${fillImage ? "flex-1 min-h-[120px]" : "shrink-0"} ${
+          onImageTap ? "cursor-pointer hover:brightness-105 active:scale-[0.99] transition-all duration-200" : ""
+        }`}
         style={{
           height: fillImage ? undefined : SPACE[12],
           borderRadius: theme.radiusLg,
@@ -169,10 +251,11 @@ export function PatientGreeting({
         }}
       >
         <AutoCarousel
-          images={theme.heroImageUrls}
+          images={heroImages}
           objectPosition={theme.heroCropPosition || "50% 15%"}
           objectFit="cover"
           intervalSeconds={theme.slideshowInterval}
+          onImageClick={onImageTap}
         />
       </div>
 
@@ -217,6 +300,19 @@ export function PatientGreeting({
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        visible={showLogoutConfirm}
+        title={t("general.logout")}
+        message={t("settings.account.overview.removeConfirm")}
+        confirmLabel={t("general.logout")}
+        variant="danger"
+        onConfirm={() => {
+          setShowLogoutConfirm(false);
+          logout();
+        }}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ApiImage } from "./ApiImage";
 import { Settings, Globe, Bell, Cast } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
@@ -40,6 +41,29 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
   const { t, locale, isRTL, fontFamily } = useLocale();
   const [time, setTime] = useState(new Date());
   const [prayerData, setPrayerData] = useState(() => getPrayerStatus(new Date()));
+  const [temperature, setTemperature] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const city = theme.location || "Jeddah";
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=01a477912e47daf2010808cc62015829`
+        );
+        const data = await response.json();
+        if (data.main && data.main.temp !== undefined) {
+          setTemperature(Math.round(data.main.temp));
+        }
+      } catch (error) {
+        console.error("Weather fetch error:", error);
+      }
+    };
+
+    fetchWeather();
+    const weatherInterval = setInterval(fetchWeather, 30 * 60 * 1000);
+    return () => clearInterval(weatherInterval);
+  }, [theme.location]);
+
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -82,7 +106,7 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
         rel="noopener noreferrer" 
         className="flex items-center justify-start h-full transition-opacity hover:opacity-80 active:opacity-60"
       >
-        <img
+        <ApiImage
           alt={theme.hospitalName}
           src={theme.logoUrl}
           style={{ height: SPACE[10], width: "auto", maxWidth: "300px", objectFit: "contain" }}
@@ -192,7 +216,8 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
               color: theme.textHeading,
             }}
           >
-            38°C
+            {temperature !== null ? `${temperature}°C` : "38°C"}
+
           </span>
         </div>
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import separatorIcon from "../../imports/Asset_2_white.svg";
+import { ApiImage } from "./ApiImage";
 
 export function NewsTicker() {
   const { theme } = useTheme();
@@ -33,6 +34,14 @@ export function NewsTicker() {
         `🏗️  ${t("news.imc.3")}`,
         `🤝  ${t("news.imc.4")}`,
         `📱  ${t("news.imc.5")}`,
+      ]
+    : theme.id === "burjeel"
+    ? [
+        `🏆  ${t("news.burjeel.1")}`,
+        `🌍  ${t("news.burjeel.2")}`,
+        `🔬  ${t("news.burjeel.3")}`,
+        `💹  ${t("news.burjeel.4")}`,
+        `🏥  ${t("news.burjeel.5")}`,
       ]
     : theme.id === "careinn"
     ? [
@@ -87,7 +96,7 @@ export function NewsTicker() {
     newsItems.forEach((item, i) => {
       elements.push(<span key={`item-${i}`}>{item}</span>);
       elements.push(
-        <img
+        <ApiImage
           key={`sep-${i}`}
           src={separatorIcon}
           alt=""

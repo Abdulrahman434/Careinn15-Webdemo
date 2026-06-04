@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { AndroidEventName } from "../types/android";
 import { Bluetooth } from "lucide-react";
+import { rewriteImageUrl } from "../lib/apiConfig";
 
 /* ─── Re-exported helper types for components ─── */
 
@@ -37,6 +38,14 @@ export type CastDevice = {
   name: string;
   type: string;
   available: boolean;
+};
+
+export type IptvChannel = {
+  id: number;
+  name: string;
+  url: string;
+  nameAr?: string;
+  logo?: string;
 };
 
 /* ─── Detection ─── */
@@ -323,15 +332,26 @@ export const KNOWN_APPS = {
   iptv: 'com.bitsarabia.bedsideterminalsolution/.careinn.iptvStreamActivity',
 } as const;
 
-/* ─── IPTV ─── */
+// ── Module-level IPTV state ─────────────────────────────────────────
+// Persists across component mounts/unmounts so channel switching 
+// works even when IptvChannels UI is not mounted.
 
-export type IptvChannel = {
-  id: number;
-  name: string;
-  nameAr: string;
-  url: string;
-  logo: string;
-};
+let _iptvChannels: IptvChannel[] = [];
+let _iptvPlayingId: number | null = null;
+
+/** Called by useIptvChannels when channels load */
+export function _setIptvChannels(channels: IptvChannel[]) {
+  _iptvChannels = channels;
+}
+
+/** Called by IptvChannels when playing state changes */
+export function _setIptvPlayingId(id: number | null) {
+  _iptvPlayingId = id;
+}
+
+export function _getIptvChannels() { return _iptvChannels; }
+export function _getIptvPlayingId() { return _iptvPlayingId; }
+// ───────────────────────────────────────────────────────────────────
 
 export const iptv = {
   /**
@@ -344,11 +364,38 @@ export const iptv = {
   },
   
   play(channel: IptvChannel): void {
-    try { 
-      sys()?.playIptv(channel.url, channel.name); 
+    try {
+      sys()?.playIptv(channel.url, channel.name);
     } catch (e) { console.warn('[androidBridge] iptv.play failed:', e); }
   },
-  
+
+  /**
+   * Hand the entire channel list to the native overlay and start at `startIndex`.
+   * Falls back to single-channel `playIptv` on old APKs without `playChannelList`.
+   * JSON shape matches SystemBridge.playChannelList: { channel_url, name_en, name_ar, channel_image }.
+   */
+  playList(channels: IptvChannel[], startIndex: number): void {
+    try {
+      if (!channels.length) return;
+      const start = Math.max(0, Math.min(startIndex, channels.length - 1));
+      if (typeof sys()?.playChannelList === 'function') {
+        const json = JSON.stringify(channels.map(ch => ({
+          channel_url:   ch.url,
+          name_en:       ch.name,
+          name_ar:       ch.nameAr || ch.name,
+          channel_image: ch.logo   || "",
+        })));
+        sys()!.playChannelList!(json, start);
+      } else {
+        // Old APK fallback — single channel
+        const ch = channels[start];
+        if (ch) sys()?.playIptv(ch.url, ch.name);
+      }
+    } catch (e) {
+      console.warn("[androidBridge] iptv.playList failed:", e);
+    }
+  },
+
   stop(): void {
     try { sys()?.stopIptv(); } 
     catch (e) { console.warn('[androidBridge] iptv.stop failed:', e); }
@@ -358,7 +405,83 @@ export const iptv = {
     try { return sys()?.isIptvPlaying() ?? false; } 
     catch { return false; }
   },
+
+  channelNext(): void {
+    const channels = _iptvChannels;
+    const currentId = _iptvPlayingId;
+    if (!channels.length) {
+      console.warn('[iptv] No channels loaded yet');
+      return;
+    }
+    if (currentId === null) {
+      // Nothing playing — start from first channel
+      iptv.play(channels[0]);
+      return;
+    }
+    const idx = channels.findIndex(c => c.id === currentId);
+    const next = channels[(idx + 1) % channels.length];
+    iptv.play(next);
+  },
+
+  channelPrev(): void {
+    const channels = _iptvChannels;
+    const currentId = _iptvPlayingId;
+    if (!channels.length) {
+      console.warn('[iptv] No channels loaded yet');
+      return;
+    }
+    if (currentId === null) {
+      iptv.play(channels[channels.length - 1]);
+      return;
+    }
+    const idx = channels.findIndex(c => c.id === currentId);
+    const prev = channels[(idx - 1 + channels.length) % channels.length];
+    iptv.play(prev);
+  },
 };
+
+/* ─── Device Info ─── */
+
+export interface DeviceInfo {
+  serial: string;       // ro.serialno e.g. "mt15pwjn896694018"
+  androidId: string;    // e.g. "a190325536d38954"
+  ipAddress: string;    // e.g. "10.32.0.51"
+  model: string;        // e.g. "MT15"
+  manufacturer: string; // e.g. "Queclink"
+}
+
+export function getDeviceInfo(): DeviceInfo | null {
+  try {
+    const json = sys()?.getDeviceInfo?.();
+    if (!json) return null;
+    return JSON.parse(json);
+  } catch { return null; }
+}
+
+/**
+ * Reactive hook — reads device info once on mount.
+ * Refreshes when the bridge becomes available.
+ */
+export function useDeviceInfo(): DeviceInfo | null {
+  const [info, setInfo] = useState<DeviceInfo | null>(null);
+
+  useEffect(() => {
+    // Try immediately
+    const d = getDeviceInfo();
+    if (d) {
+      setInfo(d);
+      return;
+    }
+
+    // If bridge not ready yet, retry after 1s (WebView load timing)
+    const t = setTimeout(() => {
+      setInfo(getDeviceInfo());
+    }, 1000);
+    return () => clearTimeout(t);
+  }, []);
+
+  return info;
+}
 
 /**
  * React hook: triggers a channel fetch on mount, parses the result, 
@@ -424,7 +547,26 @@ export function useIptvChannels() {
         arr = d.channels;
       }
 
-      setChannels(Array.isArray(arr) ? arr : []);
+      const mapped: IptvChannel[] = (Array.isArray(arr) ? arr : [])
+        .map((ch: any, idx: number) => {
+          const locales = ch.channel_locale ?? [];
+          const nameEn = locales.find(
+            (l: any) => l.language_id === 1)?.locale_name
+            ?? ch.name ?? `Channel ${idx + 1}`;
+          const nameAr = locales.find(
+            (l: any) => l.language_id === 2)?.locale_name
+            ?? nameEn;
+          return {
+            id:     ch.id ?? idx,
+            name:   nameEn,
+            nameAr: nameAr,
+            url:    ch.channel_url ?? ch.url ?? "",
+            logo:   rewriteImageUrl(ch.channel_image ?? ch.logo ?? ""),
+          };
+        })
+        .filter((ch: IptvChannel) => ch.url); // skip channels with no URL
+      setChannels(mapped);
+      _setIptvChannels(mapped); // sync to module store
       setLoading(false);
       setError(null);
     } catch (e) {
@@ -519,6 +661,12 @@ export const sip = {
       return (window.AndroidSystem?.sipGetRegistrationState() 
           ?? 'None') as SipRegistrationState;
     } catch { return 'None'; }
+  },
+
+  getLocalExtension(): string {
+    try {
+      return window.AndroidSystem?.sipGetLocalExtension?.() ?? '';
+    } catch { return ''; }
   },
 
   /**
@@ -682,6 +830,41 @@ export function useSipContacts() {
     setContacts(sip.getContacts());
   });
   return contacts;
+}
+/**
+ * Reactive hook for the local SIP extension.
+ * Updates when the Android app refreshes SIP credentials from the API.
+ */
+export function useSipLocalExtension(): string {
+  const [extension, setExtension] = useState<string>(
+    () => {
+      try {
+        return window.AndroidSystem?.sipGetLocalExtension?.() ?? '';
+      } catch { return ''; }
+    }
+  );
+
+  // Update when API refresh completes
+  useAndroidEvent<{ extension: string }>(
+    'sip-credentials-updated',
+    (d) => {
+      if (d.extension) setExtension(d.extension);
+    }
+  );
+
+  // Also poll once after 3 seconds to catch the initial API refresh
+  useEffect(() => {
+    if (!isAndroidApp()) return;
+    const t = setTimeout(() => {
+      try {
+        const ext = window.AndroidSystem?.sipGetLocalExtension?.() ?? '';
+        if (ext) setExtension(ext);
+      } catch {}
+    }, 3500);  // slightly after the 2s API refresh delay
+    return () => clearTimeout(t);
+  }, []);
+
+  return extension;
 }
 
 /**

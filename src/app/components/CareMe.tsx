@@ -1,4 +1,5 @@
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, primaryRgba, TEXT_STYLE, SPACE } from "./ThemeContext";
+import { ApiImage } from "./ApiImage";
 import { useLocale } from "./i18n";
 import { useNurseStore, type SectionKey } from "./NurseDataStore";
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
@@ -48,6 +49,7 @@ import {
   Wind,
   ChevronLeft,
   ChevronRight,
+  ArrowLeftRight,
 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import svgPaths from "../../imports/svg-ca68x68c4i";
@@ -110,12 +112,12 @@ const ALL_SLIDES: SlideConfig[] = [
   { key: "profile", title: "Patient Profile", titleKey: "care.profile.title", icon: IdCard },
   { key: "overview", title: "Care Overview", titleKey: "care.overview.title", icon: Activity },
   { key: "plan", title: "My Care Plan", titleKey: "care.plan.title", icon: ClipboardList },
-  { key: "billing", title: "Financial Summary", titleKey: "care.billing.title", icon: CreditCard },
+  { key: "observations", title: "Observations", titleKey: "care.observations.title", icon: Activity },
   { key: "labs", title: "Lab Results", titleKey: "care.labs.title", icon: FlaskConical },
   { key: "imaging", title: "Scans & Imaging", titleKey: "care.imaging.title", icon: ImageIcon },
   { key: "baby", title: "Baby Camera", titleKey: "care.baby.title", icon: Baby },
   { key: "discharge", title: "Discharge Plan", titleKey: "care.discharge.title", icon: LogOut },
-  { key: "observations", title: "Observations", titleKey: "care.observations.title", icon: Activity },
+  { key: "billing", title: "Financial Summary", titleKey: "care.billing.title", icon: CreditCard },
 ];
 
 /** Map CareMe slide keys → NurseDataStore SectionKey */
@@ -212,7 +214,7 @@ function GendersIcon({ size = 14, style }: { size?: number, style?: any }) {
 }
 
 function PatientProfileSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: boolean }) {
-  const { t, localizeNumber } = useLocale();
+  const { t, isRTL, localizeNumber } = useLocale();
   const nurseStore = useNurseStore();
   const p = nurseStore.patient;
 
@@ -273,7 +275,7 @@ function PatientProfileSlide({ theme, isExpanded = false }: { theme: any, isExpa
             <div className="flex flex-col pt-0.5">
               <p style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "16px" : "13px", color: theme.textMuted, lineHeight: "1.2" }}>{t("care.fullName")}</p>
               <p style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "18px" : "15.5px", fontWeight: WEIGHT.bold, color: theme.textHeading, lineHeight: "1.4", marginTop: "2px" }}>
-                {t("direction") === "rtl" && p.nameAr ? p.nameAr : (p.nameKey ? t(p.nameKey) : p.name)}
+                {isRTL && p.nameAr ? p.nameAr : (p.nameKey ? t(p.nameKey) : p.name)}
               </p>
             </div>
           </div>
@@ -282,9 +284,9 @@ function PatientProfileSlide({ theme, isExpanded = false }: { theme: any, isExpa
             {infoRow(Hash, t("greeting.mrn"), <span dir="ltr">{p.mrn}</span>)}
             {infoRow(Shield, t("care.insurance"), t("care.insurance.tawuniya"))}
             {infoRow(CalendarDays, t("care.age"), t("care.ageUnits", localizeNumber(Number(p.age) || 0)))}
-            {infoRow(GendersIcon, t("care.gender"), t("care.gender.female"))}
-            {infoRow(Clock, t("care.dob"), t("care.birthDateVal"))}
-            {infoRow(DoorOpen, t("care.room") + " / " + t("care.bed"), `${p.room} / A`)}
+            {infoRow(GendersIcon, t("care.gender"), p.sex ? t(`care.gender.${p.sex.toLowerCase() === 'm' ? 'male' : (p.sex.toLowerCase() === 'f' ? 'female' : p.sex.toLowerCase())}`) : t("care.gender.female"))}
+            {infoRow(Clock, t("care.dob"), p.dob || t("care.birthDateVal"))}
+            {infoRow(DoorOpen, t("care.room") + " / " + t("care.bed"), `${p.room} / ${p.bed || 'A'}`)}
           </div>
         </div>
       </SectionContainer>
@@ -339,7 +341,7 @@ function CareOverviewSlide({ theme, isExpanded = false }: { theme: any, isExpand
                   borderRadius: theme.radiusFull
                 }}
               >
-                <img src={m.img} alt={t(m.nameKey)} className="w-full h-full object-cover" />
+                <ApiImage src={m.img} alt={t(m.nameKey)} className="w-full h-full object-cover" />
               </div>
               <div className="flex flex-col">
                 <p style={{ fontFamily: theme.fontFamily, fontSize: labelSize, color: theme.primary, fontWeight: 700, lineHeight: 1.2 }}>{t(m.roleKey)}</p>
@@ -655,7 +657,7 @@ function TimelineSlide({
                   color: step.active ? theme.primary : theme.textHeading,
                   textDecoration: "none",
                 }}>
-                  {t("direction") === "rtl" && step.labelAr ? step.labelAr : (step.label || (step.labelKey ? t(step.labelKey) : ""))}
+                  {isRTL && step.labelAr ? step.labelAr : (step.label || (step.labelKey ? t(step.labelKey) : ""))}
                 </span>
                 <span
                   className="flex items-center gap-1 shrink-0 ml-2 px-2 py-0.5"
@@ -1042,7 +1044,7 @@ function BabyCameraSlide({ isExpanded = false }: { isExpanded?: boolean }) {
         }}
         onClick={() => setFullscreen(true)}
       >
-        <img
+        <ApiImage
           src={cameraImage}
           alt="Baby Camera Feed"
           className="w-full h-full object-cover absolute inset-0 transition-transform duration-500 group-hover:scale-105"
@@ -1136,7 +1138,7 @@ function BabyCameraFullscreen({ onClose, cameraImage }: { onClose: () => void, c
       onClick={onClose}
     >
       <div className="relative w-full h-full flex items-center justify-center">
-        <img
+        <ApiImage
           src={cameraImage}
           alt="Baby Camera Feed — Full Screen"
           className="w-full h-full object-contain"
@@ -1292,7 +1294,7 @@ function HospitalInvoiceOverlay({ theme, onClose }: { theme: any, onClose: () =>
         {/* Invoice Header */}
         <div className="p-10 border-b flex justify-between items-start" style={{ borderColor: theme.borderSubtle }}>
           <div className="flex flex-col gap-6">
-            <img src={theme.logoUrl} alt="Hospital Logo" className="h-16 object-contain self-start" />
+            <ApiImage src={theme.logoUrl} alt="Hospital Logo" className="h-16 object-contain self-start" />
             <div>
               <h1 style={{ fontFamily: theme.fontFamily, fontSize: "28px", fontWeight: WEIGHT.extrabold, color: theme.textHeading }}>
                 {t("care.billing.invoiceTitle")}
@@ -1847,6 +1849,7 @@ export function CareMe({ onExpand }: { onExpand?: () => void }) {
               </span>
             </button>
           )}
+
           <button
             data-nav="true"
             onClick={() => setIsBlurred(prev => !prev)}
@@ -2064,7 +2067,7 @@ export function CareMeExpanded({ onClose }: { onClose: () => void }) {
       }}
     >
       {/* Subtle background texture */}
-      <img
+      <ApiImage
         src={theme.heroImageUrl}
         alt=""
         aria-hidden

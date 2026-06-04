@@ -14,6 +14,52 @@
 import { useState, useEffect } from "react";
 
 /* ═══════════════════════════════════════════════════════════════
+ * OVERRIDE TRACKING LOGIC
+ * ═══════════════════════════════════════════════════════════════ */
+
+// Fields that can be overridden by nurse
+export type OverridableField = 
+  | "name" | "room" | "bed" | "mrn" 
+  | "admissionDate" | "dischargeDate" | "nameAr";
+
+// localStorage key
+const OVERRIDE_KEY     = "careinn-nurse-overrides";
+const API_SNAPSHOT_KEY = "careinn-api-snapshot";
+
+// In-memory override set — which fields nurse has manually edited
+// after API populated them
+let _nurseOverrides: Set<OverridableField> = (() => {
+  try {
+    const raw = localStorage.getItem(OVERRIDE_KEY);
+    return new Set(JSON.parse(raw ?? "[]"));
+  } catch { return new Set(); }
+})();
+
+// Last values written by the API — used to detect real changes
+let _apiSnapshot: Partial<PatientProfile> = (() => {
+  try {
+    const raw = localStorage.getItem(API_SNAPSHOT_KEY);
+    return JSON.parse(raw ?? "{}");
+  } catch { return {}; }
+})();
+
+function saveOverrides() {
+  localStorage.setItem(OVERRIDE_KEY, JSON.stringify([..._nurseOverrides]));
+}
+
+function saveApiSnapshot(data: Partial<PatientProfile>) {
+  _apiSnapshot = { ..._apiSnapshot, ...data };
+  localStorage.setItem(API_SNAPSHOT_KEY, JSON.stringify(_apiSnapshot));
+}
+
+function clearOverrides() {
+  _nurseOverrides.clear();
+  localStorage.removeItem(OVERRIDE_KEY);
+  localStorage.removeItem(API_SNAPSHOT_KEY);
+  _apiSnapshot = {};
+}
+
+/* ═══════════════════════════════════════════════════════════════
  * TYPE DEFINITIONS
  * ═══════════════════════════════════════════════════════════════ */
 
@@ -24,6 +70,9 @@ export interface PatientProfile {
   age: string;
   mrn: string;
   room: string;
+  bed:           string;
+  sex:           string;
+  dob:           string;
   admissionDate: string;
   dischargeDate: string;
   contact: string;
@@ -121,7 +170,8 @@ export type SectionKey =
   | "imaging"
   | "baby"
   | "discharge"
-  | "observations";
+  | "observations"
+  | "nfc";
 
 /* ═══════════════════════════════════════════════════════════════
  * STORE STATE
@@ -196,6 +246,7 @@ function createDefaultState(): NurseStoreState {
       baby: true,
       discharge: true,
       observations: true,
+      nfc: false, // Not a patient-facing CareMe slide
     },
 
     patient: {
@@ -205,6 +256,9 @@ function createDefaultState(): NurseStoreState {
       age: "32",
       mrn: "00-284619",
       room: "412",
+      bed:           "",
+      sex:           "",
+      dob:           "",
       admissionDate: "10 Mar 2026",
       dischargeDate: "12 Mar 2026",
       contact: "050 123 4567",
@@ -299,11 +353,31 @@ function createDefaultState(): NurseStoreState {
 
 type StoreListener = (state: NurseStoreState) => void;
 
+const NURSE_STORE_CACHE_KEY = 'careinn-nurse-store';
+
+function loadCachedState(): Partial<NurseStoreState> {
+  try {
+    const raw = localStorage.getItem(NURSE_STORE_CACHE_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw);
+  } catch { return {}; }
+}
+
 const nurseStore = (() => {
-  let state = createDefaultState();
+  let state = {
+    ...createDefaultState(),
+    ...loadCachedState(),
+  };
   const listeners = new Set<StoreListener>();
 
+  function persistState() {
+    try {
+      localStorage.setItem(NURSE_STORE_CACHE_KEY, JSON.stringify(state));
+    } catch {}
+  }
+
   function notify() {
+    persistState();
     listeners.forEach((l) => l({ ...state }));
   }
 
@@ -330,6 +404,98 @@ const nurseStore = (() => {
       }
       state = { ...state, patient: nextPatient };
       notify();
+    },
+
+    /**
+     * Called ONLY by hospitalApi — applies API data with override logic.
+     * 
+     * Rules per field:
+     *  - API value empty → always skip
+     *  - Nurse override set AND API value same as last snapshot → skip
+     *  - API value different from last snapshot → always apply 
+     *    (new patient or real change), clear that field's override
+     *  - No nurse override → always apply
+     */
+    updatePatientFromApi: (
+      updates: Partial<PatientProfile>
+    ) => {
+      const fields = Object.keys(updates) as OverridableField[];
+      const applied: Partial<PatientProfile> = {};
+
+      for (const field of fields) {
+        const apiValue = updates[field as keyof PatientProfile];
+
+        // Rule 1: empty API value never overrides anything
+        if (!apiValue) continue;
+
+        const lastApiValue = _apiSnapshot[
+          field as keyof PatientProfile];
+        const hasOverride = _nurseOverrides.has(field);
+        const apiChanged  = apiValue !== lastApiValue;
+
+        if (hasOverride && !apiChanged) {
+          // Nurse edited this field AND API hasn't changed → keep nurse value
+          continue;
+        }
+
+        if (apiChanged && lastApiValue) {
+          // API value genuinely changed (new patient) → apply + clear override
+          _nurseOverrides.delete(field);
+        }
+
+        // Apply this field
+        applied[field as keyof PatientProfile] = apiValue as any;
+      }
+
+      if (Object.keys(applied).length === 0) return;
+
+      // Save API snapshot of what we just applied
+      saveApiSnapshot(applied);
+      saveOverrides();
+
+      // Apply to store
+      let nextPatient = { ...state.patient, ...applied };
+      if (applied.name && applied.name !== state.patient.name) {
+        nextPatient.nameKey = "";
+      }
+      state = { ...state, patient: nextPatient };
+      notify();
+    },
+
+    /**
+     * Called when nurse manually edits a field in the UI.
+     * Marks that field as nurse-overridden so future API calls
+     * don't overwrite it (unless API value changes).
+     */
+    updatePatientFromNurse: (
+      updates: Partial<PatientProfile>
+    ) => {
+      // Only flag override if API has already populated this field
+      const fields = Object.keys(updates) as OverridableField[];
+      for (const field of fields) {
+        const apiHasValue = !!_apiSnapshot[
+          field as keyof PatientProfile];
+        if (apiHasValue) {
+          // API had a value — nurse is now overriding it
+          _nurseOverrides.add(field);
+        }
+        // If API never populated this field, no override needed —
+        // nurse is just filling it in fresh
+      }
+      saveOverrides();
+
+      // Apply nurse update normally
+      let nextPatient = { ...state.patient, ...updates };
+      if (updates.name && updates.name !== state.patient.name) {
+        nextPatient.nameKey = "";
+      }
+      state = { ...state, patient: nextPatient };
+      notify();
+    },
+
+    /** Clear all overrides — call on new admission or Clear Data */
+    clearPatientOverrides: () => {
+      clearOverrides();
     },
 
     // ── Care Team ──
@@ -492,14 +658,6 @@ const nurseStore = (() => {
     },
     addDischargePlanItem: (item: CarePlanItem) => {
       state = { ...state, dischargePlan: [...state.dischargePlan, item] };
-      notify();
-    },
-    updateDischargePlanItem: (id: string, updates: Partial<CarePlanItem>) => {
-      state = { ...state, dischargePlan: state.dischargePlan.map((i) => i.id === id ? { ...i, ...updates } : i) };
-      notify();
-    },
-    deleteDischargePlanItem: (id: string) => {
-      state = { ...state, dischargePlan: state.dischargePlan.filter((i) => i.id !== id) };
       notify();
     },
 

@@ -3,6 +3,8 @@ import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, ArrowLeft, Camera, Image as ImageIcon } from "lucide-react";
+import { ApiImage } from "../ApiImage";
+import { proxyImageUrl } from "../../lib/imageProxy";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
 
 type Difficulty = 3 | 4 | 5;
@@ -50,6 +52,13 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [hasSavedGame, setHasSavedGame] = useState(false);
   const [showNumbers, setShowNumbers] = useState(false);
+  const [proxiedImageUrl, setProxiedImageUrl] = useState("");
+
+  useEffect(() => {
+    if (imageUrl) {
+      proxyImageUrl(imageUrl).then(setProxiedImageUrl);
+    }
+  }, [imageUrl]);
 
   const getDifficultyKey = (diff: Difficulty) => {
     if (diff === 3) return 'easy';
@@ -354,7 +363,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
                         boxShadow: selectedImageIndex === idx ? SHADOW.lg : 'none'
                       }}
                     >
-                      <img src={url} alt={`Puzzle ${idx + 1}`} className="w-full h-full object-cover" />
+                      <ApiImage src={url} alt={`Puzzle ${idx + 1}`} className="w-full h-full object-cover" />
                       {selectedImageIndex === idx && (
                         <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
                           <div className="bg-white rounded-full p-2 shadow-lg">
@@ -383,7 +392,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
               className="absolute top-8 left-8 w-[200px] rounded-xl overflow-hidden shadow-md z-10 pointer-events-none"
               style={{ border: `2px solid ${theme.textMuted || '#ccc'}`, aspectRatio: imageAspectRatio || 1 }}
             >
-              <img src={imageUrl} alt="Puzzle preview" className="w-full h-full object-contain bg-gray-100" />
+              <ApiImage src={imageUrl} alt="Puzzle preview" className="w-full h-full object-contain bg-gray-100" />
             </div>
             <div className="relative flex flex-col items-center gap-8">
               <div
@@ -415,7 +424,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
                       <div
                         className="absolute inset-0 w-full h-full"
                         style={{
-                          backgroundImage: `url(${imageUrl})`,
+                          backgroundImage: `url(${proxiedImageUrl || imageUrl})`,
                           backgroundSize: `${difficulty * 100}% ${difficulty * 100}%`,
                           backgroundPosition: `${col * percentage}% ${row * percentage}%`,
                         }}
@@ -450,7 +459,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
               <div className="w-full max-w-[600px] rounded-3xl overflow-hidden shadow-2xl border-4 border-white"
                 style={{ aspectRatio: imageAspectRatio || 1 }}
               >
-                <img src={imageUrl} alt="Complete" className="w-full h-full object-contain bg-gray-100" />
+                <ApiImage src={imageUrl} alt="Complete" className="w-full h-full object-cover" />
               </div>
               <div className="absolute -bottom-4 -right-4 bg-green-500 text-white p-4 rounded-full shadow-lg">
                 <Trophy size={32} />

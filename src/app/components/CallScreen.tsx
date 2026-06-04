@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { sip, useSipCallState, useSipRegistration, useSipContacts, useSipAvailable, isAndroidApp } from "../utils/androidBridge";
+import { ApiImage } from "./ApiImage";
+import { sip, useSipCallState, useSipRegistration, useSipContacts, useSipAvailable, useSipLocalExtension, isAndroidApp } from "../utils/androidBridge";
+import { 
+  loadHistory, saveEntry, formatDuration, formatCallTime,
+  groupByDate, type CallHistoryEntry 
+} from '../utils/callHistory';
 import { motion, AnimatePresence } from "motion/react";
 import {
   Phone,
@@ -234,10 +239,21 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
   const { callState: sipCallState, remote } = useSipCallState();
   const regState = useSipRegistration();
   const isSipAvailable = useSipAvailable();
+  const localExtension = useSipLocalExtension();
+
 
   // Local Simulation State
   const [simCallState, setSimCallState] = useState<CallState>("idle");
   const [simCallTarget, setSimCallTarget] = useState<Extension | null>(null);
+
+  const [callHistory, setCallHistory] = useState<CallHistoryEntry[]>(
+    () => loadHistory()
+  );
+
+  const callStartTimeRef = useRef<number | null>(null);
+  const callTargetExtRef = useRef<string>('');
+  const callTargetNameRef = useRef<string>('');
+  const callDirectionRef = useRef<'incoming' | 'outgoing'>('outgoing');
 
   // Bridge state takes priority ONLY for incoming calls and 
   // connected state — everything else follows simCallState
@@ -262,6 +278,109 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
     : simCallState;
 
   const callTarget = simCallTarget;
+
+  useEffect(() => {
+    // Track call start
+    if (callState === 'active') {
+      callStartTimeRef.current = Date.now();
+    }
+
+    // Track outgoing call initiated
+    if (callState === 'outgoing' && simCallTarget) {
+      callTargetExtRef.current = simCallTarget.ext;
+      callTargetNameRef.current = simCallTarget.nameKey;
+      callDirectionRef.current = 'outgoing';
+    }
+
+    // Track incoming call
+    if (callState === 'incoming' && simCallTarget) {
+      callTargetExtRef.current = simCallTarget.ext;
+      callTargetNameRef.current = simCallTarget.nameKey;
+      callDirectionRef.current = 'incoming';
+      callStartTimeRef.current = null; // not started yet
+    }
+
+    // Record when call ends
+    if (
+      (callState === 'idle' || 
+       callState === 'released' as any) &&
+      callTargetExtRef.current
+    ) {
+      const wasActive = callStartTimeRef.current !== null;
+      const durationSeconds = wasActive
+        ? Math.floor((Date.now() - callStartTimeRef.current!) / 1000)
+        : 0;
+
+      // Only record if we had a real call attempt
+      // (not just simulation mode reset)
+      if (isSipAvailable && callTargetExtRef.current) {
+        const entry: CallHistoryEntry = {
+          id: `call-${Date.now()}`,
+          extension: callTargetExtRef.current,
+          name: callTargetNameRef.current || callTargetExtRef.current,
+          direction: callDirectionRef.current,
+          type: wasActive ? 'attended' : 'missed',
+          timestamp: Date.now(),
+          durationSeconds,
+        };
+
+        saveEntry(entry);
+        setCallHistory(loadHistory()); // refresh from storage
+      }
+
+      // Reset refs
+      callStartTimeRef.current = null;
+      callTargetExtRef.current = '';
+      callTargetNameRef.current = '';
+    }
+  }, [callState, simCallTarget, isSipAvailable]);
+
+  // Use real history if available, fallback to mocks
+  const hasRealHistory = callHistory.length > 0;
+
+  const realMissed: CallLogEntry[] = callHistory
+    .filter(h => h.type === 'missed')
+    .map(h => ({
+      id: h.id,
+      extensionId: h.extension,
+      nameKey: h.name,          // raw name, not translation key
+      ext: h.extension,
+      time: formatCallTime(h.timestamp),
+      type: 'missed' as const,
+      direction: h.direction,
+    }));
+
+  const realAttended: CallLogEntry[] = callHistory
+    .filter(h => h.type === 'attended')
+    .map(h => ({
+      id: h.id,
+      extensionId: h.extension,
+      nameKey: h.name,
+      ext: h.extension,
+      time: formatCallTime(h.timestamp),
+      duration: formatDuration(h.durationSeconds),
+      type: 'attended' as const,
+      direction: h.direction,
+    }));
+
+  // Final display data — real if available, mocks if not
+  const displayMissed = hasRealHistory ? realMissed : MOCK_MISSED;
+  const displayAttended = hasRealHistory ? realAttended : MOCK_ATTENDED;
+  const displayAll = hasRealHistory 
+    ? [...callHistory].sort((a,b) => b.timestamp - a.timestamp)
+        .map(h => ({
+          id: h.id,
+          extensionId: h.extension,
+          nameKey: h.name,
+          ext: h.extension,
+          time: formatCallTime(h.timestamp),
+          duration: h.durationSeconds > 0 
+              ? formatDuration(h.durationSeconds) : undefined,
+          type: h.type,
+          direction: h.direction,
+        } as CallLogEntry))
+    : [...MOCK_MISSED, ...MOCK_ATTENDED]
+        .sort((a,b) => b.id.localeCompare(a.id));
 
   // Sync bridge call target for incoming calls
   useEffect(() => {
@@ -352,6 +471,9 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
     }
   }, [isSipAvailable]);
 
+  // ── Handset Event Listeners ──
+
+
   const handleDialCustom = useCallback(() => {
     if (!dialInput) return;
     handleDial({ 
@@ -416,6 +538,86 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
     playDTMF("delete");
     setDialInput((prev) => prev.slice(0, -1));
   }, [dialInput]);
+
+  // ── Handset Event Listeners ──
+
+  // Listen for handset "focus dialer" — focus the keypad input
+  useEffect(() => {
+    const handler = () => {
+      setDialInput(""); // clear previous input
+      const firstKey = document.querySelector(
+        '[data-keypad-digit="1"]'
+      ) as HTMLElement;
+      if (firstKey) firstKey.focus();
+    };
+    window.addEventListener('handset-focus-dialer', handler);
+    return () => window.removeEventListener('handset-focus-dialer', handler);
+  }, []);
+
+  // Listen for handset "nurse call" — call emergency contact
+  useEffect(() => {
+    const handler = () => {
+      const emergencyContact = contacts.find(c => c.emergency);
+      if (emergencyContact) {
+        handleDial({
+          extension: emergencyContact.extension,
+          displayName: locale === 'ar' 
+            ? emergencyContact.nameAr 
+            : emergencyContact.nameEn,
+          emergency: true,
+        });
+      } else {
+        const nurseExt = EXTENSIONS.find(e => e.id === "nurse");
+        if (nurseExt) {
+          handleDial({
+            extension: nurseExt.ext,
+            displayName: t(nurseExt.nameKey),
+            emergency: true,
+          });
+        }
+      }
+    };
+    window.addEventListener('handset-nurse-call', handler);
+    return () => window.removeEventListener('handset-nurse-call', handler);
+  }, [contacts, handleDial, locale, t]);
+
+  // Listen for handset digit keys — append to dialer when call page open
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { digit } = (e as CustomEvent<{ digit: string }>).detail;
+      if (simCallState === "idle") {
+        setDialInput(prev => prev.length >= 15 ? prev : prev + digit);
+      }
+    };
+    window.addEventListener('handset-dial-digit', handler);
+    return () => window.removeEventListener('handset-dial-digit', handler);
+  }, [simCallState]);
+
+  // Listen for handset "dial" action (accept call or dial input)
+  useEffect(() => {
+    const handler = () => {
+      if (callState === "incoming") {
+        handleAccept();
+      } else if (callState === "idle" && dialInput) {
+        handleDialCustom();
+      }
+    };
+    window.addEventListener('handset-dial-action', handler);
+    return () => window.removeEventListener('handset-dial-action', handler);
+  }, [callState, dialInput, handleAccept, handleDialCustom]);
+
+  // Listen for handset "hangup" action (decline or end call)
+  useEffect(() => {
+    const handler = () => {
+      if (callState === "incoming") {
+        handleDecline();
+      } else if (callState === "active" || callState === "outgoing") {
+        handleEnd();
+      }
+    };
+    window.addEventListener('handset-hangup-action', handler);
+    return () => window.removeEventListener('handset-hangup-action', handler);
+  }, [callState, handleDecline, handleEnd]);
 
   /* ═══════════════════════════════════════════════════════════════════════
    * RENDER — Call-in-progress overlays (dark)
@@ -511,7 +713,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
                    {[["1","2","3"],["4","5","6"],["7","8","9"],["*","0","#"]].map((row, ri) => (
                       <div key={ri} className="flex gap-4 justify-center">
                         {row.map((digit) => (
-                           <button key={digit} data-no-tick="true" onPointerDown={() => { playDTMF(digit); setInCallDigits(prev => prev.length >= 16 ? prev : prev + digit); }} className="active:scale-90 transition-transform" style={{
+                           <button key={digit} data-keypad-digit={digit} data-no-tick="true" onPointerDown={() => { playDTMF(digit); setInCallDigits(prev => prev.length >= 16 ? prev : prev + digit); }} className="active:scale-90 transition-transform" style={{
                              width:"68px", height:"68px", borderRadius:theme.radiusFull, backgroundColor:"rgba(255,255,255,0.12)",
                              display:"flex", alignItems:"center", justifyContent:"center", border: "none",
                            }}>
@@ -616,7 +818,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
       }}
     >
       {/* Subtle hero texture */}
-      <img
+      <ApiImage
         src={theme.heroImageUrl}
         alt="" aria-hidden
         className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
@@ -681,7 +883,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
           </div>
           <div className="text-left">
             <p style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "14px", color: "rgba(255,255,255,0.7)" }}>{t("call.yourExtension")}</p>
-            <p style={{ fontFamily: theme.fontFamilyMono, fontSize: "20px", fontWeight: WEIGHT.bold, color: "#fff", letterSpacing: "1px", lineHeight: 1 }}>4120</p>
+            <p style={{ fontFamily: theme.fontFamilyMono, fontSize: "20px", fontWeight: WEIGHT.bold, color: "#fff", letterSpacing: "1px", lineHeight: 1 }}>{localExtension || '—'}</p>
           </div>
         </button>
       </div>
@@ -714,7 +916,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
             }}>
               {(["all", "missed", "attended"] as const).map((key) => {
                 const active = historyTab === key;
-                const count = key === "missed" ? MOCK_MISSED.length : key === "attended" ? MOCK_ATTENDED.length : MOCK_MISSED.length + MOCK_ATTENDED.length;
+                const count = key === "missed" ? displayMissed.length : key === "attended" ? displayAttended.length : displayAll.length;
                 return (
                   <button
                     key={key}
@@ -751,14 +953,14 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
             <AnimatePresence mode="wait">
               {historyTab === "all" ? (
                 <motion.div key="all" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
-                  {[...MOCK_ATTENDED, ...MOCK_MISSED].length === 0 ? (
+                  {displayAll.length === 0 ? (
                     <EmptyState message={t("call.noHistory")} />
                   ) : (
                     <div className="flex flex-col gap-3">
                       <p className="px-2 pt-1 pb-2" style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "16px", color: theme.textMuted }}>{t("call.today")}</p>
-                      {[...MOCK_ATTENDED, ...MOCK_MISSED].sort((a,b) => b.id.localeCompare(a.id)).map((entry) => (
+                      {displayAll.map((entry) => (
                         <CallLogRow key={entry.id} entry={entry} onCallback={(e) => {
-                          handleDial({ extension: e.ext, displayName: t(e.nameKey) });
+                          handleDial({ extension: e.ext, displayName: e.nameKey.startsWith('call.') ? t(e.nameKey) : e.nameKey });
                         }} />
                       ))}
                     </div>
@@ -766,14 +968,14 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
                 </motion.div>
               ) : historyTab === "missed" ? (
                 <motion.div key="missed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
-                  {MOCK_MISSED.length === 0 ? (
+                  {displayMissed.length === 0 ? (
                     <EmptyState message={t("call.noMissed")} />
                   ) : (
                     <div className="flex flex-col gap-3">
                       <p className="px-2 pt-1 pb-2" style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "16px", color: theme.textMuted }}>{t("call.today")}</p>
-                      {MOCK_MISSED.map((entry) => (
+                      {displayMissed.map((entry) => (
                         <CallLogRow key={entry.id} entry={entry} onCallback={(e) => {
-                          handleDial({ extension: e.ext, displayName: t(e.nameKey) });
+                          handleDial({ extension: e.ext, displayName: e.nameKey.startsWith('call.') ? t(e.nameKey) : e.nameKey });
                         }} />
                       ))}
                     </div>
@@ -781,14 +983,14 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
                 </motion.div>
               ) : (
                 <motion.div key="attended" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
-                  {MOCK_ATTENDED.length === 0 ? (
+                  {displayAttended.length === 0 ? (
                     <EmptyState message={t("call.noAttended")} />
                   ) : (
                     <div className="flex flex-col gap-3">
                       <p className="px-2 pt-1 pb-2" style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "16px", color: theme.textMuted }}>{t("call.today")}</p>
-                      {MOCK_ATTENDED.map((entry) => (
+                      {displayAttended.map((entry) => (
                         <CallLogRow key={entry.id} entry={entry} onCallback={(e) => {
-                          handleDial({ extension: e.ext, displayName: t(e.nameKey) });
+                          handleDial({ extension: e.ext, displayName: e.nameKey.startsWith('call.') ? t(e.nameKey) : e.nameKey });
                         }} />
                       ))}
                     </div>
@@ -1032,7 +1234,7 @@ function CallLogRow({ entry, onCallback }: { entry: CallLogEntry; onCallback: (e
           fontFamily, fontSize: "17px", fontWeight: WEIGHT.semibold,
           color: isMissed ? DANGER : theme.textHeading, margin: 0,
         }}>
-          {t(entry.nameKey)}
+          {entry.nameKey.startsWith('call.') ? t(entry.nameKey) : entry.nameKey}
         </p>
         <div className="flex items-center gap-3 mt-1">
           <span style={{
@@ -1099,6 +1301,7 @@ function KeypadButton({ digit, onPress }: { digit: string; onPress: (digit: stri
   
   return (
     <button
+      data-keypad-digit={digit}
       data-no-tick="true"
       onPointerDown={() => setPressed(true)}
       onPointerUp={() => setPressed(false)}

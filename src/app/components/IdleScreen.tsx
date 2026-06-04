@@ -1,4 +1,5 @@
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, LEADING, TEXT_STYLE } from "./ThemeContext";
+import { ApiImage } from "./ApiImage";
 import { useLocale } from "./i18n";
 
 export function IdleScreen() {
@@ -41,7 +42,7 @@ export function IdleScreen() {
         <a href={theme.id === "imc" ? `https://www.imc.med.sa/${locale}` : theme.hospitalWebsiteUrl} target="_blank" rel="noopener noreferrer" 
           className="transition-transform hover:scale-105 active:scale-95"
           style={{ textDecoration: "none" }}>
-          <img
+          <ApiImage
             src={theme.logoUrl}
             alt="Hospital"
             className="w-auto object-contain"

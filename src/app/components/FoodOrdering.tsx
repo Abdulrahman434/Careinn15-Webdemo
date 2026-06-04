@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { ApiImage } from "./ApiImage";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowLeft,
@@ -25,12 +26,14 @@ import {
   Info,
   ChevronLeft,
   ChevronRight,
+  AlertTriangle,
 } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW, SPACE, LEADING } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useOrders } from "./OrderStore";
 import type { PlacedOrder, OrderStatus } from "./OrderStore";
+import { useNurseStore } from "./NurseDataStore";
 import pancakesImg from "../../assets/b167c7c821f762f1a84e11f36986d483ad5614d0.png";
 import scrambledEggsImg from "../../assets/075c5a0d40e038030a1d251707da75764fd76276.png";
 import coffeeImg from "../../assets/9df352703d6019b682a622cf9d906127db5bc7a5.png";
@@ -44,6 +47,14 @@ import lemonTeaImg from "../../assets/f79d8913c4dbf3edcd50cd2e9c1efa1483970622.p
 
 type DietaryTag = "vegetarian" | "vegan" | "gluten-free" | "low-sodium" | "diabetic-friendly" | "high-protein";
 
+type Allergen =
+  | "peanuts" | "tree-nuts" | "shellfish" | "fish" | "eggs"
+  | "dairy" | "lactose" | "gluten" | "wheat" | "soy" | "sesame"
+  | "latex" | "penicillin";
+
+type DietCompatibility =
+  | "REG" | "DM" | "NAS" | "LS" | "RD" | "LF" | "SOFT" | "CL" | "FL" | "BLAND" | "LP";
+
 interface MenuItem {
   id: string;
   name: { en: string; ar: string };
@@ -52,6 +63,24 @@ interface MenuItem {
   calories: number;
   tags: DietaryTag[];
   popular?: boolean;
+  suitableFor: DietCompatibility[];
+  allergens: Allergen[];
+  nutrition?: { protein?: number; carbs?: number; sodium?: number; sugar?: number; fat?: number };
+}
+
+/** Map raw nurse-entered allergy strings to standardized tokens */
+function normalizeAllergyName(raw: string): Allergen | null {
+  const lower = raw.toLowerCase().trim();
+  const map: Record<string, Allergen> = {
+    "peanut": "peanuts", "peanuts": "peanuts",
+    "tree nut": "tree-nuts", "tree nuts": "tree-nuts", "nuts": "tree-nuts",
+    "shellfish": "shellfish", "shrimp": "shellfish", "crab": "shellfish", "lobster": "shellfish",
+    "fish": "fish", "egg": "eggs", "eggs": "eggs",
+    "milk": "dairy", "dairy": "dairy", "lactose": "lactose",
+    "gluten": "gluten", "wheat": "wheat", "soy": "soy", "soya": "soy",
+    "sesame": "sesame", "latex": "latex", "penicillin": "penicillin",
+  };
+  return map[lower] ?? null;
 }
 
 interface MealCategory {
@@ -65,27 +94,67 @@ interface MealCategory {
   color: string; // accent color for category
 }
 
-/** Check if current time is within a meal's serving window */
-function isMealTimeActive(hours: [number, number] | null): boolean {
-  if (!hours) return true; // all-day
-  const now = new Date().getHours();
-  return now >= hours[0] && now < hours[1];
+/** 
+ * User's Strict Ordering Windows:
+ * 9:00 PM – 6:00 AM: Breakfast only
+ * 6:00 AM – 12:00 PM: Lunch only
+ * 12:00 PM – 6:00 PM: Dinner only
+ * 6:00 PM – 9:00 PM: Locked (Preparing for tomorrow)
+ */
+function getCurrentOrderableMealId(): string | null {
+  const h = new Date().getHours();
+  if (h >= 21 || h < 6) return "breakfast";
+  if (h >= 6 && h < 12) return "lunch";
+  if (h >= 12 && h < 18) return "dinner";
+  return null; // 18-21: Blackout
+}
+
+function isMealOrderable(categoryId: string): boolean {
+  // Snacks and Drinks are always orderable unless it's the blackout period?
+  // The user said "you can order for [Specific Meal] only". 
+  // We'll assume Snacks/Drinks follow the same rule or are always on. 
+  // Usually hospitals allow snacks/drinks anytime. 
+  // But I'll stick to the "Upcoming meal only" rule for main meals.
+  if (categoryId === "snacks" || categoryId === "drinks") {
+    const h = new Date().getHours();
+    return !(h >= 18 && h < 21); // Allowed except blackout
+  }
+  return categoryId === getCurrentOrderableMealId();
+}
+
+/** Check if current time is past a meal's window (for UI labels) */
+function isMealPassed(categoryId: string): boolean {
+  const h = new Date().getHours();
+  const orderable = getCurrentOrderableMealId();
+  if (categoryId === "breakfast") return h >= 6 && h < 21;
+  if (categoryId === "lunch") return h >= 12 || h < 6;
+  if (categoryId === "dinner") return h >= 18 || h < 12;
+  return false;
 }
 
 /** Get delivery message based on whether meal is currently being served */
 function getDeliveryMessage(category: MealCategory, isRTL: boolean): { label: string; detail: string } {
-  if (isMealTimeActive(category.hours)) {
+  if (isMealOrderable(category.id)) {
     return {
       label: isRTL ? "وقت التوصيل المتوقع" : "Est. Delivery",
       detail: isRTL ? "٢٥–٣٥ دقيقة" : "25–35 min",
     };
   }
-  // Pre-order: will be delivered during that meal's window
+
+  // Locked or Passed/Upcoming
+  const h = new Date().getHours();
+  if (h >= 18 && h < 21) {
+    return {
+      label: isRTL ? "جاري التجهيز" : "Preparing",
+      detail: isRTL ? "قائمة الغد قيد التجهيز" : "Tomorrow's menu",
+    };
+  }
+
   const timeStr = isRTL ? category.timeRange.ar : category.timeRange.en;
-  const mealName = isRTL ? category.label.ar : category.label.en;
+  const prefix = isMealPassed(category.id) ? (isRTL ? "غداً " : "Tomorrow ") : "";
   return {
     label: isRTL ? "سيتم التوصيل في" : "Delivered during",
-    detail: isRTL ? `${mealName} (${timeStr})` : `${mealName} (${timeStr})`,
+    detail: `${prefix}${timeStr}`,
   };
 }
 
@@ -106,6 +175,9 @@ const MENU: MealCategory[] = [
         calories: 320,
         tags: ["high-protein"],
         popular: true,
+        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "BLAND"],
+        allergens: ["eggs", "gluten", "wheat"],
+        nutrition: { protein: 22, carbs: 28, sodium: 380, fat: 14 },
       },
       {
         id: "b2",
@@ -114,6 +186,9 @@ const MENU: MealCategory[] = [
         image: "https://images.unsplash.com/photo-1631077019185-84d961548731?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvYXRtZWFsJTIwcG9ycmlkZ2UlMjBib3dsJTIwYnJlYWtmYXN0JTIwaGVhbHRoeXxlbnwxfHx8fDE3NzM4MDU4MDV8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
         calories: 250,
         tags: ["vegetarian", "diabetic-friendly"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "BLAND", "LP"],
+        allergens: [],
+        nutrition: { protein: 8, carbs: 42, sodium: 10, sugar: 12 },
       },
       {
         id: "b3",
@@ -122,6 +197,9 @@ const MENU: MealCategory[] = [
         image: pancakesImg,
         calories: 380,
         tags: ["vegetarian"],
+        suitableFor: ["REG"],
+        allergens: ["gluten", "dairy", "eggs", "wheat"],
+        nutrition: { protein: 8, carbs: 52, sodium: 420, sugar: 24, fat: 14 },
       },
       {
         id: "b4",
@@ -131,6 +209,9 @@ const MENU: MealCategory[] = [
         calories: 340,
         tags: ["vegetarian", "high-protein"],
         popular: true,
+        suitableFor: ["REG", "DM", "NAS", "LS", "LF"],
+        allergens: ["gluten", "eggs", "wheat"],
+        nutrition: { protein: 14, carbs: 30, sodium: 290, fat: 20 },
       },
       {
         id: "b5",
@@ -139,6 +220,9 @@ const MENU: MealCategory[] = [
         image: "https://images.unsplash.com/photo-1729368628910-2d58db8657a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx5b2d1cnQlMjBwYXJmYWl0JTIwZ3Jhbm9sYSUyMGJlcnJpZXN8ZW58MXx8fHwxNzczODA1ODA2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
         calories: 210,
         tags: ["vegetarian", "gluten-free"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "SOFT", "BLAND"],
+        allergens: ["dairy", "lactose"],
+        nutrition: { protein: 15, carbs: 28, sodium: 60, sugar: 14 },
       },
       {
         id: "b6",
@@ -147,6 +231,31 @@ const MENU: MealCategory[] = [
         image: scrambledEggsImg,
         calories: 290,
         tags: ["high-protein"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "BLAND"],
+        allergens: ["eggs", "gluten", "wheat"],
+        nutrition: { protein: 20, carbs: 24, sodium: 350, fat: 12 },
+      },
+      {
+        id: "b7",
+        name: { en: "Plain Porridge", ar: "عصيدة سادة" },
+        description: { en: "Smooth, creamy porridge — gentle on the stomach", ar: "عصيدة ناعمة كريمية — لطيفة على المعدة" },
+        image: "https://images.unsplash.com/photo-1631077019185-84d961548731?w=600",
+        calories: 150,
+        tags: ["vegetarian", "low-sodium", "diabetic-friendly"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "FL", "BLAND", "LP"],
+        allergens: [],
+        nutrition: { protein: 4, carbs: 28, sodium: 5, sugar: 2, fat: 3 },
+      },
+      {
+        id: "b8",
+        name: { en: "Fruit Plate", ar: "طبق فواكه" },
+        description: { en: "Assorted seasonal fresh fruits — light and refreshing", ar: "فواكه موسمية مشكلة طازجة — خفيفة ومنعشة" },
+        image: "https://images.unsplash.com/photo-1681840524567-732960c82f4c?w=600",
+        calories: 95,
+        tags: ["vegan", "gluten-free", "diabetic-friendly"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "SOFT", "BLAND", "LP"],
+        allergens: [],
+        nutrition: { protein: 1, carbs: 24, sodium: 2, sugar: 18, fat: 0 },
       },
     ],
   },
@@ -166,6 +275,9 @@ const MENU: MealCategory[] = [
         calories: 450,
         tags: ["high-protein", "gluten-free"],
         popular: true,
+        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT"],
+        allergens: [],
+        nutrition: { protein: 38, carbs: 42, sodium: 320, fat: 10 },
       },
       {
         id: "l2",
@@ -175,6 +287,9 @@ const MENU: MealCategory[] = [
         calories: 220,
         tags: ["vegan", "low-sodium", "diabetic-friendly"],
         popular: true,
+        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "SOFT", "BLAND", "LP"],
+        allergens: ["gluten", "wheat"],
+        nutrition: { protein: 12, carbs: 34, sodium: 180, fat: 4 },
       },
       {
         id: "l3",
@@ -183,6 +298,9 @@ const MENU: MealCategory[] = [
         image: "https://images.unsplash.com/photo-1622756144420-6877b1b7476e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMGdyZWVuJTIwc2FsYWQlMjBib3lsJTIwaGVhbHRoeXxlbnwxfHx8fDE3NzM4MDU4MDd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
         calories: 150,
         tags: ["vegan", "gluten-free", "low-sodium"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "BLAND", "LP"],
+        allergens: [],
+        nutrition: { protein: 4, carbs: 18, sodium: 45, fat: 8 },
       },
       {
         id: "l4",
@@ -191,6 +309,9 @@ const MENU: MealCategory[] = [
         image: "https://images.unsplash.com/photo-1770350482632-2ac108790b58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYXN0YSUyMHBlbm5lJTIwdG9tYXRvJTIwYmFzaWwlMjBwbGF0ZXxlbnwxfHx8fDE3NzM4MDU4MDd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
         calories: 420,
         tags: ["vegetarian"],
+        suitableFor: ["REG"],
+        allergens: ["gluten", "wheat", "dairy"],
+        nutrition: { protein: 14, carbs: 62, sodium: 580, fat: 12 },
       },
       {
         id: "l5",
@@ -199,6 +320,42 @@ const MENU: MealCategory[] = [
         image: "https://images.unsplash.com/photo-1612108438004-257c47560118?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjaGlja2VuJTIwc291cCUyMGJyb3RoJTIwdmVnZXRhYmxlcyUyMHdhcm18ZW58MXx8fHwxNzczODA1ODA4fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
         calories: 190,
         tags: ["low-sodium", "gluten-free"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "BLAND", "LP"],
+        allergens: [],
+        nutrition: { protein: 16, carbs: 18, sodium: 280, fat: 6 },
+      },
+      {
+        id: "l6",
+        name: { en: "Steamed Fish & Vegetables", ar: "سمك مطهو بالبخار وخضراوات" },
+        description: { en: "Light steamed white fish with seasonal vegetables", ar: "سمك أبيض مطهو بالبخار مع خضراوات موسمية" },
+        image: "https://images.unsplash.com/photo-1673436977947-0787164a9abc?w=600",
+        calories: 280,
+        tags: ["high-protein", "gluten-free", "low-sodium"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "BLAND", "LP"],
+        allergens: ["fish"],
+        nutrition: { protein: 32, carbs: 12, sodium: 190, fat: 10 },
+      },
+      {
+        id: "l7",
+        name: { en: "Vegetable Stew", ar: "يخنة خضراوات" },
+        description: { en: "Slow-cooked mixed vegetables in herb broth", ar: "خضراوات مشكلة مطبوخة ببطء في مرق الأعشاب" },
+        image: "https://images.unsplash.com/photo-1518164147695-36c13dd568f5?w=600",
+        calories: 180,
+        tags: ["vegan", "gluten-free", "low-sodium", "diabetic-friendly"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "BLAND", "LP"],
+        allergens: [],
+        nutrition: { protein: 6, carbs: 28, sodium: 150, fat: 4 },
+      },
+      {
+        id: "l8",
+        name: { en: "Grilled Turkey Wrap", ar: "راب ديك رومي مشوي" },
+        description: { en: "Lean turkey with greens in a whole wheat wrap", ar: "ديك رومي مشوي مع خضراوات في خبز قمح كامل" },
+        image: "https://images.unsplash.com/photo-1604382440115-5f730e6ede1f?w=600",
+        calories: 360,
+        tags: ["high-protein"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "LF"],
+        allergens: ["gluten", "wheat"],
+        nutrition: { protein: 28, carbs: 34, sodium: 420, fat: 12 },
       },
     ],
   },
@@ -218,6 +375,9 @@ const MENU: MealCategory[] = [
         calories: 380,
         tags: ["high-protein", "gluten-free"],
         popular: true,
+        suitableFor: ["REG", "DM", "NAS", "LS", "LF"],
+        allergens: ["fish", "dairy"],
+        nutrition: { protein: 36, carbs: 8, sodium: 320, fat: 22 },
       },
       {
         id: "d2",
@@ -227,6 +387,9 @@ const MENU: MealCategory[] = [
         calories: 520,
         tags: ["high-protein"],
         popular: true,
+        suitableFor: ["REG"],
+        allergens: [],
+        nutrition: { protein: 32, carbs: 52, sodium: 680, fat: 18 },
       },
       {
         id: "d3",
@@ -235,6 +398,9 @@ const MENU: MealCategory[] = [
         image: "https://images.unsplash.com/photo-1673436977947-0787164a9abc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmlsbGVkJTIwZmlzaCUyMHZlZ2V0YWJsZXMlMjBNZWRpdGVycmFuZWFuJTIwcGxhdGV8ZW58MXx8fHwxNzczODA1ODA2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
         calories: 350,
         tags: ["high-protein", "gluten-free", "low-sodium"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "LF"],
+        allergens: ["fish"],
+        nutrition: { protein: 34, carbs: 14, sodium: 240, fat: 18 },
       },
       {
         id: "d4",
@@ -243,6 +409,9 @@ const MENU: MealCategory[] = [
         image: "https://images.unsplash.com/photo-1518164147695-36c13dd568f5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdGVhbWVkJTIwdmVnZXRhYmxlcyUyMGJyb2Njb2xpJTIwY2Fycm90cyUyMGhlYWx0aHl8ZW58MXx8fHwxNzczODA1ODA5fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
         calories: 120,
         tags: ["vegan", "gluten-free", "low-sodium", "diabetic-friendly"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "CL", "FL", "BLAND", "LP"],
+        allergens: [],
+        nutrition: { protein: 4, carbs: 22, sodium: 30, fat: 2 },
       },
       {
         id: "d5",
@@ -251,6 +420,53 @@ const MENU: MealCategory[] = [
         image: "https://images.unsplash.com/photo-1743674453093-592bed88018e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxodW1tdXMlMjBwaXRhJTIwYnJlYWQlMjBNaWRkbGUlMjBFYXN0ZXJuJTIwYXBwZXRpemVyfGVufDF8fHx8MTc3MzgwNTgwOHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
         calories: 280,
         tags: ["vegan"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "LF"],
+        allergens: ["gluten", "wheat", "sesame"],
+        nutrition: { protein: 10, carbs: 36, sodium: 380, fat: 12 },
+      },
+      {
+        id: "d6",
+        name: { en: "Herb-Crusted Fish", ar: "سمك بالخردل والأعشاب" },
+        description: { en: "Baked white fish with a light herb and breadcrumb crust", ar: "سمك أبيض مخبوز بطبقة خفيفة من الأعشاب وفتات الخبز" },
+        image: "https://images.unsplash.com/photo-1673436977947-0787164a9abc?w=600",
+        calories: 310,
+        tags: ["high-protein"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "LF"],
+        allergens: ["fish", "gluten", "wheat"],
+        nutrition: { protein: 28, carbs: 18, sodium: 340, fat: 12 },
+      },
+      {
+        id: "d7",
+        name: { en: "Vegetable Lasagna", ar: "لازانيا خضراوات" },
+        description: { en: "Layered pasta with roasted vegetables and light cheese sauce", ar: "باستا بطبقات مع خضراوات مشوية وصلصة جبن خفيفة" },
+        image: "https://images.unsplash.com/photo-1770350482632-2ac108790b58?w=600",
+        calories: 420,
+        tags: ["vegetarian"],
+        suitableFor: ["REG"],
+        allergens: ["gluten", "wheat", "dairy", "lactose"],
+        nutrition: { protein: 18, carbs: 48, sodium: 520, fat: 16 },
+      },
+      {
+        id: "d8",
+        name: { en: "Grilled Steak & Mash", ar: "ستيك مشوي وبطاطس مهروسة" },
+        description: { en: "Lean beef steak with creamy mashed potatoes and green beans", ar: "ستيك لحم بقري قليل الدهون مع بطاطس مهروسة وفاصوليا خضراء" },
+        image: "https://images.unsplash.com/photo-1604382440115-5f730e6ede1f?w=600",
+        calories: 580,
+        tags: ["high-protein"],
+        suitableFor: ["REG"],
+        allergens: ["dairy", "lactose"],
+        nutrition: { protein: 42, carbs: 32, sodium: 640, fat: 28 },
+      },
+      {
+        id: "d9",
+        name: { en: "Baked Potato", ar: "بطاطس مشوية" },
+        description: { en: "Fluffy baked potato with a touch of olive oil and herbs", ar: "بطاطس مشوية هشة مع لمسة من زيت الزيتون والأعشاب" },
+        image: "https://images.unsplash.com/photo-1518164147695-36c13dd568f5?w=600",
+        calories: 160,
+        tags: ["vegan", "gluten-free", "low-sodium", "diabetic-friendly"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "BLAND", "LP"],
+        allergens: [],
+        nutrition: { protein: 4, carbs: 36, sodium: 15, fat: 0 },
       },
     ],
   },
@@ -270,6 +486,9 @@ const MENU: MealCategory[] = [
         calories: 120,
         tags: ["vegan", "gluten-free", "diabetic-friendly"],
         popular: true,
+        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "BLAND", "LP"],
+        allergens: [],
+        nutrition: { protein: 1, carbs: 30, sodium: 3, sugar: 22 },
       },
       {
         id: "s2",
@@ -278,6 +497,9 @@ const MENU: MealCategory[] = [
         image: "https://images.unsplash.com/photo-1729368628910-2d58db8657a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx5b2d1cnQlMjBwYXJmYWl0JTIwZ3Jhbm9sYSUyMGJlcnJpZXN8ZW58MXx8fHwxNzczODA1ODA2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
         calories: 200,
         tags: ["vegetarian"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "SOFT"],
+        allergens: ["dairy", "lactose"],
+        nutrition: { protein: 14, carbs: 28, sodium: 55, sugar: 16 },
       },
       {
         id: "s3",
@@ -286,6 +508,9 @@ const MENU: MealCategory[] = [
         image: "https://images.unsplash.com/photo-1598371623789-44e341c1b6ab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaXhlZCUyMG51dHMlMjBhbG1vbmRzJTIwc25hY2slMjBib3lsJTIwaGVhbHRoeXxlbnwxfHx8fDE3NzM4MDU4MTB8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
         calories: 280,
         tags: ["vegan", "gluten-free", "high-protein"],
+        suitableFor: ["REG", "DM", "LF"],
+        allergens: ["tree-nuts", "peanuts"],
+        nutrition: { protein: 10, carbs: 12, sodium: 95, fat: 24 },
       },
       {
         id: "s4",
@@ -294,6 +519,9 @@ const MENU: MealCategory[] = [
         image: "https://images.unsplash.com/photo-1745236549159-f1297ef35fb3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyaWNlJTIwcHVkZGluZyUyMGRlc3NlcnQlMjBjcmVhbXklMjBib3lsfGVufDF8fHx8MTc3MzgwNTgwOXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
         calories: 240,
         tags: ["vegetarian", "gluten-free"],
+        suitableFor: ["REG", "NAS", "LS", "SOFT"],
+        allergens: ["dairy", "lactose"],
+        nutrition: { protein: 6, carbs: 40, sodium: 80, sugar: 22 },
       },
       {
         id: "s5",
@@ -302,6 +530,42 @@ const MENU: MealCategory[] = [
         image: "https://images.unsplash.com/photo-1673551494277-92204546b504?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjaG9jb2xhdGUlMjBwdWRkaW5nJTIwZGVzc2VydCUyMGN1cHxlbnwxfHx8fDE3NzM4MDU4MTF8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
         calories: 310,
         tags: ["vegetarian"],
+        suitableFor: ["REG", "NAS", "LS", "SOFT"],
+        allergens: ["dairy", "lactose", "soy"],
+        nutrition: { protein: 5, carbs: 42, sodium: 120, sugar: 32, fat: 14 },
+      },
+      {
+        id: "s6",
+        name: { en: "Plain Crackers", ar: "بسكويت سادة" },
+        description: { en: "Lightly salted wheat crackers — easy to digest", ar: "بسكويت قمح مملح قليلاً — سهل الهضم" },
+        image: "https://images.unsplash.com/photo-1598371623789-44e341c1b6ab?w=600",
+        calories: 80,
+        tags: ["vegetarian"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "CL", "FL", "BLAND", "LP"],
+        allergens: ["gluten", "wheat"],
+        nutrition: { protein: 2, carbs: 12, sodium: 110, fat: 3 },
+      },
+      {
+        id: "s7",
+        name: { en: "Hummus with Cucumber", ar: "حمص مع خيار" },
+        description: { en: "Creamy hummus served with fresh cucumber slices", ar: "حمص كريمي يقدم مع شرائح خيار طازجة" },
+        image: "https://images.unsplash.com/photo-1743674453093-592bed88018e?w=600",
+        calories: 140,
+        tags: ["vegan", "gluten-free", "diabetic-friendly"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "SOFT", "BLAND", "LP"],
+        allergens: ["sesame"],
+        nutrition: { protein: 6, carbs: 14, sodium: 180, fat: 8 },
+      },
+      {
+        id: "s8",
+        name: { en: "Vegetable Sticks", ar: "أصابع خضراوات" },
+        description: { en: "Crunchy carrot and cucumber sticks — healthy and light", ar: "أصابع جزر وخيار مقرمشة — صحية وخفيفة" },
+        image: "https://images.unsplash.com/photo-1622756144420-6877b1b7476e?w=600",
+        calories: 45,
+        tags: ["vegan", "gluten-free", "low-sodium", "diabetic-friendly"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "CL", "FL", "BLAND", "LP"],
+        allergens: [],
+        nutrition: { protein: 1, carbs: 8, sodium: 20, fat: 0 },
       },
     ],
   },
@@ -321,6 +585,9 @@ const MENU: MealCategory[] = [
         calories: 110,
         tags: ["vegan", "gluten-free", "diabetic-friendly"],
         popular: true,
+        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "SOFT", "FL", "BLAND", "LP"],
+        allergens: [],
+        nutrition: { protein: 2, carbs: 26, sodium: 2, sugar: 22 },
       },
       {
         id: "dr2",
@@ -329,6 +596,9 @@ const MENU: MealCategory[] = [
         image: teaImg,
         calories: 5,
         tags: ["vegan", "gluten-free", "diabetic-friendly"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "CL", "FL", "BLAND", "LP"],
+        allergens: [],
+        nutrition: { protein: 0, carbs: 0, sodium: 0, sugar: 0 },
       },
       {
         id: "dr3",
@@ -338,6 +608,9 @@ const MENU: MealCategory[] = [
         calories: 10,
         tags: ["vegan", "gluten-free", "low-sodium", "diabetic-friendly"],
         popular: true,
+        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "CL", "FL", "BLAND", "LP"],
+        allergens: [],
+        nutrition: { protein: 0, carbs: 2, sodium: 0, sugar: 2 },
       },
       {
         id: "dr4",
@@ -346,6 +619,9 @@ const MENU: MealCategory[] = [
         image: milkImg,
         calories: 180,
         tags: ["vegetarian", "gluten-free"],
+        suitableFor: ["REG", "NAS", "LS", "SOFT", "FL", "BLAND"],
+        allergens: ["dairy", "lactose"],
+        nutrition: { protein: 8, carbs: 24, sodium: 100, sugar: 22 },
       },
       {
         id: "dr5",
@@ -355,6 +631,42 @@ const MENU: MealCategory[] = [
         calories: 160,
         tags: ["vegetarian", "gluten-free"],
         popular: true,
+        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "SOFT", "FL"],
+        allergens: ["dairy", "lactose"],
+        nutrition: { protein: 6, carbs: 30, sodium: 45, sugar: 24 },
+      },
+      {
+        id: "dr6",
+        name: { en: "Apple Juice", ar: "عصير تفاح" },
+        description: { en: "Clear apple juice — smooth and sweet", ar: "عصير تفاح صافي — ناعم وحلو" },
+        image: coffeeImg,
+        calories: 120,
+        tags: ["vegan", "gluten-free"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "CL", "FL", "BLAND", "LP"],
+        allergens: [],
+        nutrition: { protein: 0, carbs: 30, sodium: 10, sugar: 28 },
+      },
+      {
+        id: "dr7",
+        name: { en: "Chamomile Tea", ar: "شاي بابونج" },
+        description: { en: "Soothing herbal tea — naturally caffeine-free", ar: "شاي أعشاب مهدئ — خالي من الكافيين طبيعياً" },
+        image: teaImg,
+        calories: 2,
+        tags: ["vegan", "gluten-free", "diabetic-friendly"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "CL", "FL", "BLAND", "LP"],
+        allergens: [],
+        nutrition: { protein: 0, carbs: 0, sodium: 0, sugar: 0 },
+      },
+      {
+        id: "dr8",
+        name: { en: "Mineral Water", ar: "مياه معدنية" },
+        description: { en: "Still mineral water — stay hydrated", ar: "مياه معدنية طبيعية — حافظ على رطوبة جسمك" },
+        image: lemonTeaImg,
+        calories: 0,
+        tags: ["vegan", "gluten-free", "low-sodium", "diabetic-friendly"],
+        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "CL", "FL", "BLAND", "LP"],
+        allergens: [],
+        nutrition: { protein: 0, carbs: 0, sodium: 0, sugar: 0 },
       },
     ],
   },
@@ -363,12 +675,12 @@ const MENU: MealCategory[] = [
 const DANGER = "#D10044";
 
 const TAG_CONFIG: Record<DietaryTag, { label: { en: string; ar: string }; icon: React.ComponentType<any>; color: string }> = {
-  "vegetarian":       { label: { en: "Vegetarian", ar: "نباتي" },          icon: Leaf,          color: "#22C55E" },
-  "vegan":            { label: { en: "Vegan", ar: "نباتي صرف" },           icon: Leaf,          color: "#16A34A" },
-  "gluten-free":      { label: { en: "Gluten Free", ar: "خالٍ من الغلوتين" }, icon: Check,       color: "#8B5CF6" },
-  "low-sodium":       { label: { en: "Low Sodium", ar: "قليل الملح" },      icon: Heart,         color: "#3B82F6" },
-  "diabetic-friendly":{ label: { en: "Diabetic Friendly", ar: "مناسب لمرضى السكري" }, icon: Check, color: "#0EA5E9" },
-  "high-protein":     { label: { en: "High Protein", ar: "غني بالبروتين" },  icon: Flame,         color: "#F97316" },
+  "vegetarian": { label: { en: "Vegetarian", ar: "نباتي" }, icon: Leaf, color: "#22C55E" },
+  "vegan": { label: { en: "Vegan", ar: "نباتي صرف" }, icon: Leaf, color: "#16A34A" },
+  "gluten-free": { label: { en: "Gluten Free", ar: "خالٍ من الغلوتين" }, icon: Check, color: "#8B5CF6" },
+  "low-sodium": { label: { en: "Low Sodium", ar: "قليل الملح" }, icon: Heart, color: "#3B82F6" },
+  "diabetic-friendly": { label: { en: "Diabetic Friendly", ar: "مناسب لمرضى السكري" }, icon: Check, color: "#0EA5E9" },
+  "high-protein": { label: { en: "High Protein", ar: "غني بالبروتين" }, icon: Flame, color: "#F97316" },
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -391,6 +703,7 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
   const { isRTL, fontFamily } = useLocale();
   const { placeOrder: placeOrderToStore } = useOrders();
+  const nurseState = useNurseStore();
 
   const [step, setStep] = useState<OrderStep>("menu");
   const [activeCategory, setActiveCategory] = useState(MENU[0].id);
@@ -399,13 +712,43 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
   const [specialNotes, setSpecialNotes] = useState("");
   const [lastOrderNumber, setLastOrderNumber] = useState("");
 
+  // ── Diet / Allergy filter (reactive to NurseDataStore) ──
+  const activeDietCodes = nurseState.dietCodes.map(d => d.code as DietCompatibility);
+  const activeAllergens = useMemo(() => nurseState.allergies
+    .map(normalizeAllergyName)
+    .filter((a): a is Allergen => a !== null), [nurseState.allergies]);
+
+  const isItemAllowed = useCallback((item: MenuItem): boolean => {
+    if (item.allergens.some(a => activeAllergens.includes(a))) return false;
+    if (activeDietCodes.length === 0) return true;
+    return activeDietCodes.every(code => {
+      // Smart mapping: Treat Low Sodium (LS) and No Added Salt (NAS) as interchangeable
+      if (code === "LS" || code === "NAS") {
+        return item.suitableFor.includes("LS") || item.suitableFor.includes("NAS");
+      }
+      return item.suitableFor.includes(code);
+    });
+  }, [activeDietCodes, activeAllergens]);
+
+  const filteredMenu: MealCategory[] = useMemo(() => MENU.map(cat => ({
+    ...cat, items: cat.items.filter(isItemAllowed),
+  })), [isItemAllowed]);
+
+  const totalFilteredItems = filteredMenu.reduce((s, c) => s + c.items.length, 0);
+
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
-  const category = MENU.find((c) => c.id === activeCategory)!;
-  const clampedSliderIndex = ((sliderIndex % category.items.length) + category.items.length) % category.items.length;
+  const category = filteredMenu.find((c) => c.id === activeCategory)!;
+  const clampedSliderIndex = category.items.length > 0
+    ? ((sliderIndex % category.items.length) + category.items.length) % category.items.length
+    : 0;
   const totalItems = cart.reduce((sum, ci) => sum + ci.quantity, 0);
   const totalCalories = cart.reduce((sum, ci) => sum + ci.menuItem.calories * ci.quantity, 0);
 
   const addToCart = useCallback((item: MenuItem) => {
+    // Safety check: block non-orderable meals or blackout period
+    const category = MENU.find(c => c.items.some(mi => mi.id === item.id));
+    if (category && !isMealOrderable(category.id)) return;
+
     setCart((prev) => {
       const existing = prev.find((ci) => ci.menuItem.id === item.id);
       if (existing) {
@@ -431,7 +774,7 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
 
   /* Determine delivery info based on which categories are in the cart */
   const cartCategories = [...new Set(cart.map((ci) => {
-    for (const cat of MENU) {
+    for (const cat of filteredMenu) {
       if (cat.items.some((mi) => mi.id === ci.menuItem.id)) return cat;
     }
     return null;
@@ -445,7 +788,7 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
   const getOrderDeliveryInfo = (): { label: string; detail: string; isPreOrder: boolean }[] => {
     if (cartCategories.length === 0) return [];
     const infos: { label: string; detail: string; isPreOrder: boolean }[] = [];
-    const allActive = cartCategories.every((cat) => isMealTimeActive(cat.hours));
+    const allActive = cartCategories.every((cat) => isMealOrderable(cat.id));
     if (allActive) {
       infos.push({
         label: isRTL ? "وقت التوصيل المتوقع" : "Est. Delivery",
@@ -455,7 +798,7 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
     } else {
       for (const cat of cartCategories) {
         const msg = getDeliveryMessage(cat, isRTL);
-        infos.push({ ...msg, isPreOrder: !isMealTimeActive(cat.hours) });
+        infos.push({ ...msg, isPreOrder: !isMealOrderable(cat.id) });
       }
     }
     return infos;
@@ -494,7 +837,7 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
       }}
     >
       {/* Subtle hospital bg */}
-      <img
+      <ApiImage
         src={theme.heroImageUrl}
         alt=""
         aria-hidden
@@ -580,13 +923,64 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
               )}
             </div>
 
+            {/* Clinical Restrictions Banner */}
+            {(nurseState.dietCodes.length > 0 || nurseState.allergies.length > 0) && (
+              <div className="shrink-0 px-12 mb-4 relative z-10">
+                <div
+                  className="flex items-center gap-4 px-6 py-4"
+                  style={{
+                    backgroundColor: "rgba(59,130,246,0.15)",
+                    border: "1px solid rgba(59,130,246,0.25)",
+                    borderRadius: theme.radiusMd,
+                    backdropFilter: "blur(10px)",
+                  }}
+                >
+                  <div
+                    className="flex items-center justify-center shrink-0"
+                    style={{
+                      width: "40px", height: "40px",
+                      borderRadius: "50%",
+                      backgroundColor: "rgba(59,130,246,0.2)",
+                    }}
+                  >
+                    <ClipboardList size={20} color="#60A5FA" />
+                  </div>
+
+                  <div className="flex-1">
+                    <p style={{ fontFamily, ...TEXT_STYLE.caption, color: "rgba(255,255,255,0.6)", marginBottom: "2px" }}>
+                      {isRTL ? "القيود السريرية النشطة" : "Active Clinical Restrictions"}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {nurseState.dietCodes.map(d => (
+                        <div key={d.code} className="flex items-center gap-1.5 px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)" }}>
+                          <span style={{ fontFamily, ...TEXT_STYLE.caption, color: "#fff", fontWeight: WEIGHT.bold }}>{d.label}</span>
+                        </div>
+                      ))}
+                      {nurseState.allergies.map(a => (
+                        <div key={a} className="flex items-center gap-1.5 px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.25)" }}>
+                          <AlertTriangle size={12} color="#F87171" />
+                          <span style={{ fontFamily, ...TEXT_STYLE.caption, color: "#F87171", fontWeight: WEIGHT.bold }}>{a}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="hidden md:block">
+                    <p style={{ fontFamily, ...TEXT_STYLE.caption, color: "rgba(255,255,255,0.4)", textAlign: isRTL ? "left" : "right" }}>
+                      {isRTL ? "تم تصفية القائمة تلقائياً لسلامتك" : "Menu filtered automatically for your safety"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Category tabs */}
             <div className="shrink-0 px-12 pb-5 relative z-10">
               <div className="flex gap-3 w-full">
-                {MENU.map((cat) => {
+                {filteredMenu.map((cat) => {
                   const active = cat.id === activeCategory;
                   const Icon = cat.icon;
-                  const isActive = isMealTimeActive(cat.hours);
+                  const isActive = isMealOrderable(cat.id);
                   return (
                     <button
                       key={cat.id}
@@ -610,9 +1004,24 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
                         }}>
                           {loc(cat.label)}
                         </span>
-                        {isActive ? (
+                        {isMealOrderable(cat.id) ? (
                           <span style={{ fontFamily, ...TEXT_STYLE.caption, color: active ? "#6B7280" : "rgba(255,255,255,0.55)" }}>
                             {loc(cat.timeRange)}
+                          </span>
+                        ) : isMealPassed(cat.id) ? (
+                          <span
+                            className="flex items-center gap-1"
+                            style={{
+                              padding: "2px 8px",
+                              borderRadius: theme.radiusSm,
+                              backgroundColor: active ? "#FEE2E2" : "rgba(239,68,68,0.15)",
+                              marginTop: "2px",
+                            }}
+                          >
+                            <Clock size={11} color="#EF4444" />
+                            <span style={{ fontFamily, ...TEXT_STYLE.micro, color: active ? "#B91C1C" : "#F87171" }}>
+                              {isRTL ? "غداً " : "Tomorrow "}{loc(cat.timeRange)}
+                            </span>
                           </span>
                         ) : (
                           <span
@@ -643,6 +1052,33 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
               <div className="flex-1 min-w-0 flex flex-col">
                 {/* Carousel area */}
                 <div className="flex-1 min-h-0 flex flex-col items-center justify-center relative">
+                  {/* Status Phrase Overlay */}
+                  <div className="absolute top-0 flex flex-col items-center gap-1 pointer-events-none z-20">
+                    {new Date().getHours() >= 18 && new Date().getHours() < 21 ? (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full"
+                      >
+                        <ChefHat size={16} color="#fff" />
+                        <span style={{ fontFamily, ...TEXT_STYLE.caption, color: "#fff", fontWeight: WEIGHT.bold }}>
+                          {isRTL ? "نحن نجهز قائمة الغد لك، يمكنك الطلب لوجبة الإفطار ابتداءً من الساعة 9:00 مساءً" : "We are preparing your menu for tomorrow, you can order for your breakfast at 9:00 PM"}
+                        </span>
+                      </motion.div>
+                    ) : !isMealOrderable(category.id) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full"
+                      >
+                        <Info size={16} color="#fff" />
+                        <span style={{ fontFamily, ...TEXT_STYLE.caption, color: "#fff", fontWeight: WEIGHT.bold }}>
+                          {isRTL ? "يمكنك الطلب للوجبات القادمة فقط" : "You can order for upcoming meal only"}
+                        </span>
+                      </motion.div>
+                    )}
+                  </div>
+
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={activeCategory}
@@ -661,6 +1097,7 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
                         onAdd={addToCart}
                         onRemove={removeFromCart}
                         categoryColor={category.color}
+                        isPassed={!isMealOrderable(category.id)}
                       />
                     </motion.div>
                   </AnimatePresence>
@@ -766,6 +1203,7 @@ function FoodCarousel({
   onAdd,
   onRemove,
   categoryColor,
+  isPassed,
 }: {
   items: MenuItem[];
   activeIndex: number;
@@ -774,24 +1212,56 @@ function FoodCarousel({
   onAdd: (item: MenuItem) => void;
   onRemove: (id: string) => void;
   categoryColor: string;
+  isPassed: boolean;
 }) {
   const { theme } = useTheme();
-  const { isRTL } = useLocale();
+  const { isRTL, fontFamily } = useLocale();
   const len = items.length;
+
+  if (len === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 w-full h-full py-12 text-center">
+        <div
+          className="flex items-center justify-center mb-2"
+          style={{
+            width: "80px", height: "80px",
+            borderRadius: "50%",
+            backgroundColor: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.1)"
+          }}
+        >
+          <AlertTriangle size={32} color="rgba(255,255,255,0.3)" />
+        </div>
+        <h3 style={{ fontFamily, ...TEXT_STYLE.subtitle, color: "#fff", fontSize: "20px" }}>
+          {isRTL ? "عذراً، لا توجد وجبات متاحة" : "No items available"}
+        </h3>
+        <p style={{ fontFamily, ...TEXT_STYLE.caption, color: "rgba(255,255,255,0.5)", maxWidth: "320px", lineHeight: "1.6" }}>
+          {isRTL
+            ? "تمت تصفية جميع الأصناف في هذه الفئة بناءً على نظامك الغذائي الموصوف أو سجل الحساسية الخاص بك."
+            : "All items in this category have been filtered out based on your prescribed diet or allergy profile."}
+        </p>
+      </div>
+    );
+  }
 
   // Circular navigation helpers
   const wrap = (i: number) => ((i % len) + len) % len;
   const goPrev = () => onIndexChange(wrap(activeIndex - 1));
   const goNext = () => onIndexChange(wrap(activeIndex + 1));
 
-  // Always show 3: prev (wrapped), center, next (wrapped)
-  const prevIdx = wrap(activeIndex - 1);
-  const nextIdx = wrap(activeIndex + 1);
-  const visible: { item: MenuItem; position: "left" | "center" | "right"; originalIndex: number }[] = [
-    { item: items[prevIdx], position: "left", originalIndex: prevIdx },
-    { item: items[activeIndex], position: "center", originalIndex: activeIndex },
-    { item: items[nextIdx], position: "right", originalIndex: nextIdx },
-  ];
+  // Always show 3 if possible: prev (wrapped), center, next (wrapped)
+  const visible: { item: MenuItem; position: "left" | "center" | "right"; originalIndex: number }[] = [];
+
+  if (len === 1) {
+    visible.push({ item: items[0], position: "center", originalIndex: 0 });
+  } else if (len === 2) {
+    visible.push({ item: items[wrap(activeIndex - 1)], position: "left", originalIndex: wrap(activeIndex - 1) });
+    visible.push({ item: items[activeIndex], position: "center", originalIndex: activeIndex });
+  } else {
+    visible.push({ item: items[wrap(activeIndex - 1)], position: "left", originalIndex: wrap(activeIndex - 1) });
+    visible.push({ item: items[activeIndex], position: "center", originalIndex: activeIndex });
+    visible.push({ item: items[wrap(activeIndex + 1)], position: "right", originalIndex: wrap(activeIndex + 1) });
+  }
 
   const PrevIcon = isRTL ? ChevronRight : ChevronLeft;
   const NextIcon = isRTL ? ChevronLeft : ChevronRight;
@@ -801,7 +1271,8 @@ function FoodCarousel({
       {/* Prev arrow */}
       <button
         onClick={isRTL ? goNext : goPrev}
-        className="shrink-0 flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
+        disabled={len <= 1}
+        className="shrink-0 flex items-center justify-center cursor-pointer active:scale-90 transition-transform disabled:opacity-0 disabled:pointer-events-none"
         style={{
           width: "48px",
           height: "48px",
@@ -814,8 +1285,22 @@ function FoodCarousel({
         <PrevIcon size={24} color="#fff" />
       </button>
 
-      {/* Cards */}
-      <div className="flex-1 flex items-center justify-center gap-5" style={{ minHeight: 0, height: "100%" }}>
+      {/* Cards container */}
+      <motion.div
+        className="flex-1 flex items-center justify-center gap-5"
+        style={{ minHeight: 0, height: "100%", touchAction: "none" }}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.2}
+        onDragEnd={(_, info) => {
+          const threshold = 60;
+          if (info.offset.x > threshold) {
+            isRTL ? goNext() : goPrev();
+          } else if (info.offset.x < -threshold) {
+            isRTL ? goPrev() : goNext();
+          }
+        }}
+      >
         <AnimatePresence mode="popLayout">
           {visible.map(({ item, position, originalIndex }) => (
             <motion.div
@@ -832,7 +1317,7 @@ function FoodCarousel({
                 if (position !== "center") onIndexChange(originalIndex);
               }}
               style={{
-                flex: position === "center" ? "0 0 42%" : "0 0 26%",
+                flex: position === "center" ? "0 0 38%" : "0 0 28%",
                 maxHeight: "100%",
                 cursor: position !== "center" ? "pointer" : "default",
                 filter: position === "center" ? "none" : "brightness(0.7)",
@@ -847,16 +1332,18 @@ function FoodCarousel({
                 delay={0}
                 categoryColor={categoryColor}
                 isCenter={position === "center"}
+                isPassed={isPassed}
               />
             </motion.div>
           ))}
         </AnimatePresence>
-      </div>
+      </motion.div>
 
       {/* Next arrow */}
       <button
         onClick={isRTL ? goPrev : goNext}
-        className="shrink-0 flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
+        disabled={len <= 1}
+        className="shrink-0 flex items-center justify-center cursor-pointer active:scale-90 transition-transform disabled:opacity-0 disabled:pointer-events-none"
         style={{
           width: "48px",
           height: "48px",
@@ -884,6 +1371,7 @@ function FoodCard({
   delay,
   categoryColor,
   isCenter = true,
+  isPassed = false,
 }: {
   item: MenuItem;
   qty: number;
@@ -892,6 +1380,7 @@ function FoodCard({
   delay: number;
   categoryColor: string;
   isCenter?: boolean;
+  isPassed?: boolean;
 }) {
   const { theme } = useTheme();
   const { isRTL, fontFamily } = useLocale();
@@ -911,11 +1400,13 @@ function FoodCard({
         border: inCart ? `2px solid ${theme.primary}` : theme.cardBorder,
         transition: "border-color 0.2s, box-shadow 0.2s",
         boxShadow: inCart ? `0 0 24px ${theme.primary}20` : SHADOW.md,
+        filter: isPassed ? "grayscale(0.6)" : "none",
+        opacity: isPassed ? 0.8 : 1,
       }}
     >
       {/* Image — bigger area */}
       <div className="relative w-full overflow-hidden" style={{ aspectRatio: "1 / 0.85" }}>
-        <ImageWithFallback
+        <ApiImage
           src={item.image}
           alt={loc(item.name)}
           className="w-full h-full object-cover"
@@ -1020,6 +1511,24 @@ function FoodCard({
                   );
                 })}
               </div>
+
+              {/* Nutritional Macros in Info Overlay */}
+              {item.nutrition && (
+                <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-white/10">
+                  <div className="text-center">
+                    <p style={{ fontFamily, fontSize: "10px", color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>{isRTL ? "بروتين" : "Protein"}</p>
+                    <p style={{ fontFamily, fontSize: "14px", fontWeight: WEIGHT.bold, color: "#fff" }}>{item.nutrition.protein}g</p>
+                  </div>
+                  <div className="text-center">
+                    <p style={{ fontFamily, fontSize: "10px", color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>{isRTL ? "كربوهيدرات" : "Carbs"}</p>
+                    <p style={{ fontFamily, fontSize: "14px", fontWeight: WEIGHT.bold, color: "#fff" }}>{item.nutrition.carbs}g</p>
+                  </div>
+                  <div className="text-center">
+                    <p style={{ fontFamily, fontSize: "10px", color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>{isRTL ? "دهون" : "Fat"}</p>
+                    <p style={{ fontFamily, fontSize: "14px", fontWeight: WEIGHT.bold, color: "#fff" }}>{item.nutrition.fat}g</p>
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -1048,10 +1557,64 @@ function FoodCard({
           )}
         </div>
 
+        {/* Allergen Chips & Macros row */}
+        <div className="flex flex-col gap-2">
+          {item.allergens.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              <span style={{ fontFamily, fontSize: "11px", fontWeight: WEIGHT.bold, color: "#EF4444" }}>
+                {isRTL ? "يحتوي على:" : "Contains:"}
+              </span>
+              {item.allergens.map(a => (
+                <span
+                  key={a}
+                  style={{
+                    fontFamily, fontSize: "11px", fontWeight: WEIGHT.semibold, color: theme.textMuted,
+                    backgroundColor: "rgba(0,0,0,0.04)", padding: "1px 6px", borderRadius: theme.radiusSm
+                  }}
+                >
+                  {a.charAt(0).toUpperCase() + a.slice(1).replace("-", " ")}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {isCenter && item.nutrition && (
+            <div className="flex items-center gap-4 py-1">
+              <div className="flex items-center gap-1">
+                <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#F97316" }} />
+                <span style={{ fontFamily, fontSize: "11px", color: theme.textMuted }}>P: {item.nutrition.protein}g</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#3B82F6" }} />
+                <span style={{ fontFamily, fontSize: "11px", color: theme.textMuted }}>C: {item.nutrition.carbs}g</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#10B981" }} />
+                <span style={{ fontFamily, fontSize: "11px", color: theme.textMuted }}>F: {item.nutrition.fat}g</span>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Add / Quantity controls — only on center card */}
         {isCenter && (
           <div className="flex items-center gap-3">
-            {qty === 0 ? (
+            {isPassed ? (
+              <div
+                className="flex-1 flex items-center justify-center gap-2"
+                style={{
+                  height: "56px",
+                  borderRadius: theme.radiusMd,
+                  backgroundColor: "rgba(255,255,255,0.08)",
+                  border: "1px dashed rgba(255,255,255,0.15)",
+                }}
+              >
+                <Clock size={16} color="rgba(255,255,255,0.5)" />
+                <span style={{ fontFamily, ...TEXT_STYLE.caption, color: "rgba(255,255,255,0.6)", fontWeight: WEIGHT.bold }}>
+                  {isRTL ? "انتهى وقت الطلب" : "Cutoff Passed"}
+                </span>
+              </div>
+            ) : qty === 0 ? (
               <button
                 onClick={(e) => { e.stopPropagation(); onAdd(); }}
                 className="flex-1 flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform"
@@ -1192,7 +1755,7 @@ function OrderPreviewPanel({
               border: `1px solid ${theme.borderDefault}`,
             }}
           >
-            <ImageWithFallback
+            <ApiImage
               src={ci.menuItem.image}
               alt={loc(ci.menuItem.name)}
               style={{
@@ -1498,10 +2061,10 @@ function ConfirmationStep({ orderNumber, totalItems, deliveryInfos, onClose, onV
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 const STATUS_CONFIG: Record<OrderStatus, { label: { en: string; ar: string }; color: string; icon: React.ComponentType<any> }> = {
-  "preparing":     { label: { en: "Preparing", ar: "قيد التحضير" },     color: "#F59E0B", icon: ChefHat },
-  "quality-check": { label: { en: "Quality Check", ar: "فحص الجودة" },  color: "#3B82F6", icon: Heart },
-  "delivering":    { label: { en: "On the Way", ar: "في الطريق" },      color: "#8B5CF6", icon: Utensils },
-  "delivered":     { label: { en: "Delivered", ar: "تم التوصيل" },       color: "#22C55E", icon: Check },
+  "preparing": { label: { en: "Preparing", ar: "قيد التحضير" }, color: "#F59E0B", icon: ChefHat },
+  "quality-check": { label: { en: "Quality Check", ar: "فحص الجودة" }, color: "#3B82F6", icon: Heart },
+  "delivering": { label: { en: "On the Way", ar: "في الطريق" }, color: "#8B5CF6", icon: Utensils },
+  "delivered": { label: { en: "Delivered", ar: "تم التوصيل" }, color: "#22C55E", icon: Check },
 };
 
 function OrdersLogStep({ onBack, onClose, onReorder }: {

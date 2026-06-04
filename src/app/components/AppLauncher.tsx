@@ -19,14 +19,24 @@ import {
   Search,
   Shield,
   X,
+  Lock,
 } from "lucide-react";
-import { InternetBrowser } from "./InternetBrowser";
+import { ApiImage } from "./ApiImage";
+
+import { useLockedApps } from "../lib/lockedApps";
+import { useLongPress } from "../lib/useLongPress";
+import { AppLockMenu } from "./AppLockMenu";
+import { LockBadge } from "./LockBadge";
+import { AppIconPlaceholder } from "./figma/AppIconPlaceholder";
+
+// import { InternetBrowser } from "./InternetBrowser";
 import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { PdfReaderModal } from "./PdfReaderModal";
 import { apps, isAndroidApp, KNOWN_APPS } from "../utils/androidBridge";
+import { useApiPdfApps, API_CATEGORY_MAP } from "../lib/hospitalApi";
 import edgeLogo from "../../assets/edge_logo.png";
 import chromeIcon from "../../assets/272d9a4c809b16af18cfbe153fa4edc5816536b3.png";
 import saudiGazetteLogo from "../../assets/5a0099c6364ba06a603226f636904e61c8e17c07.png";
@@ -71,6 +81,7 @@ import theSecretIcon from "../../assets/0020d69d075db3cf35e4a115636a15027a1101fe
 interface AppItem {
   id: string;
   name: string;
+  nameAr?: string;
   nameKey?: string;
   /** CSS background (can be gradient) */
   bg: string;
@@ -86,6 +97,10 @@ interface AppItem {
   isInteractive?: boolean;
   url?: string;
   pdfSource?: string;
+  packageName?: string;  // Android package name — checked for install state
+  apkUrl?: string;       // CDN URL to download APK if not installed
+  imageUrl?: string;     // API image URL
+  appType?: "apk" | "url" | "pdf";
 }
 
 interface CategoryConfig {
@@ -99,7 +114,7 @@ type CategoryKey = string;
 
 /* ── App data with accurate branding ────────────────────────── */
 
-function getCategories(theme: any, locale: string = "en"): Record<string, CategoryConfig> {
+function getCategories(theme: any, locale: string = "en", t: any): Record<string, CategoryConfig> {
   return {
     Media: {
       label: "Media",
@@ -113,7 +128,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={iptvIcon} alt="Live TV" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={iptvIcon} alt="Live TV" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -124,7 +139,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           textColor: "#fff",
           url: "https://www.youtube.com/",
           customRender: () => (
-            <img src={youtubeIcon} alt="YouTube" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={youtubeIcon} alt="YouTube" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -135,7 +150,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           textColor: "#E50914",
           url: "https://www.netflix.com/",
           customRender: () => (
-            <img src={netflixIcon} alt="Netflix" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={netflixIcon} alt="Netflix" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -146,7 +161,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           textColor: "#333",
           url: "https://www.primevideo.com/",
           customRender: () => (
-            <img src={primeVideoIcon} alt="Prime Video" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={primeVideoIcon} alt="Prime Video" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -157,7 +172,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           textColor: "#333",
           url: "https://shahid.mbc.net/ar",
           customRender: () => (
-            <img src={mbcIcon} alt="Shahid" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={mbcIcon} alt="Shahid" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -316,7 +331,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           textColor: "#333",
           url: "https://app.quranflash.com/book/Medina1?ar#/reader/chapter/3",
           customRender: () => (
-            <img src={quranBookIcon} alt="Quran" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={quranBookIcon} alt="Quran" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
       ],
@@ -334,7 +349,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           textColor: "#fff",
           url: "https://web.whatsapp.com/",
           customRender: () => (
-            <img src={whatsappIcon} alt="WhatsApp" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={whatsappIcon} alt="WhatsApp" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -345,7 +360,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           textColor: "#333",
           url: "https://www.facebook.com/",
           customRender: () => (
-            <img src={facebookIcon} alt="Facebook" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={facebookIcon} alt="Facebook" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -356,7 +371,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           textColor: "#fff",
           url: "https://www.instagram.com/",
           customRender: () => (
-            <img src={instagramIcon} alt="Instagram" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={instagramIcon} alt="Instagram" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -377,7 +392,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           textColor: "#333",
           url: "https://www.snapchat.com/",
           customRender: () => (
-            <img src={snapchatIcon} alt="Snapchat" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={snapchatIcon} alt="Snapchat" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -388,7 +403,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           textColor: "#333",
           url: "https://www.tiktok.com/",
           customRender: () => (
-            <img src={tiktokIcon} alt="TikTok" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={tiktokIcon} alt="TikTok" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
       ],
@@ -709,7 +724,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={teamsIcon} alt="Teams" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={teamsIcon} alt="Teams" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -719,7 +734,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={webexIcon} alt="Webex" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={webexIcon} alt="Webex" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -729,7 +744,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={skypeIcon} alt="Skype" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={skypeIcon} alt="Skype" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -739,7 +754,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={zoomIcon} alt="Zoom" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={zoomIcon} alt="Zoom" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
         {
@@ -749,7 +764,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={meetIcon} alt="Google Meet" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={meetIcon} alt="Google Meet" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
       ],
@@ -768,7 +783,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           textColor: "#333",
           url: "https://www.google.com/search?igu=1",
           customRender: () => (
-            <img src={chromeIcon} alt="Chrome" style={{ width: 90, height: 90, objectFit: "contain" }} />
+            <ApiImage src={chromeIcon} alt="Chrome" style={{ width: 90, height: 90, objectFit: "contain" }} />
           ),
         },
         {
@@ -779,7 +794,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           textColor: "#fff",
           url: "https://saudigazette.com.sa",
           customRender: () => (
-            <img src={saudiGazetteLogo} alt="Saudi Gazette" style={{ width: 110, height: 110, objectFit: "contain" }} />
+            <ApiImage src={saudiGazetteLogo} alt="Saudi Gazette" style={{ width: 110, height: 110, objectFit: "contain" }} />
           ),
         },
         {
@@ -833,7 +848,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           textColor: "#fff",
           customRender: () => (
             <div className="flex flex-col items-center justify-center w-full h-full">
-              <img src={edgeLogo} alt="Browser" style={{ width: 120, height: 120, objectFit: "contain" }} />
+              <ApiImage src={edgeLogo} alt="Browser" style={{ width: 120, height: 120, objectFit: "contain" }} />
             </div>
           ),
         },
@@ -845,7 +860,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           textColor: "#333",
           url: "https://okaz.com.sa",
           customRender: () => (
-            <img src={okazIcon} alt="Okaz" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={okazIcon} alt="Okaz" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
         },
       ],
@@ -862,7 +877,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={calculatorIcon} alt="Calculator" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={calculatorIcon} alt="Calculator" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
           isInteractive: true,
         },
@@ -887,7 +902,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={alarmIcon} alt="Reminders" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={alarmIcon} alt="Reminders" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
           isInteractive: true,
         },
@@ -1064,7 +1079,7 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <img src={mirrorIcon} alt="Mirror" style={{ width: 130, height: 130, objectFit: "contain" }} />
+            <ApiImage src={mirrorIcon} alt="Mirror" style={{ width: 130, height: 130, objectFit: "contain" }} />
           ),
           isInteractive: true,
         },
@@ -1189,6 +1204,27 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
               </div>
             ),
           }))
+        : theme.id === "burjeel"
+        ? /* ── Burjeel Hospital educational materials ── */
+          [
+            { id: "bj-edu-trust", name: "burjeel.edu.fertility", url: "https://trustfertility.com/patients-educational-material/" },
+            { id: "bj-edu-video", name: "burjeel.edu.guide", url: "https://www.youtube.com/watch?v=ifnyskCCV0g", isVideo: true },
+          ].map((item) => ({
+            id: item.id,
+            name: t(item.name),
+            bg: "transparent",
+            mark: "",
+            textColor: "#333",
+            url: item.url,
+            customRender: () => (
+              <div className="flex flex-col items-center justify-center text-center" style={{ width: 150, height: 150, padding: 12, background: "#fff", borderRadius: theme.radiusXl }}>
+                <div className="flex items-center justify-center mb-1.5" style={{ width: 64, height: 64, backgroundColor: item.isVideo ? "#E8453C" : theme.primary, borderRadius: theme.radiusLg }}>
+                  {item.isVideo ? <PlayCircle size={32} color="#fff" /> : <BookOpenText size={32} color="#fff" />}
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 800, color: item.isVideo ? "#E8453C" : theme.primary, letterSpacing: 0.5 }}>{item.isVideo ? "VIDEO" : "LINK"}</span>
+              </div>
+            ),
+          }))
         : theme.id === "dallah"
         ? /* ── Dallah Hospital official educational materials ── */
           (locale === "ar"
@@ -1279,8 +1315,6 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
               { id: "edu-emotional-health", name: "Emotional Health\nAfter Delivery", nameKey: "edu.emotionalHealth", type: "video" as const },
               { id: "edu-scar-care", name: "Scar Care &\nHealing Timeline", nameKey: "edu.scarCare", type: "pdf" as const },
               { id: "edu-sleep-tips", name: "Sleep Positions\nAfter C-Section", nameKey: "edu.sleepTips", type: "pdf" as const },
-              { id: "edu-pelvic-floor", name: "Pelvic Floor\nExercises", nameKey: "edu.pelvicFloor", type: "video" as const },
-              { id: "edu-when-to-call", name: "When to Call\nYour Doctor", nameKey: "edu.whenToCall", type: "pdf" as const },
             ].map((item) => ({
               id: item.id,
               name: item.name,
@@ -1311,32 +1345,59 @@ function getCategories(theme: any, locale: string = "en"): Record<string, Catego
 
 /* ── App Tile ──────────────────────────────────────────────── */
 
-function AppTile({ app, onTap }: { app: AppItem; onTap: () => void }) {
-  const { onPointerDown, rippleElements } = useRipple("rgba(255,255,255,0.15)");
-  const { t } = useLocale();
+function AppTile({ app, onTap, onLongPress, isLocked }: { app: AppItem; onTap: () => void; onLongPress: () => void; isLocked: boolean }) {
   const { theme } = useTheme();
-  const displayName = app.nameKey ? t(app.nameKey) : app.name;
+  const { t, locale } = useLocale();
+  const [pressed, setPressed] = useState(false);
+  const { onPointerDown, rippleElements } = useRipple("rgba(255,255,255,0.15)");
+
+  const { handlers, handleClick } = useLongPress(onLongPress, 600);
+  const displayName = app.nameKey
+    ? t(app.nameKey)
+    : (locale === "ar" && app.nameAr ? app.nameAr : app.name);
 
   return (
     <button
-      onPointerDown={onPointerDown}
-      onClick={onTap}
-      className="relative overflow-hidden flex flex-col items-center gap-3 hover:scale-[1.05] active:scale-[0.94] transition-transform duration-200 cursor-pointer"
+      data-nav="true"
+      onPointerDown={(e) => { onPointerDown(e); handlers.onPointerDown(); setPressed(true); }}
+      onPointerUp={() => { handlers.onPointerUp(); setPressed(false); }}
+      onPointerLeave={() => { handlers.onPointerLeave(); setPressed(false); }}
+      onClick={() => handleClick(onTap)}
+      className="relative flex flex-col items-center gap-3 transition-transform duration-100 ease-out active:scale-95 cursor-pointer"
+      style={{ 
+        width: 160, 
+        transform: pressed ? "scale(0.96)" : "scale(1)",
+        outline: "none",
+        border: "none",
+        background: "none",
+        padding: 0
+      }}
     >
-      {rippleElements}
+      {/* Icon Square */}
       <div
-        className="flex items-center justify-center relative overflow-hidden"
+        className="relative overflow-hidden flex items-center justify-center shrink-0"
         style={{
-          width: "150px",
-          height: "150px",
+          width: 140,
+          height: 140,
           borderRadius: theme.radiusXl,
           background: app.bg,
+          boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3), 0 8px 10px -6px rgba(0,0,0,0.3)",
+          border: "1.5px solid rgba(255,255,255,0.1)",
         }}
       >
+        {rippleElements}
+        {isLocked && <LockBadge />}
         {app.customRender ? (
           <div className="absolute inset-0 flex items-center justify-center overflow-hidden" style={{ borderRadius: theme.radiusXl }}>
             {app.customRender()}
           </div>
+        ) : app.imageUrl ? (
+          <ImageWithFallbackInTile
+            src={app.imageUrl}
+            name={app.nameKey ? t(app.nameKey) : app.name}
+            type={app.appType ?? "url"}
+            tileRadius={theme.radiusXl}
+          />
         ) : (
           <span
             className="relative z-10"
@@ -1370,6 +1431,55 @@ function AppTile({ app, onTap }: { app: AppItem; onTap: () => void }) {
   );
 }
 
+function ImageWithFallbackInTile({
+  src, name, type, tileRadius,
+}: {
+  src: string;
+  name: string;
+  type: "apk" | "url" | "pdf";
+  tileRadius: string;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed || !src || src === "?") {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center" style={{ borderRadius: tileRadius }}>
+        <AppIconPlaceholder
+          name={name}
+          type={type === "pdf" ? "url" : type}
+          size={120}
+          borderRadius={20}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <ApiImage
+      src={src}
+      alt={name}
+      onError={() => setFailed(true)}
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        borderRadius: tileRadius,
+      }}
+      showFallbackWhileLoading
+      fallback={
+        <div className="absolute inset-0 flex items-center justify-center" style={{ borderRadius: tileRadius }}>
+          <AppIconPlaceholder
+            name={name}
+            type={type === "pdf" ? "url" : type}
+            size={120}
+            borderRadius={20}
+          />
+        </div>
+      }
+    />
+  );
+}
+
 /* ── Overlay ──────────────────────────────────────────────── */
 
 export function AppLauncher({
@@ -1378,18 +1488,32 @@ export function AppLauncher({
   onLaunchGame,
   onLaunchTool,
   onLaunchIptv,
+  onOpenUrl,
+  onRequestPinSetup,
+  lockMenu,
+  onLockMenuChange: setLockMenu = () => {}
 }: {
   categoryKey: string;
   onClose: () => void;
   onLaunchGame?: (gameId: string) => void;
   onLaunchTool?: (toolId: string) => void;
   onLaunchIptv?: () => void;
+  onOpenUrl?: (url: string) => void;
+  onRequestPinSetup?: () => void;
+  lockMenu?: string | null;
+  onLockMenuChange?: (val: string | null) => void;
 }) {
   const { theme } = useTheme();
   const { t, locale, isRTL } = useLocale();
+  const lockedIds = useLockedApps();
   const [activeKey, setActiveKey] = useState(categoryKey);
-  const allCategories = getCategories(theme, locale);
-  const category = allCategories[activeKey];
+  const allCategories = getCategories(theme, locale, t);
+  const apiPdfApps = useApiPdfApps(activeKey);
+  const baseCategory = allCategories[activeKey];
+  const category = baseCategory ? {
+    ...baseCategory,
+    apps: [...baseCategory.apps, ...apiPdfApps],
+  } : baseCategory;
   const [launchedApp, setLaunchedApp] = useState<string | null>(null);
   const [showPdf, setShowPdf] = useState(false);
   const [pdfSource, setPdfSource] = useState<string | undefined>(undefined);
@@ -1400,10 +1524,54 @@ export function AppLauncher({
   const swipeStartX = useRef<number | null>(null);
   const touchOffset = useRef<number>(0);
 
-  // Internet Browser States
-  const [showBrowser, setShowBrowser] = useState(false);
+  // APK install progress state
+  const [installingApp, setInstallingApp] = useState<{
+    packageName: string;
+    name: string;
+    apkUrl: string;
+    progress?: number;
+  } | null>(null);
+
+  // Listen for install progress/success/error events from Android
+  useEffect(() => {
+    const onProgress = (e: Event) => {
+      const { packageName, percent } = (e as CustomEvent).detail;
+      setInstallingApp(prev =>
+        prev?.packageName === packageName
+          ? { ...prev, progress: percent }
+          : prev
+      );
+    };
+    const onSuccess = (e: Event) => {
+      const { packageName } = (e as CustomEvent).detail;
+      window.AndroidSystem?.launchApp?.(packageName);
+      setInstallingApp(null);
+    };
+    const onError = (e: Event) => {
+      const { packageName } = (e as CustomEvent).detail;
+      setInstallingApp(prev => {
+        if (prev?.packageName === packageName) {
+          window.AndroidSystem?.showToast?.(
+            "Installation failed. Opening web version.", false);
+          return null;
+        }
+        return prev;
+      });
+    };
+    window.addEventListener("apk-install-progress", onProgress);
+    window.addEventListener("apk-install-success",  onSuccess);
+    window.addEventListener("apk-install-error",    onError);
+    return () => {
+      window.removeEventListener("apk-install-progress", onProgress);
+      window.removeEventListener("apk-install-success",  onSuccess);
+      window.removeEventListener("apk-install-error",    onError);
+    };
+  }, []);
+
+  // Internet Browser States (hidden for now, might be used later)
+  // const [showBrowser, setShowBrowser] = useState(false);
+  // const [browserUrl, setBrowserUrl] = useState("");
   const [showUrlNavigator, setShowUrlNavigator] = useState(false);
-  const [browserUrl, setBrowserUrl] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [urlError, setUrlError] = useState("");
 
@@ -1487,8 +1655,7 @@ export function AppLauncher({
         finalUrl = `https://www.google.com/search?igu=1`;
       }
       
-      setBrowserUrl(finalUrl);
-      setShowBrowser(true);
+      window.open(finalUrl, "_blank", "noopener,noreferrer");
     } else {
       setUrlError(t("launcher.invalidUrl") || "Please enter a valid URL");
     }
@@ -1501,12 +1668,32 @@ export function AppLauncher({
       return;
     }
 
-    // 1. Intercept specifically known internet apps first (Always open in internal browser)
-    const isInternetApp = ["chrome", "bbc", "cnn", "saudigazette", "okaz", "aljazeera", "wikipedia"].includes(app.id);
-    
-    if (isInternetApp && app.url) {
-      setBrowserUrl(app.url);
-      setShowBrowser(true);
+    // 1a. Native APK app
+    if (app.packageName && isAndroidApp()) {
+      const installed = window.AndroidSystem?.isAppInstalled?.(app.packageName) ?? false;
+      if (installed) {
+        window.AndroidSystem?.launchApp?.(app.packageName);
+        return;
+      }
+      if (app.apkUrl) {
+        setInstallingApp({
+          packageName: app.packageName,
+          name: app.name,
+          apkUrl: app.apkUrl,
+        });
+        window.AndroidSystem?.installApk?.(app.apkUrl, app.packageName);
+        return;
+      }
+      // Has package name but no APK URL — fall through to URL
+    }
+
+    // 1b. URL fallback
+    if (app.url) {
+      if (isAndroidApp() && onOpenUrl) {
+        onOpenUrl(app.url);
+      } else {
+        window.open(app.url, "_blank", "noopener,noreferrer");
+      }
       return;
     }
 
@@ -1530,12 +1717,7 @@ export function AppLauncher({
       return;
     }
 
-    // 4. Handle other URLs (Fallback internal browser)
-    if (app.url) {
-      setBrowserUrl(app.url);
-      setShowBrowser(true);
-      return;
-    }
+    // 4. (Removed redundant app.url check)
 
     // 5. Handle PDFs
     if (app.pdfSource) {
@@ -1567,7 +1749,9 @@ export function AppLauncher({
     }
 
     // 7. General Toast feedback for other apps
-    const displayName = app.nameKey ? t(app.nameKey) : app.name;
+    const displayName = app.nameKey
+      ? t(app.nameKey)
+      : (locale === "ar" && app.nameAr ? app.nameAr : app.name);
     setLaunchedApp(displayName);
     setTimeout(() => setLaunchedApp(null), 2000);
   };
@@ -1585,7 +1769,7 @@ export function AppLauncher({
       }}
     >
       {/* Hospital background image — subtle, blue-dominant */}
-      <img
+      <ApiImage
         src={theme.heroImageUrl}
         alt=""
         aria-hidden
@@ -1658,7 +1842,19 @@ export function AppLauncher({
                   }}
                 >
                   {pageApps.map((app) => (
-                    <AppTile key={app.id} app={app} onTap={() => handleAppTap(app)} />
+                    <AppTile
+                      key={app.id}
+                      app={app}
+                      onTap={() => {
+                        if (lockedIds.has(app.id)) {
+                          setLockMenu(app.id + "__open");
+                        } else {
+                          handleAppTap(app);
+                        }
+                      }}
+                      onLongPress={() => setLockMenu(app.id)}
+                      isLocked={lockedIds.has(app.id)}
+                    />
                   ))}
                 </div>
               </div>
@@ -1845,17 +2041,116 @@ export function AppLauncher({
         </div>
       )}
 
-      {/* Embedded Browser Overlay */}
+      {/* Embedded Browser Overlay (hidden for now, might be used later) */}
+      {/* 
       {showBrowser && (
         <InternetBrowser 
-          key={browserUrl} // Critical: Force re-render when URL changes to ensure it loads
+          key={browserUrl} 
           initialUrl={browserUrl} 
           onClose={() => {
             setShowBrowser(false);
-            // If we opened from the URL navigator, keep it open so back returns to it
-            // Otherwise it will just show the grid
           }} 
         />
+      )}
+      */}
+
+      {/* App Lock Menu Overlay */}
+      {lockMenu && (
+        <AppLockMenu
+          appId={lockMenu.replace("__open", "")}
+          appName={category.apps.find(a => a.id === lockMenu.replace("__open", ""))?.name || lockMenu.replace("__open", "")}
+          isCurrentlyLocked={lockedIds.has(lockMenu.replace("__open", ""))}
+          anchorRect={null}
+          onClose={() => setLockMenu(null)}
+          onRequestPinSetup={onRequestPinSetup || (() => {})}
+          onOpenApp={lockMenu.endsWith("__open") ? () => {
+            const id = lockMenu.replace("__open", "");
+            const targetApp = category.apps.find(a => a.id === id);
+            if (targetApp) handleAppTap(targetApp);
+          } : undefined}
+        />
+      )}
+
+      {/* APK Install Progress Overlay */}
+      {installingApp && (
+        <div style={{
+          position:       "fixed",
+          inset:          0,
+          zIndex:         9998,
+          background:     "rgba(0,0,0,0.75)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+          display:        "flex",
+          flexDirection:  "column",
+          alignItems:     "center",
+          justifyContent: "center",
+        }}>
+          <div style={{
+            backgroundColor: theme.surface,
+            borderRadius:    theme.radiusXl,
+            padding:         "36px 48px",
+            display:         "flex",
+            flexDirection:   "column",
+            alignItems:      "center",
+            gap:             "20px",
+            minWidth:        "320px",
+            boxShadow:       "0 24px 64px rgba(0,0,0,0.5)",
+          }}>
+            {/* Pulsing icon */}
+            <div style={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              backgroundColor: theme.primarySubtle,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              animation: "breathePulse 1.6s ease-in-out infinite",
+            }}>
+              <Download size={28} style={{ color: theme.primary }} />
+            </div>
+
+            {/* App name */}
+            <p style={{
+              fontFamily: theme.fontFamily,
+              fontSize: "17px",
+              fontWeight: 700,
+              color: theme.textHeading,
+              margin: 0,
+              textAlign: "center",
+            }}>
+              {t("appInstall.installing")} {installingApp.name}
+            </p>
+
+            {/* Progress bar */}
+            <div style={{
+              width:           "100%",
+              height:          "8px",
+              borderRadius:    "4px",
+              backgroundColor: theme.borderDefault ?? "rgba(0,0,0,0.1)",
+              overflow:        "hidden",
+            }}>
+              <div style={{
+                height:          "100%",
+                width:           `${installingApp.progress ?? 0}%`,
+                borderRadius:    "4px",
+                backgroundColor: theme.primary,
+                transition:      "width 0.3s ease",
+              }} />
+            </div>
+
+            {/* Percentage + hint */}
+            <p style={{
+              fontFamily: theme.fontFamily,
+              fontSize: "13px",
+              color: theme.textMuted,
+              margin: 0,
+              textAlign: "center",
+            }}>
+              {installingApp.progress ?? 0}% · {t("appInstall.hint")}
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );

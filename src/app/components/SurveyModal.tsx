@@ -201,6 +201,7 @@ function VoiceRecorder({ color, label, onRecordingChange }: {
 
 interface SurveyModalProps {
   onClose: () => void;
+  initialPath?: FeedbackPath;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -283,7 +284,7 @@ const APPRECIATION_BORDER = "rgba(27,127,90,0.18)";
 
 type FeedbackPath = "hub" | "survey" | "concern" | "appreciation";
 
-export function SurveyModal({ onClose }: SurveyModalProps) {
+export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) {
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
 
@@ -291,7 +292,7 @@ export function SurveyModal({ onClose }: SurveyModalProps) {
   const BRAND_DARK = theme.primaryDark;
 
   // Hub state
-  const [path, setPath] = useState<FeedbackPath>("hub");
+  const [path, setPath] = useState<FeedbackPath>(initialPath);
 
   // Survey state
   const [currentSlide, setCurrentSlide] = useState(0);

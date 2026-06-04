@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ApiImage } from "../../ApiImage";
 import { Users, AlertTriangle, Apple, Plus, X, Activity, Eye, EyeOff, Info } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
 import { useLocale } from "../../i18n";
@@ -62,12 +63,12 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
           {store.careTeam.map((m) => (
             <div key={m.id} className="flex items-center gap-3 px-4 py-3 rounded-2xl" style={{ backgroundColor: "#F9FAFB", border: `1px solid ${t.borderDefault}` }}>
               <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
-                <img src={m.img} alt="" className="w-full h-full object-cover" />
+                <ApiImage src={m.img} alt="" className="w-full h-full object-cover" />
               </div>
-              <div-1 min-w-0>
+              <div className="min-w-0">
                 <p style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading }}>{tr(m.nameKey)}</p>
                 <p style={{ fontSize: "12px", fontWeight: 600, color: t.primary }}>{tr(m.roleKey)}</p>
-              </div-1>
+              </div>
               {isNurse && (
                 <div className="flex items-center gap-2">
                   <span style={{ fontSize: "11px", color: t.textMuted }}>{m.visible ? "Visible" : "Hidden"}</span>
@@ -154,7 +155,7 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
               {[
                 { code: "NAS", label: "No Added Salt" },
                 { code: "DM", label: "Diabetic Diet" },
-                { code: "LD", label: "Low Diet" },
+                { code: "LS", label: "Low Sodium" },
                 { code: "NPO", label: "Nothing by mouth" },
                 { code: "SOFT", label: "Soft Diet" },
                 { code: "LIQ", label: "Clear Liquid" },

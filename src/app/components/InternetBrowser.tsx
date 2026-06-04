@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { ApiImage } from "./ApiImage";
 import { ArrowLeft, RefreshCw, X, Globe, Shield, ExternalLink, Info } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
@@ -97,7 +98,7 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
               border: `1px solid ${theme.primarySubtle}`
             }}
           >
-            <img src={edgeLogo} alt="Browser" style={{ width: 24, height: 24 }} />
+            <ApiImage src={edgeLogo} alt="Browser" style={{ width: 24, height: 24 }} />
             <span
               className="text-sm font-medium truncate"
               style={{ color: theme.textMuted }}
