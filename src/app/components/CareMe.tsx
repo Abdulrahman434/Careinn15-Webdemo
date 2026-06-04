@@ -1849,29 +1849,7 @@ export function CareMe({ onExpand }: { onExpand?: () => void }) {
               </span>
             </button>
           )}
-          {(activeSlide.key === "billing" || activeSlide.key === "observations") && (
-            <button
-              data-nav="true"
-              onClick={() => {
-                const targetKey = activeSlide.key === "billing" ? "observations" : "billing";
-                const targetIdx = slides.findIndex(s => s.key === targetKey);
-                if (targetIdx >= 0) handleManualNav(targetIdx + 1);
-              }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 cursor-pointer active:scale-95 transition-all"
-              style={{
-                borderRadius: theme.radiusMd,
-                outline: "none",
-                backgroundColor: theme.primarySubtle,
-                border: `1px solid ${theme.primary}25`,
-              }}
-              aria-label={`Switch to ${activeSlide.key === "billing" ? "Observations" : "Billing"}`}
-            >
-              <ArrowLeftRight size={13} style={{ color: theme.primary }} />
-              <span style={{ fontFamily: theme.fontFamily, fontSize: "11px", fontWeight: 700, color: theme.primary }}>
-                {activeSlide.key === "billing" ? t("care.observations.title") : t("care.billing.title")}
-              </span>
-            </button>
-          )}
+
           <button
             data-nav="true"
             onClick={() => setIsBlurred(prev => !prev)}
