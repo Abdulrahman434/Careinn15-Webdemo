@@ -4,7 +4,7 @@ import { isTvDevice } from "./utils/deviceDetect";
 import { ThemeProvider, useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "./components/ThemeContext";
 import { IptvChannels } from "./components/IptvChannels";
 import { useSipCallState } from "./utils/androidBridge";
-import { useLocale } from "./components/i18n";
+import { useLocale, translateWithLocale } from "./components/i18n";
 import { TopBar } from "./components/TopBar";
 import { NewsTicker } from "./components/NewsTicker";
 import { PatientGreeting } from "./components/PatientGreeting";
@@ -164,6 +164,32 @@ function BedsideScreen() {
   const { t, locale, isRTL, dir, fontFamily } = useLocale();
   const scale = useScreenScale();
   const isOnline = useNetworkStatus();
+  const [bypassOffline, setBypassOffline] = useState(false);
+
+  useEffect(() => {
+    if (isOnline) {
+      setBypassOffline(false);
+    }
+  }, [isOnline]);
+
+  const handleBypassOffline = () => {
+    setBypassOffline(true);
+    setOpenCategory(null);
+    setShowSurvey(false);
+    setShowAboutUs(false);
+    setShowSettings(false);
+    setShowNotifications(false);
+    setShowTasbih(false);
+    setShowConfigurator(false);
+    setShowCareMeExpanded(false);
+    setShowCall(false);
+    setShowFoodOrder(false);
+    setShowBlankPage(false);
+    setShowIptv(false);
+    setActiveGame(null);
+    setActiveTool(null);
+  };
+
   const isTV = isTvDevice();
   const [openCategory, setOpenCategory] = useState<string | null>(null);
 
@@ -669,40 +695,13 @@ function BedsideScreen() {
   const lastPrayerRef = useRef<Prayer>(Prayer.None);
   const azanAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => {
-    const loadAzan = () => {
-      const audio = new Audio("https://www.islamcan.com/audio/adhan/azan20.mp3");
-      audio.preload = "auto";
-      audio.onerror = (e) => console.error("Azan Audio Load Error:", e);
-      azanAudioRef.current = audio;
-    };
-    loadAzan();
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = new Date();
-      const status = getPrayerStatus(now, theme.location);
-
-      // Check if a prayer has just started
-      if (status.current !== Prayer.None && status.current !== lastPrayerRef.current) {
-        // TRICK: Only trigger if the previous one wasn't None (prevents double trigger on load)
-        // OR if it's the first time we detect any prayer (which always happens on load)
-        if (lastPrayerRef.current !== Prayer.None) {
-          handlePrayerTimeReached(status.current);
-        }
-        lastPrayerRef.current = status.current;
-      } else if (lastPrayerRef.current === Prayer.None) {
-        // Initial load
-        lastPrayerRef.current = status.current;
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [prayerAlarm]);
-
   const handlePrayerTimeReached = useCallback((pKey: Prayer) => {
-    const prayerNameEn = t(PRAYER_NAMES[pKey], "en");
-    const prayerNameAr = t(PRAYER_NAMES[pKey], "ar");
+    if (!pKey || pKey === Prayer.None || pKey === Prayer.Sunrise || !PRAYER_NAMES[pKey]) {
+      console.warn("[prayer] Skipping alarm/notification for unmapped prayer key:", pKey);
+      return;
+    }
+    const prayerNameEn = translateWithLocale(PRAYER_NAMES[pKey], "en");
+    const prayerNameAr = translateWithLocale(PRAYER_NAMES[pKey], "ar");
 
     // 1. Queue Broadcast (will show after tour if active)
     setBroadcastQueue(prev => [...prev, {
@@ -727,6 +726,43 @@ function BedsideScreen() {
       azanAudioRef.current.play().catch(e => console.error("Azan play failed:", e));
     }
   }, [prayerAlarm, t]);
+
+  useEffect(() => {
+    const loadAzan = () => {
+      const audio = new Audio("https://www.islamcan.com/audio/adhan/azan20.mp3");
+      audio.preload = "auto";
+      audio.onerror = (e) => console.error("Azan Audio Load Error:", e);
+      azanAudioRef.current = audio;
+    };
+    loadAzan();
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date();
+      const status = getPrayerStatus(now, theme.location);
+
+      // Check if a prayer has just started
+      if (status.current !== Prayer.None && status.current !== lastPrayerRef.current) {
+        // TRICK: Only trigger if the previous one wasn't None (prevents double trigger on load)
+        if (lastPrayerRef.current !== Prayer.None) {
+          // Only trigger if we are within 5 minutes of the actual prayer start time.
+          // This prevents delayed alerts if the device was asleep or offline.
+          const timeDiffMs = Math.abs(now.getTime() - (status.currentTime?.getTime() ?? 0));
+          if (timeDiffMs < 5 * 60 * 1000) {
+            handlePrayerTimeReached(status.current);
+          } else {
+            console.log(`[prayer] Skipping delayed prayer notification for ${status.current}. Time difference: ${Math.round(timeDiffMs / 1000)}s`);
+          }
+        }
+        lastPrayerRef.current = status.current;
+      } else if (lastPrayerRef.current === Prayer.None) {
+        // Initial load
+        lastPrayerRef.current = status.current;
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [prayerAlarm, theme.location, handlePrayerTimeReached]);
 
   /* ── Reminder Push Notification Timer (runs persistently) ── */
   useEffect(() => {
@@ -1760,7 +1796,7 @@ function BedsideScreen() {
         />
       )}
 
-      <OfflineBanner visible={!isOnline} />
+      <OfflineBanner visible={!isOnline && !bypassOffline} onBypass={handleBypassOffline} />
 
       <AccountLockScreen
         visible={isLocked}

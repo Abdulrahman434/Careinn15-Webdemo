@@ -1670,21 +1670,8 @@ export function AppLauncher({
 
     // 1a. Native APK app
     if (app.packageName && isAndroidApp()) {
-      const installed = window.AndroidSystem?.isAppInstalled?.(app.packageName) ?? false;
-      if (installed) {
-        window.AndroidSystem?.launchApp?.(app.packageName);
-        return;
-      }
-      if (app.apkUrl) {
-        setInstallingApp({
-          packageName: app.packageName,
-          name: app.name,
-          apkUrl: app.apkUrl,
-        });
-        window.AndroidSystem?.installApk?.(app.apkUrl, app.packageName);
-        return;
-      }
-      // Has package name but no APK URL — fall through to URL
+      window.AndroidSystem?.launchApp?.(app.packageName);
+      return;
     }
 
     // 1b. URL fallback

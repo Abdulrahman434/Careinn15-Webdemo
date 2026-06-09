@@ -395,6 +395,12 @@ export async function fetchAppPackages(
         apkUrl: item.package ?? null,
         pdfUrl: item.pdf ?? null,
       }));
+
+      const packages = _packagesCache
+        .filter(a => a.type === "APK" && a.packageName)
+        .map(a => a.packageName);
+      window.AndroidSystem?.setLaunchableApps?.(JSON.stringify(packages));
+
       return _packagesCache;
     } catch (e) {
       console.warn("[hospitalApi] fetchAppPackages:", e);
