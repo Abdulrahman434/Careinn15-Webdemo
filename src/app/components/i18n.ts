@@ -66,6 +66,7 @@ const translations: Record<string, TranslationEntry> = {
   "conn.lastUpdate": { en: "last update", ar: "آخر تحديث", ur: "آخری اپ ڈیٹ" },
   "conn.ago": { en: "ago", ar: "مضت", ur: "پہلے" },
   "conn.refresh": { en: "Refresh", ar: "تحديث", ur: "ریفریش" },
+  "conn.activeOffline": { en: "active offline", ar: "نشط دون اتصال", ur: "ایکٹو آف لائن" },
 
   /* ─── Prayer Names ─── */
   "prayer.fajr": { en: "FAJR", ar: "الفجر", ur: "فجر" },

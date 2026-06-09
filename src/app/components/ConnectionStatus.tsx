@@ -6,24 +6,23 @@ import {
 } from "../lib/connectionStatus";
 
 const DOT: Record<ConnState, string> = {
-  connected: "#22c55e",   // green
-  stale:     "#f59e0b",   // amber
-  offline:   "#ef4444",   // red
+  connected: "#22c55e",  // green
+  stale:     "#f59e0b",  // amber
+  bundled:   "#f59e0b",  // amber (active offline)
+  offline:   "#ef4444",  // red
 };
 
 export function ConnectionStatus() {
   const { theme: t } = useTheme();
   const { t: tr, fontFamily } = useLocale();
-  const { state, lastContact, refreshAvailable, refresh } =
+  const { state, lastContact, showRefresh, refresh } =
     useConnectionStatus();
 
   const label =
     state === "connected" ? tr("conn.connected")
     : state === "offline" ? tr("conn.offline")
+    : state === "bundled" ? tr("conn.activeOffline")
     : `${tr("conn.lastUpdate")} ${timeAgo(lastContact)} ${tr("conn.ago")}`;
-
-  // show the icon every 30 min, and whenever stale (so user can retry)
-  const showRefresh = refreshAvailable || state === "stale";
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
