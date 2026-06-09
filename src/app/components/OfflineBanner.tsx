@@ -45,11 +45,7 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
   };
 
   const handleContinueOffline = () => {
-    if (isAndroidApp()) {
-      window.location.href = "file:///android_asset/www/index.html";
-    } else {
-      onBypass?.();
-    }
+    onBypass?.();
   };
 
   const submitPin = async () => {
