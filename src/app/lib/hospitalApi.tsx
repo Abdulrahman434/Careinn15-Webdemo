@@ -464,7 +464,16 @@ function mapPackagesToAppItems(packages: AppPackage[], categoryKey: string): Api
     p => p.category === apiCategory && (p.pdfUrl || p.apkUrl || p.url)
   );
 
-  return items.map(p => {
+  // de-dupe API packages by packageName → url → id
+  const seen = new Set<string>();
+  const unique = items.filter(p => {
+    const key = (p.packageName || p.url || String(p.id)).toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return unique.map(p => {
     // ── PDF type ──
     if (p.type === "PDF" && p.pdfUrl) {
       return {

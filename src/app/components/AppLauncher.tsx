@@ -112,6 +112,90 @@ interface CategoryConfig {
 
 type CategoryKey = string;
 
+function dedupeApps(list: any[]): any[] {
+  const norm = (s?: string) =>
+    (s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+
+  const getPriority = (app: any): number => {
+    if (app.packageName && app.apkUrl) return 3;
+    if (app.packageName) return 2;
+    if (app.url) return 1;
+    return 0;
+  };
+
+  const out: any[] = [];
+  const pkgMap = new Map<string, number>();
+  const urlMap = new Map<string, number>();
+  const nameMap = new Map<string, number>();
+
+  for (const app of list) {
+    const pkg = app.packageName ? app.packageName.toLowerCase() : "";
+    const url = app.url ? app.url.trim().toLowerCase() : "";
+    const name = norm(app.nameKey || app.name);
+
+    let dupIndex = -1;
+    if (pkg && pkgMap.has(pkg)) {
+      dupIndex = pkgMap.get(pkg)!;
+    } else if (url && urlMap.has(url)) {
+      dupIndex = urlMap.get(url)!;
+    } else if (name && nameMap.has(name)) {
+      dupIndex = nameMap.get(name)!;
+    }
+
+    if (dupIndex !== -1) {
+      const existingApp = out[dupIndex];
+      const newPriority = getPriority(app);
+      const oldPriority = getPriority(existingApp);
+
+      if (newPriority > oldPriority) {
+        const merged = {
+          ...app,
+          // Preserve visual styling from existing (hardcoded) app
+          name: existingApp.name,
+          nameKey: existingApp.nameKey,
+          nameAr: existingApp.nameAr,
+          bg: existingApp.bg,
+          mark: existingApp.mark,
+          textColor: existingApp.textColor,
+          markSize: existingApp.markSize,
+          markWeight: existingApp.markWeight,
+          markFont: existingApp.markFont,
+          customRender: existingApp.customRender,
+        };
+
+        const oldPkg = existingApp.packageName ? existingApp.packageName.toLowerCase() : "";
+        const oldUrl = existingApp.url ? existingApp.url.trim().toLowerCase() : "";
+        const oldName = norm(existingApp.nameKey || existingApp.name);
+        if (oldPkg) pkgMap.delete(oldPkg);
+        if (oldUrl) urlMap.delete(oldUrl);
+        if (oldName) nameMap.delete(oldName);
+
+        out[dupIndex] = merged;
+        if (merged.packageName) pkgMap.set(merged.packageName.toLowerCase(), dupIndex);
+        if (merged.url) urlMap.set(merged.url.trim().toLowerCase(), dupIndex);
+        if (oldName) nameMap.set(oldName, dupIndex);
+      } else {
+        const merged = {
+          ...existingApp,
+          packageName: existingApp.packageName || app.packageName,
+          apkUrl: existingApp.apkUrl || app.apkUrl,
+          url: existingApp.url || app.url,
+          imageUrl: existingApp.imageUrl || app.imageUrl,
+          appType: existingApp.appType || app.appType,
+        };
+        out[dupIndex] = merged;
+      }
+    } else {
+      const newIndex = out.length;
+      out.push(app);
+      if (pkg) pkgMap.set(pkg, newIndex);
+      if (url) urlMap.set(url, newIndex);
+      if (name) nameMap.set(name, newIndex);
+    }
+  }
+  return out;
+}
+
 /* ── App data with accurate branding ────────────────────────── */
 
 function getCategories(theme: any, locale: string = "en", t: any): Record<string, CategoryConfig> {
@@ -1512,7 +1596,7 @@ export function AppLauncher({
   const baseCategory = allCategories[activeKey];
   const category = baseCategory ? {
     ...baseCategory,
-    apps: [...baseCategory.apps, ...apiPdfApps],
+    apps: dedupeApps([...baseCategory.apps, ...apiPdfApps]),
   } : baseCategory;
   const [launchedApp, setLaunchedApp] = useState<string | null>(null);
   const [showPdf, setShowPdf] = useState(false);
@@ -1536,11 +1620,12 @@ export function AppLauncher({
   useEffect(() => {
     const onProgress = (e: Event) => {
       const { packageName, percent } = (e as CustomEvent).detail;
-      setInstallingApp(prev =>
-        prev?.packageName === packageName
-          ? { ...prev, progress: percent }
-          : prev
-      );
+      setInstallingApp(prev => {
+        if (prev && prev.packageName === packageName) {
+          return { ...prev, progress: percent };
+        }
+        return prev;
+      });
     };
     const onSuccess = (e: Event) => {
       const { packageName } = (e as CustomEvent).detail;
@@ -1662,15 +1747,42 @@ export function AppLauncher({
   };
 
   const handleAppTap = (app: any) => {
+    console.log("[TAP]", JSON.stringify({
+      id: app.id, packageName: app.packageName, apkUrl: app.apkUrl,
+      url: app.url, isInteractive: app.isInteractive,
+      appType: app.appType, isAndroid: isAndroidApp()
+    }));
+
     // Special case for the standalone URL Browser app
     if (app.id === "url-browser") {
       setShowUrlNavigator(true);
       return;
     }
 
-    // 1a. Native APK app
+    // 1a. Native APK app — install if missing, else launch
     if (app.packageName && isAndroidApp()) {
-      window.AndroidSystem?.launchApp?.(app.packageName);
+      const installed = apps.isInstalled(app.packageName);
+      console.log("[TAP] APK branch, installed =", installed,
+                  "installApk fn =", typeof window.AndroidSystem?.installApk);
+      if (installed) {
+        window.AndroidSystem?.launchApp?.(app.packageName);
+        return;
+      }
+      if (app.apkUrl) {
+        setInstallingApp({
+          packageName: app.packageName,
+          name: app.nameKey ? t(app.nameKey) : app.name,
+          apkUrl: app.apkUrl,
+          progress: 0,
+        });
+        window.AndroidSystem?.installApk?.(app.apkUrl, app.packageName);
+        return;
+      }
+      if (app.url) {
+        if (onOpenUrl) onOpenUrl(app.url);
+        else window.open(app.url, "_blank", "noopener,noreferrer");
+        return;
+      }
       return;
     }
 
