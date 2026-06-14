@@ -36,7 +36,7 @@ import { useRipple } from "./useRipple";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { PdfReaderModal } from "./PdfReaderModal";
 import { apps, isAndroidApp, KNOWN_APPS } from "../utils/androidBridge";
-import { useApiPdfApps, API_CATEGORY_MAP } from "../lib/hospitalApi";
+import { useApiPdfApps, API_CATEGORY_MAP, getPackagesCache } from "../lib/hospitalApi";
 import edgeLogo from "../../assets/edge_logo.png";
 import chromeIcon from "../../assets/272d9a4c809b16af18cfbe153fa4edc5816536b3.png";
 import saudiGazetteLogo from "../../assets/5a0099c6364ba06a603226f636904e61c8e17c07.png";
@@ -116,6 +116,12 @@ function dedupeApps(list: any[]): any[] {
   const norm = (s?: string) =>
     (s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 
+  const getIdentityKey = (app: any): string => {
+    if (app.packageName) return `pkg:${app.packageName.toLowerCase()}`;
+    if (app.url) return `url:${app.url.trim().toLowerCase()}`;
+    return `name:${norm(app.nameKey || app.name)}`;
+  };
+
   const getPriority = (app: any): number => {
     if (app.packageName && app.apkUrl) return 3;
     if (app.packageName) return 2;
@@ -124,25 +130,12 @@ function dedupeApps(list: any[]): any[] {
   };
 
   const out: any[] = [];
-  const pkgMap = new Map<string, number>();
-  const urlMap = new Map<string, number>();
-  const nameMap = new Map<string, number>();
+  const identityMap = new Map<string, number>();
 
   for (const app of list) {
-    const pkg = app.packageName ? app.packageName.toLowerCase() : "";
-    const url = app.url ? app.url.trim().toLowerCase() : "";
-    const name = norm(app.nameKey || app.name);
-
-    let dupIndex = -1;
-    if (pkg && pkgMap.has(pkg)) {
-      dupIndex = pkgMap.get(pkg)!;
-    } else if (url && urlMap.has(url)) {
-      dupIndex = urlMap.get(url)!;
-    } else if (name && nameMap.has(name)) {
-      dupIndex = nameMap.get(name)!;
-    }
-
-    if (dupIndex !== -1) {
+    const key = getIdentityKey(app);
+    if (identityMap.has(key)) {
+      const dupIndex = identityMap.get(key)!;
       const existingApp = out[dupIndex];
       const newPriority = getPriority(app);
       const oldPriority = getPriority(existingApp);
@@ -150,6 +143,9 @@ function dedupeApps(list: any[]): any[] {
       if (newPriority > oldPriority) {
         const merged = {
           ...app,
+          url: app.url || existingApp.url,
+          pdfSource: app.pdfSource || existingApp.pdfSource,
+          isInteractive: app.isInteractive || existingApp.isInteractive,
           // Preserve visual styling from existing (hardcoded) app
           name: existingApp.name,
           nameKey: existingApp.nameKey,
@@ -162,18 +158,7 @@ function dedupeApps(list: any[]): any[] {
           markFont: existingApp.markFont,
           customRender: existingApp.customRender,
         };
-
-        const oldPkg = existingApp.packageName ? existingApp.packageName.toLowerCase() : "";
-        const oldUrl = existingApp.url ? existingApp.url.trim().toLowerCase() : "";
-        const oldName = norm(existingApp.nameKey || existingApp.name);
-        if (oldPkg) pkgMap.delete(oldPkg);
-        if (oldUrl) urlMap.delete(oldUrl);
-        if (oldName) nameMap.delete(oldName);
-
         out[dupIndex] = merged;
-        if (merged.packageName) pkgMap.set(merged.packageName.toLowerCase(), dupIndex);
-        if (merged.url) urlMap.set(merged.url.trim().toLowerCase(), dupIndex);
-        if (oldName) nameMap.set(oldName, dupIndex);
       } else {
         const merged = {
           ...existingApp,
@@ -186,11 +171,8 @@ function dedupeApps(list: any[]): any[] {
         out[dupIndex] = merged;
       }
     } else {
-      const newIndex = out.length;
+      identityMap.set(key, out.length);
       out.push(app);
-      if (pkg) pkgMap.set(pkg, newIndex);
-      if (url) urlMap.set(url, newIndex);
-      if (name) nameMap.set(name, newIndex);
     }
   }
   return out;
@@ -413,6 +395,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           bg: "#fff",
           mark: "القرآن",
           textColor: "#333",
+          packageName: "com.arabiait.quran.v2",
           url: "https://app.quranflash.com/book/Medina1?ar#/reader/chapter/3",
           customRender: () => (
             <ApiImage src={quranBookIcon} alt="Quran" style={{ width: 150, height: 150, objectFit: "cover" }} />
@@ -431,6 +414,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           bg: "#25D366",
           mark: "",
           textColor: "#fff",
+          packageName: "com.whatsapp",
           url: "https://web.whatsapp.com/",
           customRender: () => (
             <ApiImage src={whatsappIcon} alt="WhatsApp" style={{ width: 150, height: 150, objectFit: "cover" }} />
@@ -464,6 +448,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           bg: "#000000",
           mark: "𝕏",
           textColor: "#ffffff",
+          packageName: "com.twitter.android",
           url: "https://x.com/",
           markSize: 56,
           markWeight: 400,
@@ -474,6 +459,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           bg: "#fff",
           mark: "",
           textColor: "#333",
+          packageName: "com.snapchat.android",
           url: "https://www.snapchat.com/",
           customRender: () => (
             <ApiImage src={snapchatIcon} alt="Snapchat" style={{ width: 150, height: 150, objectFit: "cover" }} />
@@ -807,6 +793,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           bg: "#fff",
           mark: "",
           textColor: "#333",
+          packageName: "com.microsoft.teams",
           customRender: () => (
             <ApiImage src={teamsIcon} alt="Teams" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
@@ -827,6 +814,7 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
           bg: "#fff",
           mark: "",
           textColor: "#333",
+          packageName: "com.skype.raider",
           customRender: () => (
             <ApiImage src={skypeIcon} alt="Skype" style={{ width: 150, height: 150, objectFit: "cover" }} />
           ),
@@ -1629,6 +1617,14 @@ export function AppLauncher({
     };
     const onSuccess = (e: Event) => {
       const { packageName } = (e as CustomEvent).detail;
+      try {
+        // rebuild the allowlist from cached packages so the new app is allowed
+        const allApk = getPackagesCache()
+          .filter((p: any) => p.type === "APK" && p.packageName)
+          .map((p: any) => p.packageName);
+        if (!allApk.includes(packageName)) allApk.push(packageName);
+        window.AndroidSystem?.setLaunchableApps?.(JSON.stringify(allApk));
+      } catch {}
       window.AndroidSystem?.launchApp?.(packageName);
       setInstallingApp(null);
     };
@@ -1759,12 +1755,9 @@ export function AppLauncher({
       return;
     }
 
-    // 1a. Native APK app — install if missing, else launch
+    // 1a. Native APK app — launch if installed, else install
     if (app.packageName && isAndroidApp()) {
-      const installed = apps.isInstalled(app.packageName);
-      console.log("[TAP] APK branch, installed =", installed,
-                  "installApk fn =", typeof window.AndroidSystem?.installApk);
-      if (installed) {
+      if (apps.isInstalled(app.packageName)) {
         window.AndroidSystem?.launchApp?.(app.packageName);
         return;
       }
@@ -1772,7 +1765,7 @@ export function AppLauncher({
         setInstallingApp({
           packageName: app.packageName,
           name: app.nameKey ? t(app.nameKey) : app.name,
-          apkUrl: app.apkUrl,
+          apkUrl: app.apkUrl,           // already cloud-keyed via Change 2
           progress: 0,
         });
         window.AndroidSystem?.installApk?.(app.apkUrl, app.packageName);

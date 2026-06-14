@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { FileText, Smartphone } from "lucide-react";
-import { apiUrl, rewriteImageUrl } from "./apiConfig";
+import { apiUrl, rewriteImageUrl, withApiKey } from "./apiConfig";
 import { ApiImage } from "../components/ApiImage";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -362,6 +362,10 @@ export interface AppPackage {
 // ── Module-level cache — persists across component mounts ────────────────
 
 let _packagesCache: AppPackage[] | null = null;
+
+export function getPackagesCache(): AppPackage[] {
+  return _packagesCache ?? [];
+}
 let _packagesFetching: Promise<AppPackage[]> | null = null;
 
 /**
@@ -392,7 +396,7 @@ export async function fetchAppPackages(
         category: item.category_title ?? "",
         type: item.type as "APK" | "URL" | "PDF",
         url: item.url ?? null,
-        apkUrl: item.package ?? null,
+        apkUrl: item.package ? withApiKey(item.package) : null,
         pdfUrl: item.pdf ?? null,
       }));
 
