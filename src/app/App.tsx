@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, type CSSProperties } from "react";
 import { getAuthorizedCards, getNurseCardUid } from "./utils/nfc";
 import { isTvDevice } from "./utils/deviceDetect";
 import { ThemeProvider, useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "./components/ThemeContext";
@@ -12,6 +12,7 @@ import { ServicesGrid, ShortcutsColumn, HubGridCompact, ServiceCardsRow } from "
 import { useCmsHospital, useCmsSectionVisibility } from '../lib/useCmsContent';
 import { CareMe, CareMeExpanded } from "./components/CareMe";
 import { IdleScreen } from "./components/IdleScreen";
+import CiHomescreen from "../imports/CiHomescreen";
 import { RippleStyles } from "./components/useRipple";
 import { AppLauncher } from "./components/AppLauncher";
 import { SurveyModal } from "./components/SurveyModal";
@@ -160,8 +161,16 @@ const isBeforeToday = (dateStr: string | null | undefined): boolean => {
   return d.getTime() < today.getTime();
 };
 
+const getSavedLayoutMode = (): 1 | 2 => {
+  try {
+    return localStorage.getItem('careinn-layout-mode') === '2' ? 2 : 1;
+  } catch {
+    return 1;
+  }
+};
+
 function BedsideScreen() {
-  const { patientAdmitted, setPatientAdmitted, theme, darkMode, switchConfig, prayerAlarm } = useTheme();
+  const { patientAdmitted, setPatientAdmitted, theme, darkMode, switchConfig, prayerAlarm, layout2Theme } = useTheme();
   const { isFullAccess, lockedHospitalId } = useAuth();
   const { t, locale, isRTL, dir, fontFamily } = useLocale();
   const scale = useScreenScale();
@@ -247,7 +256,18 @@ function BedsideScreen() {
       return false;
     }
   });
+  const [layoutMode, setLayoutMode] = useState<1 | 2>(getSavedLayoutMode);
   const [showConfigurator, setShowConfigurator] = useState(false);
+
+  useEffect(() => {
+    const handleLayoutModeChange = () => setLayoutMode(getSavedLayoutMode());
+    window.addEventListener('layout-mode-changed', handleLayoutModeChange);
+    window.addEventListener('storage', handleLayoutModeChange);
+    return () => {
+      window.removeEventListener('layout-mode-changed', handleLayoutModeChange);
+      window.removeEventListener('storage', handleLayoutModeChange);
+    };
+  }, []);
   const [isLocked, setIsLocked] = useState(false);
   const [openAccountDirectly, setOpenAccountDirectly] = useState(false);
 
@@ -1312,161 +1332,189 @@ function BedsideScreen() {
         }}
         className={`flex flex-col overflow-hidden relative shrink-0 ${isTV ? "careinn-tv" : "careinn-kiosk"}`}
       >
-        {/* Decorative hospital background photo — subtle texture */}
-        <AutoCarousel
-          images={[theme.heroImageUrl]}
-          opacity={darkMode ? 0.03 : 0.08}
-          objectPosition={theme.heroCropPosition}
-          style={{ zIndex: 0 }}
-        />
-        {/* Decorative hospital symbol watermarks */}
-        <img
-          src={theme.id === "caremed" ? caremedicalicon : fakeehSymbol}
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none select-none absolute"
-          style={{
-            width: "680px",
-            height: "680px",
-            right: "-120px",
-            bottom: "-160px",
-            opacity: darkMode ? 0.015 : 0.03,
-            transform: "rotate(-15deg)",
-            zIndex: 0,
-          }}
-        />
-        <img
-          src={theme.id === "caremed" ? caremedicalicon : fakeehSymbol}
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none select-none absolute"
-          style={{
-            width: "420px",
-            height: "420px",
-            left: "-80px",
-            top: "-60px",
-            opacity: darkMode ? 0.012 : 0.025,
-            transform: "rotate(160deg)",
-            zIndex: 0,
-          }}
-        />
+        {layoutMode === 2 ? (
+          /* Layout 2 (CareInn) — scopes its OWN CSS variables so it never
+             inherits the active hospital (Layout 1) colors. */
+          <div
+            className="size-full"
+            style={{
+              "--primary-color": layout2Theme.primary,
+              "--primary-dark": layout2Theme.primaryDark,
+              "--primary-light": layout2Theme.primaryLight,
+              "--accent-color": layout2Theme.accent,
+              "--accent-dark": layout2Theme.accentDark,
+              "--accent-light": layout2Theme.accentLight,
+            } as CSSProperties}
+          >
+            <CiHomescreen
+              onOpenSettings={() => setShowSettings(true)}
+              onOpenCategory={handleOpenCategory}
+              onOpenSurvey={() => setShowSurvey(true)}
+              onLaunchTool={(id) => setActiveTool(id as any)}
+              onOpenAboutUs={() => setShowAboutUs(true)}
+              onShowCareMeExpanded={() => setShowCareMeExpanded(true)}
+              onShowIptv={() => setShowIptv(true)}
+              onShowFoodOrder={() => setShowFoodOrder(true)}
+              onShowCall={() => setShowCall(true)}
+            />
+          </div>
+        ) : (
+          <>
+            {/* Decorative hospital background photo — subtle texture */}
+            <AutoCarousel
+              images={[theme.heroImageUrl]}
+              opacity={darkMode ? 0.03 : 0.08}
+              objectPosition={theme.heroCropPosition}
+              style={{ zIndex: 0 }}
+            />
+            {/* Decorative hospital symbol watermarks */}
+            <img
+              src={theme.id === "caremed" ? caremedicalicon : fakeehSymbol}
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none select-none absolute"
+              style={{
+                width: "680px",
+                height: "680px",
+                right: "-120px",
+                bottom: "-160px",
+                opacity: darkMode ? 0.015 : 0.03,
+                transform: "rotate(-15deg)",
+                zIndex: 0,
+              }}
+            />
+            <img
+              src={theme.id === "caremed" ? caremedicalicon : fakeehSymbol}
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none select-none absolute"
+              style={{
+                width: "420px",
+                height: "420px",
+                left: "-80px",
+                top: "-60px",
+                opacity: darkMode ? 0.012 : 0.025,
+                transform: "rotate(160deg)",
+                zIndex: 0,
+              }}
+            />
 
-        {/* System Header */}
-        <TopBar
-          onFajrTap={() => setLayoutVersion((v) => (v === 3 ? 1 : 3))}
-          onDhuhrTap={() => setShowConfigurator(true)}
-          onAsrTap={undefined}
-          onMaghribTap={() => handlePrayerTimeReached(Prayer.Maghrib)}
-          onIshaTap={() => setShowTasbih(true)}
-          onWeatherTap={() => setLayoutVersion((v) => (v === 1 ? 2 : 1))}
-          onSettingsTap={() => setShowSettings(true)}
-          onBellTap={() => setShowNotifications(true)}
-          unreadCount={getUnreadCount()}
-        />
+            {/* System Header */}
+            <TopBar
+              onFajrTap={() => setLayoutVersion((v) => (v === 3 ? 1 : 3))}
+              onDhuhrTap={() => setShowConfigurator(true)}
+              onAsrTap={undefined}
+              onMaghribTap={() => handlePrayerTimeReached(Prayer.Maghrib)}
+              onIshaTap={() => setShowTasbih(true)}
+              onWeatherTap={() => setLayoutVersion((v) => (v === 1 ? 2 : 1))}
+              onSettingsTap={() => setShowSettings(true)}
+              onBellTap={() => setShowNotifications(true)}
+              unreadCount={getUnreadCount()}
+            />
 
-        {/* News Ticker */}
-        <NewsTicker />
+            {/* News Ticker */}
+            <NewsTicker />
 
-        {/* Main Content — 32px gap below ticker */}
-        <div className="flex-1 flex flex-row gap-[40px] px-8 pt-8 pb-6 min-h-0" style={{ position: "relative", zIndex: 1 }}>
-          {patientAdmitted ? (
-            layoutVersion === 3 ? (
-              /* ─── V3 Layout: HubCards left, Greeting+CareMe center, Shortcuts right ─── */
-              <div className="flex-1 flex flex-row gap-[40px] min-w-0 min-h-0">
-                {/* Left — 2×4 Hub Grid */}
-                <div className="flex flex-col shrink-0 min-h-0" style={{ width: "400px" }}>
-                  <HubGridCompact
-                    onOpenCategory={handleOpenCategory}
-                    visibility={v}
-                    onRequestPinSetup={() => {
-                      setOpenAccountDirectly(true);
-                      setShowSettings(true);
-                    }}
-                  />
-                </div>
+            {/* Main Content — 32px gap below ticker */}
+            <div className="flex-1 flex flex-row gap-[40px] px-8 pt-8 pb-6 min-h-0" style={{ position: "relative", zIndex: 1 }}>
+              {patientAdmitted ? (
+                layoutVersion === 3 ? (
+                  /* ─── V3 Layout: HubCards left, Greeting+CareMe center, Shortcuts right ─── */
+                  <div className="flex-1 flex flex-row gap-[40px] min-w-0 min-h-0">
+                    {/* Left — 2×4 Hub Grid */}
+                    <div className="flex flex-col shrink-0 min-h-0" style={{ width: "400px" }}>
+                      <HubGridCompact
+                        onOpenCategory={handleOpenCategory}
+                        visibility={v}
+                        onRequestPinSetup={() => {
+                          setOpenAccountDirectly(true);
+                          setShowSettings(true);
+                        }}
+                      />
+                    </div>
 
-                {/* Center — Greeting + CareMe side by side, Services below */}
-                <div className="flex-1 flex flex-col gap-5 min-w-0 min-h-0">
-                  {/* Top: Greeting + CareMe horizontally */}
-                  <div className="flex-1 flex flex-row gap-5 min-h-0">
-                    <div className="flex-1 min-w-0 min-h-0 flex flex-col">
+                    {/* Center — Greeting + CareMe side by side, Services below */}
+                    <div className="flex-1 flex flex-col gap-5 min-w-0 min-h-0">
+                      {/* Top: Greeting + CareMe horizontally */}
+                      <div className="flex-1 flex flex-row gap-5 min-h-0">
+                        <div className="flex-1 min-w-0 min-h-0 flex flex-col">
+                          <PatientGreeting
+                            onOpenAboutUs={() => setShowAboutUs(true)}
+                            onOpenTour={() => setShowTour(true)}
+                            fillImage
+                            showAboutUs={v.show_about_us}
+                            onImageTap={(url) => setCtaMediaConfig({ type: "image", url, title: t("general.aboutUs") })}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0 min-h-0 flex flex-col">
+                          {(!isGuest || careMeUnlocked) ? (
+                            <CareMe onExpand={() => setShowCareMeExpanded(true)} />
+                          ) : (
+                            <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />
+                          )}
+                        </div>
+                      </div>
+                      {/* Bottom: Service cards row */}
+                      <ServiceCardsRow
+                        onOpenCategory={handleOpenCategory}
+                        visibility={v}
+                        onRequestPinSetup={() => {
+                          setOpenAccountDirectly(true);
+                          setShowSettings(true);
+                        }}
+                      />
+                    </div>
+
+                    {/* Right — Shortcuts */}
+                    <div className="flex flex-col shrink-0 min-h-0" style={{ width: "280px" }}>
+                      <ShortcutsColumn
+                        onOpenSurvey={() => setShowSurvey(true)}
+                        onLaunchTool={(id) => setActiveTool(id as any)}
+                        onRequestPinSetup={() => {
+                          setOpenAccountDirectly(true);
+                          setShowSettings(true);
+                        }}
+                      />
+                    </div>
+                  </div>
+                ) : layoutVersion === 1 ? (
+                  <>
+                    {/* Left Column — PatientGreeting + CareMe */}
+                    <div className="flex flex-col gap-5 shrink-0 min-h-0 h-full" style={{ width: "400px" }}>
                       <PatientGreeting
                         onOpenAboutUs={() => setShowAboutUs(true)}
                         onOpenTour={() => setShowTour(true)}
-                        fillImage
                         showAboutUs={v.show_about_us}
                         onImageTap={(url) => setCtaMediaConfig({ type: "image", url, title: t("general.aboutUs") })}
                       />
+                      <div className="flex-1 min-h-0 flex flex-col">
+                        {(!isGuest || careMeUnlocked) ? (
+                          <CareMe onExpand={() => setShowCareMeExpanded(true)} />
+                        ) : (
+                          <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0 min-h-0 flex flex-col">
-                      {(!isGuest || careMeUnlocked) ? (
-                        <CareMe onExpand={() => setShowCareMeExpanded(true)} />
-                      ) : (
-                        <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />
-                      )}
-                    </div>
-                  </div>
-                  {/* Bottom: Service cards row */}
-                  <ServiceCardsRow
-                    onOpenCategory={handleOpenCategory}
-                    visibility={v}
-                    onRequestPinSetup={() => {
-                      setOpenAccountDirectly(true);
-                      setShowSettings(true);
-                    }}
-                  />
-                </div>
 
-                {/* Right — Shortcuts */}
-                <div className="flex flex-col shrink-0 min-h-0" style={{ width: "280px" }}>
-                  <ShortcutsColumn
-                    onOpenSurvey={() => setShowSurvey(true)}
-                    onLaunchTool={(id) => setActiveTool(id as any)}
-                    onRequestPinSetup={() => {
-                      setOpenAccountDirectly(true);
-                      setShowSettings(true);
-                    }}
-                  />
-                </div>
-              </div>
-            ) : layoutVersion === 1 ? (
-              <>
-                {/* Left Column — PatientGreeting + CareMe */}
-                <div className="flex flex-col gap-5 shrink-0 min-h-0 h-full" style={{ width: "400px" }}>
-                  <PatientGreeting
-                    onOpenAboutUs={() => setShowAboutUs(true)}
-                    onOpenTour={() => setShowTour(true)}
-                    showAboutUs={v.show_about_us}
-                    onImageTap={(url) => setCtaMediaConfig({ type: "image", url, title: t("general.aboutUs") })}
-                  />
-                  <div className="flex-1 min-h-0 flex flex-col">
-                    {(!isGuest || careMeUnlocked) ? (
-                      <CareMe onExpand={() => setShowCareMeExpanded(true)} />
-                    ) : (
-                      <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />
-                    )}
-                  </div>
-                </div>
+                    {/* Center + Right Column */}
+                    <div className="flex-1 flex flex-row gap-[40px] min-w-0 min-h-0">
+                      {/* Center — Engagement Grid */}
+                      <div className="flex-1 min-w-0 flex flex-col gap-5 min-h-0">
+                        <ServicesGrid
+                          onOpenCategory={handleOpenCategory}
+                          onLaunchTool={(id) => setActiveTool(id as any)}
+                          visibility={v}
+                          onRequestPinSetup={() => {
+                            setOpenAccountDirectly(true);
+                            setShowSettings(true);
+                          }}
+                          lockMenu={lockMenuApp}
+                          onLockMenuChange={setLockMenuApp}
+                        />
+                      </div>
 
-                {/* Center + Right Column */}
-                <div className="flex-1 flex flex-row gap-[40px] min-w-0 min-h-0">
-                  {/* Center — Engagement Grid */}
-                  <div className="flex-1 min-w-0 flex flex-col gap-5 min-h-0">
-                    <ServicesGrid
-                      onOpenCategory={handleOpenCategory}
-                      onLaunchTool={(id) => setActiveTool(id as any)}
-                      visibility={v}
-                      onRequestPinSetup={() => {
-                        setOpenAccountDirectly(true);
-                        setShowSettings(true);
-                      }}
-                      lockMenu={lockMenuApp}
-                      onLockMenuChange={setLockMenuApp}
-                    />
-                  </div>
-
-                  {/* Right — Shortcuts */}
-                  <div className="flex flex-col shrink-0 min-h-0" style={{ width: "280px" }}>
+                      {/* Right — Shortcuts */}
+                      <div className="flex flex-col shrink-0 min-h-0" style={{ width: "280px" }}>
                     <ShortcutsColumn
                       onOpenSurvey={() => setShowSurvey(true)}
                       onLaunchTool={(id) => setActiveTool(id as any)}
@@ -1573,6 +1621,8 @@ function BedsideScreen() {
             </>
           )}
         </div>
+          </>
+        )}
 
         {/* App Launcher Overlay */}
         {openCategory && (

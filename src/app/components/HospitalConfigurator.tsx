@@ -16,7 +16,7 @@ import {
   RotateCcw,
   Crosshair,
 } from "lucide-react";
-import { useTheme, type HospitalCoreConfig, DSFH_CORE, BUILTIN_PRESETS, autoDarken, autoLighten } from "./ThemeContext";
+import { useTheme, type HospitalCoreConfig, type Layout2Theme, DSFH_CORE, BUILTIN_PRESETS, autoDarken, autoLighten } from "./ThemeContext";
 import { useAuth } from "./AuthContext";
 import { TokenGallery } from "./TokenGallery";
 
@@ -658,12 +658,13 @@ function ConfigCard({
 
 /* ═══ MAIN EXPORT ═══ */
 export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
-  const { theme: t, allConfigs, activeConfigId, switchConfig, saveConfig, deleteConfig } =
+  const { theme: t, allConfigs, activeConfigId, switchConfig, saveConfig, deleteConfig, layout2Theme, saveLayout2Theme } =
     useTheme();
   const { isFullAccess, lockedHospitalId } = useAuth();
 
-  const [view, setView] = useState<"list" | "edit">("list");
+  const [view, setView] = useState<"list" | "edit" | "careinn">("list");
   const [editingConfig, setEditingConfig] = useState<HospitalCoreConfig | null>(null);
+  const [editingLayout2, setEditingLayout2] = useState<Layout2Theme | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [showAdvancedColors, setShowAdvancedColors] = useState(false);
   const [showTokenGallery, setShowTokenGallery] = useState(false);
@@ -701,6 +702,48 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
         ? { accentDark: autoDarken(hex), accentLight: autoLighten(hex) }
         : {}),
     });
+  };
+
+  /* ── Layout 2 (CareInn) — independent theme editor ── */
+  const startEditLayout2 = () => {
+    setEditingLayout2({ ...layout2Theme });
+    setShowAdvancedColors(false);
+    setView("careinn");
+  };
+
+  const handleLayout2PrimaryChange = (hex: string) => {
+    if (!editingLayout2) return;
+    setEditingLayout2({
+      ...editingLayout2,
+      primary: hex,
+      ...(!showAdvancedColors
+        ? { primaryDark: autoDarken(hex), primaryLight: autoLighten(hex) }
+        : {}),
+    });
+  };
+
+  const handleLayout2AccentChange = (hex: string) => {
+    if (!editingLayout2) return;
+    setEditingLayout2({
+      ...editingLayout2,
+      accent: hex,
+      ...(!showAdvancedColors
+        ? { accentDark: autoDarken(hex), accentLight: autoLighten(hex) }
+        : {}),
+    });
+  };
+
+  const handleLayout2Save = () => {
+    if (!editingLayout2) return;
+    saveLayout2Theme({
+      ...editingLayout2,
+      primaryDark: editingLayout2.primaryDark || autoDarken(editingLayout2.primary),
+      primaryLight: editingLayout2.primaryLight || autoLighten(editingLayout2.primary),
+      accentDark: editingLayout2.accentDark || autoDarken(editingLayout2.accent),
+      accentLight: editingLayout2.accentLight || autoLighten(editingLayout2.accent),
+    });
+    setView("list");
+    setEditingLayout2(null);
   };
 
   const handleSave = () => {
@@ -902,6 +945,32 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                 </button>
               )}
               <button
+                onClick={startEditLayout2}
+                className="flex items-center gap-3 w-full cursor-pointer active:scale-[0.98] transition-transform"
+                style={{
+                  padding: "12px 16px",
+                  borderRadius: "12px",
+                  backgroundColor: "rgba(0,0,0,0.02)",
+                  border: "1.5px solid rgba(0,0,0,0.06)",
+                }}
+              >
+                {/* Color preview swatches */}
+                <div className="shrink-0 flex items-center gap-1">
+                  <div style={{ width: "20px", height: "32px", borderRadius: "6px 0 0 6px", backgroundColor: layout2Theme.primary }} />
+                  <div style={{ width: "12px", height: "32px", backgroundColor: layout2Theme.primaryDark }} />
+                  <div style={{ width: "12px", height: "32px", borderRadius: "0 6px 6px 0", backgroundColor: layout2Theme.accent }} />
+                </div>
+                <div className="flex-1 text-left min-w-0">
+                  <span className="block" style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 700, color: t.textHeading }}>
+                    Edit: CareInn (Layout 2)
+                  </span>
+                  <span className="block" style={{ fontFamily: t.fontFamily, fontSize: "11px", fontWeight: 500, color: t.textMuted, marginTop: "1px" }}>
+                    Independent colors for the CareInn home design
+                  </span>
+                </div>
+                <Palette size={16} style={{ color: t.textMuted, flexShrink: 0 }} />
+              </button>
+              <button
                 onClick={() => setShowTokenGallery(true)}
                 className="flex items-center justify-center gap-2 w-full cursor-pointer active:scale-[0.97] transition-transform"
                 style={{
@@ -926,6 +995,160 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                   }}
                 >
                   Token Gallery
+                </span>
+              </button>
+            </div>
+          </>
+        ) : view === "careinn" ? (
+          /* ─── CAREINN (LAYOUT 2) COLOR EDITOR ─── */
+          <>
+            {/* Header */}
+            <div className="flex items-center gap-3 shrink-0" style={{ padding: "24px 24px 0 24px" }}>
+              <button
+                onClick={() => {
+                  setView("list");
+                  setEditingLayout2(null);
+                }}
+                className="flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "10px",
+                  backgroundColor: "rgba(0,0,0,0.05)",
+                  border: "none",
+                }}
+              >
+                <ChevronLeft size={20} style={{ color: t.textMuted }} />
+              </button>
+              <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading }}>
+                Edit: CareInn
+              </span>
+            </div>
+
+            {editingLayout2 && (
+              <div className="flex-1 overflow-y-auto flex flex-col gap-5" style={{ padding: "20px 24px", scrollbarWidth: "none" }}>
+                <span style={{ fontFamily: t.fontFamily, fontSize: "12px", fontWeight: 500, color: t.textMuted, lineHeight: "18px" }}>
+                  These colors apply only to Layout 2 (the CareInn home design) and are kept fully
+                  independent from every hospital configuration above.
+                </span>
+
+                {/* ── Brand Colors ── */}
+                <SectionHeader icon={<Palette size={15} />} label="Brand Colors" />
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <ColorField
+                      label="Primary Color"
+                      value={editingLayout2.primary}
+                      onChange={handleLayout2PrimaryChange}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <ColorField
+                      label="Accent Color"
+                      value={editingLayout2.accent}
+                      onChange={handleLayout2AccentChange}
+                    />
+                  </div>
+                </div>
+
+                {/* Auto-derived colors hint */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Info size={12} style={{ color: t.textDisabled }} />
+                    <span style={{ fontSize: "11px", fontWeight: 500, color: t.textDisabled }}>
+                      Dark & light variants are auto-generated
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setShowAdvancedColors((v) => !v)}
+                    className="cursor-pointer"
+                    style={{ fontSize: "11px", fontWeight: 600, color: t.primary, background: "none", border: "none", padding: 0 }}
+                  >
+                    {showAdvancedColors ? "Hide advanced" : "Customize variants"}
+                  </button>
+                </div>
+
+                {showAdvancedColors && (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <ColorField
+                          label="Primary Dark"
+                          value={editingLayout2.primaryDark || autoDarken(editingLayout2.primary)}
+                          onChange={(v) => setEditingLayout2({ ...editingLayout2, primaryDark: v })}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <ColorField
+                          label="Primary Light"
+                          value={editingLayout2.primaryLight || autoLighten(editingLayout2.primary)}
+                          onChange={(v) => setEditingLayout2({ ...editingLayout2, primaryLight: v })}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <ColorField
+                          label="Accent Dark"
+                          value={editingLayout2.accentDark || autoDarken(editingLayout2.accent)}
+                          onChange={(v) => setEditingLayout2({ ...editingLayout2, accentDark: v })}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <ColorField
+                          label="Accent Light"
+                          value={editingLayout2.accentLight || autoLighten(editingLayout2.accent)}
+                          onChange={(v) => setEditingLayout2({ ...editingLayout2, accentLight: v })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Live Preview ── */}
+                <SectionHeader icon={<Info size={15} />} label="Live Preview" />
+                <div
+                  className="flex flex-col gap-2"
+                  style={{ padding: "16px", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.06)" }}
+                >
+                  <div className="flex gap-2">
+                    <div
+                      className="flex-1 flex items-center justify-center"
+                      style={{ height: "36px", borderRadius: "10px", backgroundColor: editingLayout2.primary }}
+                    >
+                      <span style={{ fontFamily: t.fontFamily, fontSize: "13px", fontWeight: 700, color: "#fff" }}>Primary</span>
+                    </div>
+                    <div
+                      className="flex-1 flex items-center justify-center"
+                      style={{ height: "36px", borderRadius: "10px", backgroundColor: editingLayout2.accent }}
+                    >
+                      <span style={{ fontFamily: t.fontFamily, fontSize: "13px", fontWeight: 700, color: "#fff" }}>Accent</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <div style={{ flex: 1, height: "20px", borderRadius: "6px", backgroundColor: editingLayout2.primaryDark || autoDarken(editingLayout2.primary) }} />
+                    <div style={{ flex: 2, height: "20px", borderRadius: "6px", backgroundColor: editingLayout2.primary }} />
+                    <div style={{ flex: 2, height: "20px", borderRadius: "6px", backgroundColor: editingLayout2.primaryLight || autoLighten(editingLayout2.primary) }} />
+                  </div>
+                  <div className="flex gap-1">
+                    <div style={{ flex: 1, height: "20px", borderRadius: "6px", backgroundColor: editingLayout2.accentDark || autoDarken(editingLayout2.accent) }} />
+                    <div style={{ flex: 2, height: "20px", borderRadius: "6px", backgroundColor: editingLayout2.accent }} />
+                    <div style={{ flex: 2, height: "20px", borderRadius: "6px", backgroundColor: editingLayout2.accentLight || autoLighten(editingLayout2.accent) }} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Save Button */}
+            <div style={{ padding: "16px 24px 24px 24px" }}>
+              <button
+                onClick={handleLayout2Save}
+                className="flex items-center justify-center gap-2 w-full cursor-pointer active:scale-[0.97] transition-transform"
+                style={{ height: "52px", borderRadius: "14px", backgroundColor: t.primary, border: "none" }}
+              >
+                <Check size={20} style={{ color: t.textInverse }} />
+                <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: t.textInverse }}>
+                  Save Changes
                 </span>
               </button>
             </div>

@@ -4,13 +4,17 @@ import { useLocale } from "./i18n";
 import separatorIcon from "../../imports/Asset_2_white.svg";
 import { ApiImage } from "./ApiImage";
 
-export function NewsTicker() {
+interface NewsTickerProps {
+  items?: string[];
+}
+
+export function NewsTicker({ items }: NewsTickerProps = {}) {
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
   const [offset, setOffset] = useState(0);
   const textRef = useRef<HTMLDivElement>(null);
 
-  const newsItems = theme.id === "dallah"
+  const newsItems = items ?? (theme.id === "dallah"
     ? [
         `🏆  ${t("news.dallah.1")}`,
         `🌍  ${t("news.dallah.2")}`,
@@ -58,7 +62,7 @@ export function NewsTicker() {
         `🏆  ${t("news.wifi")}`,
         `🌍  ${t("news.carePlans")}`,
         `🔬  ${t("news.menu")}`,
-      ];
+      ]);
 
   useEffect(() => {
     let animFrame: number;
@@ -119,7 +123,9 @@ export function NewsTicker() {
       className="w-full overflow-hidden flex items-center justify-center shrink-0"
       style={{
         height: SPACE[5],
-        background: theme.primary,
+        // Read the scoped CSS variable so Layout 2 uses its own (CareInn) theme
+        // source; falls back to the active-hospital theme in Layout 1.
+        background: `var(--primary-color, ${theme.primary})`,
         boxShadow: SHADOW.md,
       }}
     >

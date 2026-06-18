@@ -670,12 +670,12 @@ export const CAREINN_CORE: HospitalCoreConfig = {
   hospitalWebsiteUrl: "",
   heroImageUrl: careinnHero,
   heroCropPosition: "50% 40%",
-  primary: "#16274D",
-  primaryDark: "#0E1A35",
-  primaryLight: "#E3E7EE",
-  accent: "#4EBEE3",
-  accentDark: "#3A96B5",
-  accentLight: "#E2F5FA",
+  primary: "#1B2F5B",
+  primaryDark: "#152446",
+  primaryLight: "#e1e3e9",
+  accent: "#4A90D9",
+  accentDark: "#3970a9",
+  accentLight: "#e7f0fa",
   location: "Riyadh",
 };
 
@@ -713,6 +713,51 @@ export interface HospitalCoreConfig {
   accentDark: string;
   accentLight: string;
   location?: string;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LAYOUT 2 (CareInn) — fully independent theme, isolated from hospital configs
+ * ═══════════════════════════════════════════════════════════════════════════
+ * Layout 2 (the CiHomescreen "CareInn" design) must NEVER inherit colors from
+ * the active hospital config that drives Layout 1. It has its own localStorage
+ * slice and its own scoped CSS variables (applied on the Layout 2 wrapper in
+ * App.tsx), so editing a Layout 1 hospital can never affect Layout 2 and vice
+ * versa.
+ */
+export interface Layout2Theme {
+  primary: string;
+  primaryDark: string;
+  primaryLight: string;
+  accent: string;
+  accentDark: string;
+  accentLight: string;
+}
+
+export const DEFAULT_LAYOUT2_THEME: Layout2Theme = {
+  primary: "#1B2F5B",
+  primaryDark: "#152446",
+  primaryLight: "#e1e3e9",
+  accent: "#4A90D9",
+  accentDark: "#3970a9",
+  accentLight: "#e7f0fa",
+};
+
+// localStorage key — independent from "hospital-configs" (Layout 1 storage)
+const LAYOUT2_THEME_KEY = "careinn-layout2-theme";
+
+function loadLayout2Theme(): Layout2Theme {
+  try {
+    const raw = localStorage.getItem(LAYOUT2_THEME_KEY);
+    if (!raw) return DEFAULT_LAYOUT2_THEME;
+    const parsed = JSON.parse(raw) as Partial<Layout2Theme>;
+    return { ...DEFAULT_LAYOUT2_THEME, ...parsed };
+  } catch {
+    return DEFAULT_LAYOUT2_THEME;
+  }
+}
+
+function saveLayout2ThemeToStorage(t: Layout2Theme) {
+  localStorage.setItem(LAYOUT2_THEME_KEY, JSON.stringify(t));
 }
 
 const STORAGE_KEY = "hospital-configs";
@@ -756,6 +801,12 @@ function saveDarkMode(val: boolean) {
   localStorage.setItem("hbs-dark-mode", val ? "true" : "false");
 }
 
+// Layout mode (1 = active hospital design, 2 = CareInn design). Written by
+// MyAccountDialog under "careinn-layout-mode"; broadcast via "layout-mode-changed".
+function loadLayoutMode(): 1 | 2 {
+  return localStorage.getItem("careinn-layout-mode") === "2" ? 2 : 1;
+}
+
 /* ── Context Type ── */
 interface ThemeContextType {
   theme: ThemeConfig;
@@ -774,6 +825,9 @@ interface ThemeContextType {
   setLocale: (v: Locale) => void;
   prayerAlarm: boolean;
   setPrayerAlarm: (v: boolean) => void;
+  /** Layout 2 (CareInn) theme — independent of the active hospital config. */
+  layout2Theme: Layout2Theme;
+  saveLayout2Theme: (t: Layout2Theme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
@@ -793,6 +847,8 @@ const ThemeContext = createContext<ThemeContextType>({
   setLocale: () => { },
   prayerAlarm: true,
   setPrayerAlarm: () => { },
+  layout2Theme: DEFAULT_LAYOUT2_THEME,
+  saveLayout2Theme: () => { },
 });
 
 /* ── Inject CSS Custom Properties ──
@@ -847,6 +903,16 @@ function injectCSSVars(t: ThemeConfig) {
     "--hbs-warning-subtle": t.warningSubtle,
     "--hbs-error": t.error,
     "--hbs-error-subtle": t.errorSubtle,
+
+    // Standard CSS Custom Properties for layout styling
+    "--primary-color": t.primary,
+    "--primary-dark": t.primaryDark,
+    "--primary-light": t.primaryLight,
+    "--primary-subtle": t.primarySubtle,
+    "--accent-color": t.accent,
+    "--accent-dark": t.accentDark,
+    "--accent-light": t.accentLight,
+    "--accent-subtle": t.accentSubtle,
   };
   Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
 }
@@ -864,10 +930,27 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return saved === null ? true : saved === "true";
   });
 
+  const [layout2Theme, setLayout2Theme] = useState<Layout2Theme>(() => loadLayout2Theme());
+  const [layoutMode, setLayoutMode] = useState<1 | 2>(() => loadLayoutMode());
+
+  // Keep the effective theme in sync with the active layout mode so that, in
+  // Layout 2, the WHOLE app (home, games, tools, settings, overlays) is driven
+  // by the CareInn Layout 2 theme instead of the active hospital config.
+  useEffect(() => {
+    const handler = () => setLayoutMode(loadLayoutMode());
+    window.addEventListener("layout-mode-changed", handler);
+    return () => window.removeEventListener("layout-mode-changed", handler);
+  }, []);
+
   const updatePrayerAlarm = (val: boolean) => {
     setPrayerAlarm(val);
     localStorage.setItem("prayer-alarm", val ? "true" : "false");
   };
+
+  const saveLayout2Theme = useCallback((next: Layout2Theme) => {
+    setLayout2Theme(next);
+    saveLayout2ThemeToStorage(next);
+  }, []);
 
   // All configs = built-in presets (overridable by saved versions) + user-created configs
   const allConfigs: HospitalCoreConfig[] = (() => {
@@ -894,9 +977,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return [...merged, ...userCreated];
   })();
 
-  // Resolve active config → theme
+  // Resolve effective config → theme.
+  // Layout 1 uses the active hospital config as-is. Layout 2 overrides ONLY the
+  // six brand color fields with the independent CareInn Layout 2 theme, while
+  // keeping the hospital's identity/location/fonts/assets untouched (so prayer
+  // times, weather, news and app content are unaffected). buildTheme derives all
+  // color tokens from these inputs, so this single source of truth drives both
+  // the JS `theme` object and the injected :root CSS variables — no Layout 2
+  // component can fall back to a Layout 1 color.
   const activeCore = allConfigs.find((c) => c.id === activeId) || DSFH_CORE;
-  const baseTheme = buildTheme(activeCore, darkMode);
+  const effectiveCore: HospitalCoreConfig =
+    layoutMode === 2 ? { ...activeCore, ...layout2Theme } : activeCore;
+  const baseTheme = buildTheme(effectiveCore, darkMode);
   // Override fontFamily based on active locale so every component using
   // theme.fontFamily automatically gets the correct Arabic/English font.
   const theme = useMemo(() => ({
@@ -907,7 +999,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Inject CSS vars on theme change
   useEffect(() => {
     injectCSSVars(theme);
-  }, [activeId, savedConfigs, darkMode, locale]);
+  }, [activeId, savedConfigs, darkMode, locale, layoutMode, layout2Theme]);
 
   const switchConfig = useCallback((id: string) => {
     setActiveId(id);
@@ -973,6 +1065,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       },
       prayerAlarm,
       setPrayerAlarm: updatePrayerAlarm,
+      layout2Theme,
+      saveLayout2Theme,
     }}>
       {children}
     </ThemeContext.Provider>

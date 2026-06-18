@@ -29,7 +29,8 @@ type Step =
   | 'server'
   | 'admin-login'
   | 'admin-controls'
-  | 'backgrounds';
+  | 'backgrounds'
+  | 'layout-mode';
 
 type PendingAction = 'reset-pin' | 'reset-nfc' | 'remove-account' | 'admin-login' | null;
 
@@ -245,6 +246,13 @@ export function MyPreferencesDialog({
   const [nfcUid1, setNfcUid1] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [verifyPinVal, setVerifyPinVal] = useState("");
+  const [layoutModeValue, setLayoutModeValue] = useState<1 | 2>(() => {
+    try {
+      return localStorage.getItem('careinn-layout-mode') === '2' ? 2 : 1;
+    } catch {
+      return 1;
+    }
+  });
 
   // Server Config state
   const [serverIp, setServerIp] = useState("");
@@ -268,6 +276,7 @@ export function MyPreferencesDialog({
       const config = getApiConfig();
       setServerIp(config.serverIp);
       setApiKey(config.apiKey);
+      setLayoutModeValue(localStorage.getItem('careinn-layout-mode') === '2' ? 2 : 1);
     }
   }, [open]);
 
@@ -319,6 +328,16 @@ export function MyPreferencesDialog({
   const handleResetServer = () => {
     resetApiConfig();
     window.location.reload();
+  };
+
+  const saveLayoutMode = (mode: 1 | 2) => {
+    try {
+      localStorage.setItem('careinn-layout-mode', mode.toString());
+    } catch {
+      // ignore storage errors
+    }
+    setLayoutModeValue(mode);
+    window.dispatchEvent(new Event('layout-mode-changed'));
   };
 
   if (!open) return null;
@@ -401,9 +420,10 @@ export function MyPreferencesDialog({
               </button>
 
               {/* SECTION 4: Layout Mode */}
-              <div
-                className="flex items-center gap-3 w-full text-left"
-                style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, opacity: 0.5 }}
+              <button
+                onClick={() => setStep('layout-mode')}
+                className="flex items-center gap-3 w-full text-left cursor-pointer active:scale-[0.98] transition-transform"
+                style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none" }}
               >
                 <div style={{ padding: "8px", borderRadius: t.radiusMd, backgroundColor: t.primarySubtle }}>
                   <Layout size={20} style={{ color: t.primary }} />
@@ -413,10 +433,11 @@ export function MyPreferencesDialog({
                     Layout Mode
                   </span>
                   <span style={{ fontFamily: t.fontFamily, fontSize: "13px", color: t.textMuted }}>
-                    Coming soon
+                    {layoutModeValue === 1 ? 'Layout 1 selected' : 'Layout 2 selected'}
                   </span>
                 </div>
-              </div>
+                <ChevronRight size={20} style={{ color: t.textMuted, transform: isRTL ? 'rotate(180deg)' : '' }} />
+              </button>
 
               {/* SECTION 5: Admin Settings */}
               <button
@@ -885,6 +906,37 @@ export function MyPreferencesDialog({
           </div>
         );
 
+      case 'layout-mode':
+        return (
+          <div className="flex flex-col" style={{ padding: "16px 20px 24px" }}>
+            <div className="flex flex-col gap-3" style={{ padding: "8px 0 0" }}>
+              {[
+                { id: 1, title: "Layout 1", subtitle: "Current layout (existing design)" },
+                { id: 2, title: "Layout 2", subtitle: "CareInn15 design" },
+              ].map((option) => (
+                <button
+                  key={option.id}
+                  onClick={() => saveLayoutMode(option.id as 1 | 2)}
+                  className="flex items-center gap-3 w-full text-left cursor-pointer active:scale-[0.98] transition-transform"
+                  style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none" }}
+                >
+                  <div className="flex-1 flex flex-col gap-1">
+                    <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: t.textHeading }}>
+                      {option.title}
+                    </span>
+                    <span style={{ fontFamily: t.fontFamily, fontSize: "13px", color: t.textMuted }}>
+                      {option.subtitle}
+                    </span>
+                  </div>
+                  {layoutModeValue === option.id ? (
+                    <Check size={18} style={{ color: t.primary }} />
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+
       case 'backgrounds':
         return <BackgroundsPanel />;
     }
@@ -894,6 +946,7 @@ export function MyPreferencesDialog({
     switch (step) {
       case 'menu': return tr("settings.preferences");
       case 'server': return "Server Configuration";
+      case 'layout-mode': return "Layout Mode";
       case 'admin-controls': return "Admin Settings";
       case 'setup-pin1':
       case 'setup-pin2':
