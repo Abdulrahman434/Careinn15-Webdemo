@@ -10,6 +10,7 @@ import { createContext, useContext, useState, useCallback, ReactNode, useEffect 
  *   "slh"      → Saint Louis Hospital only
  *   "caremed"  → Care Medical only
  *   "fakeeh"   → Dr. Soliman Fakeeh Hospital only
+ *   "prime"    → Prime Hospital only
  *   "careinn"  → Full access (all hospitals, configurator enabled)
  *
  * ═══════════════════════════════════════════════════════════════════════════ */
@@ -23,6 +24,7 @@ export const HASHED_PASSWORD_MAP: Record<string, string> = {
   "183f1e06fe841b761a073d9057ba11164292e7846fbe8e474230aebb4635f41e": "dsfh",    // "fakeeh"
   "7e453343b3477a0d9538df8e905ecb160aea04b9215528ffc21056ddb6d2cd09": "careinn", // full access
   "c598203581040f62b32d0d9c64555333e5ae42dc82878ed73644bc2abf3dbdde": "imc",
+  "dccc5d01dabcd1c0b9fa89c91e7f4bde603121ee0172b4ff394e6bb30d295e41": "prime",
 };
 
 /** The SHA-256 hash for the careinn full-access password */
@@ -98,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       else if (basePassword === "burjeel") hashHex = "26a692dd0d4f558fc8c3b7cb1749e812605a4095b58777d3a690cc1ebfc15f2a";
       else if (basePassword === "slh") hashHex = "025705ec8cab15dbf71655031ccc2081b8af1dde1bc70539ba56f8f20b8a7a27";
       else if (basePassword === "imc") hashHex = "c598203581040f62b32d0d9c64555333e5ae42dc82878ed73644bc2abf3dbdde";
+      else if (basePassword === "prime") hashHex = "dccc5d01dabcd1c0b9fa89c91e7f4bde603121ee0172b4ff394e6bb30d295e41";
     }
 
     const mapping = HASHED_PASSWORD_MAP[hashHex];

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Info, FileText, Play, Film, Trophy, Star, Medal, Zap } from "lucide-react";
+import { Info, FileText, Play, Film, Trophy, Star, Medal, Zap, Globe, MapPin } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { InternalPageHeader } from "./InternalPageHeader";
@@ -34,6 +34,8 @@ import burjeelDna from "../../assets/BurjeelDNA.png";
 import burjeelNumbers from "../../assets/BurjeelNumbers.png";
 import burjeelServices from "../../assets/BurjeelServices.png";
 import burjeelAccreds from "../../assets/burjeelaccreds.png";
+
+import primeAccreds from "../../assets/prime-accreditations.png";
 
 interface AboutSection {
   id: string;
@@ -97,32 +99,86 @@ const dallahPatientRightsAr = `سيقوم مكتب الاستقبال أو طا�
 
 const dallahAccreditationsText = ``; // Replaced by images
 
+/* ── Prime Hospital — About Us content ── */
+const primeDna = `Personalised Care Personally!
+
+At Prime Hospital, care is personal, warm, and complete. Every patient is treated as an individual, with attention to their unique needs at every step of their journey.
+
+Our Brand Identity
+• Tagline — "Personalised Care Personally!"
+• Primary Colour — Orange, reflecting warmth and human connection
+• Secondary Colour — Grey, reflecting reliability and trust
+• Typeface — Montserrat
+
+Our Values
+• Personalised Care — treatment tailored to each individual
+• Warmth — compassion in every interaction
+• Reliability — dependable, consistent quality of care
+• Completeness — comprehensive services under one roof`;
+
+const primeNumbers = `Prime Hospital at a Glance
+
+• 100+ Beds — comprehensive inpatient capacity
+• 30+ Specialties — a full range of medical and surgical care
+• 15+ Years of Service — trusted care in Dubai
+• 200+ Doctors & Specialists — experienced multidisciplinary teams
+• 500,000+ Patients Served — and growing every year
+
+* Indicative figures.`;
+
+const primeServices = `Centres of Excellence & Specialties
+
+• Cardiology — advanced heart care and diagnostics
+• Orthopaedics — joint, bone, and sports injury care
+• Neurology — brain, spine, and nervous system care
+• Paediatrics — dedicated care for infants and children
+• Obstetrics & Gynaecology — women's health and maternity
+• Emergency Care — 24/7 emergency and critical care
+
+Supporting Services
+• General & Internal Medicine
+• Surgery & Day-Care Procedures
+• Radiology & Advanced Imaging
+• Laboratory & Diagnostics
+• Pharmacy Services`;
+
+const primeDigital = `Digital Care at Your Fingertips
+
+• Online Appointment Booking — schedule visits anytime, anywhere
+• Patient Portal — view reports, records, and visit history
+• Telemedicine — virtual consultations with our specialists
+• Mobile App — manage appointments and health on the go
+• Digital Check-In — faster, paperless registration`;
+
 const getSections = (themeId: string, isRTL: boolean, locale: string): AboutSection[] => [
   {
     id: "hospital",
     title: themeId === "dallah" ? "About Dallah" : "Our Hospital",
     titleKey: themeId === "dallah" ? "about.aboutDallah" : "about.ourHospital",
-    video: themeId === "burjeel" ? "OH71A4YxCG4" : themeId === "imc" ? imcVideo : themeId === "careinn" ? (locale === "ar" ? "5ZQofr0sVn4" : "pbnYEIewk6Q") : themeId === "caremed" ? "HW7Od_8C3_I" : themeId === "dallah" ? "JPgxKaOQf3s" : "4VXy7_qn608",
+    video: themeId === "burjeel" ? "OH71A4YxCG4" : themeId === "imc" ? imcVideo : themeId === "careinn" ? (locale === "ar" ? "5ZQofr0sVn4" : "pbnYEIewk6Q") : themeId === "caremed" ? "HW7Od_8C3_I" : themeId === "dallah" ? "JPgxKaOQf3s" : themeId === "prime" ? "qM3E7ALQ4TM" : "4VXy7_qn608",
   },
   {
     id: "dna",
-    title: themeId === "caremed" ? "CareMed InBrief" : themeId === "dallah" ? "Dallah DNA" : "Fakeeh Care DNA",
+    title: themeId === "caremed" ? "CareMed InBrief" : themeId === "dallah" ? "Dallah DNA" : themeId === "prime" ? "Prime DNA" : "Fakeeh Care DNA",
     titleKey: themeId === "caremed" ? "about.caremedInBrief" : themeId === "dallah" ? "about.dallahDna" : "about.dna",
-    image: themeId === "burjeel" ? burjeelDna : themeId === "careinn" ? (isRTL ? careinnDnaAr : careinnDna) : themeId === "imc" ? imcDna : themeId === "dallah" ? dallahDna : themeId === "caremed" ? (isRTL ? careMedInBriefAr : careMedInBriefEn) : dnaImg,
+    ...(themeId === "prime"
+      ? { content: primeDna }
+      : { image: themeId === "burjeel" ? burjeelDna : themeId === "careinn" ? (isRTL ? careinnDnaAr : careinnDna) : themeId === "imc" ? imcDna : themeId === "dallah" ? dallahDna : themeId === "caremed" ? (isRTL ? careMedInBriefAr : careMedInBriefEn) : dnaImg }),
   },
   ...(themeId === "careinn" ? [] : [{
     id: "numbers",
-    title: themeId === "imc" ? "IMC History" : themeId === "caremed" ? "CareMed In Numbers" : themeId === "dallah" ? "Accreditations" : "Fakeeh In Numbers",
+    title: themeId === "imc" ? "IMC History" : themeId === "caremed" ? "CareMed In Numbers" : themeId === "dallah" ? "Accreditations" : themeId === "prime" ? "Prime In Numbers" : "Fakeeh In Numbers",
     titleKey: themeId === "imc" ? "about.imcHistory" : themeId === "dallah" ? "about.accreditations" : "about.numbers",
-    image: themeId === "burjeel" ? burjeelNumbers : themeId === "imc" ? imcHistory : themeId === "dallah" ? (isRTL ? dallahAccredsAr : dallahAccredsEn) : themeId === "caremed" ? (isRTL ? numbersAr : numbersEn) : numbersImg,
-    content: themeId === "dallah" ? undefined : undefined,
+    ...(themeId === "prime"
+      ? { content: primeNumbers }
+      : { image: themeId === "burjeel" ? burjeelNumbers : themeId === "imc" ? imcHistory : themeId === "dallah" ? (isRTL ? dallahAccredsAr : dallahAccredsEn) : themeId === "caremed" ? (isRTL ? numbersAr : numbersEn) : numbersImg }),
   }]),
   {
     id: "services",
     title: "Services",
     titleKey: "about.services",
     image: themeId === "burjeel" ? burjeelServices : undefined,
-    content: themeId === "burjeel" ? undefined : themeId === "careinn"
+    content: themeId === "burjeel" ? undefined : themeId === "prime" ? primeServices : themeId === "careinn"
       ? (locale === "ar" ? `• CareInn15
 شاشة تفاعلية بجانب السرير تتيح للمرضى سهولة الوصول إلى خدمات المستشفى والترفيه والطلبات والمعلومات الأساسية أثناء إقامتهم. توفر تجربة أكثر تواصلاً وراحة داخل الغرفة.
 
@@ -180,7 +236,7 @@ Support Services
     id: "accreditations",
     title: themeId === "careinn" ? "Certifications" : themeId === "dallah" ? "Awards" : "Accreditations",
     titleKey: themeId === "careinn" ? "about.certifications" : themeId === "dallah" ? "about.awards" : "about.accreditations",
-    image: themeId === "burjeel" ? burjeelAccreds : themeId === "careinn" ? careinnCertifications : themeId === "imc" ? imcAccreds : themeId === "dallah" ? (isRTL ? dallahAwardsAr : dallahAwardsEn) : themeId === "caremed" ? accredsImg : accreditationsImg,
+    image: themeId === "burjeel" ? burjeelAccreds : themeId === "careinn" ? careinnCertifications : themeId === "imc" ? imcAccreds : themeId === "dallah" ? (isRTL ? dallahAwardsAr : dallahAwardsEn) : themeId === "caremed" ? accredsImg : themeId === "prime" ? primeAccreds : accreditationsImg,
   },
   {
     id: "digital",
@@ -188,7 +244,7 @@ Support Services
     titleKey: themeId === "careinn" ? "about.participations" : themeId === "dallah" ? "about.patientRights" : "about.digital",
     ...(themeId === "careinn"
       ? { image: careinnParticipations }
-      : { content: themeId === "dallah" ? (isRTL ? dallahPatientRightsAr : dallahPatientRightsEn) : `Connected Care at Your Fingertips
+      : { content: themeId === "dallah" ? (isRTL ? dallahPatientRightsAr : dallahPatientRightsEn) : themeId === "prime" ? primeDigital : `Connected Care at Your Fingertips
 
 Patient Portal
 • View lab results & medical records
@@ -614,6 +670,33 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                   : currentSection.content}
               </div>
             ) : null}
+
+            {/* Prime Hospital — contact footer */}
+            {theme.id === "prime" && (
+              <div
+                className="shrink-0 flex items-center gap-8 flex-wrap pt-4 mt-4"
+                style={{ borderTop: `1px solid ${theme.primarySubtle}`, fontFamily: theme.fontFamily }}
+              >
+                <a
+                  href={theme.hospitalWebsiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2"
+                  style={{ textDecoration: "none" }}
+                >
+                  <Globe size={18} color={theme.primary} />
+                  <span style={{ fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.semibold, color: theme.primary }}>
+                    {theme.hospitalWebsiteUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                  </span>
+                </a>
+                <div className="flex items-center gap-2">
+                  <MapPin size={18} color={theme.primary} />
+                  <span style={{ fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.medium, color: "#4A5568" }}>
+                    {theme.location}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

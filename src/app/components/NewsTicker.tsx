@@ -47,6 +47,12 @@ export function NewsTicker({ items }: NewsTickerProps = {}) {
         `💹  ${t("news.burjeel.4")}`,
         `🏥  ${t("news.burjeel.5")}`,
       ]
+    : theme.id === "prime"
+    ? [
+        `🏆  ${t("news.prime.1")}`,
+        `❤️  ${t("news.prime.2")}`,
+        `🤝  ${t("news.prime.3")}`,
+      ]
     : theme.id === "careinn"
     ? [
         `🏆  ${t("news.careinn.1")}`,

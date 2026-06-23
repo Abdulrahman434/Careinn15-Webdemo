@@ -334,9 +334,9 @@ function buildTheme(core: {
     fontFamilyAr: c.fontFamilyAr,
     fontFamilyMono: `${c.fontFamily.split(",")[0]}, monospace`,
 
-    logoUrl: c.logoUrl || (c.id === "dsfh" ? DSFH_LOGO : c.id === "burjeel" ? burjeelLogo : c.id === "slh" ? slhLogo : c.id === "dallah" ? dallahLogo : c.id === "caremed" ? caremedLogo : c.id === "imc" ? imcLogo : c.id === "careinn" ? careinnLogo : ""),
-    heroImageUrl: c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : ""),
-    heroImageUrls: c.heroImageUrls && c.heroImageUrls.length > 0 ? c.heroImageUrls : [c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : "")],
+    logoUrl: c.logoUrl || (c.id === "dsfh" ? DSFH_LOGO : c.id === "burjeel" ? burjeelLogo : c.id === "slh" ? slhLogo : c.id === "dallah" ? dallahLogo : c.id === "caremed" ? caremedLogo : c.id === "imc" ? imcLogo : c.id === "careinn" ? careinnLogo : c.id === "prime" ? primeLogo : ""),
+    heroImageUrl: c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : ""),
+    heroImageUrls: c.heroImageUrls && c.heroImageUrls.length > 0 ? c.heroImageUrls : [c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : "")],
     heroCropPosition: c.heroCropPosition || "50% 15%",
     slideshowInterval: c.slideshowInterval || 5,
     location: (c as any).location || "Riyadh",
@@ -540,6 +540,9 @@ import imcHero from "../../assets/IMC-e1556123324461.jpg";
 import careinnLogo from "../../assets/careinn-hospital-logo.png";
 import careinnHero from "../../assets/careinn-hospital-hero.jpg";
 
+import primeLogo from "../../assets/prime-hospital-logo.png";
+import primeHero from "../../assets/prime-hospital-hero.jpg";
+
 /* Canonical built-in asset URLs — used as fallbacks for DSFH */
 export const DSFH_LOGO = logoImage;
 export const DSFH_HERO = hospitalImg;
@@ -679,6 +682,24 @@ export const CAREINN_CORE: HospitalCoreConfig = {
   location: "Riyadh",
 };
 
+export const PRIME_CORE: HospitalCoreConfig = {
+  id: "prime",
+  hospitalName: "Prime Hospital",
+  hospitalShortName: "Prime",
+  fontFamily: "'Montserrat', sans-serif",
+  fontFamilyAr: "'Almarai', sans-serif",
+  logoUrl: primeLogo,
+  hospitalWebsiteUrl: "https://www.primehospital.com/",
+  heroImageUrl: primeHero,
+  primary: "#F47B20",
+  primaryDark: "#C45E0A",
+  primaryLight: "#F9B27A",
+  accent: "#6D6E71",
+  accentDark: "#58595B",
+  accentLight: "#EBEBEC",
+  location: "Dubai - UAE",
+};
+
 /** All built-in hospital presets (always available, never deleted) */
 export const BUILTIN_PRESETS: HospitalCoreConfig[] = [
   DSFH_CORE,
@@ -688,6 +709,7 @@ export const BUILTIN_PRESETS: HospitalCoreConfig[] = [
   CAREMED_CORE,
   IMC_CORE,
   CAREINN_CORE,
+  PRIME_CORE,
 ];
 
 
@@ -958,7 +980,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const merged = BUILTIN_PRESETS.map((preset) => {
       const saved = savedConfigs.find((c) => c.id === preset.id);
       if (!saved) return preset;
-      const hasBuiltinAssets = ["dsfh", "burjeel", "slh", "dallah", "caremed", "careinn"].includes(preset.id);
+      const hasBuiltinAssets = ["dsfh", "burjeel", "slh", "dallah", "caremed", "careinn", "prime"].includes(preset.id);
       return {
         ...preset,
         ...saved,
@@ -978,16 +1000,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   })();
 
   // Resolve effective config → theme.
-  // Layout 1 uses the active hospital config as-is. Layout 2 overrides ONLY the
-  // six brand color fields with the independent CareInn Layout 2 theme, while
-  // keeping the hospital's identity/location/fonts/assets untouched (so prayer
-  // times, weather, news and app content are unaffected). buildTheme derives all
-  // color tokens from these inputs, so this single source of truth drives both
-  // the JS `theme` object and the injected :root CSS variables — no Layout 2
-  // component can fall back to a Layout 1 color.
+  // Both layouts use the active hospital config as-is, so Layout 2 (CareInn)
+  // inherits Layout 1's active brand colors AND logo automatically — when the
+  // admin edits the active hospital's brand colors, both layouts reflect them.
+  // (layout2Theme is retained for the configurator's editor but no longer
+  // overrides the rendered theme.)
   const activeCore = allConfigs.find((c) => c.id === activeId) || DSFH_CORE;
-  const effectiveCore: HospitalCoreConfig =
-    layoutMode === 2 ? { ...activeCore, ...layout2Theme } : activeCore;
+  const effectiveCore: HospitalCoreConfig = activeCore;
   const baseTheme = buildTheme(effectiveCore, darkMode);
   // Override fontFamily based on active locale so every component using
   // theme.fontFamily automatically gets the correct Arabic/English font.
@@ -1007,7 +1026,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const saveConfigFn = useCallback((config: HospitalCoreConfig) => {
-    const hasBuiltinAssets = ["dsfh", "burjeel", "slh", "dallah", "caremed", "careinn"].includes(config.id);
+    const hasBuiltinAssets = ["dsfh", "burjeel", "slh", "dallah", "caremed", "careinn", "prime"].includes(config.id);
     const toSave = hasBuiltinAssets
       ? {
         ...config,
