@@ -833,8 +833,8 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
             onClick={onClose}
             className="flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer absolute"
             style={{
-              width: "52px", height: "52px", borderRadius: theme.radiusLg,
-              backgroundColor: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
+              width: "52px", height: "52px", borderRadius: "12px",
+              backgroundColor: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.15)",
               [isRTL ? "right" : "left"]: "-112px"
             }}
           >
@@ -842,26 +842,28 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
           </button>
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center" style={{
-              width: "52px", height: "52px", borderRadius: theme.radiusLg,
-              backgroundColor: regState === 'Ok' ? "rgba(34,197,94,0.15)" : regState === 'Progress' ? "rgba(234,179,8,0.15)" : "rgba(239,68,68,0.15)",
+              width: "52px", height: "52px", borderRadius: "12px",
+              backgroundColor: "rgba(255,255,255,0.12)",
             }}>
-              <Phone size={26} fill={regState === 'Ok' ? "#22C55E" : regState === 'Progress' ? "#EAB308" : "#EF4444"} style={{ color: regState === 'Ok' ? "#22C55E" : regState === 'Progress' ? "#EAB308" : "#EF4444" }} />
+              <Phone size={26} style={{ color: "#fff" }} />
             </div>
             <div>
               <h2 className="flex items-center gap-3" style={{ fontFamily, ...TEXT_STYLE.display, fontSize: "32px", color: "#FFFFFF", lineHeight: "36px" }}>
                 {t("call.title")}
                 <span style={{
-                  fontSize: "12px", 
-                  padding: "4px 8px", 
-                  borderRadius: "12px", 
-                  backgroundColor: regState === 'Ok' ? "rgba(34,197,94,0.2)" : regState === 'Progress' ? "rgba(234,179,8,0.2)" : "rgba(239,68,68,0.2)",
-                  color: regState === 'Ok' ? "#4ade80" : regState === 'Progress' ? "#facc15" : "#f87171",
+                  fontSize: "12px",
+                  padding: "4px 10px",
+                  borderRadius: "12px",
+                  backgroundColor: "rgba(255,255,255,0.2)",
+                  border: "1px solid rgba(255,255,255,0.25)",
+                  color: "#FFFFFF",
+                  fontWeight: WEIGHT.semibold,
                   fontFamily: theme.fontFamilyMono
                 }}>
                   {regState === 'Ok' ? "Connected" : regState === 'Progress' ? "Connecting..." : "Unavailable"}
                 </span>
               </h2>
-              <p style={{ fontFamily, ...TEXT_STYLE.caption, color: "rgba(255,255,255,0.6)", marginTop: "2px" }}>
+              <p style={{ fontFamily, ...TEXT_STYLE.caption, color: "rgba(255,255,255,0.8)", marginTop: "2px" }}>
                 {isSipAvailable ? t("call.tapToCall") : "Using simulation mode (Bridge unavailable)"}
               </p>
             </div>
