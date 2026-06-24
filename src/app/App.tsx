@@ -1348,10 +1348,13 @@ function BedsideScreen() {
             } as CSSProperties}
           >
             {/* Main background — the active hospital's building photo, synced
-                from the same config Layout 1 uses (instead of a plain canvas). */}
+                from the same config Layout 1 uses (instead of a plain canvas).
+                Opacity is admin-configurable per hospital (theme.heroOpacity,
+                a 0–100 percent); dark mode dims it to ~57% of that value to
+                preserve the original 0.35→0.20 relationship. */}
             <AutoCarousel
               images={[theme.heroImageUrl]}
-              opacity={darkMode ? 0.2 : 0.35}
+              opacity={(darkMode ? 0.57 : 1) * (theme.heroOpacity / 100)}
               objectPosition={theme.heroCropPosition}
               style={{ zIndex: 0 }}
             />

@@ -225,6 +225,7 @@ export interface ThemeConfig {
   heroImageUrls: string[];   // multiple hero images for carousel
   heroCropPosition: string;  // object-position for hero image crop, e.g. "50% 15%"
   slideshowInterval: number; // custom interval for slides in seconds
+  heroOpacity: number;       // background photo opacity, percent 0–100 (default 35)
   location: string;
 
   /* ── Brand Colors ── */
@@ -314,6 +315,7 @@ function buildTheme(core: {
   heroImageUrls?: string[];
   heroCropPosition?: string;
   slideshowInterval?: number;
+  heroOpacity?: number;
   primary: string;
   primaryDark: string;
   primaryLight: string;
@@ -339,6 +341,7 @@ function buildTheme(core: {
     heroImageUrls: c.heroImageUrls && c.heroImageUrls.length > 0 ? c.heroImageUrls : [c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : "")],
     heroCropPosition: c.heroCropPosition || "50% 15%",
     slideshowInterval: c.slideshowInterval || 5,
+    heroOpacity: c.heroOpacity ?? 35,
     location: (c as any).location || "Riyadh",
 
     primary: c.primary,
@@ -728,6 +731,7 @@ export interface HospitalCoreConfig {
   heroImageUrls?: string[];
   heroCropPosition?: string;
   slideshowInterval?: number;
+  heroOpacity?: number;      // background photo opacity, percent 0–100 (default 35)
   primary: string;
   primaryDark: string;
   primaryLight: string;

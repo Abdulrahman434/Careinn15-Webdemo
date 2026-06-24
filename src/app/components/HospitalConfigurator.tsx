@@ -1224,6 +1224,39 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                   </div>
                 )}
 
+                {/* Background image opacity */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        color: "#95A3AD",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px",
+                      }}
+                    >
+                      Background Image Opacity
+                    </span>
+                    <span style={{ fontSize: "12px", fontWeight: 700, color: t.primary }}>
+                      {editingConfig.heroOpacity ?? 35}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={editingConfig.heroOpacity ?? 35}
+                    onChange={(e) => updateField("heroOpacity", parseInt(e.target.value))}
+                    style={{ width: "100%", accentColor: t.primary, cursor: "pointer" }}
+                  />
+                  <span style={{ fontSize: "11px", fontWeight: 500, color: "#C0CAD0", lineHeight: "16px" }}>
+                    How visible the hospital background photo appears. 0% is fully transparent,
+                    100% fully visible. Default is 35%.
+                  </span>
+                </div>
+
                 {/* ── Live Preview ── */}
                 <SectionHeader icon={<Info size={15} />} label="Live Preview" />
                 <div
