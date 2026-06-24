@@ -1143,7 +1143,7 @@ export default function CiHomescreen({
         <TopBar onSettingsTap={onOpenSettings} onBellTap={onOpenNotifications} unreadCount={unreadCount} />
       </div>
       <div className="absolute left-0 right-0 top-[104px] z-10">
-        <NewsTicker items={["CareInn wins Innovation Award in Patient Experience conference"]} />
+        <NewsTicker />
       </div>
       <Frame48 />
       <Frame53 />
