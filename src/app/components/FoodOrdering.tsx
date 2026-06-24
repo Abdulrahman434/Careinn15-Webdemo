@@ -1,5 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
-import { ApiImage } from "./ApiImage";
+import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowLeft,
@@ -7,693 +6,327 @@ import {
   Sun,
   Coffee,
   Moon,
-  Cookie,
-  Plus,
-  Minus,
-  ShoppingCart,
-  Check,
-  Leaf,
-  Flame,
-  X,
   Clock,
-  ChefHat,
-  Utensils,
-  Heart,
-  GlassWater,
-  ClipboardList,
-  Bell,
-  RotateCcw,
-  Info,
-  ChevronLeft,
-  ChevronRight,
+  Check,
   AlertTriangle,
+  RotateCcw,
+  ClipboardList,
+  ShieldAlert,
+  ShoppingBag,
+  X,
+  CheckCircle2,
+  Utensils,
+  User,
+  Users,
+  MapPin,
 } from "lucide-react";
-import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW, SPACE, LEADING } from "./ThemeContext";
+import { useTheme, TEXT_STYLE, SHADOW, SPACE, TYPE_SCALE } from "./ThemeContext";
 import { useLocale } from "./i18n";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useOrders } from "./OrderStore";
-import type { PlacedOrder, OrderStatus } from "./OrderStore";
 import { useNurseStore } from "./NurseDataStore";
-import pancakesImg from "../../assets/b167c7c821f762f1a84e11f36986d483ad5614d0.png";
-import scrambledEggsImg from "../../assets/075c5a0d40e038030a1d251707da75764fd76276.png";
-import coffeeImg from "../../assets/9df352703d6019b682a622cf9d906127db5bc7a5.png";
-import teaImg from "../../assets/0270c84b734264f02001c49c568266e21d08eaa2.png";
-import milkImg from "../../assets/15ae1834fda72d939586113cfa43abdbcedb2dc2.png";
-import lemonTeaImg from "../../assets/f79d8913c4dbf3edcd50cd2e9c1efa1483970622.png";
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * FOOD DATA — mock hospital menu
+ * FAKEEH HOSPITAL MENU — grouped "choose one" sections mirroring the printed
+ * bedside menu card. Images are intentionally avoided (the kiosk runs offline
+ * behind a native shell); each item is illustrated with an emoji glyph instead.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-type DietaryTag = "vegetarian" | "vegan" | "gluten-free" | "low-sodium" | "diabetic-friendly" | "high-protein";
+type Locale = { en: string; ar: string };
 
+/** The ten major allergens surfaced in the staff filter row. */
 type Allergen =
-  | "peanuts" | "tree-nuts" | "shellfish" | "fish" | "eggs"
-  | "dairy" | "lactose" | "gluten" | "wheat" | "soy" | "sesame"
-  | "latex" | "penicillin";
+  | "gluten" | "dairy" | "eggs" | "tree-nuts" | "fish"
+  | "shellfish" | "sesame" | "soy" | "peanuts" | "sulphites";
 
-type DietCompatibility =
-  | "REG" | "DM" | "NAS" | "LS" | "RD" | "LF" | "SOFT" | "CL" | "FL" | "BLAND" | "LP";
+/** Diet-order codes that can mark an item unsuitable (chart-driven). */
+type DietCode = "NAS" | "DM" | "LS" | "RD" | "LF";
 
 interface MenuItem {
   id: string;
-  name: { en: string; ar: string };
-  description: { en: string; ar: string };
-  image: string;
-  calories: number;
-  tags: DietaryTag[];
-  popular?: boolean;
-  suitableFor: DietCompatibility[];
+  name: Locale;
+  emoji: string;
   allergens: Allergen[];
-  nutrition?: { protein?: number; carbs?: number; sodium?: number; sugar?: number; fat?: number };
+  /** Diet orders this item is NOT suitable for. */
+  restrictedFor?: DietCode[];
 }
 
-/** Map raw nurse-entered allergy strings to standardized tokens */
-function normalizeAllergyName(raw: string): Allergen | null {
-  const lower = raw.toLowerCase().trim();
-  const map: Record<string, Allergen> = {
-    "peanut": "peanuts", "peanuts": "peanuts",
-    "tree nut": "tree-nuts", "tree nuts": "tree-nuts", "nuts": "tree-nuts",
-    "shellfish": "shellfish", "shrimp": "shellfish", "crab": "shellfish", "lobster": "shellfish",
-    "fish": "fish", "egg": "eggs", "eggs": "eggs",
-    "milk": "dairy", "dairy": "dairy", "lactose": "lactose",
-    "gluten": "gluten", "wheat": "wheat", "soy": "soy", "soya": "soy",
-    "sesame": "sesame", "latex": "latex", "penicillin": "penicillin",
-  };
-  return map[lower] ?? null;
-}
-
-interface MealCategory {
+interface FoodGroup {
   id: string;
-  label: { en: string; ar: string };
-  icon: React.ComponentType<any>;
-  timeRange: { en: string; ar: string };
-  /** Hour range [start, end) in 24h format. null = all day */
-  hours: [number, number] | null;
+  label: Locale;
   items: MenuItem[];
-  color: string; // accent color for category
 }
 
-/** 
- * User's Strict Ordering Windows:
- * 9:00 PM – 6:00 AM: Breakfast only
- * 6:00 AM – 12:00 PM: Lunch only
- * 12:00 PM – 6:00 PM: Dinner only
- * 6:00 PM – 9:00 PM: Locked (Preparing for tomorrow)
- */
-function getCurrentOrderableMealId(): string | null {
-  const h = new Date().getHours();
-  if (h >= 21 || h < 6) return "breakfast";
-  if (h >= 6 && h < 12) return "lunch";
-  if (h >= 12 && h < 18) return "dinner";
-  return null; // 18-21: Blackout
+interface Meal {
+  id: "breakfast" | "lunch" | "dinner";
+  label: Locale;
+  icon: React.ComponentType<any>;
+  window: Locale;
+  /** Hero food photo shown at the top of the column (with solid-color fallback). */
+  heroImage: string;
+  groups: FoodGroup[];
+  includedForAll: MenuItem[];
 }
 
-function isMealOrderable(categoryId: string): boolean {
-  // Snacks and Drinks are always orderable unless it's the blackout period?
-  // The user said "you can order for [Specific Meal] only". 
-  // We'll assume Snacks/Drinks follow the same rule or are always on. 
-  // Usually hospitals allow snacks/drinks anytime. 
-  // But I'll stick to the "Upcoming meal only" rule for main meals.
-  if (categoryId === "snacks" || categoryId === "drinks") {
-    const h = new Date().getHours();
-    return !(h >= 18 && h < 21); // Allowed except blackout
-  }
-  return categoryId === getCurrentOrderableMealId();
-}
+const ALLERGEN_ORDER: Allergen[] = [
+  "gluten", "dairy", "eggs", "tree-nuts", "fish",
+  "shellfish", "sesame", "soy", "peanuts", "sulphites",
+];
 
-/** Check if current time is past a meal's window (for UI labels) */
-function isMealPassed(categoryId: string): boolean {
-  const h = new Date().getHours();
-  const orderable = getCurrentOrderableMealId();
-  if (categoryId === "breakfast") return h >= 6 && h < 21;
-  if (categoryId === "lunch") return h >= 12 || h < 6;
-  if (categoryId === "dinner") return h >= 18 || h < 12;
-  return false;
-}
+const ALLERGEN_META: Record<Allergen, { label: Locale; emoji: string }> = {
+  gluten: { label: { en: "Gluten", ar: "غلوتين" }, emoji: "🌾" },
+  dairy: { label: { en: "Dairy", ar: "ألبان" }, emoji: "🥛" },
+  eggs: { label: { en: "Eggs", ar: "بيض" }, emoji: "🥚" },
+  "tree-nuts": { label: { en: "Tree Nuts", ar: "مكسرات" }, emoji: "🌰" },
+  fish: { label: { en: "Fish", ar: "سمك" }, emoji: "🐟" },
+  shellfish: { label: { en: "Shellfish", ar: "محار" }, emoji: "🦐" },
+  sesame: { label: { en: "Sesame", ar: "سمسم" }, emoji: "🟤" },
+  soy: { label: { en: "Soy", ar: "صويا" }, emoji: "🫛" },
+  peanuts: { label: { en: "Peanuts", ar: "فول سوداني" }, emoji: "🥜" },
+  sulphites: { label: { en: "Sulphites", ar: "كبريتات" }, emoji: "🍇" },
+};
 
-/** Get delivery message based on whether meal is currently being served */
-function getDeliveryMessage(category: MealCategory, isRTL: boolean): { label: string; detail: string } {
-  if (isMealOrderable(category.id)) {
-    return {
-      label: isRTL ? "وقت التوصيل المتوقع" : "Est. Delivery",
-      detail: isRTL ? "٢٥–٣٥ دقيقة" : "25–35 min",
-    };
-  }
+const DIET_LABELS: Record<DietCode, Locale> = {
+  NAS: { en: "No Added Salt", ar: "بدون ملح مضاف" },
+  DM: { en: "Diabetic Diet", ar: "حمية السكري" },
+  LS: { en: "Low Sodium", ar: "قليل الصوديوم" },
+  RD: { en: "Renal Diet", ar: "حمية الكلى" },
+  LF: { en: "Low Fat", ar: "قليل الدهون" },
+};
 
-  // Locked or Passed/Upcoming
-  const h = new Date().getHours();
-  if (h >= 18 && h < 21) {
-    return {
-      label: isRTL ? "جاري التجهيز" : "Preparing",
-      detail: isRTL ? "قائمة الغد قيد التجهيز" : "Tomorrow's menu",
-    };
-  }
+/** Chart allergy strings that are not food allergens — shown but never block food. */
+const NON_FOOD_ALLERGY = new Set(["penicillin", "latex"]);
 
-  const timeStr = isRTL ? category.timeRange.ar : category.timeRange.en;
-  const prefix = isMealPassed(category.id) ? (isRTL ? "غداً " : "Tomorrow ") : "";
-  return {
-    label: isRTL ? "سيتم التوصيل في" : "Delivered during",
-    detail: `${prefix}${timeStr}`,
+/** Map a raw chart allergy string to a standardized food-allergen token. */
+function normalizeAllergen(raw: string): Allergen | null {
+  const s = raw.toLowerCase().trim();
+  const map: Record<string, Allergen> = {
+    gluten: "gluten", wheat: "gluten", bread: "gluten",
+    dairy: "dairy", milk: "dairy", lactose: "dairy", cheese: "dairy",
+    egg: "eggs", eggs: "eggs",
+    "tree nut": "tree-nuts", "tree nuts": "tree-nuts", nut: "tree-nuts", nuts: "tree-nuts",
+    fish: "fish",
+    shellfish: "shellfish", shrimp: "shellfish", crab: "shellfish", lobster: "shellfish", prawn: "shellfish",
+    sesame: "sesame", tahini: "sesame",
+    soy: "soy", soya: "soy",
+    peanut: "peanuts", peanuts: "peanuts",
+    sulphite: "sulphites", sulphites: "sulphites", sulfite: "sulphites",
   };
+  return map[s] ?? null;
 }
 
-const MENU: MealCategory[] = [
+/** Lunch & Dinner share an identical menu; build the groups for a given prefix. */
+function mainMealGroups(p: "ln" | "dn"): FoodGroup[] {
+  return [
+    {
+      id: `${p}-a`,
+      label: { en: "Group A · Soups", ar: "المجموعة أ · شوربات" },
+      items: [
+        { id: `${p}-a1`, name: { en: "Vegetable Soup", ar: "شوربة خضار" }, emoji: "🥬", allergens: [] },
+        { id: `${p}-a2`, name: { en: "Orzo Soup", ar: "شوربة أورزو" }, emoji: "🍲", allergens: ["gluten"] },
+        { id: `${p}-a3`, name: { en: "Chicken Soup", ar: "شوربة دجاج" }, emoji: "🍜", allergens: [] },
+        { id: `${p}-a4`, name: { en: "Vermicelli Soup with Chicken", ar: "شوربة شعيرية بالدجاج" }, emoji: "🍜", allergens: ["gluten"] },
+      ],
+    },
+    {
+      id: `${p}-b`,
+      label: { en: "Group B · Salads", ar: "المجموعة ب · سلطات" },
+      items: [
+        { id: `${p}-b1`, name: { en: "Mix Green Salad", ar: "سلطة خضراء مشكلة" }, emoji: "🥗", allergens: [] },
+        { id: `${p}-b2`, name: { en: "Carrot Salad", ar: "سلطة جزر" }, emoji: "🥕", allergens: [] },
+        { id: `${p}-b3`, name: { en: "Fattoush Salad", ar: "سلطة فتوش" }, emoji: "🥙", allergens: ["gluten"] },
+        { id: `${p}-b4`, name: { en: "Mutable", ar: "متبل" }, emoji: "🍆", allergens: ["sesame"] },
+        { id: `${p}-b5`, name: { en: "Tahini Salad", ar: "سلطة طحينة" }, emoji: "🥣", allergens: ["sesame"] },
+      ],
+    },
+    {
+      id: `${p}-c`,
+      label: { en: "Group C · Main Course", ar: "المجموعة ج · الطبق الرئيسي" },
+      items: [
+        { id: `${p}-c1`, name: { en: "Grilled fish served with butter and lemon sauce", ar: "سمك مشوي مع صلصة الزبدة والليمون" }, emoji: "🐟", allergens: ["fish", "dairy"] },
+        { id: `${p}-c2`, name: { en: "Fish Panne", ar: "سمك بانيه" }, emoji: "🐠", allergens: ["fish", "gluten", "eggs"] },
+        { id: `${p}-c3`, name: { en: "Grilled Chicken with herbal sauce", ar: "دجاج مشوي مع صلصة الأعشاب" }, emoji: "🍗", allergens: [] },
+        { id: `${p}-c4`, name: { en: "Grilled Chicken Kofta", ar: "كفتة دجاج مشوية" }, emoji: "🍢", allergens: [] },
+        { id: `${p}-c5`, name: { en: "Chicken Panne", ar: "دجاج بانيه" }, emoji: "🍗", allergens: ["gluten", "eggs"] },
+        { id: `${p}-c6`, name: { en: "Grilled Beef Kofta", ar: "كفتة لحم مشوية" }, emoji: "🥩", allergens: [] },
+      ],
+    },
+    {
+      id: `${p}-d`,
+      label: { en: "Group D · Rice & Pasta", ar: "المجموعة د · أرز ومعكرونة" },
+      items: [
+        { id: `${p}-d1`, name: { en: "White Rice", ar: "أرز أبيض" }, emoji: "🍚", allergens: [] },
+        { id: `${p}-d2`, name: { en: "Rice of The Day", ar: "أرز اليوم" }, emoji: "🍛", allergens: [] },
+        { id: `${p}-d3`, name: { en: "Pasta of The Day", ar: "معكرونة اليوم" }, emoji: "🍝", allergens: ["gluten"] },
+      ],
+    },
+    {
+      id: `${p}-e`,
+      label: { en: "Group E · Vegetables", ar: "المجموعة هـ · خضار" },
+      items: [
+        { id: `${p}-e1`, name: { en: "Vegetable Sauteed", ar: "خضار سوتيه" }, emoji: "🥘", allergens: [] },
+        { id: `${p}-e2`, name: { en: "Vegetable Grilled", ar: "خضار مشوية" }, emoji: "🥦", allergens: [] },
+        { id: `${p}-e3`, name: { en: "Potato of The Day", ar: "بطاطس اليوم" }, emoji: "🥔", allergens: [] },
+      ],
+    },
+    {
+      id: `${p}-f`,
+      label: { en: "Group F · Dessert", ar: "المجموعة و · حلويات" },
+      items: [
+        { id: `${p}-f1`, name: { en: "Dessert of The Day", ar: "حلى اليوم" }, emoji: "🍰", allergens: ["gluten", "dairy", "eggs"], restrictedFor: ["DM"] },
+        { id: `${p}-f2`, name: { en: "Fruit Salad", ar: "سلطة فواكه" }, emoji: "🍉", allergens: [] },
+      ],
+    },
+  ];
+}
+
+/** "Water Bottle" + "Tetra Pack Juice" — included with every meal. */
+function forAll(p: string): MenuItem[] {
+  return [
+    { id: `${p}-inc1`, name: { en: "Water Bottle", ar: "زجاجة ماء" }, emoji: "💧", allergens: [] },
+    { id: `${p}-inc2`, name: { en: "Tetra Pack Juice", ar: "عصير تيترا باك" }, emoji: "🧃", allergens: [] },
+  ];
+}
+
+const MEALS: Meal[] = [
   {
     id: "breakfast",
-    label: { en: "Breakfast", ar: "الفطور" },
+    label: { en: "Breakfast", ar: "الإفطار" },
     icon: Sun,
-    timeRange: { en: "6:00 AM – 10:00 AM", ar: "٦:٠٠ ص – ٠٠:٠٠ ص" },
-    hours: [6, 10],
-    color: "#F59E0B",
-    items: [
+    window: { en: "8:00 – 9:30 AM", ar: "٨:٠٠ – ٩:٣٠ ص" },
+    heroImage: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=900&q=70",
+    groups: [
       {
-        id: "b1",
-        name: { en: "Eggs & Toast", ar: "بيض وتوست" },
-        description: { en: "Scrambled eggs with whole wheat toast and fresh vegetables", ar: "بيض مخفوق مع توست قمح كامل وخضراوات طازجة" },
-        image: "https://images.unsplash.com/photo-1725986038149-00f65b707814?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob3NwaXRhbCUyMGJyZWFrZmFzdCUyMHRyYXklMjBlZ2dzJTIwdG9hc3QlMjBoZWFsdGh5fGVufDF8fHx8MTc3MzgwNTgwM3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 320,
-        tags: ["high-protein"],
-        popular: true,
-        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "BLAND"],
-        allergens: ["eggs", "gluten", "wheat"],
-        nutrition: { protein: 22, carbs: 28, sodium: 380, fat: 14 },
+        id: "bf-a",
+        label: { en: "Group A · Bread", ar: "المجموعة أ · خبز" },
+        items: [
+          { id: "bf-a1", name: { en: "Arabic Bread White", ar: "خبز عربي أبيض" }, emoji: "🍞", allergens: ["gluten"] },
+          { id: "bf-a2", name: { en: "Arabic Bread Brown", ar: "خبز عربي أسمر" }, emoji: "🥖", allergens: ["gluten"] },
+          { id: "bf-a3", name: { en: "Samoli Bread", ar: "خبز صامولي" }, emoji: "🥯", allergens: ["gluten"] },
+        ],
       },
       {
-        id: "b2",
-        name: { en: "Oatmeal Bowl", ar: "طبق شوفان" },
-        description: { en: "Warm oatmeal topped with honey, cinnamon, and fresh fruits", ar: "شوفان دافئ بالعسل والقرفة والفواكه الطازجة" },
-        image: "https://images.unsplash.com/photo-1631077019185-84d961548731?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvYXRtZWFsJTIwcG9ycmlkZ2UlMjBib3dsJTIwYnJlYWtmYXN0JTIwaGVhbHRoeXxlbnwxfHx8fDE3NzM4MDU4MDV8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 250,
-        tags: ["vegetarian", "diabetic-friendly"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "BLAND", "LP"],
-        allergens: [],
-        nutrition: { protein: 8, carbs: 42, sodium: 10, sugar: 12 },
+        id: "bf-b",
+        label: { en: "Group B · Hot Sides", ar: "المجموعة ب · أطباق ساخنة" },
+        items: [
+          { id: "bf-b1", name: { en: "Hash Brown", ar: "هاش براون" }, emoji: "🥔", allergens: [] },
+          { id: "bf-b2", name: { en: "Grilled Tomato", ar: "طماطم مشوية" }, emoji: "🍅", allergens: [] },
+          { id: "bf-b3", name: { en: "Potato Wedges", ar: "أصابع بطاطس" }, emoji: "🍟", allergens: [] },
+        ],
       },
       {
-        id: "b3",
-        name: { en: "Fluffy Pancakes", ar: "بان كيك" },
-        description: { en: "Light buttermilk pancakes with maple syrup and fresh berries", ar: "بان كيك خفيف بشراب القيقب والتوت الطازج" },
-        image: pancakesImg,
-        calories: 380,
-        tags: ["vegetarian"],
-        suitableFor: ["REG"],
-        allergens: ["gluten", "dairy", "eggs", "wheat"],
-        nutrition: { protein: 8, carbs: 52, sodium: 420, sugar: 24, fat: 14 },
+        id: "bf-c",
+        label: { en: "Group C · Cereals", ar: "المجموعة ج · حبوب" },
+        items: [
+          { id: "bf-c1", name: { en: "Corn Flakes", ar: "رقائق الذرة" }, emoji: "🥣", allergens: ["gluten"] },
+          { id: "bf-c2", name: { en: "Whole Bran Flakes", ar: "رقائق النخالة الكاملة" }, emoji: "🌾", allergens: ["gluten"] },
+        ],
       },
       {
-        id: "b4",
-        name: { en: "Avocado Toast", ar: "توست أفوكادو" },
-        description: { en: "Smashed avocado on sourdough with poached eggs and herbs", ar: "أفوكادو مهروس على خبز العجينة المخمرة مع بيض مسلوق وأعشاب" },
-        image: "https://images.unsplash.com/photo-1767034235859-d656cd447242?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzY3JhbWJsZWQlMjBlZ2dzJTIwYXZvY2FkbyUyMHRvYXN0JTIwYnJlYWtmYXN0JTIwcGxhdGV8ZW58MXx8fHwxNzczODA1ODExfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 340,
-        tags: ["vegetarian", "high-protein"],
-        popular: true,
-        suitableFor: ["REG", "DM", "NAS", "LS", "LF"],
-        allergens: ["gluten", "eggs", "wheat"],
-        nutrition: { protein: 14, carbs: 30, sodium: 290, fat: 20 },
+        id: "bf-d",
+        label: { en: "Group D · Cheese", ar: "المجموعة د · أجبان" },
+        items: [
+          { id: "bf-d1", name: { en: "Cheese Platter", ar: "طبق أجبان" }, emoji: "🧀", allergens: ["dairy"], restrictedFor: ["NAS"] },
+          { id: "bf-d2", name: { en: "Labna", ar: "لبنة" }, emoji: "🥛", allergens: ["dairy"], restrictedFor: ["NAS"] },
+        ],
       },
       {
-        id: "b5",
-        name: { en: "Yogurt & Granola", ar: "زبادي وجرانولا" },
-        description: { en: "Creamy Greek yogurt with crunchy granola and drizzled honey", ar: "زبادي يوناني كريمي مع جرانولا مقرمشة وعسل" },
-        image: "https://images.unsplash.com/photo-1729368628910-2d58db8657a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx5b2d1cnQlMjBwYXJmYWl0JTIwZ3Jhbm9sYSUyMGJlcnJpZXN8ZW58MXx8fHwxNzczODA1ODA2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 210,
-        tags: ["vegetarian", "gluten-free"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "SOFT", "BLAND"],
-        allergens: ["dairy", "lactose"],
-        nutrition: { protein: 15, carbs: 28, sodium: 60, sugar: 14 },
+        id: "bf-e",
+        label: { en: "Group E · Eggs", ar: "المجموعة هـ · بيض" },
+        items: [
+          { id: "bf-e1", name: { en: "Espanola Omelette", ar: "أومليت إسبانيولا" }, emoji: "🍳", allergens: ["eggs"] },
+          { id: "bf-e2", name: { en: "Scrambled Egg", ar: "بيض مخفوق" }, emoji: "🍳", allergens: ["eggs", "dairy"] },
+          { id: "bf-e3", name: { en: "Boiled Eggs", ar: "بيض مسلوق" }, emoji: "🥚", allergens: ["eggs"] },
+          { id: "bf-e4", name: { en: "Cheese Omelette", ar: "أومليت بالجبن" }, emoji: "🧀", allergens: ["eggs", "dairy"] },
+          { id: "bf-e5", name: { en: "Plain Omelette", ar: "أومليت سادة" }, emoji: "🍳", allergens: ["eggs"] },
+        ],
       },
       {
-        id: "b6",
-        name: { en: "Scrambled Eggs with Toast", ar: "بيض مخفوق مع توست" },
-        description: { en: "Fluffy scrambled eggs served on whole grain toast with fresh herbs and vegetables", ar: "بيض مخفوق هش مقدم على توست حبوب كاملة مع أعشاب طازجة وخضراوات" },
-        image: scrambledEggsImg,
-        calories: 290,
-        tags: ["high-protein"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "BLAND"],
-        allergens: ["eggs", "gluten", "wheat"],
-        nutrition: { protein: 20, carbs: 24, sodium: 350, fat: 12 },
+        id: "bf-f",
+        label: { en: "Group F · Yogurt", ar: "المجموعة و · زبادي" },
+        items: [
+          { id: "bf-f1", name: { en: "Plain Yogurt", ar: "زبادي سادة" }, emoji: "🥛", allergens: ["dairy"] },
+          { id: "bf-f2", name: { en: "Fruit Yogurt", ar: "زبادي بالفواكه" }, emoji: "🍓", allergens: ["dairy"] },
+        ],
       },
       {
-        id: "b7",
-        name: { en: "Plain Porridge", ar: "عصيدة سادة" },
-        description: { en: "Smooth, creamy porridge — gentle on the stomach", ar: "عصيدة ناعمة كريمية — لطيفة على المعدة" },
-        image: "https://images.unsplash.com/photo-1631077019185-84d961548731?w=600",
-        calories: 150,
-        tags: ["vegetarian", "low-sodium", "diabetic-friendly"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "FL", "BLAND", "LP"],
-        allergens: [],
-        nutrition: { protein: 4, carbs: 28, sodium: 5, sugar: 2, fat: 3 },
-      },
-      {
-        id: "b8",
-        name: { en: "Fruit Plate", ar: "طبق فواكه" },
-        description: { en: "Assorted seasonal fresh fruits — light and refreshing", ar: "فواكه موسمية مشكلة طازجة — خفيفة ومنعشة" },
-        image: "https://images.unsplash.com/photo-1681840524567-732960c82f4c?w=600",
-        calories: 95,
-        tags: ["vegan", "gluten-free", "diabetic-friendly"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "SOFT", "BLAND", "LP"],
-        allergens: [],
-        nutrition: { protein: 1, carbs: 24, sodium: 2, sugar: 18, fat: 0 },
+        id: "bf-g",
+        label: { en: "Group G · Pastries", ar: "المجموعة ز · معجنات" },
+        items: [
+          { id: "bf-g1", name: { en: "Croissant", ar: "كرواسون" }, emoji: "🥐", allergens: ["gluten", "dairy", "eggs"], restrictedFor: ["DM"] },
+          { id: "bf-g2", name: { en: "Muffin Cake", ar: "كيك مافن" }, emoji: "🧁", allergens: ["gluten", "dairy", "eggs"], restrictedFor: ["DM"] },
+          { id: "bf-g3", name: { en: "Danish Pastry", ar: "معجنات دنماركية" }, emoji: "🥧", allergens: ["gluten", "dairy", "eggs"], restrictedFor: ["DM"] },
+          { id: "bf-g4", name: { en: "Cinnamon Roll", ar: "لفائف القرفة" }, emoji: "🍩", allergens: ["gluten", "dairy", "eggs"], restrictedFor: ["DM"] },
+        ],
       },
     ],
+    includedForAll: forAll("bf"),
   },
   {
     id: "lunch",
     label: { en: "Lunch", ar: "الغداء" },
     icon: Coffee,
-    timeRange: { en: "12:00 PM – 3:00 PM", ar: "٢:٠٠ م – ٣:٠٠ م" },
-    hours: [12, 15],
-    color: "#22C55E",
-    items: [
-      {
-        id: "l1",
-        name: { en: "Grilled Chicken & Rice", ar: "دجاج مشوي وأرز" },
-        description: { en: "Herb-marinated grilled chicken breast with basmati rice and grilled vegetables", ar: "صدر دجاج مشوي بالأعشاب مع أرز بسمتي وخضراوات مشوية" },
-        image: "https://images.unsplash.com/photo-1604382440115-5f730e6ede1f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmlsbGVkJTIwY2hpY2tlbiUyMHJpY2UlMjBwbGF0ZSUyMGhlYWx0aHklMjBsdW5jaHxlbnwxfHx8fDE3NzM4MDU4MDR8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 450,
-        tags: ["high-protein", "gluten-free"],
-        popular: true,
-        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT"],
-        allergens: [],
-        nutrition: { protein: 38, carbs: 42, sodium: 320, fat: 10 },
-      },
-      {
-        id: "l2",
-        name: { en: "Lentil Soup", ar: "شوربة عدس" },
-        description: { en: "Traditional Arabic lentil soup with warm pita bread", ar: "شوربة عدس عربية تقليدية مع خبز بيتا دافئ" },
-        image: "https://images.unsplash.com/photo-1636044984153-dd292d223bdb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhcmFiaWMlMjBsZW50aWwlMjBzb3VwJTIwYm93bCUyMHdhcm18ZW58MXx8fHwxNzczODA1ODA1fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 220,
-        tags: ["vegan", "low-sodium", "diabetic-friendly"],
-        popular: true,
-        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "SOFT", "BLAND", "LP"],
-        allergens: ["gluten", "wheat"],
-        nutrition: { protein: 12, carbs: 34, sodium: 180, fat: 4 },
-      },
-      {
-        id: "l3",
-        name: { en: "Garden Salad", ar: "سلطة خضراء" },
-        description: { en: "Fresh mixed greens with cherry tomatoes, cucumber, and lemon vinaigrette", ar: "خضروات مشكلة طازجة مع طماطم كرزية وخيار وصلصة الليمون" },
-        image: "https://images.unsplash.com/photo-1622756144420-6877b1b7476e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMGdyZWVuJTIwc2FsYWQlMjBib3lsJTIwaGVhbHRoeXxlbnwxfHx8fDE3NzM4MDU4MDd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 150,
-        tags: ["vegan", "gluten-free", "low-sodium"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "BLAND", "LP"],
-        allergens: [],
-        nutrition: { protein: 4, carbs: 18, sodium: 45, fat: 8 },
-      },
-      {
-        id: "l4",
-        name: { en: "Penne Pasta", ar: "باستا بيني" },
-        description: { en: "Penne with tomato basil sauce, fresh parmesan, and herbs", ar: "بيني بصلصة الطماطم والريحان والبارميزان الطازج والأعشاب" },
-        image: "https://images.unsplash.com/photo-1770350482632-2ac108790b58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYXN0YSUyMHBlbm5lJTIwdG9tYXRvJTIwYmFzaWwlMjBwbGF0ZXxlbnwxfHx8fDE3NzM4MDU4MDd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 420,
-        tags: ["vegetarian"],
-        suitableFor: ["REG"],
-        allergens: ["gluten", "wheat", "dairy"],
-        nutrition: { protein: 14, carbs: 62, sodium: 580, fat: 12 },
-      },
-      {
-        id: "l5",
-        name: { en: "Chicken Soup", ar: "شوربة دجاج" },
-        description: { en: "Hearty chicken soup with vegetables and herbs — comfort food", ar: "شوربة دجاج شهية بالخضراوات والأعشاب — طعام مريح" },
-        image: "https://images.unsplash.com/photo-1612108438004-257c47560118?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjaGlja2VuJTIwc291cCUyMGJyb3RoJTIwdmVnZXRhYmxlcyUyMHdhcm18ZW58MXx8fHwxNzczODA1ODA4fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 190,
-        tags: ["low-sodium", "gluten-free"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "BLAND", "LP"],
-        allergens: [],
-        nutrition: { protein: 16, carbs: 18, sodium: 280, fat: 6 },
-      },
-      {
-        id: "l6",
-        name: { en: "Steamed Fish & Vegetables", ar: "سمك مطهو بالبخار وخضراوات" },
-        description: { en: "Light steamed white fish with seasonal vegetables", ar: "سمك أبيض مطهو بالبخار مع خضراوات موسمية" },
-        image: "https://images.unsplash.com/photo-1673436977947-0787164a9abc?w=600",
-        calories: 280,
-        tags: ["high-protein", "gluten-free", "low-sodium"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "BLAND", "LP"],
-        allergens: ["fish"],
-        nutrition: { protein: 32, carbs: 12, sodium: 190, fat: 10 },
-      },
-      {
-        id: "l7",
-        name: { en: "Vegetable Stew", ar: "يخنة خضراوات" },
-        description: { en: "Slow-cooked mixed vegetables in herb broth", ar: "خضراوات مشكلة مطبوخة ببطء في مرق الأعشاب" },
-        image: "https://images.unsplash.com/photo-1518164147695-36c13dd568f5?w=600",
-        calories: 180,
-        tags: ["vegan", "gluten-free", "low-sodium", "diabetic-friendly"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "BLAND", "LP"],
-        allergens: [],
-        nutrition: { protein: 6, carbs: 28, sodium: 150, fat: 4 },
-      },
-      {
-        id: "l8",
-        name: { en: "Grilled Turkey Wrap", ar: "راب ديك رومي مشوي" },
-        description: { en: "Lean turkey with greens in a whole wheat wrap", ar: "ديك رومي مشوي مع خضراوات في خبز قمح كامل" },
-        image: "https://images.unsplash.com/photo-1604382440115-5f730e6ede1f?w=600",
-        calories: 360,
-        tags: ["high-protein"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "LF"],
-        allergens: ["gluten", "wheat"],
-        nutrition: { protein: 28, carbs: 34, sodium: 420, fat: 12 },
-      },
-    ],
+    window: { en: "1:00 – 2:00 PM", ar: "١:٠٠ – ٢:٠٠ م" },
+    heroImage: "https://images.unsplash.com/photo-1604382440115-5f730e6ede1f?auto=format&fit=crop&w=900&q=70",
+    groups: mainMealGroups("ln"),
+    includedForAll: forAll("ln"),
   },
   {
     id: "dinner",
     label: { en: "Dinner", ar: "العشاء" },
     icon: Moon,
-    timeRange: { en: "6:00 PM – 9:00 PM", ar: "٦:٠٠ م – ٩:٠٠ م" },
-    hours: [18, 21],
-    color: "#8B5CF6",
-    items: [
-      {
-        id: "d1",
-        name: { en: "Grilled Salmon", ar: "سلمون مشوي" },
-        description: { en: "Atlantic salmon fillet with steamed vegetables and lemon butter sauce", ar: "فيليه سلمون أطلسي مع خضراوات مطهوة وصلصة الليمون والزبدة" },
-        image: "https://images.unsplash.com/photo-1689672235271-727de51355e6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYWxtb24lMjBkaW5uZXIlMjBwbGF0ZSUyMHZlZ2V0YWJsZXMlMjBlbGVnYW50fGVufDF8fHx8MTc3MzgwNTgwNHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 380,
-        tags: ["high-protein", "gluten-free"],
-        popular: true,
-        suitableFor: ["REG", "DM", "NAS", "LS", "LF"],
-        allergens: ["fish", "dairy"],
-        nutrition: { protein: 36, carbs: 8, sodium: 320, fat: 22 },
-      },
-      {
-        id: "d2",
-        name: { en: "Lamb Kabsa", ar: "كبسة لحم" },
-        description: { en: "Traditional Saudi spiced rice with tender lamb and aromatic herbs", ar: "أرز سعودي تقليدي بالبهارات مع لحم طري وأعشاب عطرية" },
-        image: "https://images.unsplash.com/photo-1646997577271-00e32bb0dc0f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsYW1iJTIwa2Fic2ElMjByaWNlJTIwU2F1ZGklMjBBcmFiaWFuJTIwZm9vZHxlbnwxfHx8fDE3NzM4MDU4MTF8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 520,
-        tags: ["high-protein"],
-        popular: true,
-        suitableFor: ["REG"],
-        allergens: [],
-        nutrition: { protein: 32, carbs: 52, sodium: 680, fat: 18 },
-      },
-      {
-        id: "d3",
-        name: { en: "Mediterranean Fish", ar: "سمك متوسطي" },
-        description: { en: "Grilled sea bass with roasted vegetables and olive oil drizzle", ar: "سمك قاروص مشوي مع خضراوات محمصة وزيت زيتون" },
-        image: "https://images.unsplash.com/photo-1673436977947-0787164a9abc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxncmlsbGVkJTIwZmlzaCUyMHZlZ2V0YWJsZXMlMjBNZWRpdGVycmFuZWFuJTIwcGxhdGV8ZW58MXx8fHwxNzczODA1ODA2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 350,
-        tags: ["high-protein", "gluten-free", "low-sodium"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "LF"],
-        allergens: ["fish"],
-        nutrition: { protein: 34, carbs: 14, sodium: 240, fat: 18 },
-      },
-      {
-        id: "d4",
-        name: { en: "Steamed Vegetables", ar: "خضراوات مطهوة" },
-        description: { en: "Seasonal steamed vegetables with light herb seasoning", ar: "خضراوات موسمية مطهوة بالبخار مع توابل أعشاب خفيفة" },
-        image: "https://images.unsplash.com/photo-1518164147695-36c13dd568f5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdGVhbWVkJTIwdmVnZXRhYmxlcyUyMGJyb2Njb2xpJTIwY2Fycm90cyUyMGhlYWx0aHl8ZW58MXx8fHwxNzczODA1ODA5fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 120,
-        tags: ["vegan", "gluten-free", "low-sodium", "diabetic-friendly"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "CL", "FL", "BLAND", "LP"],
-        allergens: [],
-        nutrition: { protein: 4, carbs: 22, sodium: 30, fat: 2 },
-      },
-      {
-        id: "d5",
-        name: { en: "Hummus & Pita", ar: "حمص وخبز بيتا" },
-        description: { en: "Creamy hummus with warm pita bread and olive oil garnish", ar: "حمص كريمي مع خبز بيتا دافئ وزيت زيتون" },
-        image: "https://images.unsplash.com/photo-1743674453093-592bed88018e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxodW1tdXMlMjBwaXRhJTIwYnJlYWQlMjBNaWRkbGUlMjBFYXN0ZXJuJTIwYXBwZXRpemVyfGVufDF8fHx8MTc3MzgwNTgwOHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 280,
-        tags: ["vegan"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "LF"],
-        allergens: ["gluten", "wheat", "sesame"],
-        nutrition: { protein: 10, carbs: 36, sodium: 380, fat: 12 },
-      },
-      {
-        id: "d6",
-        name: { en: "Herb-Crusted Fish", ar: "سمك بالخردل والأعشاب" },
-        description: { en: "Baked white fish with a light herb and breadcrumb crust", ar: "سمك أبيض مخبوز بطبقة خفيفة من الأعشاب وفتات الخبز" },
-        image: "https://images.unsplash.com/photo-1673436977947-0787164a9abc?w=600",
-        calories: 310,
-        tags: ["high-protein"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "LF"],
-        allergens: ["fish", "gluten", "wheat"],
-        nutrition: { protein: 28, carbs: 18, sodium: 340, fat: 12 },
-      },
-      {
-        id: "d7",
-        name: { en: "Vegetable Lasagna", ar: "لازانيا خضراوات" },
-        description: { en: "Layered pasta with roasted vegetables and light cheese sauce", ar: "باستا بطبقات مع خضراوات مشوية وصلصة جبن خفيفة" },
-        image: "https://images.unsplash.com/photo-1770350482632-2ac108790b58?w=600",
-        calories: 420,
-        tags: ["vegetarian"],
-        suitableFor: ["REG"],
-        allergens: ["gluten", "wheat", "dairy", "lactose"],
-        nutrition: { protein: 18, carbs: 48, sodium: 520, fat: 16 },
-      },
-      {
-        id: "d8",
-        name: { en: "Grilled Steak & Mash", ar: "ستيك مشوي وبطاطس مهروسة" },
-        description: { en: "Lean beef steak with creamy mashed potatoes and green beans", ar: "ستيك لحم بقري قليل الدهون مع بطاطس مهروسة وفاصوليا خضراء" },
-        image: "https://images.unsplash.com/photo-1604382440115-5f730e6ede1f?w=600",
-        calories: 580,
-        tags: ["high-protein"],
-        suitableFor: ["REG"],
-        allergens: ["dairy", "lactose"],
-        nutrition: { protein: 42, carbs: 32, sodium: 640, fat: 28 },
-      },
-      {
-        id: "d9",
-        name: { en: "Baked Potato", ar: "بطاطس مشوية" },
-        description: { en: "Fluffy baked potato with a touch of olive oil and herbs", ar: "بطاطس مشوية هشة مع لمسة من زيت الزيتون والأعشاب" },
-        image: "https://images.unsplash.com/photo-1518164147695-36c13dd568f5?w=600",
-        calories: 160,
-        tags: ["vegan", "gluten-free", "low-sodium", "diabetic-friendly"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "BLAND", "LP"],
-        allergens: [],
-        nutrition: { protein: 4, carbs: 36, sodium: 15, fat: 0 },
-      },
-    ],
-  },
-  {
-    id: "snacks",
-    label: { en: "Snacks", ar: "وجبات خفيفة" },
-    icon: Cookie,
-    timeRange: { en: "Available all day", ar: "متاح طوال اليوم" },
-    hours: null,
-    color: "#EC4899",
-    items: [
-      {
-        id: "s1",
-        name: { en: "Fresh Fruit Bowl", ar: "طبق فواكه طازجة" },
-        description: { en: "Seasonal mixed fruits — naturally sweet and refreshing", ar: "فواكه مشكلة موسمية — حلوة ومنعشة بشكل طبيعي" },
-        image: "https://images.unsplash.com/photo-1681840524567-732960c82f4c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMGZydWl0JTIwYm93bCUyMGNvbG9yZnVsJTIwaGVhbHRoeSUyMHNuYWNrfGVufDF8fHx8MTc3MzgwNTgwNHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 120,
-        tags: ["vegan", "gluten-free", "diabetic-friendly"],
-        popular: true,
-        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "BLAND", "LP"],
-        allergens: [],
-        nutrition: { protein: 1, carbs: 30, sodium: 3, sugar: 22 },
-      },
-      {
-        id: "s2",
-        name: { en: "Yogurt Parfait", ar: "بارفيه زبادي" },
-        description: { en: "Greek yogurt layered with granola, honey, and mixed berries", ar: "زبادي يوناني بطبقات جرانولا والعسل والتوت المشكل" },
-        image: "https://images.unsplash.com/photo-1729368628910-2d58db8657a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx5b2d1cnQlMjBwYXJmYWl0JTIwZ3Jhbm9sYSUyMGJlcnJpZXN8ZW58MXx8fHwxNzczODA1ODA2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 200,
-        tags: ["vegetarian"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "SOFT"],
-        allergens: ["dairy", "lactose"],
-        nutrition: { protein: 14, carbs: 28, sodium: 55, sugar: 16 },
-      },
-      {
-        id: "s3",
-        name: { en: "Mixed Nuts", ar: "مكسرات مشكلة" },
-        description: { en: "Premium roasted almonds, cashews, and walnuts — lightly salted", ar: "لوز وكاجو وجوز محمص فاخر — مملح قليلاً" },
-        image: "https://images.unsplash.com/photo-1598371623789-44e341c1b6ab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaXhlZCUyMG51dHMlMjBhbG1vbmRzJTIwc25hY2slMjBib3lsJTIwaGVhbHRoeXxlbnwxfHx8fDE3NzM4MDU4MTB8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 280,
-        tags: ["vegan", "gluten-free", "high-protein"],
-        suitableFor: ["REG", "DM", "LF"],
-        allergens: ["tree-nuts", "peanuts"],
-        nutrition: { protein: 10, carbs: 12, sodium: 95, fat: 24 },
-      },
-      {
-        id: "s4",
-        name: { en: "Rice Pudding", ar: "أرز بالحليب" },
-        description: { en: "Creamy traditional rice pudding with cinnamon and rosewater", ar: "أرز بالحليب تقليدي كريمي بالقرفة وماء الورد" },
-        image: "https://images.unsplash.com/photo-1745236549159-f1297ef35fb3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyaWNlJTIwcHVkZGluZyUyMGRlc3NlcnQlMjBjcmVhbXklMjBib3lsfGVufDF8fHx8MTc3MzgwNTgwOXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 240,
-        tags: ["vegetarian", "gluten-free"],
-        suitableFor: ["REG", "NAS", "LS", "SOFT"],
-        allergens: ["dairy", "lactose"],
-        nutrition: { protein: 6, carbs: 40, sodium: 80, sugar: 22 },
-      },
-      {
-        id: "s5",
-        name: { en: "Chocolate Pudding", ar: "بودنغ شوكولاتة" },
-        description: { en: "Silky dark chocolate pudding — a comforting treat", ar: "بودنغ شوكولاتة داكنة ناعم — حلوى مريحة" },
-        image: "https://images.unsplash.com/photo-1673551494277-92204546b504?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjaG9jb2xhdGUlMjBwdWRkaW5nJTIwZGVzc2VydCUyMGN1cHxlbnwxfHx8fDE3NzM4MDU4MTF8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        calories: 310,
-        tags: ["vegetarian"],
-        suitableFor: ["REG", "NAS", "LS", "SOFT"],
-        allergens: ["dairy", "lactose", "soy"],
-        nutrition: { protein: 5, carbs: 42, sodium: 120, sugar: 32, fat: 14 },
-      },
-      {
-        id: "s6",
-        name: { en: "Plain Crackers", ar: "بسكويت سادة" },
-        description: { en: "Lightly salted wheat crackers — easy to digest", ar: "بسكويت قمح مملح قليلاً — سهل الهضم" },
-        image: "https://images.unsplash.com/photo-1598371623789-44e341c1b6ab?w=600",
-        calories: 80,
-        tags: ["vegetarian"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "CL", "FL", "BLAND", "LP"],
-        allergens: ["gluten", "wheat"],
-        nutrition: { protein: 2, carbs: 12, sodium: 110, fat: 3 },
-      },
-      {
-        id: "s7",
-        name: { en: "Hummus with Cucumber", ar: "حمص مع خيار" },
-        description: { en: "Creamy hummus served with fresh cucumber slices", ar: "حمص كريمي يقدم مع شرائح خيار طازجة" },
-        image: "https://images.unsplash.com/photo-1743674453093-592bed88018e?w=600",
-        calories: 140,
-        tags: ["vegan", "gluten-free", "diabetic-friendly"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "SOFT", "BLAND", "LP"],
-        allergens: ["sesame"],
-        nutrition: { protein: 6, carbs: 14, sodium: 180, fat: 8 },
-      },
-      {
-        id: "s8",
-        name: { en: "Vegetable Sticks", ar: "أصابع خضراوات" },
-        description: { en: "Crunchy carrot and cucumber sticks — healthy and light", ar: "أصابع جزر وخيار مقرمشة — صحية وخفيفة" },
-        image: "https://images.unsplash.com/photo-1622756144420-6877b1b7476e?w=600",
-        calories: 45,
-        tags: ["vegan", "gluten-free", "low-sodium", "diabetic-friendly"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "CL", "FL", "BLAND", "LP"],
-        allergens: [],
-        nutrition: { protein: 1, carbs: 8, sodium: 20, fat: 0 },
-      },
-    ],
-  },
-  {
-    id: "drinks",
-    label: { en: "Drinks", ar: "مشروبات" },
-    icon: GlassWater,
-    timeRange: { en: "Available all day", ar: "متاح طوال اليوم" },
-    hours: null,
-    color: "#0EA5E9",
-    items: [
-      {
-        id: "dr1",
-        name: { en: "Fresh Orange Juice", ar: "عصير برتقال طازج" },
-        description: { en: "Freshly squeezed orange juice, no added sugar", ar: "عصير برتقال طازج بدون سكر مضاف" },
-        image: coffeeImg,
-        calories: 110,
-        tags: ["vegan", "gluten-free", "diabetic-friendly"],
-        popular: true,
-        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "SOFT", "FL", "BLAND", "LP"],
-        allergens: [],
-        nutrition: { protein: 2, carbs: 26, sodium: 2, sugar: 22 },
-      },
-      {
-        id: "dr2",
-        name: { en: "Green Herbal Tea", ar: "شاي أعشاب أخضر" },
-        description: { en: "Calming green tea with natural herbs — caffeine-free option available", ar: "شاي أخضر مهدئ بأعشاب طبيعية — متوفر بدون كافيين" },
-        image: teaImg,
-        calories: 5,
-        tags: ["vegan", "gluten-free", "diabetic-friendly"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "CL", "FL", "BLAND", "LP"],
-        allergens: [],
-        nutrition: { protein: 0, carbs: 0, sodium: 0, sugar: 0 },
-      },
-      {
-        id: "dr3",
-        name: { en: "Lemon Mint Water", ar: "ماء بالليمون والنعناع" },
-        description: { en: "Refreshing infused water with fresh lemon and mint leaves", ar: "ماء منعش بالليمون الطازج وأوراق النعناع" },
-        image: lemonTeaImg,
-        calories: 10,
-        tags: ["vegan", "gluten-free", "low-sodium", "diabetic-friendly"],
-        popular: true,
-        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "CL", "FL", "BLAND", "LP"],
-        allergens: [],
-        nutrition: { protein: 0, carbs: 2, sodium: 0, sugar: 2 },
-      },
-      {
-        id: "dr4",
-        name: { en: "Warm Milk & Honey", ar: "حليب دافئ بالعسل" },
-        description: { en: "Warm whole milk with natural honey — perfect before bedtime", ar: "حليب كامل دافئ بالعسل الطبيعي — مثالي قبل النوم" },
-        image: milkImg,
-        calories: 180,
-        tags: ["vegetarian", "gluten-free"],
-        suitableFor: ["REG", "NAS", "LS", "SOFT", "FL", "BLAND"],
-        allergens: ["dairy", "lactose"],
-        nutrition: { protein: 8, carbs: 24, sodium: 100, sugar: 22 },
-      },
-      {
-        id: "dr5",
-        name: { en: "Berry Smoothie", ar: "سموذي التوت" },
-        description: { en: "Blended mixed berries with yogurt and a touch of honey", ar: "توت مشكل مخلوط مع زبادي ولمسة من العسل" },
-        image: coffeeImg,
-        calories: 160,
-        tags: ["vegetarian", "gluten-free"],
-        popular: true,
-        suitableFor: ["REG", "DM", "NAS", "LS", "LF", "SOFT", "FL"],
-        allergens: ["dairy", "lactose"],
-        nutrition: { protein: 6, carbs: 30, sodium: 45, sugar: 24 },
-      },
-      {
-        id: "dr6",
-        name: { en: "Apple Juice", ar: "عصير تفاح" },
-        description: { en: "Clear apple juice — smooth and sweet", ar: "عصير تفاح صافي — ناعم وحلو" },
-        image: coffeeImg,
-        calories: 120,
-        tags: ["vegan", "gluten-free"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "CL", "FL", "BLAND", "LP"],
-        allergens: [],
-        nutrition: { protein: 0, carbs: 30, sodium: 10, sugar: 28 },
-      },
-      {
-        id: "dr7",
-        name: { en: "Chamomile Tea", ar: "شاي بابونج" },
-        description: { en: "Soothing herbal tea — naturally caffeine-free", ar: "شاي أعشاب مهدئ — خالي من الكافيين طبيعياً" },
-        image: teaImg,
-        calories: 2,
-        tags: ["vegan", "gluten-free", "diabetic-friendly"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "CL", "FL", "BLAND", "LP"],
-        allergens: [],
-        nutrition: { protein: 0, carbs: 0, sodium: 0, sugar: 0 },
-      },
-      {
-        id: "dr8",
-        name: { en: "Mineral Water", ar: "مياه معدنية" },
-        description: { en: "Still mineral water — stay hydrated", ar: "مياه معدنية طبيعية — حافظ على رطوبة جسمك" },
-        image: lemonTeaImg,
-        calories: 0,
-        tags: ["vegan", "gluten-free", "low-sodium", "diabetic-friendly"],
-        suitableFor: ["REG", "DM", "NAS", "LS", "RD", "LF", "SOFT", "CL", "FL", "BLAND", "LP"],
-        allergens: [],
-        nutrition: { protein: 0, carbs: 0, sodium: 0, sugar: 0 },
-      },
-    ],
+    window: { en: "7:00 – 8:00 PM", ar: "٧:٠٠ – ٨:٠٠ م" },
+    heroImage: "https://images.unsplash.com/photo-1432139555190-58524dae6a55?auto=format&fit=crop&w=900&q=70",
+    groups: mainMealGroups("dn"),
+    includedForAll: forAll("dn"),
   },
 ];
 
-const DANGER = "#D10044";
-
-const TAG_CONFIG: Record<DietaryTag, { label: { en: string; ar: string }; icon: React.ComponentType<any>; color: string }> = {
-  "vegetarian": { label: { en: "Vegetarian", ar: "نباتي" }, icon: Leaf, color: "#22C55E" },
-  "vegan": { label: { en: "Vegan", ar: "نباتي صرف" }, icon: Leaf, color: "#16A34A" },
-  "gluten-free": { label: { en: "Gluten Free", ar: "خالٍ من الغلوتين" }, icon: Check, color: "#8B5CF6" },
-  "low-sodium": { label: { en: "Low Sodium", ar: "قليل الملح" }, icon: Heart, color: "#3B82F6" },
-  "diabetic-friendly": { label: { en: "Diabetic Friendly", ar: "مناسب لمرضى السكري" }, icon: Check, color: "#0EA5E9" },
-  "high-protein": { label: { en: "High Protein", ar: "غني بالبروتين" }, icon: Flame, color: "#F97316" },
+/** Real dish photos for the selection-preview card, keyed by English dish name.
+ *  Dishes without an entry (or whose photo fails to load) fall back to the
+ *  enlarged per-item emoji, so a broken image icon is never shown. */
+const ux = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=640&q=70`;
+const DISH_PHOTOS: Record<string, string> = {
+  // Breakfast
+  "Scrambled Egg": ux("1525351484163-7529414344d8"),
+  "Boiled Eggs": ux("1607690424560-35d967d6ad7c"),
+  "Espanola Omelette": ux("1612240498936-65f5101365d2"),
+  "Cheese Omelette": ux("1612240498936-65f5101365d2"),
+  "Plain Omelette": ux("1612240498936-65f5101365d2"),
+  "Corn Flakes": ux("1631077019185-84d961548731"),
+  "Whole Bran Flakes": ux("1631077019185-84d961548731"),
+  "Plain Yogurt": ux("1729368628910-2d58db8657a6"),
+  "Fruit Yogurt": ux("1729368628910-2d58db8657a6"),
+  Croissant: ux("1555507036-ab1f4038808a"),
+  "Danish Pastry": ux("1509365465985-25d11c17e812"),
+  "Cinnamon Roll": ux("1509365465985-25d11c17e812"),
+  "Muffin Cake": ux("1607958996333-41aaf7caefaa"),
+  // Lunch & Dinner — soups
+  "Vegetable Soup": ux("1547592180-85f173990554"),
+  "Orzo Soup": ux("1612108438004-257c47560118"),
+  "Chicken Soup": ux("1612108438004-257c47560118"),
+  "Vermicelli Soup with Chicken": ux("1612108438004-257c47560118"),
+  // salads
+  "Mix Green Salad": ux("1622756144420-6877b1b7476e"),
+  "Fattoush Salad": ux("1622756144420-6877b1b7476e"),
+  Mutable: ux("1743674453093-592bed88018e"),
+  "Tahini Salad": ux("1743674453093-592bed88018e"),
+  // mains
+  "Grilled fish served with butter and lemon sauce": ux("1673436977947-0787164a9abc"),
+  "Fish Panne": ux("1673436977947-0787164a9abc"),
+  "Grilled Chicken with herbal sauce": ux("1604382440115-5f730e6ede1f"),
+  "Grilled Chicken Kofta": ux("1604382440115-5f730e6ede1f"),
+  "Chicken Panne": ux("1604382440115-5f730e6ede1f"),
+  "Grilled Beef Kofta": ux("1432139555190-58524dae6a55"),
+  // carbs & veg
+  "Pasta of The Day": ux("1770350482632-2ac108790b58"),
+  "Vegetable Sauteed": ux("1518164147695-36c13dd568f5"),
+  "Vegetable Grilled": ux("1518164147695-36c13dd568f5"),
+  // dessert
+  "Dessert of The Day": ux("1673551494277-92204546b504"),
+  "Fruit Salad": ux("1681840524567-732960c82f4c"),
 };
 
-/* ═══════════════════════════════════════════════════════════════════════════
- * TYPES
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-type OrderStep = "menu" | "confirmed" | "history";
-
-interface CartItem {
-  menuItem: MenuItem;
-  quantity: number;
-  notes: string;
-}
+type BlockReason = { type: "allergen"; allergen: Allergen } | { type: "diet"; code: DietCode };
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * MAIN COMPONENT
@@ -702,1354 +335,641 @@ interface CartItem {
 export function FoodOrdering({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
   const { isRTL, fontFamily } = useLocale();
-  const { placeOrder: placeOrderToStore } = useOrders();
-  const nurseState = useNurseStore();
+  const { placeOrder, orders } = useOrders();
+  const nurse = useNurseStore();
 
-  const [step, setStep] = useState<OrderStep>("menu");
-  const [activeCategory, setActiveCategory] = useState(MENU[0].id);
-  const [sliderIndex, setSliderIndex] = useState(1);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [specialNotes, setSpecialNotes] = useState("");
-  const [lastOrderNumber, setLastOrderNumber] = useState("");
-
-  // ── Diet / Allergy filter (reactive to NurseDataStore) ──
-  const activeDietCodes = nurseState.dietCodes.map(d => d.code as DietCompatibility);
-  const activeAllergens = useMemo(() => nurseState.allergies
-    .map(normalizeAllergyName)
-    .filter((a): a is Allergen => a !== null), [nurseState.allergies]);
-
-  const isItemAllowed = useCallback((item: MenuItem): boolean => {
-    if (item.allergens.some(a => activeAllergens.includes(a))) return false;
-    if (activeDietCodes.length === 0) return true;
-    return activeDietCodes.every(code => {
-      // Smart mapping: Treat Low Sodium (LS) and No Added Salt (NAS) as interchangeable
-      if (code === "LS" || code === "NAS") {
-        return item.suitableFor.includes("LS") || item.suitableFor.includes("NAS");
-      }
-      return item.suitableFor.includes(code);
-    });
-  }, [activeDietCodes, activeAllergens]);
-
-  const filteredMenu: MealCategory[] = useMemo(() => MENU.map(cat => ({
-    ...cat, items: cat.items.filter(isItemAllowed),
-  })), [isItemAllowed]);
-
-  const totalFilteredItems = filteredMenu.reduce((s, c) => s + c.items.length, 0);
-
+  const loc = useCallback((v: Locale) => (isRTL ? v.ar : v.en), [isRTL]);
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
-  const category = filteredMenu.find((c) => c.id === activeCategory)!;
-  const clampedSliderIndex = category.items.length > 0
-    ? ((sliderIndex % category.items.length) + category.items.length) % category.items.length
-    : 0;
-  const totalItems = cart.reduce((sum, ci) => sum + ci.quantity, 0);
-  const totalCalories = cart.reduce((sum, ci) => sum + ci.menuItem.calories * ci.quantity, 0);
 
-  const addToCart = useCallback((item: MenuItem) => {
-    // Safety check: block non-orderable meals or blackout period
-    const category = MENU.find(c => c.items.some(mi => mi.id === item.id));
-    if (category && !isMealOrderable(category.id)) return;
+  /* ── Paper-form header fields: who the order is for + name + room ── */
+  const [orderFor, setOrderFor] = useState<"patient" | "guest">("patient");
+  const [patientName, setPatientName] = useState(nurse.patient.name);
+  const [roomNumber, setRoomNumber] = useState(nurse.patient.room);
 
-    setCart((prev) => {
-      const existing = prev.find((ci) => ci.menuItem.id === item.id);
-      if (existing) {
-        return prev.map((ci) => ci.menuItem.id === item.id ? { ...ci, quantity: ci.quantity + 1 } : ci);
-      }
-      return [...prev, { menuItem: item, quantity: 1, notes: "" }];
+  /* ── Chart-derived defaults (the patient's clinical restrictions) ── */
+  const defaults = useMemo(() => {
+    const dietCodes = nurse.dietCodes
+      .map((d) => d.code)
+      .filter((c): c is DietCode => c in DIET_LABELS);
+    const foodAllergens = nurse.allergies
+      .map(normalizeAllergen)
+      .filter((a): a is Allergen => a !== null);
+    const nonFood = nurse.allergies.filter((a) => NON_FOOD_ALLERGY.has(a.toLowerCase().trim()));
+    return { dietCodes, foodAllergens, nonFood };
+  }, [nurse.dietCodes, nurse.allergies]);
+
+  /* ── Live, in-page restriction state — never mutates the global nurse store ── */
+  const [activeAllergens, setActiveAllergens] = useState<Set<Allergen>>(() => new Set(defaults.foodAllergens));
+  const [activeDiet, setActiveDiet] = useState<Set<DietCode>>(() => new Set(defaults.dietCodes));
+  const [activeNonFood, setActiveNonFood] = useState<Set<string>>(() => new Set(defaults.nonFood));
+
+  const toggleAllergen = (a: Allergen) =>
+    setActiveAllergens((prev) => {
+      const next = new Set(prev);
+      next.has(a) ? next.delete(a) : next.add(a);
+      return next;
     });
-  }, []);
-
-  const removeFromCart = useCallback((itemId: string) => {
-    setCart((prev) => {
-      const existing = prev.find((ci) => ci.menuItem.id === itemId);
-      if (existing && existing.quantity > 1) {
-        return prev.map((ci) => ci.menuItem.id === itemId ? { ...ci, quantity: ci.quantity - 1 } : ci);
-      }
-      return prev.filter((ci) => ci.menuItem.id !== itemId);
+  const toggleDiet = (c: DietCode) =>
+    setActiveDiet((prev) => {
+      const next = new Set(prev);
+      next.has(c) ? next.delete(c) : next.add(c);
+      return next;
     });
-  }, []);
+  const toggleNonFood = (raw: string) =>
+    setActiveNonFood((prev) => {
+      const next = new Set(prev);
+      next.has(raw) ? next.delete(raw) : next.add(raw);
+      return next;
+    });
 
-  const getQty = (itemId: string) => cart.find((ci) => ci.menuItem.id === itemId)?.quantity || 0;
-
-  const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
-
-  /* Determine delivery info based on which categories are in the cart */
-  const cartCategories = [...new Set(cart.map((ci) => {
-    for (const cat of filteredMenu) {
-      if (cat.items.some((mi) => mi.id === ci.menuItem.id)) return cat;
-    }
-    return null;
-  }).filter(Boolean))] as MealCategory[];
-
-  /** 
-   * If ALL categories in cart are currently active → 25-35 min.
-   * If ANY category is outside its time window → it's a pre-order for that meal period.
-   * Show per-category delivery info. 
-   */
-  const getOrderDeliveryInfo = (): { label: string; detail: string; isPreOrder: boolean }[] => {
-    if (cartCategories.length === 0) return [];
-    const infos: { label: string; detail: string; isPreOrder: boolean }[] = [];
-    const allActive = cartCategories.every((cat) => isMealOrderable(cat.id));
-    if (allActive) {
-      infos.push({
-        label: isRTL ? "وقت التوصيل المتوقع" : "Est. Delivery",
-        detail: isRTL ? "٢٥–٣٥ دقيقة" : "25–35 min",
-        isPreOrder: false,
-      });
-    } else {
-      for (const cat of cartCategories) {
-        const msg = getDeliveryMessage(cat, isRTL);
-        infos.push({ ...msg, isPreOrder: !isMealOrderable(cat.id) });
-      }
-    }
-    return infos;
+  const resetToDefaults = () => {
+    setActiveAllergens(new Set(defaults.foodAllergens));
+    setActiveDiet(new Set(defaults.dietCodes));
+    setActiveNonFood(new Set(defaults.nonFood));
   };
 
-  const deliveryInfos = getOrderDeliveryInfo();
+  /* ── Blocking logic shared across all three meal columns ── */
+  const blockReason = useCallback(
+    (item: MenuItem): BlockReason | null => {
+      const a = item.allergens.find((x) => activeAllergens.has(x));
+      if (a) return { type: "allergen", allergen: a };
+      const d = (item.restrictedFor ?? []).find((c) => activeDiet.has(c));
+      if (d) return { type: "diet", code: d };
+      return null;
+    },
+    [activeAllergens, activeDiet]
+  );
 
-  const handlePlaceOrder = () => {
-    const mealTypes = [...new Set(cartCategories.map((c) => loc(c.label)))].join(", ");
-    const placed = placeOrderToStore({
-      items: cart.map((ci) => ({
-        id: ci.menuItem.id,
-        name: ci.menuItem.name,
-        quantity: ci.quantity,
-        calories: ci.menuItem.calories * ci.quantity,
-        image: ci.menuItem.image,
-      })),
-      totalCalories,
+  const blockedCount = useMemo(() => {
+    let n = 0;
+    for (const meal of MEALS)
+      for (const group of meal.groups)
+        for (const item of group.items) if (blockReason(item)) n++;
+    return n;
+  }, [blockReason]);
+
+  /* ── Selection state: one item per group ── */
+  const [selections, setSelections] = useState<Record<string, string>>({});
+
+  /* ── Visual-confirmation preview for the most recently selected item ── */
+  const [preview, setPreview] = useState<MenuItem | null>(null);
+
+  const selectedItemFor = useCallback(
+    (group: FoodGroup): MenuItem | undefined => {
+      const id = selections[group.id];
+      if (!id) return undefined;
+      const item = group.items.find((i) => i.id === id);
+      // A previously-chosen item silently clears if a restriction now blocks it.
+      if (!item || blockReason(item)) return undefined;
+      return item;
+    },
+    [selections, blockReason]
+  );
+
+  const selectItem = (group: FoodGroup, item: MenuItem) => {
+    if (blockReason(item)) return;
+    const wasSelected = selections[group.id] === item.id;
+    setSelections((prev) => {
+      const next = { ...prev };
+      if (next[group.id] === item.id) delete next[group.id];
+      else next[group.id] = item.id;
+      return next;
+    });
+    // Selecting (or switching to) an item shows its photo; deselecting closes it.
+    setPreview(wasSelected ? null : item);
+  };
+
+  const totalSelected = useMemo(
+    () => MEALS.reduce((sum, m) => sum + m.groups.filter((g) => selectedItemFor(g)).length, 0),
+    [selectedItemFor]
+  );
+
+  const mealSelectedCount = (meal: Meal) => meal.groups.filter((g) => selectedItemFor(g)).length;
+
+  /* ── Submit ── */
+  const [showOrders, setShowOrders] = useState(false);
+  const [confirmation, setConfirmation] = useState<string | null>(null);
+
+  const handleSubmit = () => {
+    if (totalSelected === 0) return;
+    const items: { id: string; name: Locale; quantity: number; calories: number; image: string }[] = [];
+    const mealTypes: string[] = [];
+    for (const meal of MEALS) {
+      const chosen = meal.groups.map((g) => selectedItemFor(g)).filter(Boolean) as MenuItem[];
+      if (chosen.length === 0) continue;
+      mealTypes.push(loc(meal.label));
+      for (const it of chosen) items.push({ id: it.id, name: it.name, quantity: 1, calories: 0, image: "" });
+      for (const inc of meal.includedForAll) items.push({ id: inc.id, name: inc.name, quantity: 1, calories: 0, image: "" });
+    }
+    const whoLabel = orderFor === "patient" ? "Patient" : "Guest";
+    const specialNotes = [
+      patientName ? `Name: ${patientName}` : "",
+      roomNumber ? `Room: ${roomNumber}` : "",
+      `For: ${whoLabel}`,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    const placed = placeOrder({
+      items,
+      totalCalories: 0,
       specialNotes,
-      estimatedDelivery: deliveryInfos[0]?.detail || "25–35 min",
-      mealType: mealTypes,
+      estimatedDelivery: "25–35 min",
+      mealType: mealTypes.join(", "),
     });
-    setLastOrderNumber(placed.orderNumber);
-    setStep("confirmed");
+    setConfirmation(placed.orderNumber);
+    setSelections({});
   };
+
+  /* ── Chart restriction chips (diet + allergy) for the top banner ── */
+  const chartChips = useMemo(() => {
+    const diet = nurse.dietCodes
+      .filter((d) => d.code in DIET_LABELS)
+      .map((d) => ({ key: `diet:${d.code}`, kind: "diet" as const, code: d.code as DietCode, token: null, raw: d.code, label: d.label }));
+    const allergy = nurse.allergies.map((raw) => ({
+      key: `alg:${raw}`,
+      kind: "allergy" as const,
+      code: null,
+      token: normalizeAllergen(raw),
+      raw,
+      label: raw,
+    }));
+    return [...diet, ...allergy];
+  }, [nurse.dietCodes, nurse.allergies]);
+
+  const chipActive = (chip: (typeof chartChips)[number]) => {
+    if (chip.kind === "diet" && chip.code) return activeDiet.has(chip.code);
+    if (chip.token) return activeAllergens.has(chip.token);
+    return activeNonFood.has(chip.raw);
+  };
+  const toggleChip = (chip: (typeof chartChips)[number]) => {
+    if (chip.kind === "diet" && chip.code) return toggleDiet(chip.code);
+    if (chip.token) return toggleAllergen(chip.token);
+    return toggleNonFood(chip.raw);
+  };
+
+  const isDirty =
+    defaults.foodAllergens.length !== activeAllergens.size ||
+    defaults.dietCodes.length !== activeDiet.size ||
+    defaults.nonFood.length !== activeNonFood.size ||
+    defaults.foodAllergens.some((a) => !activeAllergens.has(a)) ||
+    defaults.dietCodes.some((c) => !activeDiet.has(c)) ||
+    defaults.nonFood.some((n) => !activeNonFood.has(n));
+
+  /* ════════════════════════════════════════════════════════════════════════ */
 
   return (
     <motion.div
+      dir={isRTL ? "rtl" : "ltr"}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.25 }}
+      transition={{ duration: 0.2 }}
       className="absolute inset-0 z-50 flex flex-col overflow-hidden"
-      style={{
-        background: `linear-gradient(160deg, ${theme.primary} 0%, ${theme.primaryDark} 40%, #0a1628 100%)`,
-      }}
+      style={{ background: theme.gradientCanvas, fontFamily }}
     >
-      {/* Subtle hospital bg */}
-      <ApiImage
-        src={theme.heroImageUrl}
-        alt=""
-        aria-hidden
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
-        style={{ opacity: 0.06, mixBlendMode: "luminosity" }}
-      />
-
       <style>{`
-        @keyframes foodIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
-        .food-scroll::-webkit-scrollbar { width: 4px; }
-        .food-scroll::-webkit-scrollbar-track { background: transparent; }
-        .food-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 100px; }
-        .food-scroll { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent; }
+        .meal-scroll::-webkit-scrollbar { width: 8px; }
+        .meal-scroll::-webkit-scrollbar-track { background: transparent; }
+        .meal-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 100px; }
       `}</style>
 
-      <AnimatePresence mode="wait">
-        {step === "menu" && (
-          <motion.div
-            key="menu"
-            initial={{ opacity: 0, x: 0 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: isRTL ? 40 : -40 }}
-            transition={{ duration: 0.25 }}
-            className="flex flex-col flex-1 min-h-0"
+      {/* ── Header ── */}
+      <div className="shrink-0 flex items-center gap-4" style={{ padding: `${SPACE[5]} ${SPACE[6]} ${SPACE[3]}` }}>
+        <button
+          onClick={onClose}
+          className="flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
+          style={{ width: "56px", height: "56px", borderRadius: theme.radiusFull, backgroundColor: theme.surface, boxShadow: SHADOW.md }}
+        >
+          <BackArrow size={24} color={theme.primary} />
+        </button>
+
+        <div
+          className="flex items-center justify-center shrink-0"
+          style={{ width: "56px", height: "56px", borderRadius: theme.radiusMd, backgroundColor: theme.primary }}
+        >
+          <Utensils size={28} color={theme.textInverse} />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <h2 style={{ ...TEXT_STYLE.display, color: theme.primaryDark }}>{loc({ en: "Meal Ordering", ar: "طلب الوجبات" })}</h2>
+          <p style={{ ...TEXT_STYLE.caption, color: theme.textMuted, marginTop: "2px" }}>
+            {theme.hospitalName} · {loc({ en: "Select one item per group", ar: "اختر صنفاً واحداً لكل مجموعة" })}
+          </p>
+        </div>
+
+        <button
+          onClick={() => setShowOrders(true)}
+          className="flex items-center gap-2 active:scale-95 transition-transform cursor-pointer"
+          style={{ height: "56px", padding: `0 ${SPACE[3]}`, borderRadius: theme.radiusFull, backgroundColor: theme.surface, boxShadow: SHADOW.md }}
+        >
+          <ClipboardList size={20} color={theme.primary} />
+          <span style={{ ...TEXT_STYLE.buttonSm, color: theme.primaryDark }}>{loc({ en: "My Orders", ar: "طلباتي" })}</span>
+        </button>
+      </div>
+
+      {/* ── Clinical restrictions + allergen filter ── */}
+      <div className="shrink-0 flex flex-col" style={{ padding: `0 ${SPACE[6]}`, gap: SPACE[2] }}>
+        {/* Order-for + Name + Room (mirrors the paper menu card header) */}
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Patient / Guest toggle */}
+          <div className="flex items-center" style={{ borderRadius: theme.radiusFull, backgroundColor: theme.primarySubtle, padding: "4px", gap: "2px" }}>
+            {([
+              { key: "patient", label: { en: "Patient", ar: "المريض" }, icon: User },
+              { key: "guest", label: { en: "Guest", ar: "ضيف" }, icon: Users },
+            ] as const).map((opt) => {
+              const active = orderFor === opt.key;
+              const OptIcon = opt.icon;
+              return (
+                <button
+                  key={opt.key}
+                  onClick={() => setOrderFor(opt.key)}
+                  className="flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                  style={{ padding: "8px 16px", borderRadius: theme.radiusFull, backgroundColor: active ? theme.primary : "transparent" }}
+                >
+                  <OptIcon size={16} color={active ? theme.textInverse : theme.primaryDark} />
+                  <span style={{ ...TEXT_STYLE.pill, color: active ? theme.textInverse : theme.primaryDark }}>{loc(opt.label)}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Patient Name */}
+          <div
+            className="flex items-center gap-2"
+            style={{ height: "44px", padding: `0 ${SPACE[2]}`, borderRadius: theme.radiusFull, backgroundColor: theme.surface, boxShadow: SHADOW.sm, border: `1px solid ${theme.borderDefault}` }}
           >
-            {/* Header */}
-            <div className="shrink-0 flex items-center gap-5 px-12 pt-10 pb-4 relative z-10">
-              <button
-                onClick={onClose}
-                className="flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer"
-                style={{
-                  width: "52px", height: "52px",
-                  borderRadius: theme.radiusMd,
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  border: "1px solid rgba(255,255,255,0.15)",
-                }}
-              >
-                <BackArrow size={24} color="#fff" />
-              </button>
-              <div className="flex items-center gap-4 flex-1">
-                <div
-                  className="flex items-center justify-center"
-                  style={{
-                    width: "52px", height: "52px",
-                    borderRadius: theme.radiusMd,
-                    backgroundColor: "rgba(255,255,255,0.12)",
-                  }}
-                >
-                  <Utensils size={26} color="#fff" />
-                </div>
-                <div>
-                  <h2 style={{ fontFamily, ...TEXT_STYLE.display, fontSize: "32px", color: "#fff", lineHeight: "36px" }}>
-                    {isRTL ? "طلب الوجبات" : "Meal Ordering"}
-                  </h2>
-                  <p style={{ fontFamily, ...TEXT_STYLE.caption, color: "rgba(255,255,255,0.5)", marginTop: "2px" }}>
-                    {isRTL ? "اختر وجبتك المفضلة" : "Choose your favorite meal"}
-                  </p>
-                </div>
-              </div>
+            <User size={16} color={theme.primary} />
+            <span style={{ ...TEXT_STYLE.label, color: theme.textMuted }}>{loc({ en: "Name", ar: "الاسم" })}</span>
+            <input
+              value={patientName}
+              onChange={(e) => setPatientName(e.target.value)}
+              placeholder={loc({ en: "Patient name", ar: "اسم المريض" })}
+              className="bg-transparent outline-none"
+              style={{ ...TEXT_STYLE.bodyEmphasis, color: theme.primaryDark, width: "180px", textAlign: isRTL ? "right" : "left" }}
+            />
+          </div>
 
-              {/* My Orders button */}
-              <button
-                onClick={() => setStep("history")}
-                className="flex items-center gap-2 cursor-pointer active:scale-95 transition-transform"
-                style={{
-                  height: "48px",
-                  padding: "0 20px",
-                  borderRadius: theme.radiusMd,
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  outline: "none",
-                }}
-              >
-                <ClipboardList size={20} color="rgba(255,255,255,0.8)" />
-                <span style={{ fontFamily, ...TEXT_STYLE.buttonSm, color: "rgba(255,255,255,0.8)" }}>
-                  {isRTL ? "طلباتي" : "My Orders"}
-                </span>
-              </button>
+          {/* Room Number */}
+          <div
+            className="flex items-center gap-2"
+            style={{ height: "44px", padding: `0 ${SPACE[2]}`, borderRadius: theme.radiusFull, backgroundColor: theme.surface, boxShadow: SHADOW.sm, border: `1px solid ${theme.borderDefault}` }}
+          >
+            <MapPin size={16} color={theme.primary} />
+            <span style={{ ...TEXT_STYLE.label, color: theme.textMuted }}>{loc({ en: "Room", ar: "الغرفة" })}</span>
+            <input
+              type="text"
+              value={roomNumber}
+              onChange={(e) => setRoomNumber(e.target.value.replace(/[^0-9]/g, ""))}
+              inputMode="numeric"
+              placeholder={loc({ en: "Room", ar: "الغرفة" })}
+              className="bg-transparent outline-none"
+              style={{ ...TEXT_STYLE.bodyEmphasis, color: theme.primaryDark, width: "80px", textAlign: isRTL ? "right" : "left" }}
+            />
+          </div>
+        </div>
 
-              {/* Cart badge */}
-              {totalItems > 0 && (
-                null
-              )}
+        {/* Active Clinical Restrictions */}
+        <div
+          className="flex items-center gap-4 flex-wrap"
+          style={{
+            backgroundColor: theme.errorSubtle,
+            border: `1.5px solid ${theme.error}33`,
+            borderRadius: theme.radiusLg,
+            padding: `${SPACE[2]} ${SPACE[3]}`,
+          }}
+        >
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center justify-center" style={{ width: "36px", height: "36px", borderRadius: theme.radiusFull, backgroundColor: `${theme.error}1F` }}>
+              <ShieldAlert size={20} color={theme.error} />
             </div>
+            <span style={{ ...TEXT_STYLE.label, color: theme.error }}>{loc({ en: "Active Clinical Restrictions", ar: "القيود السريرية النشطة" })}</span>
+          </div>
 
-            {/* Clinical Restrictions Banner */}
-            {(nurseState.dietCodes.length > 0 || nurseState.allergies.length > 0) && (
-              <div className="shrink-0 px-12 mb-4 relative z-10">
-                <div
-                  className="flex items-center gap-4 px-6 py-4"
-                  style={{
-                    backgroundColor: "rgba(59,130,246,0.15)",
-                    border: "1px solid rgba(59,130,246,0.25)",
-                    borderRadius: theme.radiusMd,
-                    backdropFilter: "blur(10px)",
-                  }}
-                >
-                  <div
-                    className="flex items-center justify-center shrink-0"
-                    style={{
-                      width: "40px", height: "40px",
-                      borderRadius: "50%",
-                      backgroundColor: "rgba(59,130,246,0.2)",
-                    }}
-                  >
-                    <ClipboardList size={20} color="#60A5FA" />
-                  </div>
-
-                  <div className="flex-1">
-                    <p style={{ fontFamily, ...TEXT_STYLE.caption, color: "rgba(255,255,255,0.6)", marginBottom: "2px" }}>
-                      {isRTL ? "القيود السريرية النشطة" : "Active Clinical Restrictions"}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {nurseState.dietCodes.map(d => (
-                        <div key={d.code} className="flex items-center gap-1.5 px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)" }}>
-                          <span style={{ fontFamily, ...TEXT_STYLE.caption, color: "#fff", fontWeight: WEIGHT.bold }}>{d.label}</span>
-                        </div>
-                      ))}
-                      {nurseState.allergies.map(a => (
-                        <div key={a} className="flex items-center gap-1.5 px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.25)" }}>
-                          <AlertTriangle size={12} color="#F87171" />
-                          <span style={{ fontFamily, ...TEXT_STYLE.caption, color: "#F87171", fontWeight: WEIGHT.bold }}>{a}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="hidden md:block">
-                    <p style={{ fontFamily, ...TEXT_STYLE.caption, color: "rgba(255,255,255,0.4)", textAlign: isRTL ? "left" : "right" }}>
-                      {isRTL ? "تم تصفية القائمة تلقائياً لسلامتك" : "Menu filtered automatically for your safety"}
-                    </p>
-                  </div>
-                </div>
-              </div>
+          <div className="flex items-center gap-2 flex-wrap flex-1">
+            {chartChips.length === 0 && (
+              <span style={{ ...TEXT_STYLE.caption, color: theme.textMuted }}>{loc({ en: "No restrictions on chart", ar: "لا توجد قيود على الملف" })}</span>
             )}
+            {chartChips.map((chip) => {
+              const active = chipActive(chip);
+              return (
+                <button
+                  key={chip.key}
+                  onClick={() => toggleChip(chip)}
+                  className="flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: theme.radiusFull,
+                    backgroundColor: active ? theme.error : theme.surface,
+                    border: `1.5px solid ${active ? theme.error : theme.borderDefault}`,
+                    opacity: active ? 1 : 0.55,
+                  }}
+                >
+                  {active && <Check size={14} color={theme.textInverse} />}
+                  <span style={{ ...TEXT_STYLE.pill, color: active ? theme.textInverse : theme.textMuted }}>{chip.label}</span>
+                </button>
+              );
+            })}
+          </div>
 
-            {/* Category tabs */}
-            <div className="shrink-0 px-12 pb-5 relative z-10">
-              <div className="flex gap-3 w-full">
-                {filteredMenu.map((cat) => {
-                  const active = cat.id === activeCategory;
-                  const Icon = cat.icon;
-                  const isActive = isMealOrderable(cat.id);
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => { setActiveCategory(cat.id); setSliderIndex(1); }}
-                      className="flex items-center justify-center gap-3 flex-1 cursor-pointer active:scale-95 transition-transform"
-                      style={{
-                        height: "64px",
-                        padding: "0 24px",
-                        borderRadius: theme.radiusMd,
-                        backgroundColor: active ? "#fff" : "rgba(255,255,255,0.08)",
-                        border: active ? "none" : "1px solid rgba(255,255,255,0.12)",
-                        outline: "none",
-                      }}
-                    >
-                      <Icon size={20} color={active ? theme.primary : "rgba(255,255,255,0.6)"} />
-                      <div className="flex flex-col" style={{ alignItems: isRTL ? "flex-end" : "flex-start" }}>
-                        <span style={{
-                          fontFamily,
-                          ...TEXT_STYLE.subtitle,
-                          color: active ? theme.primaryDark : "rgba(255,255,255,0.8)",
-                        }}>
-                          {loc(cat.label)}
-                        </span>
-                        {isMealOrderable(cat.id) ? (
-                          <span style={{ fontFamily, ...TEXT_STYLE.caption, color: active ? "#6B7280" : "rgba(255,255,255,0.55)" }}>
-                            {loc(cat.timeRange)}
-                          </span>
-                        ) : isMealPassed(cat.id) ? (
-                          <span
-                            className="flex items-center gap-1"
-                            style={{
-                              padding: "2px 8px",
-                              borderRadius: theme.radiusSm,
-                              backgroundColor: active ? "#FEE2E2" : "rgba(239,68,68,0.15)",
-                              marginTop: "2px",
-                            }}
-                          >
-                            <Clock size={11} color="#EF4444" />
-                            <span style={{ fontFamily, ...TEXT_STYLE.micro, color: active ? "#B91C1C" : "#F87171" }}>
-                              {isRTL ? "غداً " : "Tomorrow "}{loc(cat.timeRange)}
-                            </span>
-                          </span>
-                        ) : (
-                          <span
-                            className="flex items-center gap-1"
-                            style={{
-                              padding: "2px 8px",
-                              borderRadius: theme.radiusSm,
-                              backgroundColor: active ? "#FEF3C7" : "rgba(245,158,11,0.15)",
-                              marginTop: "2px",
-                            }}
-                          >
-                            <Clock size={11} color="#F59E0B" />
-                            <span style={{ fontFamily, ...TEXT_STYLE.micro, color: active ? "#D97706" : "#FBBF24" }}>
-                              {loc(cat.timeRange)}
-                            </span>
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+          {isDirty && (
+            <button
+              onClick={resetToDefaults}
+              className="flex items-center gap-1.5 active:scale-95 transition-transform cursor-pointer shrink-0"
+              style={{ padding: "6px 14px", borderRadius: theme.radiusFull, backgroundColor: theme.surface, border: `1.5px solid ${theme.borderDefault}` }}
+            >
+              <RotateCcw size={14} color={theme.primary} />
+              <span style={{ ...TEXT_STYLE.pill, color: theme.primary }}>{loc({ en: "Reset to defaults", ar: "إعادة التعيين" })}</span>
+            </button>
+          )}
+        </div>
 
-            {/* Menu carousel + order preview */}
-            <div className="flex-1 min-h-0 flex gap-5 px-12 pb-8 relative z-10">
-              {/* Menu carousel */}
-              <div className="flex-1 min-w-0 flex flex-col">
-                {/* Carousel area */}
-                <div className="flex-1 min-h-0 flex flex-col items-center justify-center relative">
-                  {/* Status Phrase Overlay */}
-                  <div className="absolute top-0 flex flex-col items-center gap-1 pointer-events-none z-20">
-                    {new Date().getHours() >= 18 && new Date().getHours() < 21 ? (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full"
-                      >
-                        <ChefHat size={16} color="#fff" />
-                        <span style={{ fontFamily, ...TEXT_STYLE.caption, color: "#fff", fontWeight: WEIGHT.bold }}>
-                          {isRTL ? "نحن نجهز قائمة الغد لك، يمكنك الطلب لوجبة الإفطار ابتداءً من الساعة 9:00 مساءً" : "We are preparing your menu for tomorrow, you can order for your breakfast at 9:00 PM"}
-                        </span>
-                      </motion.div>
-                    ) : !isMealOrderable(category.id) && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full"
-                      >
-                        <Info size={16} color="#fff" />
-                        <span style={{ fontFamily, ...TEXT_STYLE.caption, color: "#fff", fontWeight: WEIGHT.bold }}>
-                          {isRTL ? "يمكنك الطلب للوجبات القادمة فقط" : "You can order for upcoming meal only"}
-                        </span>
-                      </motion.div>
-                    )}
-                  </div>
-
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={activeCategory}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="w-full flex items-center justify-center"
-                      style={{ height: "100%" }}
-                    >
-                      <FoodCarousel
-                        items={category.items}
-                        activeIndex={clampedSliderIndex}
-                        onIndexChange={setSliderIndex}
-                        getQty={getQty}
-                        onAdd={addToCart}
-                        onRemove={removeFromCart}
-                        categoryColor={category.color}
-                        isPassed={!isMealOrderable(category.id)}
-                      />
-                    </motion.div>
-                  </AnimatePresence>
-
-                  {/* Dots indicator */}
-                  <div className="shrink-0 flex items-center justify-center gap-2 mt-4">
-                    {category.items.map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setSliderIndex(i)}
-                        className="cursor-pointer transition-transform active:scale-90"
-                        style={{
-                          width: i === clampedSliderIndex ? "28px" : "8px",
-                          height: "8px",
-                          borderRadius: theme.radiusFull,
-                          backgroundColor: i === clampedSliderIndex ? "#fff" : "rgba(255,255,255,0.25)",
-                          border: "none",
-                          outline: "none",
-                          transition: "all 0.3s ease",
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Order preview sidebar — visible when cart has items */}
-              <AnimatePresence>
-                {totalItems > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, x: isRTL ? -24 : 24, width: 0 }}
-                    animate={{ opacity: 1, x: 0, width: 400 }}
-                    exit={{ opacity: 0, x: isRTL ? -24 : 24, width: 0 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="shrink-0 flex flex-col overflow-hidden"
-                    style={{ width: 400 }}
-                  >
-                    <OrderPreviewPanel
-                      cart={cart}
-                      totalItems={totalItems}
-                      totalCalories={totalCalories}
-                      specialNotes={specialNotes}
-                      onSpecialNotesChange={setSpecialNotes}
-                      deliveryInfos={deliveryInfos}
-                      onAdd={addToCart}
-                      onRemove={removeFromCart}
-                      onPlaceOrder={handlePlaceOrder}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        )}
-
-        {step === "confirmed" && (
-          <motion.div
-            key="confirmed"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.35 }}
-            className="flex flex-col flex-1 items-center justify-center"
+        {/* Allergen filter row */}
+        <div className="flex items-center gap-3 flex-wrap" style={{ backgroundColor: theme.surface, borderRadius: theme.radiusLg, padding: `${SPACE[2]} ${SPACE[3]}`, boxShadow: SHADOW.sm }}>
+          <span style={{ ...TEXT_STYLE.label, color: theme.textMuted, whiteSpace: "nowrap" }}>{loc({ en: "Flag allergy", ar: "إضافة حساسية" })}</span>
+          <div className="flex items-center gap-2 flex-wrap flex-1">
+            {ALLERGEN_ORDER.map((a) => {
+              const active = activeAllergens.has(a);
+              const meta = ALLERGEN_META[a];
+              return (
+                <button
+                  key={a}
+                  onClick={() => toggleAllergen(a)}
+                  className="flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: theme.radiusFull,
+                    backgroundColor: active ? theme.primary : theme.primarySubtle,
+                    border: `1.5px solid ${active ? theme.primary : "transparent"}`,
+                  }}
+                >
+                  <span style={{ fontSize: TYPE_SCALE.sm, lineHeight: 1 }}>{meta.emoji}</span>
+                  <span style={{ ...TEXT_STYLE.pill, color: active ? theme.textInverse : theme.primaryDark }}>{loc(meta.label)}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div
+            className="flex items-center gap-2 shrink-0"
+            style={{ padding: "4px 12px", borderRadius: theme.radiusFull, backgroundColor: blockedCount > 0 ? theme.errorSubtle : theme.successSubtle }}
           >
-            <ConfirmationStep orderNumber={lastOrderNumber} totalItems={totalItems} deliveryInfos={deliveryInfos} onClose={onClose} onViewOrders={() => setStep("history")} />
-          </motion.div>
-        )}
+            <AlertTriangle size={15} color={blockedCount > 0 ? theme.error : theme.success} />
+            <span style={{ ...TEXT_STYLE.caption, color: blockedCount > 0 ? theme.error : theme.success }}>
+              {blockedCount > 0
+                ? loc({ en: `${blockedCount} menu items currently hidden by active restrictions / allergies`, ar: `${blockedCount} صنفاً مخفياً حالياً بسبب القيود / الحساسية النشطة` })
+                : loc({ en: "No conflicts — full menu available", ar: "لا تعارض — القائمة كاملة متاحة" })}
+            </span>
+          </div>
+        </div>
+      </div>
 
-        {step === "history" && (
+      {/* ── Three meal columns ── */}
+      <div className="meal-scroll flex-1 min-h-0 overflow-y-auto" style={{ padding: `${SPACE[3]} ${SPACE[6]} ${SPACE[4]}` }}>
+        <div className="grid" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: SPACE[3], alignItems: "start" }}>
+          {MEALS.map((meal) => (
+            <MealColumn
+              key={meal.id}
+              meal={meal}
+              theme={theme}
+              loc={loc}
+              isRTL={isRTL}
+              blockReason={blockReason}
+              selectedItemFor={selectedItemFor}
+              onSelect={selectItem}
+              count={mealSelectedCount(meal)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* ── Sticky footer ── */}
+      <div
+        className="shrink-0 flex items-center gap-4"
+        style={{ padding: `${SPACE[2]} ${SPACE[6]}`, backgroundColor: theme.surface, boxShadow: SHADOW.lg, borderTop: `1px solid ${theme.borderDefault}` }}
+      >
+        <div className="flex items-center justify-center shrink-0" style={{ width: "48px", height: "48px", borderRadius: theme.radiusMd, backgroundColor: theme.primarySubtle }}>
+          <ShoppingBag size={22} color={theme.primary} />
+        </div>
+        <div className="flex-1">
+          <p style={{ ...TEXT_STYLE.sectionTitle, color: theme.primaryDark }}>
+            {totalSelected} {loc({ en: totalSelected === 1 ? "item selected" : "items selected", ar: "صنف مختار" })}
+          </p>
+          <p style={{ ...TEXT_STYLE.caption, color: theme.textMuted }}>
+            {loc({ en: "Drinks & water included with every meal · Est. delivery 25–35 min", ar: "المشروبات والماء مع كل وجبة · التوصيل خلال ٢٥–٣٥ دقيقة" })}
+          </p>
+        </div>
+        <button
+          onClick={handleSubmit}
+          disabled={totalSelected === 0}
+          className="flex items-center gap-2 active:scale-95 transition-transform"
+          style={{
+            height: "56px",
+            padding: `0 ${SPACE[5]}`,
+            borderRadius: theme.radiusFull,
+            backgroundColor: totalSelected === 0 ? theme.borderDefault : theme.primary,
+            cursor: totalSelected === 0 ? "not-allowed" : "pointer",
+            opacity: totalSelected === 0 ? 0.7 : 1,
+          }}
+        >
+          <Check size={22} color={theme.textInverse} />
+          <span style={{ ...TEXT_STYLE.button, color: theme.textInverse }}>{loc({ en: "Submit Order", ar: "إرسال الطلب" })}</span>
+        </button>
+      </div>
+
+      {/* ── Confirmation overlay ── */}
+      <AnimatePresence>
+        {confirmation && (
           <motion.div
-            key="history"
-            initial={{ opacity: 0, x: isRTL ? -40 : 40 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="flex flex-col flex-1 min-h-0"
+            className="absolute inset-0 z-[60] flex items-center justify-center"
+            style={{ backgroundColor: theme.overlay }}
+            onClick={() => setConfirmation(null)}
           >
-            <OrdersLogStep onBack={() => setStep("menu")} onClose={onClose} onReorder={(items) => {
-              items.forEach((item) => {
-                // Add items back to cart for reordering
-                for (let i = 0; i < item.quantity; i++) {
-                  const menuItem = MENU.flatMap((m) => m.items).find((mi) => mi.id === item.id);
-                  if (menuItem) addToCart(menuItem);
-                }
-              });
-              setStep("menu");
-            }} />
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="flex flex-col items-center text-center"
+              style={{ backgroundColor: theme.surface, borderRadius: theme.radiusXl, padding: SPACE[6], width: "440px", boxShadow: SHADOW.xl }}
+            >
+              <div
+                className="flex items-center justify-center"
+                style={{ width: "80px", height: "80px", borderRadius: theme.radiusFull, backgroundColor: theme.successSubtle, marginBottom: SPACE[3] }}
+              >
+                <CheckCircle2 size={44} color={theme.success} />
+              </div>
+              <h3 style={{ ...TEXT_STYLE.pageTitle, color: theme.primaryDark }}>{loc({ en: "Order Placed", ar: "تم إرسال الطلب" })}</h3>
+              <p style={{ ...TEXT_STYLE.body, color: theme.textMuted, marginTop: SPACE[1] }}>
+                {loc({ en: "Order", ar: "طلب" })} {confirmation} · {loc({ en: "the kitchen has been notified.", ar: "تم إبلاغ المطبخ." })}
+              </p>
+              <div className="flex gap-3" style={{ marginTop: SPACE[4] }}>
+                <button
+                  onClick={() => { setConfirmation(null); setShowOrders(true); }}
+                  style={{ height: "52px", padding: `0 ${SPACE[4]}`, borderRadius: theme.radiusFull, backgroundColor: theme.surface, border: `1.5px solid ${theme.borderDefault}` }}
+                >
+                  <span style={{ ...TEXT_STYLE.buttonSm, color: theme.primaryDark }}>{loc({ en: "View Orders", ar: "عرض الطلبات" })}</span>
+                </button>
+                <button
+                  onClick={() => setConfirmation(null)}
+                  style={{ height: "52px", padding: `0 ${SPACE[4]}`, borderRadius: theme.radiusFull, backgroundColor: theme.primary }}
+                >
+                  <span style={{ ...TEXT_STYLE.buttonSm, color: theme.textInverse }}>{loc({ en: "Done", ar: "تم" })}</span>
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
+      </AnimatePresence>
+
+      {/* ── Selected-item photo preview (visual confirmation, non-blocking) ── */}
+      <AnimatePresence>
+        {preview && (
+          <PreviewModal
+            item={preview}
+            photo={DISH_PHOTOS[preview.name.en] ?? ""}
+            theme={theme}
+            loc={loc}
+            onClose={() => setPreview(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── My Orders overlay ── */}
+      <AnimatePresence>
+        {showOrders && <MyOrders orders={orders} theme={theme} loc={loc} isRTL={isRTL} onClose={() => setShowOrders(false)} />}
       </AnimatePresence>
     </motion.div>
   );
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * FOOD CAROUSEL — shows 3 items, center one is bigger
+ * MEAL HERO IMAGE — real food photo with a graceful solid-color fallback
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-function FoodCarousel({
-  items,
-  activeIndex,
-  onIndexChange,
-  getQty,
-  onAdd,
-  onRemove,
-  categoryColor,
-  isPassed,
-}: {
-  items: MenuItem[];
-  activeIndex: number;
-  onIndexChange: (i: number) => void;
-  getQty: (id: string) => number;
-  onAdd: (item: MenuItem) => void;
-  onRemove: (id: string) => void;
-  categoryColor: string;
-  isPassed: boolean;
-}) {
-  const { theme } = useTheme();
-  const { isRTL, fontFamily } = useLocale();
-  const len = items.length;
-
-  if (len === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-4 w-full h-full py-12 text-center">
-        <div
-          className="flex items-center justify-center mb-2"
-          style={{
-            width: "80px", height: "80px",
-            borderRadius: "50%",
-            backgroundColor: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.1)"
-          }}
-        >
-          <AlertTriangle size={32} color="rgba(255,255,255,0.3)" />
-        </div>
-        <h3 style={{ fontFamily, ...TEXT_STYLE.subtitle, color: "#fff", fontSize: "20px" }}>
-          {isRTL ? "عذراً، لا توجد وجبات متاحة" : "No items available"}
-        </h3>
-        <p style={{ fontFamily, ...TEXT_STYLE.caption, color: "rgba(255,255,255,0.5)", maxWidth: "320px", lineHeight: "1.6" }}>
-          {isRTL
-            ? "تمت تصفية جميع الأصناف في هذه الفئة بناءً على نظامك الغذائي الموصوف أو سجل الحساسية الخاص بك."
-            : "All items in this category have been filtered out based on your prescribed diet or allergy profile."}
-        </p>
-      </div>
-    );
-  }
-
-  // Circular navigation helpers
-  const wrap = (i: number) => ((i % len) + len) % len;
-  const goPrev = () => onIndexChange(wrap(activeIndex - 1));
-  const goNext = () => onIndexChange(wrap(activeIndex + 1));
-
-  // Always show 3 if possible: prev (wrapped), center, next (wrapped)
-  const visible: { item: MenuItem; position: "left" | "center" | "right"; originalIndex: number }[] = [];
-
-  if (len === 1) {
-    visible.push({ item: items[0], position: "center", originalIndex: 0 });
-  } else if (len === 2) {
-    visible.push({ item: items[wrap(activeIndex - 1)], position: "left", originalIndex: wrap(activeIndex - 1) });
-    visible.push({ item: items[activeIndex], position: "center", originalIndex: activeIndex });
-  } else {
-    visible.push({ item: items[wrap(activeIndex - 1)], position: "left", originalIndex: wrap(activeIndex - 1) });
-    visible.push({ item: items[activeIndex], position: "center", originalIndex: activeIndex });
-    visible.push({ item: items[wrap(activeIndex + 1)], position: "right", originalIndex: wrap(activeIndex + 1) });
-  }
-
-  const PrevIcon = isRTL ? ChevronRight : ChevronLeft;
-  const NextIcon = isRTL ? ChevronLeft : ChevronRight;
-
+function MealHero({ src, fallback, alt }: { src: string; fallback: string; alt: string }) {
+  const [ok, setOk] = useState(true);
   return (
-    <div className="flex items-center gap-4 w-full h-full justify-center">
-      {/* Prev arrow */}
-      <button
-        onClick={isRTL ? goNext : goPrev}
-        disabled={len <= 1}
-        className="shrink-0 flex items-center justify-center cursor-pointer active:scale-90 transition-transform disabled:opacity-0 disabled:pointer-events-none"
-        style={{
-          width: "48px",
-          height: "48px",
-          borderRadius: theme.radiusFull,
-          backgroundColor: "rgba(255,255,255,0.15)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          outline: "none",
-        }}
-      >
-        <PrevIcon size={24} color="#fff" />
-      </button>
-
-      {/* Cards container */}
-      <motion.div
-        className="flex-1 flex items-center justify-center gap-5"
-        style={{ minHeight: 0, height: "100%", touchAction: "none" }}
-        drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.2}
-        onDragEnd={(_, info) => {
-          const threshold = 60;
-          if (info.offset.x > threshold) {
-            isRTL ? goNext() : goPrev();
-          } else if (info.offset.x < -threshold) {
-            isRTL ? goPrev() : goNext();
-          }
-        }}
-      >
-        <AnimatePresence mode="popLayout">
-          {visible.map(({ item, position, originalIndex }) => (
-            <motion.div
-              key={item.id}
-              layout
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{
-                opacity: position === "center" ? 1 : 0.55,
-                scale: position === "center" ? 1 : 0.82,
-              }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 300, damping: 28 }}
-              onClick={() => {
-                if (position !== "center") onIndexChange(originalIndex);
-              }}
-              style={{
-                flex: position === "center" ? "0 0 38%" : "0 0 28%",
-                maxHeight: "100%",
-                cursor: position !== "center" ? "pointer" : "default",
-                filter: position === "center" ? "none" : "brightness(0.7)",
-                zIndex: position === "center" ? 2 : 1,
-              }}
-            >
-              <FoodCard
-                item={item}
-                qty={getQty(item.id)}
-                onAdd={() => onAdd(item)}
-                onRemove={() => onRemove(item.id)}
-                delay={0}
-                categoryColor={categoryColor}
-                isCenter={position === "center"}
-                isPassed={isPassed}
-              />
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </motion.div>
-
-      {/* Next arrow */}
-      <button
-        onClick={isRTL ? goPrev : goNext}
-        disabled={len <= 1}
-        className="shrink-0 flex items-center justify-center cursor-pointer active:scale-90 transition-transform disabled:opacity-0 disabled:pointer-events-none"
-        style={{
-          width: "48px",
-          height: "48px",
-          borderRadius: theme.radiusFull,
-          backgroundColor: "rgba(255,255,255,0.15)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          outline: "none",
-        }}
-      >
-        <NextIcon size={24} color="#fff" />
-      </button>
+    <div className="absolute inset-0" style={{ backgroundColor: fallback }}>
+      {ok && (
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          onError={() => setOk(false)}
+          className="w-full h-full object-cover"
+          style={{ display: "block" }}
+        />
+      )}
     </div>
   );
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * FOOD CARD
+ * DISH PHOTO — real photo with enlarged-emoji fallback (never a broken image)
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-function FoodCard({
-  item,
-  qty,
-  onAdd,
-  onRemove,
-  delay,
-  categoryColor,
-  isCenter = true,
-  isPassed = false,
-}: {
-  item: MenuItem;
-  qty: number;
-  onAdd: () => void;
-  onRemove: () => void;
-  delay: number;
-  categoryColor: string;
-  isCenter?: boolean;
-  isPassed?: boolean;
-}) {
-  const { theme } = useTheme();
-  const { isRTL, fontFamily } = useLocale();
-  const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
-  const inCart = qty > 0;
-  const [showInfo, setShowInfo] = useState(false);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay }}
-      className="relative flex flex-col overflow-hidden"
-      style={{
-        borderRadius: theme.radiusXl,
-        backgroundColor: theme.surface,
-        border: inCart ? `2px solid ${theme.primary}` : theme.cardBorder,
-        transition: "border-color 0.2s, box-shadow 0.2s",
-        boxShadow: inCart ? `0 0 24px ${theme.primary}20` : SHADOW.md,
-        filter: isPassed ? "grayscale(0.6)" : "none",
-        opacity: isPassed ? 0.8 : 1,
-      }}
-    >
-      {/* Image — bigger area */}
-      <div className="relative w-full overflow-hidden" style={{ aspectRatio: "1 / 0.85" }}>
-        <ApiImage
-          src={item.image}
-          alt={loc(item.name)}
-          className="w-full h-full object-cover"
-          style={{ transition: "transform 0.3s" }}
-        />
-        {/* Gradient overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: "linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.55) 100%)" }}
-        />
-        {/* Popular badge */}
-        {item.popular && (
-          <div
-            className="absolute flex items-center gap-1.5"
-            style={{
-              top: "10px",
-              [isRTL ? "right" : "left"]: "10px",
-              padding: "5px 10px",
-              borderRadius: theme.radiusFull,
-              backgroundColor: categoryColor,
-              boxShadow: `0 4px 12px ${categoryColor}50`,
-            }}
-          >
-            <Heart size={12} color="#fff" fill="#fff" />
-            <span style={{ fontFamily, fontSize: "11px", fontWeight: WEIGHT.bold, color: "#fff" }}>
-              {isRTL ? "شائع" : "Popular"}
-            </span>
-          </div>
-        )}
-        {/* Info icon — tap to see description (center card only) */}
-        {isCenter && (
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowInfo(!showInfo); }}
-            className="absolute flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
-            style={{
-              top: "10px",
-              [isRTL ? "left" : "right"]: "10px",
-              width: "32px", height: "32px",
-              borderRadius: theme.radiusFull,
-              backgroundColor: showInfo ? "#fff" : "rgba(0,0,0,0.45)",
-              backdropFilter: "blur(8px)",
-              border: "none", outline: "none",
-            }}
-          >
-            <Info size={16} color={showInfo ? theme.primary : "#fff"} />
-          </button>
-        )}
-        {/* Calories badge */}
-        <div
-          className="absolute flex items-center gap-1"
-          style={{
-            bottom: "10px",
-            [isRTL ? "left" : "right"]: "10px",
-            padding: "4px 10px",
-            borderRadius: theme.radiusFull,
-            backgroundColor: "rgba(0,0,0,0.55)",
-            backdropFilter: "blur(8px)",
-          }}
-        >
-          <Flame size={13} color="#F59E0B" />
-          <span style={{ fontFamily, fontSize: "12px", fontWeight: WEIGHT.semibold, color: "rgba(255,255,255,0.9)" }}>
-            {item.calories} {isRTL ? "سعرة" : "kcal"}
-          </span>
-        </div>
-
-        {/* Description overlay — shown on info tap */}
-        <AnimatePresence>
-          {showInfo && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="absolute inset-0 flex flex-col justify-end p-4"
-              style={{ backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}
-              onClick={(e) => { e.stopPropagation(); setShowInfo(false); }}
-            >
-              <p style={{
-                fontFamily,
-                ...TEXT_STYLE.body,
-                color: "#fff",
-                margin: 0,
-                lineHeight: LEADING.relaxed,
-              }}>
-                {loc(item.description)}
-              </p>
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {item.tags.map((tag) => {
-                  const cfg = TAG_CONFIG[tag];
-                  return (
-                    <span
-                      key={tag}
-                      style={{
-                        padding: "3px 8px",
-                        borderRadius: theme.radiusFull,
-                        backgroundColor: `${cfg.color}30`,
-                        fontFamily, fontSize: "11px", fontWeight: WEIGHT.bold, color: "#fff",
-                      }}
-                    >
-                      {loc(cfg.label)}
-                    </span>
-                  );
-                })}
-              </div>
-
-              {/* Nutritional Macros in Info Overlay */}
-              {item.nutrition && (
-                <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-white/10">
-                  <div className="text-center">
-                    <p style={{ fontFamily, fontSize: "10px", color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>{isRTL ? "بروتين" : "Protein"}</p>
-                    <p style={{ fontFamily, fontSize: "14px", fontWeight: WEIGHT.bold, color: "#fff" }}>{item.nutrition.protein}g</p>
-                  </div>
-                  <div className="text-center">
-                    <p style={{ fontFamily, fontSize: "10px", color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>{isRTL ? "كربوهيدرات" : "Carbs"}</p>
-                    <p style={{ fontFamily, fontSize: "14px", fontWeight: WEIGHT.bold, color: "#fff" }}>{item.nutrition.carbs}g</p>
-                  </div>
-                  <div className="text-center">
-                    <p style={{ fontFamily, fontSize: "10px", color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>{isRTL ? "دهون" : "Fat"}</p>
-                    <p style={{ fontFamily, fontSize: "14px", fontWeight: WEIGHT.bold, color: "#fff" }}>{item.nutrition.fat}g</p>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Content — compact: name + tags + controls */}
-      <div className="flex flex-col px-4 pt-3 pb-4 gap-2">
-        <div>
-          <h3 style={{ fontFamily, ...TEXT_STYLE.cardTitle, color: theme.textHeading, margin: 0 }}>
-            {loc(item.name)}
-          </h3>
-          {/* Description — only on center card */}
-          {isCenter && (
-            <p style={{
-              fontFamily,
-              ...TEXT_STYLE.body,
-              color: theme.textMuted,
-              margin: "4px 0 0",
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical" as any,
-              overflow: "hidden",
-            }}>
-              {loc(item.description)}
-            </p>
-          )}
-        </div>
-
-        {/* Allergen Chips & Macros row */}
-        <div className="flex flex-col gap-2">
-          {item.allergens.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              <span style={{ fontFamily, fontSize: "11px", fontWeight: WEIGHT.bold, color: "#EF4444" }}>
-                {isRTL ? "يحتوي على:" : "Contains:"}
-              </span>
-              {item.allergens.map(a => (
-                <span
-                  key={a}
-                  style={{
-                    fontFamily, fontSize: "11px", fontWeight: WEIGHT.semibold, color: theme.textMuted,
-                    backgroundColor: "rgba(0,0,0,0.04)", padding: "1px 6px", borderRadius: theme.radiusSm
-                  }}
-                >
-                  {a.charAt(0).toUpperCase() + a.slice(1).replace("-", " ")}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {isCenter && item.nutrition && (
-            <div className="flex items-center gap-4 py-1">
-              <div className="flex items-center gap-1">
-                <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#F97316" }} />
-                <span style={{ fontFamily, fontSize: "11px", color: theme.textMuted }}>P: {item.nutrition.protein}g</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#3B82F6" }} />
-                <span style={{ fontFamily, fontSize: "11px", color: theme.textMuted }}>C: {item.nutrition.carbs}g</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#10B981" }} />
-                <span style={{ fontFamily, fontSize: "11px", color: theme.textMuted }}>F: {item.nutrition.fat}g</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Add / Quantity controls — only on center card */}
-        {isCenter && (
-          <div className="flex items-center gap-3">
-            {isPassed ? (
-              <div
-                className="flex-1 flex items-center justify-center gap-2"
-                style={{
-                  height: "56px",
-                  borderRadius: theme.radiusMd,
-                  backgroundColor: "rgba(255,255,255,0.08)",
-                  border: "1px dashed rgba(255,255,255,0.15)",
-                }}
-              >
-                <Clock size={16} color="rgba(255,255,255,0.5)" />
-                <span style={{ fontFamily, ...TEXT_STYLE.caption, color: "rgba(255,255,255,0.6)", fontWeight: WEIGHT.bold }}>
-                  {isRTL ? "انتهى وقت الطلب" : "Cutoff Passed"}
-                </span>
-              </div>
-            ) : qty === 0 ? (
-              <button
-                onClick={(e) => { e.stopPropagation(); onAdd(); }}
-                className="flex-1 flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform"
-                style={{
-                  height: "56px",
-                  borderRadius: theme.radiusMd,
-                  backgroundColor: theme.primary,
-                  border: "none",
-                  outline: "none",
-                  boxShadow: `0 4px 16px ${theme.primary}40`,
-                }}
-              >
-                <Plus size={20} color="#fff" />
-                <span style={{ fontFamily, ...TEXT_STYLE.button, color: "#fff" }}>
-                  {isRTL ? "أضف" : "Add"}
-                </span>
-              </button>
-            ) : (
-              <motion.div
-                initial={{ scale: 0.9 }}
-                animate={{ scale: 1 }}
-                className="flex-1 flex items-center justify-between"
-                style={{
-                  height: "44px",
-                  borderRadius: theme.radiusMd,
-                  backgroundColor: `${theme.primary}10`,
-                  border: `1px solid ${theme.primary}25`,
-                  padding: "0 6px",
-                }}
-              >
-                <button
-                  onClick={(e) => { e.stopPropagation(); onRemove(); }}
-                  className="flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
-                  style={{
-                    width: "36px", height: "36px",
-                    borderRadius: theme.radiusSm,
-                    backgroundColor: qty === 1 ? DANGER : theme.primary,
-                    border: "none", outline: "none",
-                  }}
-                >
-                  {qty === 1 ? <X size={18} color="#fff" /> : <Minus size={18} color="#fff" />}
-                </button>
-                <span style={{ fontFamily, ...TEXT_STYLE.button, color: theme.textHeading }}>{qty}</span>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onAdd(); }}
-                  className="flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
-                  style={{
-                    width: "36px", height: "36px",
-                    borderRadius: theme.radiusSm,
-                    backgroundColor: theme.primary,
-                    border: "none", outline: "none",
-                  }}
-                >
-                  <Plus size={18} color="#fff" />
-                </button>
-              </motion.div>
-            )}
-          </div>
-        )}
-      </div>
-    </motion.div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * ORDER PREVIEW PANEL (sidebar next to menu)
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-function OrderPreviewPanel({
-  cart,
-  totalItems,
-  totalCalories,
-  specialNotes,
-  onSpecialNotesChange,
-  deliveryInfos,
-  onAdd,
-  onRemove,
-  onPlaceOrder,
-}: {
-  cart: CartItem[];
-  totalItems: number;
-  totalCalories: number;
-  specialNotes: string;
-  onSpecialNotesChange: (v: string) => void;
-  deliveryInfos: { label: string; detail: string; isPreOrder: boolean }[];
-  onAdd: (item: MenuItem) => void;
-  onRemove: (itemId: string) => void;
-  onPlaceOrder: () => void;
-}) {
-  const { theme } = useTheme();
-  const { isRTL, fontFamily } = useLocale();
-  const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
-
+function DishPhoto({ src, emoji, alt, theme }: { src: string; emoji: string; alt: string; theme: any }) {
+  const [ok, setOk] = useState(!!src);
+  const showImg = !!src && ok;
   return (
     <div
-      className="flex flex-col h-full overflow-hidden"
-      style={{
-        borderRadius: theme.radiusXl,
-        backgroundColor: theme.surface,
-        border: theme.cardBorder,
-        boxShadow: SHADOW.lg,
-      }}
+      className="flex items-center justify-center w-full"
+      style={{ height: "210px", borderRadius: theme.radiusLg, overflow: "hidden", backgroundColor: theme.primarySubtle }}
     >
-      {/* Header */}
-      <div className="shrink-0 px-5 pt-5 pb-3" style={{ borderBottom: `1px solid ${theme.borderDefault}` }}>
-        <div className="flex items-center gap-3">
-          <div
-            className="flex items-center justify-center"
-            style={{
-              width: "36px", height: "36px",
-              borderRadius: theme.radiusMd,
-              backgroundColor: `${theme.primary}12`,
-            }}
-          >
-            <ShoppingCart size={18} color={theme.primary} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 style={{ fontFamily, ...TEXT_STYLE.subtitle, color: theme.textHeading, margin: 0 }}>
-              {isRTL ? "طلبك" : "Your Order"}
-            </h3>
-            <p style={{ fontFamily, ...TEXT_STYLE.micro, color: theme.textMuted, margin: 0 }}>
-              {totalItems} {isRTL ? "عنصر" : `item${totalItems !== 1 ? "s" : ""}`} · {totalCalories} {isRTL ? "سعرة" : "kcal"}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Cart items list */}
-      <div className="flex-1 min-h-0 overflow-y-auto food-scroll px-4 py-3 flex flex-col gap-2">
-        {cart.map((ci) => (
-          <div
-            key={ci.menuItem.id}
-            className="flex items-center gap-3"
-            style={{
-              padding: "8px",
-              borderRadius: theme.radiusMd,
-              backgroundColor: `${theme.primary}04`,
-              border: `1px solid ${theme.borderDefault}`,
-            }}
-          >
-            <ApiImage
-              src={ci.menuItem.image}
-              alt={loc(ci.menuItem.name)}
-              style={{
-                width: "44px", height: "44px",
-                borderRadius: theme.radiusSm,
-                objectFit: "cover",
-                flexShrink: 0,
-              }}
-            />
-            <div className="flex-1 min-w-0">
-              <p style={{
-                fontFamily,
-                ...TEXT_STYLE.caption,
-                fontWeight: WEIGHT.semibold,
-                color: theme.textHeading,
-                margin: 0,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}>
-                {loc(ci.menuItem.name)}
-              </p>
-              <p style={{ fontFamily, ...TEXT_STYLE.micro, color: theme.textMuted, margin: 0 }}>
-                {ci.menuItem.calories * ci.quantity} {isRTL ? "سعرة" : "kcal"}
-              </p>
-            </div>
-            {/* Qty controls */}
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                onClick={() => onRemove(ci.menuItem.id)}
-                className="flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
-                style={{
-                  width: "28px", height: "28px",
-                  borderRadius: theme.radiusSm,
-                  backgroundColor: ci.quantity === 1 ? `${DANGER}12` : `${theme.primary}10`,
-                  border: "none", outline: "none",
-                }}
-              >
-                {ci.quantity === 1 ? <X size={14} color={DANGER} /> : <Minus size={14} color={theme.primary} />}
-              </button>
-              <span style={{ fontFamily, ...TEXT_STYLE.caption, fontWeight: WEIGHT.bold, color: theme.textHeading, width: "24px", textAlign: "center" }}>
-                {ci.quantity}
-              </span>
-              <button
-                onClick={() => onAdd(ci.menuItem)}
-                className="flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
-                style={{
-                  width: "28px", height: "28px",
-                  borderRadius: theme.radiusSm,
-                  backgroundColor: theme.primary,
-                  border: "none", outline: "none",
-                }}
-              >
-                <Plus size={14} color="#fff" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Footer — notes, delivery, place order */}
-      <div className="shrink-0 px-4 pb-4 pt-3 flex flex-col gap-3" style={{ borderTop: `1px solid ${theme.borderDefault}` }}>
-        {/* Special notes */}
-        <textarea
-          value={specialNotes}
-          onChange={(e) => onSpecialNotesChange(e.target.value)}
-          placeholder={isRTL ? "ملاحظات (حساسية، تفضيلات)..." : "Notes (allergies, preferences)..."}
-          className="w-full resize-none"
-          rows={2}
-          style={{
-            fontFamily,
-            ...TEXT_STYLE.caption,
-            color: theme.textHeading,
-            backgroundColor: `${theme.primary}06`,
-            border: `1px solid ${theme.borderDefault}`,
-            borderRadius: theme.radiusMd,
-            padding: "10px 12px",
-            outline: "none",
-          }}
-        />
-
-        {/* Delivery info */}
-        {deliveryInfos.map((info, i) => (
-          <div key={i} className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Clock size={14} color={info.isPreOrder ? "#F59E0B" : theme.textMuted} />
-              <span style={{ fontFamily, ...TEXT_STYLE.micro, color: theme.textBody }}>
-                {info.label}
-              </span>
-            </div>
-            <span style={{ fontFamily, ...TEXT_STYLE.micro, fontWeight: WEIGHT.bold, color: info.isPreOrder ? "#F59E0B" : theme.textHeading }}>
-              {info.detail}
-            </span>
-          </div>
-        ))}
-
-        {/* Place order */}
-        <button
-          onClick={onPlaceOrder}
-          className="w-full flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97] transition-transform"
-          style={{
-            height: "52px",
-            borderRadius: theme.radiusMd,
-            backgroundColor: theme.primary,
-            border: "none",
-            outline: "none",
-            boxShadow: `0 6px 24px ${theme.primary}40`,
-          }}
-        >
-          <ChefHat size={20} color="#fff" />
-          <span style={{ fontFamily, ...TEXT_STYLE.buttonSm, color: "#fff" }}>
-            {isRTL ? "تأكيد الطلب" : "Place Order"}
-          </span>
-        </button>
-      </div>
+      {showImg ? (
+        <img src={src} alt={alt} onError={() => setOk(false)} className="w-full h-full object-cover" style={{ display: "block" }} />
+      ) : (
+        <span style={{ fontSize: "84px", lineHeight: 1 }}>{emoji}</span>
+      )}
     </div>
   );
 }
 
-/* ReviewStep removed — merged into OrderPreviewPanel sidebar */
-
 /* ═══════════════════════════════════════════════════════════════════════════
- * CONFIRMATION STEP
+ * SELECTION PREVIEW MODAL — quick visual confirmation of the chosen dish
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-function ConfirmationStep({ orderNumber, totalItems, deliveryInfos, onClose, onViewOrders }: { orderNumber: string; totalItems: number; deliveryInfos: { label: string; detail: string; isPreOrder: boolean }[]; onClose: () => void; onViewOrders: () => void }) {
-  const { theme } = useTheme();
-  const { isRTL, fontFamily } = useLocale();
-
+function PreviewModal({
+  item,
+  photo,
+  theme,
+  loc,
+  onClose,
+}: {
+  item: MenuItem;
+  photo: string;
+  theme: any;
+  loc: (v: Locale) => string;
+  onClose: () => void;
+}) {
   return (
     <motion.div
-      className="flex flex-col items-center gap-6 relative z-10 px-12"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2, duration: 0.4 }}
-      style={{ maxWidth: "600px", margin: "0 auto" }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="absolute inset-0 z-[60] flex items-center justify-center"
+      style={{ backgroundColor: theme.overlay }}
+      onClick={onClose}
     >
-      {/* Success card */}
-      <div
-        className="w-full flex flex-col items-center gap-6"
-        style={{
-          padding: "40px 32px",
-          borderRadius: theme.radiusXl,
-          backgroundColor: theme.surface,
-          border: theme.cardBorder,
-          boxShadow: SHADOW.lg,
-        }}
-      >
-        {/* Success icon */}
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
-          className="flex items-center justify-center"
-          style={{
-            width: "100px", height: "100px",
-            borderRadius: "50%",
-            backgroundColor: "#22C55E15",
-            border: "2px solid #22C55E30",
-          }}
-        >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 300, damping: 18, delay: 0.35 }}
-            className="flex items-center justify-center"
-            style={{
-              width: "72px", height: "72px",
-              borderRadius: "50%",
-              backgroundColor: "#22C55E",
-              boxShadow: "0 8px 32px rgba(34,197,94,0.35)",
-            }}
-          >
-            <Check size={36} color="#fff" strokeWidth={3} />
-          </motion.div>
-        </motion.div>
-
-        <div className="flex flex-col items-center gap-2 text-center">
-          <h2 style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading, lineHeight: LEADING.snug, margin: 0 }}>
-            {isRTL ? "تم تقديم طلبك!" : "Order Placed!"}
-          </h2>
-          <p style={{ fontFamily, ...TEXT_STYLE.body, color: theme.textBody, margin: 0 }}>
-            {deliveryInfos.some((d) => d.isPreOrder)
-              ? (isRTL ? "تم حفظ تفضيلاتك! سيتم تجهيز وجبتك وتوصيلها في الموعد المحدد." : "Your preferences have been saved! Your meal will be delivered during the scheduled time.")
-              : (isRTL ? "طلبك قيد التحضير. سيتم توصيل وجبتك خلال ٢٥–٣٥ دقيقة." : "Your order is being prepared. Delivery in 25–35 minutes.")}
-          </p>
-        </div>
-
-        {/* Order number & delivery info */}
-        <div
-          className="w-full flex flex-col gap-4"
-          style={{
-            padding: "20px 24px",
-            borderRadius: theme.radiusLg,
-            backgroundColor: `${theme.primary}06`,
-            border: `1px solid ${theme.borderDefault}`,
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <span style={{ fontFamily, ...TEXT_STYLE.body, color: theme.textBody }}>
-              {isRTL ? "رقم الطلب" : "Order Number"}
-            </span>
-            <span style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading, letterSpacing: "1px" }}>
-              {orderNumber}
-            </span>
-          </div>
-          <div style={{ borderTop: `1px solid ${theme.borderDefault}` }} />
-          {deliveryInfos.map((info, i) => (
-            <div key={i} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Clock size={16} color={info.isPreOrder ? "#F59E0B" : theme.textMuted} />
-                <span style={{ fontFamily, ...TEXT_STYLE.body, color: theme.textBody }}>
-                  {info.label}
-                </span>
-              </div>
-              <span style={{ fontFamily, ...TEXT_STYLE.bodyEmphasis, color: info.isPreOrder ? "#F59E0B" : theme.textHeading }}>
-                {info.detail}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Notification hint */}
       <motion.div
-        className="w-full flex items-center gap-4"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.45 }}
-        style={{
-          padding: "18px 24px",
-          borderRadius: theme.radiusLg,
-          backgroundColor: `${theme.primary}08`,
-          border: `1px solid ${theme.primary}20`,
-        }}
-      >
-        <div
-          className="flex items-center justify-center shrink-0"
-          style={{
-            width: "44px", height: "44px",
-            borderRadius: theme.radiusMd,
-            backgroundColor: `${theme.primary}15`,
-          }}
-        >
-          <Bell size={22} color={theme.primary} />
-        </div>
-        <p style={{ fontFamily, ...TEXT_STYLE.body, color: theme.textBody, margin: 0, flex: 1 }}>
-          {isRTL
-            ? "سيتم إرسال تحديثات حالة طلبك إلى لوحة الإشعارات. اضغط على جرس الإشعارات في الشاشة الرئيسية لمتابعة طلبك."
-            : "Order status updates will be sent to your notifications panel. Tap the bell icon on the home screen to track your order."}
-        </p>
-      </motion.div>
-
-      {/* Action buttons */}
-      <motion.div
-        className="w-full flex gap-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.55 }}
+        key={item.id}
+        initial={{ scale: 0.92, y: 16 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.92, y: 16 }}
+        transition={{ type: "spring", stiffness: 300, damping: 26 }}
+        onClick={(e) => e.stopPropagation()}
+        className="relative flex flex-col"
+        style={{ backgroundColor: theme.surface, borderRadius: theme.radiusXl, padding: SPACE[3], width: "400px", boxShadow: SHADOW.xl }}
       >
         <button
           onClick={onClose}
-          className="flex-1 flex items-center justify-center gap-3 cursor-pointer active:scale-[0.97] transition-transform"
-          style={{
-            height: "60px",
-            borderRadius: theme.radiusMd,
-            backgroundColor: theme.primary,
-            border: "none",
-            outline: "none",
-            boxShadow: `0 8px 32px ${theme.primary}40`,
-          }}
+          className="absolute flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
+          style={{ top: SPACE[3], insetInlineEnd: SPACE[3], width: "40px", height: "40px", borderRadius: theme.radiusFull, backgroundColor: "rgba(255,255,255,0.85)", boxShadow: SHADOW.md, zIndex: 2 }}
         >
-          <Bell size={22} color="#fff" />
-          <span style={{ fontFamily, ...TEXT_STYLE.button, color: "#fff" }}>
-            {isRTL ? "العودة للرئيسية" : "Back to Home"}
-          </span>
+          <X size={20} color={theme.primaryDark} />
         </button>
+
+        <DishPhoto src={photo} emoji={item.emoji} alt={loc(item.name)} theme={theme} />
+
+        <div className="flex items-center gap-1.5" style={{ marginTop: SPACE[2] }}>
+          <Check size={16} color={theme.success} />
+          <span style={{ ...TEXT_STYLE.label, color: theme.success }}>{loc({ en: "Selected", ar: "تم الاختيار" })}</span>
+        </div>
+
+        <h3 style={{ ...TEXT_STYLE.cardTitle, color: theme.primaryDark, marginTop: "4px" }}>{loc(item.name)}</h3>
+
+        <div className="flex flex-wrap gap-2" style={{ marginTop: SPACE[2] }}>
+          {item.allergens.length > 0 ? (
+            item.allergens.map((a) => (
+              <span
+                key={a}
+                className="flex items-center gap-1.5"
+                style={{ padding: "5px 12px", borderRadius: theme.radiusFull, backgroundColor: theme.errorSubtle, border: `1px solid ${theme.error}33` }}
+              >
+                <AlertTriangle size={12} color={theme.error} />
+                <span style={{ ...TEXT_STYLE.pill, color: theme.error }}>{loc(ALLERGEN_META[a].label)}</span>
+              </span>
+            ))
+          ) : (
+            <span
+              className="flex items-center gap-1.5"
+              style={{ padding: "5px 12px", borderRadius: theme.radiusFull, backgroundColor: theme.successSubtle, border: `1px solid ${theme.success}33` }}
+            >
+              <Check size={12} color={theme.success} />
+              <span style={{ ...TEXT_STYLE.pill, color: theme.success }}>{loc({ en: "No major allergens", ar: "لا تحتوي على مسببات حساسية رئيسية" })}</span>
+            </span>
+          )}
+        </div>
+
         <button
-          onClick={onViewOrders}
-          className="flex items-center justify-center gap-3 cursor-pointer active:scale-[0.97] transition-transform"
-          style={{
-            height: "60px",
-            padding: "0 28px",
-            borderRadius: theme.radiusMd,
-            backgroundColor: theme.surface,
-            border: theme.cardBorder,
-            outline: "none",
-            boxShadow: SHADOW.md,
-          }}
+          onClick={onClose}
+          className="flex items-center justify-center gap-2 active:scale-95 transition-transform cursor-pointer"
+          style={{ height: "52px", borderRadius: theme.radiusFull, backgroundColor: theme.primary, marginTop: SPACE[3] }}
         >
-          <ClipboardList size={20} color={theme.textBody} />
-          <span style={{ fontFamily, ...TEXT_STYLE.button, color: theme.textBody }}>
-            {isRTL ? "طلباتي" : "My Orders"}
-          </span>
+          <Check size={20} color={theme.textInverse} />
+          <span style={{ ...TEXT_STYLE.buttonSm, color: theme.textInverse }}>{loc({ en: "Confirm", ar: "تأكيد" })}</span>
         </button>
       </motion.div>
     </motion.div>
@@ -2057,253 +977,266 @@ function ConfirmationStep({ orderNumber, totalItems, deliveryInfos, onClose, onV
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * ORDERS LOG STEP
+ * MEAL COLUMN
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-const STATUS_CONFIG: Record<OrderStatus, { label: { en: string; ar: string }; color: string; icon: React.ComponentType<any> }> = {
-  "preparing": { label: { en: "Preparing", ar: "قيد التحضير" }, color: "#F59E0B", icon: ChefHat },
-  "quality-check": { label: { en: "Quality Check", ar: "فحص الجودة" }, color: "#3B82F6", icon: Heart },
-  "delivering": { label: { en: "On the Way", ar: "في الطريق" }, color: "#8B5CF6", icon: Utensils },
-  "delivered": { label: { en: "Delivered", ar: "تم التوصيل" }, color: "#22C55E", icon: Check },
-};
-
-function OrdersLogStep({ onBack, onClose, onReorder }: {
-  onBack: () => void;
-  onClose: () => void;
-  onReorder: (items: { id: string; quantity: number }[]) => void;
+function MealColumn({
+  meal,
+  theme,
+  loc,
+  isRTL,
+  blockReason,
+  selectedItemFor,
+  onSelect,
+  count,
+}: {
+  meal: Meal;
+  theme: any;
+  loc: (v: Locale) => string;
+  isRTL: boolean;
+  blockReason: (item: MenuItem) => BlockReason | null;
+  selectedItemFor: (g: FoodGroup) => MenuItem | undefined;
+  onSelect: (g: FoodGroup, item: MenuItem) => void;
+  count: number;
 }) {
-  const { theme } = useTheme();
-  const { isRTL, fontFamily } = useLocale();
-  const { activeOrders, pastOrders } = useOrders();
-  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
-  const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
-  const [tab, setTab] = useState<"active" | "past">("active");
-
-  const displayOrders = tab === "active" ? activeOrders : pastOrders;
-
-  const formatTime = (d: Date) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  const formatDate = (d: Date) => {
-    const today = new Date();
-    const isToday = d.toDateString() === today.toDateString();
-    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
-    const isYesterday = d.toDateString() === yesterday.toDateString();
-    if (isToday) return isRTL ? "اليوم" : "Today";
-    if (isYesterday) return isRTL ? "أمس" : "Yesterday";
-    return d.toLocaleDateString(isRTL ? "ar-SA" : "en-US", { month: "short", day: "numeric" });
-  };
-
+  const Icon = meal.icon;
   return (
-    <>
-      {/* Header */}
-      <div className="shrink-0 flex items-center gap-5 px-12 pt-10 pb-6 relative z-10">
-        <button
-          onClick={onBack}
-          className="flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer"
-          style={{
-            width: "52px", height: "52px",
-            borderRadius: theme.radiusMd,
-            backgroundColor: "rgba(255,255,255,0.15)",
-            border: "1px solid rgba(255,255,255,0.2)",
-          }}
-        >
-          <BackArrow size={24} color="#fff" />
-        </button>
-        <div className="flex items-center gap-4 flex-1">
-          <div
-            className="flex items-center justify-center"
-            style={{
-              width: "52px", height: "52px",
-              borderRadius: theme.radiusMd,
-              backgroundColor: "rgba(255,255,255,0.15)",
-            }}
-          >
-            <ClipboardList size={26} color="#fff" />
+    <div style={{ backgroundColor: theme.surface, borderRadius: theme.radiusLg, boxShadow: SHADOW.md, overflow: "hidden" }}>
+      {/* Column header — hero food photo with title overlaid (solid-color fallback) */}
+      <div style={{ position: "relative", height: "150px", overflow: "hidden" }}>
+        <MealHero src={meal.heroImage} fallback={theme.primary} alt={loc(meal.label)} />
+        <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(180deg, ${theme.primaryDark}33 0%, ${theme.primaryDark}40 45%, ${theme.primaryDark}F2 100%)` }} />
+        <div className="absolute inset-x-0 bottom-0 flex items-center gap-3" style={{ padding: SPACE[3] }}>
+          <div className="flex items-center justify-center shrink-0" style={{ width: "48px", height: "48px", borderRadius: theme.radiusMd, backgroundColor: "rgba(255,255,255,0.22)", backdropFilter: "blur(4px)" }}>
+            <Icon size={26} color={theme.textInverse} />
           </div>
-          <div>
-            <h2 style={{ fontFamily, ...TEXT_STYLE.display, fontSize: "32px", color: "#fff", lineHeight: "36px" }}>
-              {isRTL ? "طلباتي" : "My Orders"}
-            </h2>
-            <p style={{ fontFamily, ...TEXT_STYLE.caption, color: "rgba(255,255,255,0.6)", marginTop: "2px" }}>
-              {isRTL
-                ? `${activeOrders.length} نشط · ${pastOrders.length} سابق`
-                : `${activeOrders.length} active · ${pastOrders.length} past`}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="shrink-0 px-12 pb-5 relative z-10">
-        <div className="flex gap-3">
-          {(["active", "past"] as const).map((t) => {
-            const isActive = tab === t;
-            const count = t === "active" ? activeOrders.length : pastOrders.length;
-            return (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className="flex items-center gap-2 cursor-pointer active:scale-95 transition-transform"
-                style={{
-                  height: "48px",
-                  padding: "0 24px",
-                  borderRadius: theme.radiusFull,
-                  backgroundColor: isActive ? "#fff" : "rgba(255,255,255,0.08)",
-                  border: isActive ? "none" : "1px solid rgba(255,255,255,0.12)",
-                  outline: "none",
-                }}
-              >
-                <span style={{ fontFamily, ...TEXT_STYLE.subtitle, color: isActive ? theme.primaryDark : "rgba(255,255,255,0.8)" }}>
-                  {t === "active" ? (isRTL ? "الطلبات النشطة" : "Active Orders") : (isRTL ? "الطلبات السابقة" : "Past Orders")}
-                </span>
-                <span
-                  className="flex items-center justify-center"
-                  style={{
-                    minWidth: "24px", height: "24px",
-                    borderRadius: theme.radiusFull,
-                    backgroundColor: isActive ? theme.primary : "rgba(255,255,255,0.15)",
-                    fontFamily, fontSize: TYPE_SCALE.xs, fontWeight: WEIGHT.bold,
-                    color: "#fff", padding: "0 6px",
-                  }}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Orders list */}
-      <div className="flex-1 min-h-0 px-12 pb-8 relative z-10">
-        <div className="food-scroll overflow-y-auto h-full pr-2 flex flex-col gap-4">
-          {displayOrders.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center gap-4" style={{ minHeight: "300px" }}>
-              <div
-                className="flex items-center justify-center"
-                style={{
-                  width: "80px", height: "80px",
-                  borderRadius: theme.radiusLg,
-                  backgroundColor: "rgba(255,255,255,0.08)",
-                }}
-              >
-                <ClipboardList size={36} color="rgba(255,255,255,0.3)" />
-              </div>
-              <p style={{ fontFamily, ...TEXT_STYLE.subtitle, color: "rgba(255,255,255,0.4)" }}>
-                {tab === "active"
-                  ? (isRTL ? "لا توجد طلبات نشطة" : "No active orders")
-                  : (isRTL ? "لا توجد طلبات سابقة" : "No past orders")}
-              </p>
+          <div className="flex-1 min-w-0">
+            <h3 style={{ ...TEXT_STYLE.sectionTitle, color: theme.textInverse }}>{loc(meal.label)}</h3>
+            <div className="flex items-center gap-1.5" style={{ marginTop: "2px" }}>
+              <Clock size={13} color={theme.textInverse} />
+              <span style={{ ...TEXT_STYLE.caption, color: theme.textInverse, opacity: 0.85 }}>{loc(meal.window)}</span>
             </div>
-          ) : (
-            displayOrders.map((order, i) => {
-              const statusCfg = STATUS_CONFIG[order.status];
-              const StatusIcon = statusCfg.icon;
-              return (
-                <motion.div
-                  key={order.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  style={{
-                    padding: "20px 24px",
-                    borderRadius: theme.radiusLg,
-                    backgroundColor: theme.surface,
-                    border: theme.cardBorder,
-                    boxShadow: SHADOW.md,
-                  }}
-                >
-                  {/* Top row */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <span style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading }}>
-                        {order.orderNumber}
-                      </span>
-                      <span style={{ fontFamily, ...TEXT_STYLE.caption, color: theme.textMuted }}>
-                        {formatDate(order.placedAt)} · {formatTime(order.placedAt)}
-                      </span>
-                    </div>
-                    <div
-                      className="flex items-center gap-2"
-                      style={{
-                        padding: "6px 14px",
-                        borderRadius: theme.radiusFull,
-                        backgroundColor: `${statusCfg.color}15`,
-                        border: `1px solid ${statusCfg.color}30`,
-                      }}
-                    >
-                      <StatusIcon size={16} color={statusCfg.color} />
-                      <span style={{ fontFamily, fontSize: TYPE_SCALE.xs, fontWeight: WEIGHT.bold, color: statusCfg.color }}>
-                        {loc(statusCfg.label)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Items */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
-                      {order.items.map((item, j) => (
-                        <span key={j} style={{ fontFamily, ...TEXT_STYLE.body, color: theme.textBody }}>
-                          {item.quantity}x {loc(item.name)}{j < order.items.length - 1 ? "," : ""}
-                        </span>
-                      ))}
-                    </div>
-                    <span style={{ fontFamily, ...TEXT_STYLE.caption, color: theme.textMuted }}>
-                      {order.totalCalories} kcal
-                    </span>
-                  </div>
-
-                  {/* Bottom row */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <span
-                        style={{
-                          fontFamily, fontSize: TYPE_SCALE.xs, fontWeight: WEIGHT.semibold,
-                          color: theme.textMuted, padding: "4px 10px",
-                          borderRadius: theme.radiusSm, backgroundColor: `${theme.primary}08`,
-                        }}
-                      >
-                        {order.mealType}
-                      </span>
-                      {order.status !== "delivered" && (
-                        <div className="flex items-center gap-1.5">
-                          <Clock size={14} color={theme.textMuted} />
-                          <span style={{ fontFamily, ...TEXT_STYLE.caption, color: theme.textMuted }}>
-                            {order.estimatedDelivery}
-                          </span>
-                        </div>
-                      )}
-                      {order.specialNotes && (
-                        <span style={{ fontFamily, ...TEXT_STYLE.caption, color: theme.textMuted }}>
-                          {isRTL ? "ملاحظة:" : "Note:"} {order.specialNotes}
-                        </span>
-                      )}
-                    </div>
-                    {order.status === "delivered" && (
-                      <button
-                        onClick={() => onReorder(order.items.map((it) => ({ id: it.id, quantity: it.quantity })))}
-                        className="flex items-center gap-2 cursor-pointer active:scale-95 transition-transform"
-                        style={{
-                          height: "40px",
-                          padding: "0 16px",
-                          borderRadius: theme.radiusMd,
-                          backgroundColor: `${theme.primary}10`,
-                          border: `1px solid ${theme.primary}20`,
-                          outline: "none",
-                        }}
-                      >
-                        <RotateCcw size={16} color={theme.primary} />
-                        <span style={{ fontFamily, ...TEXT_STYLE.buttonSm, color: theme.primary }}>
-                          {isRTL ? "إعادة الطلب" : "Reorder"}
-                        </span>
-                      </button>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })
+          </div>
+          {count > 0 && (
+            <div className="flex items-center justify-center shrink-0" style={{ minWidth: "30px", height: "30px", padding: "0 9px", borderRadius: theme.radiusFull, backgroundColor: theme.textInverse }}>
+              <span style={{ ...TEXT_STYLE.micro, color: theme.primary }}>{count}</span>
+            </div>
           )}
         </div>
       </div>
-    </>
+
+      {/* Groups */}
+      <div className="flex flex-col" style={{ padding: SPACE[3], gap: SPACE[3] }}>
+        {meal.groups.map((group) => {
+          const selected = selectedItemFor(group);
+          return (
+            <div key={group.id} className="flex flex-col" style={{ gap: SPACE[1] }}>
+              <div className="flex items-center justify-between">
+                <span style={{ ...TEXT_STYLE.label, color: theme.primaryDark }}>{loc(group.label)}</span>
+                <span style={{ ...TEXT_STYLE.helper, color: selected ? theme.success : theme.textMuted }}>
+                  {selected ? loc({ en: "✓ Chosen", ar: "✓ تم الاختيار" }) : loc({ en: "Choose one", ar: "اختر واحداً" })}
+                </span>
+              </div>
+              <div className="flex flex-col" style={{ gap: "6px" }}>
+                {group.items.map((item) => (
+                  <ItemRow
+                    key={item.id}
+                    item={item}
+                    theme={theme}
+                    loc={loc}
+                    isRTL={isRTL}
+                    block={blockReason(item)}
+                    selected={selected?.id === item.id}
+                    onClick={() => onSelect(group, item)}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Included for all */}
+        <div style={{ borderTop: `1px dashed ${theme.borderDefault}`, paddingTop: SPACE[2] }} className="flex flex-col">
+          <span style={{ ...TEXT_STYLE.label, color: theme.textMuted, marginBottom: "8px" }}>{loc({ en: "Included for all", ar: "مشمول للجميع" })}</span>
+          <div className="flex flex-wrap gap-2">
+            {meal.includedForAll.map((inc) => (
+              <div
+                key={inc.id}
+                className="flex items-center gap-2"
+                style={{ padding: "6px 12px", borderRadius: theme.radiusFull, backgroundColor: theme.successSubtle, border: `1px solid ${theme.success}33` }}
+              >
+                <span style={{ fontSize: TYPE_SCALE.sm, lineHeight: 1 }}>{inc.emoji}</span>
+                <span style={{ ...TEXT_STYLE.pill, color: theme.textBody }}>{loc(inc.name)}</span>
+                <Check size={13} color={theme.success} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * ITEM ROW
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+function ItemRow({
+  item,
+  theme,
+  loc,
+  isRTL,
+  block,
+  selected,
+  onClick,
+}: {
+  item: MenuItem;
+  theme: any;
+  loc: (v: Locale) => string;
+  isRTL: boolean;
+  block: BlockReason | null;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  const blockLabel = block
+    ? block.type === "allergen"
+      ? loc(ALLERGEN_META[block.allergen].label)
+      : loc(DIET_LABELS[block.code])
+    : "";
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={!!block}
+      className="flex items-center gap-3 w-full transition-all"
+      style={{
+        padding: "10px 12px",
+        borderRadius: theme.radiusMd,
+        textAlign: isRTL ? "right" : "left",
+        cursor: block ? "not-allowed" : "pointer",
+        backgroundColor: block ? theme.errorSubtle : selected ? theme.primarySubtle : theme.background,
+        border: `1.5px solid ${block ? `${theme.error}33` : selected ? theme.primary : theme.borderDefault}`,
+        opacity: block ? 0.6 : 1,
+      }}
+    >
+      <div
+        className="flex items-center justify-center shrink-0"
+        style={{
+          width: "38px",
+          height: "38px",
+          borderRadius: theme.radiusFull,
+          backgroundColor: selected ? theme.primary : theme.surface,
+          border: `1px solid ${theme.borderDefault}`,
+          filter: block ? "grayscale(1)" : "none",
+        }}
+      >
+        <span style={{ fontSize: TYPE_SCALE.md, lineHeight: 1 }}>{item.emoji}</span>
+      </div>
+
+      <span className="flex-1 min-w-0 truncate" style={{ ...TEXT_STYLE.bodyEmphasis, color: block ? theme.textMuted : theme.textHeading }}>
+        {loc(item.name)}
+      </span>
+
+      {block ? (
+        <span className="flex items-center gap-1 shrink-0" style={{ padding: "3px 9px", borderRadius: theme.radiusFull, backgroundColor: theme.error }}>
+          <AlertTriangle size={11} color={theme.textInverse} />
+          <span style={{ ...TEXT_STYLE.micro, color: theme.textInverse }}>{blockLabel}</span>
+        </span>
+      ) : selected ? (
+        <div className="flex items-center justify-center shrink-0" style={{ width: "26px", height: "26px", borderRadius: theme.radiusFull, backgroundColor: theme.primary }}>
+          <Check size={16} color={theme.textInverse} />
+        </div>
+      ) : (
+        <div className="shrink-0" style={{ width: "26px", height: "26px", borderRadius: theme.radiusFull, border: `2px solid ${theme.borderDefault}` }} />
+      )}
+    </button>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * MY ORDERS OVERLAY
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+function MyOrders({
+  orders,
+  theme,
+  loc,
+  isRTL,
+  onClose,
+}: {
+  orders: ReturnType<typeof useOrders>["orders"];
+  theme: any;
+  loc: (v: Locale) => string;
+  isRTL: boolean;
+  onClose: () => void;
+}) {
+  const STATUS_LABEL: Record<string, Locale> = {
+    preparing: { en: "Preparing", ar: "قيد التحضير" },
+    "quality-check": { en: "Quality Check", ar: "فحص الجودة" },
+    delivering: { en: "On the way", ar: "في الطريق" },
+    delivered: { en: "Delivered", ar: "تم التوصيل" },
+  };
+  const statusColor = (s: string) => (s === "delivered" ? theme.success : s === "delivering" ? theme.warning : theme.primary);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="absolute inset-0 z-[60] flex justify-end"
+      style={{ backgroundColor: theme.overlay }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ x: isRTL ? "-100%" : "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: isRTL ? "-100%" : "100%" }}
+        transition={{ type: "tween", duration: 0.25 }}
+        onClick={(e) => e.stopPropagation()}
+        className="flex flex-col h-full"
+        style={{ width: "560px", background: theme.gradientCanvas }}
+      >
+        <div className="flex items-center justify-between shrink-0" style={{ padding: SPACE[4] }}>
+          <h3 style={{ ...TEXT_STYLE.pageTitle, color: theme.primaryDark }}>{loc({ en: "My Orders", ar: "طلباتي" })}</h3>
+          <button
+            onClick={onClose}
+            className="flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
+            style={{ width: "48px", height: "48px", borderRadius: theme.radiusFull, backgroundColor: theme.surface, boxShadow: SHADOW.md }}
+          >
+            <X size={22} color={theme.primary} />
+          </button>
+        </div>
+
+        <div className="meal-scroll flex-1 overflow-y-auto flex flex-col" style={{ padding: `0 ${SPACE[4]} ${SPACE[4]}`, gap: SPACE[3] }}>
+          {orders.length === 0 && (
+            <p style={{ ...TEXT_STYLE.body, color: theme.textMuted, textAlign: "center", marginTop: SPACE[8] }}>{loc({ en: "No orders yet", ar: "لا توجد طلبات بعد" })}</p>
+          )}
+          {orders.map((o) => (
+            <div key={o.id} style={{ backgroundColor: theme.surface, borderRadius: theme.radiusLg, padding: SPACE[3], boxShadow: SHADOW.sm }}>
+              <div className="flex items-center justify-between" style={{ marginBottom: SPACE[2] }}>
+                <div>
+                  <span style={{ ...TEXT_STYLE.cardTitle, color: theme.primaryDark }}>{o.orderNumber}</span>
+                  <span style={{ ...TEXT_STYLE.caption, color: theme.textMuted, marginInlineStart: "10px" }}>{o.mealType}</span>
+                </div>
+                <span style={{ ...TEXT_STYLE.micro, color: theme.textInverse, padding: "5px 12px", borderRadius: theme.radiusFull, backgroundColor: statusColor(o.status) }}>
+                  {loc(STATUS_LABEL[o.status] ?? { en: o.status, ar: o.status })}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {o.items.map((it, idx) => (
+                  <span
+                    key={`${o.id}-${idx}`}
+                    style={{ ...TEXT_STYLE.pill, color: theme.textBody, padding: "5px 12px", borderRadius: theme.radiusFull, backgroundColor: theme.primarySubtle }}
+                  >
+                    {loc(it.name)}
+                    {it.quantity > 1 ? ` ×${it.quantity}` : ""}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }

@@ -1,6 +1,7 @@
 import { Settings } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { NewsTicker } from "../app/components/NewsTicker";
+import { TopBar } from "../app/components/TopBar";
 import svgPaths from "./svg-jt2c43b1ae";
 
 interface CiHomescreenProps {
@@ -13,6 +14,8 @@ interface CiHomescreenProps {
   onShowIptv: () => void;
   onShowFoodOrder: () => void;
   onShowCall: () => void;
+  onOpenNotifications?: () => void;
+  unreadCount?: number;
 }
 
 function SimpleLineIconsUserFemale() {
@@ -889,6 +892,16 @@ function Frame44() {
 function Frame45() {
   return (
     <div className="absolute bottom-[30px] content-stretch flex flex-col gap-[8px] items-end right-[30px]">
+      {/* Patient name / info — left-aligned, directly above the Live TV / Food Order / Room Service row */}
+      <div className="flex flex-col gap-[4px] items-start text-left w-full pl-[2px] pb-[4px]">
+        <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold not-italic text-[24px] leading-[30px]" dir="auto" style={{ color: "var(--primary-color)" }}>
+          <span>{`Sara Saleh `}</span>
+          <span className="font-['Inter:Regular',sans-serif] font-normal" style={{ color: "var(--primary-dark)" }}>| MRN: 14789521</span>
+        </p>
+        <p className="font-['Inter:Italic',sans-serif] font-normal italic text-[15px] leading-[18px]" dir="auto" style={{ color: "var(--primary-color)", opacity: 0.7 }}>
+          Welcome to CareInn Hospital. We wish you a speedy recovery!
+        </p>
+      </div>
       <Frame43 />
       <Frame44 />
     </div>
@@ -1047,6 +1060,8 @@ export default function CiHomescreen({
   onShowIptv,
   onShowFoodOrder,
   onShowCall,
+  onOpenNotifications,
+  unreadCount,
 }: CiHomescreenProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -1121,16 +1136,21 @@ export default function CiHomescreen({
           background-color: var(--accent-dark) !important;
         }
       `}</style>
-      <Frame28 onOpenSettings={onOpenSettings} />
-      <div className="absolute left-0 right-0 top-[98px] z-10">
+      {/* Header — Layout 1's TopBar (logo left, prayers centered, right cluster:
+          time/date, weather, language, notifications, settings). Theme-driven,
+          so logo + brand colors follow the active hospital. */}
+      <div className="absolute left-0 right-0 top-0 z-20">
+        <TopBar onSettingsTap={onOpenSettings} onBellTap={onOpenNotifications} unreadCount={unreadCount} />
+      </div>
+      <div className="absolute left-0 right-0 top-[104px] z-10">
         <NewsTicker items={["CareInn wins Innovation Award in Patient Experience conference"]} />
       </div>
       <Frame48 />
       <Frame53 />
       <Frame45 />
-      <Group11 />
-      <Frame5 />
-      {/* Group12 (static news ticker) replaced by dynamic MessageBanner */}
+      {/* Large centered CareInn watermark logo removed — branding now comes from
+          Layout 1's hospital config (logo in TopBar + hospital background photo) */}
+      {/* Standalone prayer row removed — prayers now live in the TopBar header */}
     </div>
   );
 }

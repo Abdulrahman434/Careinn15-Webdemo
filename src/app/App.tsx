@@ -170,7 +170,7 @@ const getSavedLayoutMode = (): 1 | 2 => {
 };
 
 function BedsideScreen() {
-  const { patientAdmitted, setPatientAdmitted, theme, darkMode, switchConfig, prayerAlarm, layout2Theme } = useTheme();
+  const { patientAdmitted, setPatientAdmitted, theme, darkMode, switchConfig, prayerAlarm } = useTheme();
   const { isFullAccess, lockedHospitalId } = useAuth();
   const { t, locale, isRTL, dir, fontFamily } = useLocale();
   const scale = useScreenScale();
@@ -1333,19 +1333,28 @@ function BedsideScreen() {
         className={`flex flex-col overflow-hidden relative shrink-0 ${isTV ? "careinn-tv" : "careinn-kiosk"}`}
       >
         {layoutMode === 2 ? (
-          /* Layout 2 (CareInn) — scopes its OWN CSS variables so it never
-             inherits the active hospital (Layout 1) colors. */
+          /* Layout 2 (CareInn) — inherits Layout 1's active hospital brand
+             colors (and logo) by feeding the active theme into the CSS vars
+             the CiHomescreen consumes. */
           <div
-            className="size-full"
+            className="size-full relative"
             style={{
-              "--primary-color": layout2Theme.primary,
-              "--primary-dark": layout2Theme.primaryDark,
-              "--primary-light": layout2Theme.primaryLight,
-              "--accent-color": layout2Theme.accent,
-              "--accent-dark": layout2Theme.accentDark,
-              "--accent-light": layout2Theme.accentLight,
+              "--primary-color": theme.primary,
+              "--primary-dark": theme.primaryDark,
+              "--primary-light": theme.primaryLight,
+              "--accent-color": theme.accent,
+              "--accent-dark": theme.accentDark,
+              "--accent-light": theme.accentLight,
             } as CSSProperties}
           >
+            {/* Main background — the active hospital's building photo, synced
+                from the same config Layout 1 uses (instead of a plain canvas). */}
+            <AutoCarousel
+              images={[theme.heroImageUrl]}
+              opacity={darkMode ? 0.2 : 0.35}
+              objectPosition={theme.heroCropPosition}
+              style={{ zIndex: 0 }}
+            />
             <CiHomescreen
               onOpenSettings={() => setShowSettings(true)}
               onOpenCategory={handleOpenCategory}
@@ -1356,6 +1365,8 @@ function BedsideScreen() {
               onShowIptv={() => setShowIptv(true)}
               onShowFoodOrder={() => setShowFoodOrder(true)}
               onShowCall={() => setShowCall(true)}
+              onOpenNotifications={() => setShowNotifications(true)}
+              unreadCount={getUnreadCount()}
             />
           </div>
         ) : (
