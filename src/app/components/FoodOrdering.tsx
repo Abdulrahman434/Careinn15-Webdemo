@@ -132,7 +132,7 @@ function mainMealGroups(p: "ln" | "dn"): FoodGroup[] {
       label: { en: "Group B · Salads", ar: "المجموعة ب · سلطات" },
       items: [
         { id: `${p}-b1`, name: { en: "Mix Green Salad", ar: "سلطة خضراء مشكلة" }, emoji: "🥗", allergens: [] },
-        { id: `${p}-b2`, name: { en: "Carrot Salad", ar: "سلطة جزر" }, emoji: "🥕", allergens: [] },
+        { id: `${p}-b2`, name: { en: "Carrot Salad", ar: "سلطة جزر" }, emoji: "🥕", allergens: ["sesame"] },
         { id: `${p}-b3`, name: { en: "Fattoush Salad", ar: "سلطة فتوش" }, emoji: "🥙", allergens: ["gluten"] },
         { id: `${p}-b4`, name: { en: "Mutable", ar: "متبل" }, emoji: "🍆", allergens: ["sesame"] },
         { id: `${p}-b5`, name: { en: "Tahini Salad", ar: "سلطة طحينة" }, emoji: "🥣", allergens: ["sesame"] },
@@ -140,9 +140,9 @@ function mainMealGroups(p: "ln" | "dn"): FoodGroup[] {
     },
     {
       id: `${p}-c`,
-      label: { en: "Group C · Main Course", ar: "المجموعة ج · الطبق الرئيسي" },
+      label: { en: "Group C · Mains", ar: "المجموعة ج · الطبق الرئيسي" },
       items: [
-        { id: `${p}-c1`, name: { en: "Grilled fish served with butter and lemon sauce", ar: "سمك مشوي مع صلصة الزبدة والليمون" }, emoji: "🐟", allergens: ["fish", "dairy"] },
+        { id: `${p}-c1`, name: { en: "Grilled fish served with butter and lemon sauce", ar: "سمك مشوي مع صلصة الزبدة والليمون" }, emoji: "🐟", allergens: ["fish"] },
         { id: `${p}-c2`, name: { en: "Fish Panne", ar: "سمك بانيه" }, emoji: "🐠", allergens: ["fish", "gluten", "eggs"] },
         { id: `${p}-c3`, name: { en: "Grilled Chicken with herbal sauce", ar: "دجاج مشوي مع صلصة الأعشاب" }, emoji: "🍗", allergens: [] },
         { id: `${p}-c4`, name: { en: "Grilled Chicken Kofta", ar: "كفتة دجاج مشوية" }, emoji: "🍢", allergens: [] },
@@ -152,11 +152,11 @@ function mainMealGroups(p: "ln" | "dn"): FoodGroup[] {
     },
     {
       id: `${p}-d`,
-      label: { en: "Group D · Rice & Pasta", ar: "المجموعة د · أرز ومعكرونة" },
+      label: { en: "Group D · Starches", ar: "المجموعة د · نشويات" },
       items: [
         { id: `${p}-d1`, name: { en: "White Rice", ar: "أرز أبيض" }, emoji: "🍚", allergens: [] },
         { id: `${p}-d2`, name: { en: "Rice of The Day", ar: "أرز اليوم" }, emoji: "🍛", allergens: [] },
-        { id: `${p}-d3`, name: { en: "Pasta of The Day", ar: "معكرونة اليوم" }, emoji: "🍝", allergens: ["gluten"] },
+        { id: `${p}-d3`, name: { en: "Pasta of The Day", ar: "معكرونة اليوم" }, emoji: "🍝", allergens: ["gluten", "eggs"] },
       ],
     },
     {
@@ -170,7 +170,7 @@ function mainMealGroups(p: "ln" | "dn"): FoodGroup[] {
     },
     {
       id: `${p}-f`,
-      label: { en: "Group F · Dessert", ar: "المجموعة و · حلويات" },
+      label: { en: "Group F · Desserts", ar: "المجموعة و · حلويات" },
       items: [
         { id: `${p}-f1`, name: { en: "Dessert of The Day", ar: "حلى اليوم" }, emoji: "🍰", allergens: ["gluten", "dairy", "eggs"], restrictedFor: ["DM"] },
         { id: `${p}-f2`, name: { en: "Fruit Salad", ar: "سلطة فواكه" }, emoji: "🍉", allergens: [] },
@@ -183,7 +183,7 @@ function mainMealGroups(p: "ln" | "dn"): FoodGroup[] {
 function forAll(p: string): MenuItem[] {
   return [
     { id: `${p}-inc1`, name: { en: "Water Bottle", ar: "زجاجة ماء" }, emoji: "💧", allergens: [] },
-    { id: `${p}-inc2`, name: { en: "Tetra Pack Juice", ar: "عصير تيترا باك" }, emoji: "🧃", allergens: [] },
+    { id: `${p}-inc2`, name: { en: "Tetra Pak Juice", ar: "عصير تيترا باك" }, emoji: "🧃", allergens: [] },
   ];
 }
 
@@ -197,11 +197,11 @@ const MEALS: Meal[] = [
     groups: [
       {
         id: "bf-a",
-        label: { en: "Group A · Bread", ar: "المجموعة أ · خبز" },
+        label: { en: "Group A · Breads", ar: "المجموعة أ · خبز" },
         items: [
-          { id: "bf-a1", name: { en: "Arabic Bread White", ar: "خبز عربي أبيض" }, emoji: "🍞", allergens: ["gluten"] },
-          { id: "bf-a2", name: { en: "Arabic Bread Brown", ar: "خبز عربي أسمر" }, emoji: "🥖", allergens: ["gluten"] },
-          { id: "bf-a3", name: { en: "Samoli Bread", ar: "خبز صامولي" }, emoji: "🥯", allergens: ["gluten"] },
+          { id: "bf-a1", name: { en: "Arabic Bread White", ar: "خبز عربي أبيض" }, emoji: "🍞", allergens: ["gluten", "sesame"] },
+          { id: "bf-a2", name: { en: "Arabic Bread Brown", ar: "خبز عربي أسمر" }, emoji: "🥖", allergens: ["gluten", "sesame"] },
+          { id: "bf-a3", name: { en: "Samoli Bread", ar: "خبز صامولي" }, emoji: "🥯", allergens: ["gluten", "sesame"] },
         ],
       },
       {
@@ -223,9 +223,9 @@ const MEALS: Meal[] = [
       },
       {
         id: "bf-d",
-        label: { en: "Group D · Cheese", ar: "المجموعة د · أجبان" },
+        label: { en: "Group D · Dairy & Spreads", ar: "المجموعة د · ألبان وأجبان" },
         items: [
-          { id: "bf-d1", name: { en: "Cheese Platter", ar: "طبق أجبان" }, emoji: "🧀", allergens: ["dairy"], restrictedFor: ["NAS"] },
+          { id: "bf-d1", name: { en: "Cheese Platter", ar: "طبق أجبان" }, emoji: "🧀", allergens: ["dairy", "eggs"], restrictedFor: ["NAS"] },
           { id: "bf-d2", name: { en: "Labna", ar: "لبنة" }, emoji: "🥛", allergens: ["dairy"], restrictedFor: ["NAS"] },
         ],
       },
@@ -234,7 +234,7 @@ const MEALS: Meal[] = [
         label: { en: "Group E · Eggs", ar: "المجموعة هـ · بيض" },
         items: [
           { id: "bf-e1", name: { en: "Espanola Omelette", ar: "أومليت إسبانيولا" }, emoji: "🍳", allergens: ["eggs"] },
-          { id: "bf-e2", name: { en: "Scrambled Egg", ar: "بيض مخفوق" }, emoji: "🍳", allergens: ["eggs", "dairy"] },
+          { id: "bf-e2", name: { en: "Scrambled Egg", ar: "بيض مخفوق" }, emoji: "🍳", allergens: ["eggs"] },
           { id: "bf-e3", name: { en: "Boiled Eggs", ar: "بيض مسلوق" }, emoji: "🥚", allergens: ["eggs"] },
           { id: "bf-e4", name: { en: "Cheese Omelette", ar: "أومليت بالجبن" }, emoji: "🧀", allergens: ["eggs", "dairy"] },
           { id: "bf-e5", name: { en: "Plain Omelette", ar: "أومليت سادة" }, emoji: "🍳", allergens: ["eggs"] },
@@ -253,7 +253,7 @@ const MEALS: Meal[] = [
         label: { en: "Group G · Pastries", ar: "المجموعة ز · معجنات" },
         items: [
           { id: "bf-g1", name: { en: "Croissant", ar: "كرواسون" }, emoji: "🥐", allergens: ["gluten", "dairy", "eggs"], restrictedFor: ["DM"] },
-          { id: "bf-g2", name: { en: "Muffin Cake", ar: "كيك مافن" }, emoji: "🧁", allergens: ["gluten", "dairy", "eggs"], restrictedFor: ["DM"] },
+          { id: "bf-g2", name: { en: "Muffin Cake", ar: "كيك مافن" }, emoji: "🧁", allergens: ["gluten", "dairy", "eggs", "tree-nuts"], restrictedFor: ["DM"] },
           { id: "bf-g3", name: { en: "Danish Pastry", ar: "معجنات دنماركية" }, emoji: "🥧", allergens: ["gluten", "dairy", "eggs"], restrictedFor: ["DM"] },
           { id: "bf-g4", name: { en: "Cinnamon Roll", ar: "لفائف القرفة" }, emoji: "🍩", allergens: ["gluten", "dairy", "eggs"], restrictedFor: ["DM"] },
         ],
@@ -278,6 +278,197 @@ const MEALS: Meal[] = [
     heroImage: "https://images.unsplash.com/photo-1432139555190-58524dae6a55?auto=format&fit=crop&w=900&q=70",
     groups: mainMealGroups("dn"),
     includedForAll: forAll("dn"),
+  },
+];
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * REGULAR MENU — shown when the order is placed for a Guest (vs. the OB menu
+ * above, used for the Patient). Allergen tags are derived from the obvious
+ * ingredients in each item name so the staff allergen filter stays functional.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/** Lunch & Dinner share an identical Regular menu; build groups for a prefix. */
+function regularMainGroups(p: "ln" | "dn"): FoodGroup[] {
+  return [
+    {
+      id: `rg-${p}-a`,
+      label: { en: "Group A · Starters", ar: "المجموعة أ · مقبلات" },
+      items: [
+        { id: `rg-${p}-a1`, name: { en: "Vegetable Dipping Sticks", ar: "أصابع خضار" }, emoji: "🥕", allergens: [] },
+        { id: `rg-${p}-a2`, name: { en: "Melon Pieces", ar: "قطع شمام" }, emoji: "🍈", allergens: [] },
+        { id: `rg-${p}-a3`, name: { en: "Hummus and Pitta", ar: "حمص مع خبز" }, emoji: "🥙", allergens: ["gluten", "sesame"] },
+        { id: `rg-${p}-a4`, name: { en: "Tomato Soup", ar: "شوربة طماطم" }, emoji: "🍅", allergens: [] },
+        { id: `rg-${p}-a5`, name: { en: "Lentil Soup", ar: "شوربة عدس" }, emoji: "🍲", allergens: [] },
+        { id: `rg-${p}-a6`, name: { en: "Soup of the Day", ar: "شوربة اليوم" }, emoji: "🥣", allergens: [] },
+      ],
+    },
+    {
+      id: `rg-${p}-b`,
+      label: { en: "Group B · Mains", ar: "المجموعة ب · الأطباق الرئيسية" },
+      items: [
+        { id: `rg-${p}-b1`, name: { en: "Beef Burger", ar: "برجر لحم" }, emoji: "🍔", allergens: ["gluten"] },
+        { id: `rg-${p}-b2`, name: { en: "Chicken Burger", ar: "برجر دجاج" }, emoji: "🍔", allergens: ["gluten"] },
+        { id: `rg-${p}-b3`, name: { en: "Mini Pizza", ar: "بيتزا صغيرة" }, emoji: "🍕", allergens: ["gluten", "dairy"] },
+        { id: `rg-${p}-b4`, name: { en: "Chicken Goujons", ar: "أصابع دجاج" }, emoji: "🍗", allergens: ["gluten", "eggs"] },
+        { id: `rg-${p}-b5`, name: { en: "Grilled Chicken Breast", ar: "صدر دجاج مشوي" }, emoji: "🍗", allergens: [] },
+        { id: `rg-${p}-b6`, name: { en: "Fish Fingers", ar: "أصابع سمك" }, emoji: "🐟", allergens: ["fish", "gluten"] },
+        { id: `rg-${p}-b7`, name: { en: "Spaghetti Bolognaise", ar: "سباغيتي بولونيز" }, emoji: "🍝", allergens: ["gluten"] },
+      ],
+    },
+  ];
+}
+
+const REGULAR_MEALS: Meal[] = [
+  {
+    id: "breakfast",
+    label: { en: "Breakfast", ar: "الإفطار" },
+    icon: Sun,
+    window: { en: "8:00 – 9:30 AM", ar: "٨:٠٠ – ٩:٣٠ ص" },
+    heroImage: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=900&q=70",
+    groups: [
+      {
+        id: "rg-bf-a",
+        label: { en: "Group A · Accompaniments", ar: "المجموعة أ · المضافات" },
+        items: [
+          { id: "rg-bf-a1", name: { en: "Butter", ar: "زبدة" }, emoji: "🧈", allergens: ["dairy"] },
+          { id: "rg-bf-a2", name: { en: "Margarine", ar: "سمن نباتي" }, emoji: "🧈", allergens: [] },
+          { id: "rg-bf-a3", name: { en: "Strawberry Jam", ar: "مربى الفراولة" }, emoji: "🍓", allergens: [] },
+          { id: "rg-bf-a4", name: { en: "Orange Marmalade", ar: "مربى البرتقال" }, emoji: "🍊", allergens: [] },
+          { id: "rg-bf-a5", name: { en: "Honey", ar: "عسل" }, emoji: "🍯", allergens: [] },
+          { id: "rg-bf-a6", name: { en: "Peanut Butter", ar: "زبدة الفول السوداني" }, emoji: "🥜", allergens: ["peanuts"] },
+        ],
+      },
+      {
+        id: "rg-bf-b",
+        label: { en: "Group B · Cereals", ar: "المجموعة ب · حبوب الإفطار" },
+        items: [
+          { id: "rg-bf-b1", name: { en: "Cornflakes", ar: "رقائق الذرة" }, emoji: "🥣", allergens: ["gluten"] },
+          { id: "rg-bf-b2", name: { en: "Choco Cornflakes", ar: "رقائق الذرة بالشوكولاتة" }, emoji: "🍫", allergens: ["gluten"] },
+          { id: "rg-bf-b3", name: { en: "Bran Flakes", ar: "رقائق النخالة" }, emoji: "🌾", allergens: ["gluten"] },
+          { id: "rg-bf-b4", name: { en: "Muesli", ar: "ميوزلي" }, emoji: "🥣", allergens: ["gluten", "tree-nuts"] },
+          { id: "rg-bf-b5", name: { en: "Rice Krispies", ar: "رقائق الأرز" }, emoji: "🍚", allergens: ["gluten"] },
+        ],
+      },
+      {
+        id: "rg-bf-c",
+        label: { en: "Group C · Cold Meats", ar: "المجموعة ج · لحوم باردة" },
+        items: [
+          { id: "rg-bf-c1", name: { en: "Turkey Ham", ar: "هام الديك الرومي" }, emoji: "🍖", allergens: [] },
+          { id: "rg-bf-c2", name: { en: "Chicken Mortadella", ar: "مرتديلا دجاج" }, emoji: "🍗", allergens: [] },
+        ],
+      },
+      {
+        id: "rg-bf-d",
+        label: { en: "Group D · Fruit", ar: "المجموعة د · فواكه" },
+        items: [
+          { id: "rg-bf-d1", name: { en: "Orange", ar: "برتقال" }, emoji: "🍊", allergens: [] },
+          { id: "rg-bf-d2", name: { en: "Banana", ar: "موز" }, emoji: "🍌", allergens: [] },
+          { id: "rg-bf-d3", name: { en: "Sliced Fruit", ar: "فواكه مقطعة" }, emoji: "🍓", allergens: [] },
+        ],
+      },
+      {
+        id: "rg-bf-e",
+        label: { en: "Group E · Fruit Juice", ar: "المجموعة هـ · عصائر" },
+        items: [
+          { id: "rg-bf-e1", name: { en: "Orange", ar: "عصير برتقال" }, emoji: "🧃", allergens: [] },
+          { id: "rg-bf-e2", name: { en: "Apple", ar: "عصير تفاح" }, emoji: "🧃", allergens: [] },
+          { id: "rg-bf-e3", name: { en: "Pineapple", ar: "عصير أناناس" }, emoji: "🍍", allergens: [] },
+          { id: "rg-bf-e4", name: { en: "Mango", ar: "عصير مانجو" }, emoji: "🥭", allergens: [] },
+        ],
+      },
+      {
+        id: "rg-bf-f",
+        label: { en: "Group F · Baked Breads", ar: "المجموعة و · مخبوزات" },
+        items: [
+          { id: "rg-bf-f1", name: { en: "White Sliced Bread", ar: "خبز أبيض مقطع" }, emoji: "🍞", allergens: ["gluten"] },
+          { id: "rg-bf-f2", name: { en: "White Toast Bread", ar: "خبز توست أبيض" }, emoji: "🍞", allergens: ["gluten"] },
+          { id: "rg-bf-f3", name: { en: "White Khubz", ar: "خبز أبيض" }, emoji: "🥙", allergens: ["gluten"] },
+          { id: "rg-bf-f4", name: { en: "Brown Khubz", ar: "خبز أسمر" }, emoji: "🥙", allergens: ["gluten"] },
+        ],
+      },
+      {
+        id: "rg-bf-g",
+        label: { en: "Group G · Eggs", ar: "المجموعة ز · بيض" },
+        items: [
+          { id: "rg-bf-g1", name: { en: "Poached Eggs", ar: "بيض مسلوق بدون قشر" }, emoji: "🍳", allergens: ["eggs"] },
+          { id: "rg-bf-g2", name: { en: "Rolled Omelette Plain", ar: "أومليت ملفوف سادة" }, emoji: "🍳", allergens: ["eggs"] },
+          { id: "rg-bf-g3", name: { en: "Rolled Omelette Cheese", ar: "أومليت ملفوف بالجبن" }, emoji: "🧀", allergens: ["eggs", "dairy"] },
+          { id: "rg-bf-g4", name: { en: "Rolled Omelette Mixed Vegetables", ar: "أومليت ملفوف بالخضار" }, emoji: "🥬", allergens: ["eggs"] },
+          { id: "rg-bf-g5", name: { en: "Scrambled Eggs", ar: "بيض مخفوق" }, emoji: "🍳", allergens: ["eggs"] },
+          { id: "rg-bf-g6", name: { en: "Hard Boiled Eggs", ar: "بيض مسلوق" }, emoji: "🥚", allergens: ["eggs"] },
+        ],
+      },
+      {
+        id: "rg-bf-h",
+        label: { en: "Group H · Dairy", ar: "المجموعة ح · ألبان" },
+        items: [
+          { id: "rg-bf-h1", name: { en: "Plain Yoghurt", ar: "زبادي سادة" }, emoji: "🥛", allergens: ["dairy"] },
+          { id: "rg-bf-h2", name: { en: "Fruit Yoghurt", ar: "زبادي بالفواكه" }, emoji: "🍓", allergens: ["dairy"] },
+          { id: "rg-bf-h3", name: { en: "Vanilla Dessert", ar: "حلى الفانيلا" }, emoji: "🍮", allergens: ["dairy"] },
+          { id: "rg-bf-h4", name: { en: "Chocolate Dessert", ar: "حلى الشوكولاتة" }, emoji: "🍫", allergens: ["dairy"] },
+          { id: "rg-bf-h5", name: { en: "Sliced Cheese", ar: "جبن شرائح" }, emoji: "🧀", allergens: ["dairy"] },
+          { id: "rg-bf-h6", name: { en: "Low Fat Milk", ar: "حليب قليل الدسم" }, emoji: "🥛", allergens: ["dairy"] },
+          { id: "rg-bf-h7", name: { en: "Full Fat Milk", ar: "حليب كامل الدسم" }, emoji: "🥛", allergens: ["dairy"] },
+          { id: "rg-bf-h8", name: { en: "Strawberry Milk", ar: "حليب بالفراولة" }, emoji: "🥤", allergens: ["dairy"] },
+          { id: "rg-bf-h9", name: { en: "Chocolate Milk", ar: "حليب بالشوكولاتة" }, emoji: "🥤", allergens: ["dairy"] },
+          { id: "rg-bf-h10", name: { en: "Vanilla Milk", ar: "حليب بالفانيلا" }, emoji: "🥤", allergens: ["dairy"] },
+        ],
+      },
+      {
+        id: "rg-bf-i",
+        label: { en: "Group I · Side Orders Cold", ar: "المجموعة ط · أطباق جانبية باردة" },
+        items: [
+          { id: "rg-bf-i1", name: { en: "Sliced Tomato", ar: "طماطم مقطعة" }, emoji: "🍅", allergens: [] },
+          { id: "rg-bf-i2", name: { en: "Sliced Cucumber", ar: "خيار مقطع" }, emoji: "🥒", allergens: [] },
+          { id: "rg-bf-i3", name: { en: "Sliced Lettuce", ar: "خس مقطع" }, emoji: "🥬", allergens: [] },
+          { id: "rg-bf-i4", name: { en: "Olives", ar: "زيتون" }, emoji: "🫒", allergens: [] },
+          { id: "rg-bf-i5", name: { en: "Plain Croissant", ar: "كرواسون سادة" }, emoji: "🥐", allergens: ["gluten", "dairy", "eggs"] },
+          { id: "rg-bf-i6", name: { en: "Danish Pastry", ar: "معجنات دنماركية" }, emoji: "🥧", allergens: ["gluten", "dairy", "eggs"] },
+          { id: "rg-bf-i7", name: { en: "Chocolate Chip Muffin", ar: "مافن برقائق الشوكولاتة" }, emoji: "🧁", allergens: ["gluten", "dairy", "eggs"] },
+          { id: "rg-bf-i8", name: { en: "Cinnamon Roll", ar: "لفائف القرفة" }, emoji: "🍩", allergens: ["gluten", "dairy", "eggs"] },
+        ],
+      },
+      {
+        id: "rg-bf-j",
+        label: { en: "Group J · Side Order 1", ar: "المجموعة ي · أطباق جانبية ١" },
+        items: [
+          { id: "rg-bf-j1", name: { en: "Beef Bacon", ar: "بيكون لحم بقري" }, emoji: "🥓", allergens: [] },
+          { id: "rg-bf-j2", name: { en: "Smoked Turkey", ar: "ديك رومي مدخن" }, emoji: "🦃", allergens: [] },
+          { id: "rg-bf-j3", name: { en: "Chicken Sausage", ar: "سجق دجاج" }, emoji: "🌭", allergens: [] },
+        ],
+      },
+      {
+        id: "rg-bf-k",
+        label: { en: "Group K · Side Order 2", ar: "المجموعة ك · أطباق جانبية ٢" },
+        items: [
+          { id: "rg-bf-k1", name: { en: "Grilled Tomato Slices", ar: "شرائح طماطم مشوية" }, emoji: "🍅", allergens: [] },
+          { id: "rg-bf-k2", name: { en: "Hash Browns", ar: "هاش براون" }, emoji: "🥔", allergens: [] },
+          { id: "rg-bf-k3", name: { en: "Smiley Potato", ar: "بطاطس مبتسمة" }, emoji: "🥔", allergens: [] },
+          { id: "rg-bf-k4", name: { en: "Mushrooms", ar: "فطر" }, emoji: "🍄", allergens: [] },
+          { id: "rg-bf-k5", name: { en: "French Toast", ar: "توست فرنسي" }, emoji: "🍞", allergens: ["gluten", "dairy", "eggs"] },
+          { id: "rg-bf-k6", name: { en: "Foul Medames", ar: "فول مدمس" }, emoji: "🫘", allergens: [] },
+        ],
+      },
+    ],
+    includedForAll: [],
+  },
+  {
+    id: "lunch",
+    label: { en: "Lunch", ar: "الغداء" },
+    icon: Coffee,
+    window: { en: "1:00 – 2:00 PM", ar: "١:٠٠ – ٢:٠٠ م" },
+    heroImage: "https://images.unsplash.com/photo-1604382440115-5f730e6ede1f?auto=format&fit=crop&w=900&q=70",
+    groups: regularMainGroups("ln"),
+    includedForAll: [],
+  },
+  {
+    id: "dinner",
+    label: { en: "Dinner", ar: "العشاء" },
+    icon: Moon,
+    window: { en: "7:00 – 8:00 PM", ar: "٧:٠٠ – ٨:٠٠ م" },
+    heroImage: "https://images.unsplash.com/photo-1432139555190-58524dae6a55?auto=format&fit=crop&w=900&q=70",
+    groups: regularMainGroups("dn"),
+    includedForAll: [],
   },
 ];
 
@@ -346,6 +537,9 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
   const [patientName, setPatientName] = useState(nurse.patient.name);
   const [roomNumber, setRoomNumber] = useState(nurse.patient.room);
 
+  /* Patient → OB menu (chart-aware). Guest → Regular menu. */
+  const meals = orderFor === "guest" ? REGULAR_MEALS : MEALS;
+
   /* ── Chart-derived defaults (the patient's clinical restrictions) ── */
   const defaults = useMemo(() => {
     const dietCodes = nurse.dietCodes
@@ -402,17 +596,29 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
 
   const blockedCount = useMemo(() => {
     let n = 0;
-    for (const meal of MEALS)
+    for (const meal of meals)
       for (const group of meal.groups)
         for (const item of group.items) if (blockReason(item)) n++;
     return n;
-  }, [blockReason]);
+  }, [blockReason, meals]);
 
   /* ── Selection state: one item per group ── */
-  const [selections, setSelections] = useState<Record<string, string>>({});
+  /* Every group starts with its first item pre-selected (across both menus). */
+  const [selections, setSelections] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    for (const dataset of [MEALS, REGULAR_MEALS])
+      for (const meal of dataset)
+        for (const group of meal.groups)
+          if (group.items[0]) init[group.id] = group.items[0].id;
+    return init;
+  });
 
   /* ── Visual-confirmation preview for the most recently selected item ── */
   const [preview, setPreview] = useState<MenuItem | null>(null);
+
+  /* ── Which meal's menu is shown in the single panel below the selector ── */
+  const [activeMeal, setActiveMeal] = useState<Meal["id"]>("breakfast");
+  const activeMealObj = meals.find((m) => m.id === activeMeal)!;
 
   const selectedItemFor = useCallback(
     (group: FoodGroup): MenuItem | undefined => {
@@ -440,8 +646,8 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
   };
 
   const totalSelected = useMemo(
-    () => MEALS.reduce((sum, m) => sum + m.groups.filter((g) => selectedItemFor(g)).length, 0),
-    [selectedItemFor]
+    () => meals.reduce((sum, m) => sum + m.groups.filter((g) => selectedItemFor(g)).length, 0),
+    [selectedItemFor, meals]
   );
 
   const mealSelectedCount = (meal: Meal) => meal.groups.filter((g) => selectedItemFor(g)).length;
@@ -454,7 +660,7 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
     if (totalSelected === 0) return;
     const items: { id: string; name: Locale; quantity: number; calories: number; image: string }[] = [];
     const mealTypes: string[] = [];
-    for (const meal of MEALS) {
+    for (const meal of meals) {
       const chosen = meal.groups.map((g) => selectedItemFor(g)).filter(Boolean) as MenuItem[];
       if (chosen.length === 0) continue;
       mealTypes.push(loc(meal.label));
@@ -722,23 +928,89 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      {/* ── Three meal columns ── */}
-      <div className="meal-scroll flex-1 min-h-0 overflow-y-auto" style={{ padding: `${SPACE[3]} ${SPACE[6]} ${SPACE[4]}` }}>
-        <div className="grid" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: SPACE[3], alignItems: "start" }}>
-          {MEALS.map((meal) => (
-            <MealColumn
-              key={meal.id}
-              meal={meal}
-              theme={theme}
-              loc={loc}
-              isRTL={isRTL}
-              blockReason={blockReason}
-              selectedItemFor={selectedItemFor}
-              onSelect={selectItem}
-              count={mealSelectedCount(meal)}
-            />
-          ))}
+      {/* ── Meal selector — one active meal at a time ── */}
+      <div className="shrink-0" style={{ padding: `${SPACE[3]} ${SPACE[6]} 0` }}>
+        <div className="grid" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: SPACE[3] }}>
+          {meals.map((meal) => {
+            const active = activeMeal === meal.id;
+            const Icon = meal.icon;
+            const count = mealSelectedCount(meal);
+            return (
+              <button
+                key={meal.id}
+                onClick={() => setActiveMeal(meal.id)}
+                className="flex items-center gap-3 active:scale-[0.98] transition-all cursor-pointer"
+                style={{
+                  padding: SPACE[3],
+                  borderRadius: theme.radiusLg,
+                  textAlign: isRTL ? "right" : "left",
+                  backgroundColor: active ? theme.primary : theme.surface,
+                  border: `1.5px solid ${active ? theme.primary : theme.borderDefault}`,
+                  boxShadow: active ? SHADOW.md : SHADOW.sm,
+                }}
+              >
+                <div
+                  className="flex items-center justify-center shrink-0"
+                  style={{
+                    width: "48px",
+                    height: "48px",
+                    borderRadius: theme.radiusMd,
+                    backgroundColor: active ? "rgba(255,255,255,0.22)" : theme.primarySubtle,
+                  }}
+                >
+                  <Icon size={26} color={active ? theme.textInverse : theme.primary} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 style={{ ...TEXT_STYLE.sectionTitle, color: active ? theme.textInverse : theme.primaryDark }}>{loc(meal.label)}</h3>
+                  <div className="flex items-center gap-1.5" style={{ marginTop: "2px" }}>
+                    <Clock size={13} color={active ? theme.textInverse : theme.textMuted} />
+                    <span style={{ ...TEXT_STYLE.caption, color: active ? theme.textInverse : theme.textMuted, opacity: active ? 0.85 : 1 }}>{loc(meal.window)}</span>
+                  </div>
+                </div>
+                {count > 0 && (
+                  <div
+                    className="flex items-center justify-center shrink-0"
+                    style={{ minWidth: "30px", height: "30px", padding: "0 9px", borderRadius: theme.radiusFull, backgroundColor: active ? theme.textInverse : theme.primary }}
+                  >
+                    <span style={{ ...TEXT_STYLE.micro, color: active ? theme.primary : theme.textInverse }}>{count}</span>
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
+      </div>
+
+      {/* ── Sticky progress bar — how many groups have a selection ── */}
+      {(() => {
+        const groupsTotal = activeMealObj.groups.length;
+        const groupsDone = mealSelectedCount(activeMealObj);
+        const pct = groupsTotal > 0 ? (groupsDone / groupsTotal) * 100 : 0;
+        return (
+          <div className="shrink-0 flex items-center gap-3" style={{ padding: `${SPACE[2]} ${SPACE[6]} 0` }}>
+            <span style={{ ...TEXT_STYLE.label, color: theme.primaryDark, whiteSpace: "nowrap" }}>
+              {loc({ en: `${groupsDone} of ${groupsTotal} groups selected`, ar: `${groupsDone} من ${groupsTotal} مجموعات مختارة` })}
+            </span>
+            <div className="flex-1" style={{ height: "8px", borderRadius: theme.radiusFull, backgroundColor: theme.primarySubtle, overflow: "hidden" }}>
+              <div style={{ width: `${pct}%`, height: "100%", borderRadius: theme.radiusFull, backgroundColor: theme.primary, transition: "width 0.3s ease" }} />
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Single meal panel — group grid for the selected meal ── */}
+      <div className="meal-scroll flex-1 min-h-0 overflow-y-auto" style={{ padding: `${SPACE[2]} ${SPACE[6]} ${SPACE[3]}` }}>
+        <MealColumn
+          key={activeMealObj.id}
+          meal={activeMealObj}
+          theme={theme}
+          loc={loc}
+          isRTL={isRTL}
+          blockReason={blockReason}
+          selectedItemFor={selectedItemFor}
+          onSelect={selectItem}
+          count={mealSelectedCount(activeMealObj)}
+        />
       </div>
 
       {/* ── Sticky footer ── */}
@@ -841,28 +1113,6 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
         {showOrders && <MyOrders orders={orders} theme={theme} loc={loc} isRTL={isRTL} onClose={() => setShowOrders(false)} />}
       </AnimatePresence>
     </motion.div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * MEAL HERO IMAGE — real food photo with a graceful solid-color fallback
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-function MealHero({ src, fallback, alt }: { src: string; fallback: string; alt: string }) {
-  const [ok, setOk] = useState(true);
-  return (
-    <div className="absolute inset-0" style={{ backgroundColor: fallback }}>
-      {ok && (
-        <img
-          src={src}
-          alt={alt}
-          loading="lazy"
-          onError={() => setOk(false)}
-          className="w-full h-full object-cover"
-          style={{ display: "block" }}
-        />
-      )}
-    </div>
   );
 }
 
@@ -1000,44 +1250,49 @@ function MealColumn({
   count: number;
 }) {
   const Icon = meal.icon;
+
   return (
-    <div style={{ backgroundColor: theme.surface, borderRadius: theme.radiusLg, boxShadow: SHADOW.md, overflow: "hidden" }}>
-      {/* Column header — hero food photo with title overlaid (solid-color fallback) */}
-      <div style={{ position: "relative", height: "150px", overflow: "hidden" }}>
-        <MealHero src={meal.heroImage} fallback={theme.primary} alt={loc(meal.label)} />
-        <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(180deg, ${theme.primaryDark}33 0%, ${theme.primaryDark}40 45%, ${theme.primaryDark}F2 100%)` }} />
-        <div className="absolute inset-x-0 bottom-0 flex items-center gap-3" style={{ padding: SPACE[3] }}>
-          <div className="flex items-center justify-center shrink-0" style={{ width: "48px", height: "48px", borderRadius: theme.radiusMd, backgroundColor: "rgba(255,255,255,0.22)", backdropFilter: "blur(4px)" }}>
-            <Icon size={26} color={theme.textInverse} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 style={{ ...TEXT_STYLE.sectionTitle, color: theme.textInverse }}>{loc(meal.label)}</h3>
-            <div className="flex items-center gap-1.5" style={{ marginTop: "2px" }}>
-              <Clock size={13} color={theme.textInverse} />
-              <span style={{ ...TEXT_STYLE.caption, color: theme.textInverse, opacity: 0.85 }}>{loc(meal.window)}</span>
-            </div>
-          </div>
-          {count > 0 && (
-            <div className="flex items-center justify-center shrink-0" style={{ minWidth: "30px", height: "30px", padding: "0 9px", borderRadius: theme.radiusFull, backgroundColor: theme.textInverse }}>
-              <span style={{ ...TEXT_STYLE.micro, color: theme.primary }}>{count}</span>
-            </div>
-          )}
+    <div style={{ backgroundColor: theme.surface, borderRadius: theme.radiusLg, boxShadow: SHADOW.md, padding: SPACE[3] }}>
+      {/* Compact text header — meal name + time (photo removed to save vertical space) */}
+      <div className="flex items-center gap-2" style={{ marginBottom: SPACE[2] }}>
+        <div className="flex items-center justify-center shrink-0" style={{ width: "34px", height: "34px", borderRadius: theme.radiusMd, backgroundColor: theme.primarySubtle }}>
+          <Icon size={20} color={theme.primary} />
         </div>
+        <h3 style={{ ...TEXT_STYLE.sectionTitle, color: theme.primaryDark }}>{loc(meal.label)}</h3>
+        <div className="flex items-center gap-1" style={{ marginInlineStart: "4px" }}>
+          <Clock size={13} color={theme.textMuted} />
+          <span style={{ ...TEXT_STYLE.caption, color: theme.textMuted }}>{loc(meal.window)}</span>
+        </div>
+        {count > 0 && (
+          <div className="flex items-center justify-center shrink-0" style={{ marginInlineStart: "auto", minWidth: "26px", height: "26px", padding: "0 8px", borderRadius: theme.radiusFull, backgroundColor: theme.primary }}>
+            <span style={{ ...TEXT_STYLE.micro, color: theme.textInverse }}>{count}</span>
+          </div>
+        )}
       </div>
 
-      {/* Groups */}
-      <div className="flex flex-col" style={{ padding: SPACE[3], gap: SPACE[3] }}>
+      {/* Group grid — 3 equal columns wrapping into rows (A B C / D E F / …) */}
+      <div className="grid" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: SPACE[2], alignItems: "start" }}>
         {meal.groups.map((group) => {
           const selected = selectedItemFor(group);
           return (
-            <div key={group.id} className="flex flex-col" style={{ gap: SPACE[1] }}>
-              <div className="flex items-center justify-between">
+            <div
+              key={group.id}
+              className="flex flex-col"
+              style={{
+                gap: "4px",
+                padding: SPACE[2],
+                borderRadius: theme.radiusMd,
+                backgroundColor: theme.background,
+                border: `2px solid ${selected ? theme.primary : theme.borderDefault}`,
+              }}
+            >
+              <div className="flex items-baseline justify-between gap-2">
                 <span style={{ ...TEXT_STYLE.label, color: theme.primaryDark }}>{loc(group.label)}</span>
-                <span style={{ ...TEXT_STYLE.helper, color: selected ? theme.success : theme.textMuted }}>
+                <span className="shrink-0" style={{ ...TEXT_STYLE.micro, color: selected ? theme.success : theme.textMuted }}>
                   {selected ? loc({ en: "✓ Chosen", ar: "✓ تم الاختيار" }) : loc({ en: "Choose one", ar: "اختر واحداً" })}
                 </span>
               </div>
-              <div className="flex flex-col" style={{ gap: "6px" }}>
+              <div className="flex flex-col" style={{ gap: "4px" }}>
                 {group.items.map((item) => (
                   <ItemRow
                     key={item.id}
@@ -1055,23 +1310,27 @@ function MealColumn({
           );
         })}
 
-        {/* Included for all */}
-        <div style={{ borderTop: `1px dashed ${theme.borderDefault}`, paddingTop: SPACE[2] }} className="flex flex-col">
-          <span style={{ ...TEXT_STYLE.label, color: theme.textMuted, marginBottom: "8px" }}>{loc({ en: "Included for all", ar: "مشمول للجميع" })}</span>
-          <div className="flex flex-wrap gap-2">
-            {meal.includedForAll.map((inc) => (
-              <div
-                key={inc.id}
-                className="flex items-center gap-2"
-                style={{ padding: "6px 12px", borderRadius: theme.radiusFull, backgroundColor: theme.successSubtle, border: `1px solid ${theme.success}33` }}
-              >
-                <span style={{ fontSize: TYPE_SCALE.sm, lineHeight: 1 }}>{inc.emoji}</span>
-                <span style={{ ...TEXT_STYLE.pill, color: theme.textBody }}>{loc(inc.name)}</span>
-                <Check size={13} color={theme.success} />
-              </div>
-            ))}
+        {/* Included for all — final card in the grid */}
+        {meal.includedForAll.length > 0 && (
+          <div
+            className="flex flex-col"
+            style={{ gap: "6px", padding: SPACE[2], borderRadius: theme.radiusMd, backgroundColor: theme.successSubtle, border: `1px solid ${theme.success}33` }}
+          >
+            <span style={{ ...TEXT_STYLE.label, color: theme.textBody }}>{loc({ en: "Included for all", ar: "مشمول للجميع" })}</span>
+            <div className="flex flex-wrap gap-1.5">
+              {meal.includedForAll.map((inc) => (
+                <div
+                  key={inc.id}
+                  className="flex items-center gap-1.5"
+                  style={{ padding: "4px 10px", borderRadius: theme.radiusFull, backgroundColor: theme.surface, border: `1px solid ${theme.success}33` }}
+                >
+                  <span style={{ fontSize: TYPE_SCALE.sm, lineHeight: 1 }}>{inc.emoji}</span>
+                  <span style={{ ...TEXT_STYLE.pill, color: theme.textBody }}>{loc(inc.name)}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -1108,13 +1367,13 @@ function ItemRow({
     <button
       onClick={onClick}
       disabled={!!block}
-      className="flex items-center gap-3 w-full transition-all"
+      className="flex items-center gap-2 w-full transition-all"
       style={{
-        padding: "10px 12px",
+        padding: "5px 8px",
         borderRadius: theme.radiusMd,
         textAlign: isRTL ? "right" : "left",
         cursor: block ? "not-allowed" : "pointer",
-        backgroundColor: block ? theme.errorSubtle : selected ? theme.primarySubtle : theme.background,
+        backgroundColor: block ? theme.errorSubtle : selected ? theme.primarySubtle : theme.surface,
         border: `1.5px solid ${block ? `${theme.error}33` : selected ? theme.primary : theme.borderDefault}`,
         opacity: block ? 0.6 : 1,
       }}
@@ -1122,32 +1381,32 @@ function ItemRow({
       <div
         className="flex items-center justify-center shrink-0"
         style={{
-          width: "38px",
-          height: "38px",
+          width: "26px",
+          height: "26px",
           borderRadius: theme.radiusFull,
-          backgroundColor: selected ? theme.primary : theme.surface,
+          backgroundColor: selected ? theme.primary : theme.background,
           border: `1px solid ${theme.borderDefault}`,
           filter: block ? "grayscale(1)" : "none",
         }}
       >
-        <span style={{ fontSize: TYPE_SCALE.md, lineHeight: 1 }}>{item.emoji}</span>
+        <span style={{ fontSize: TYPE_SCALE.sm, lineHeight: 1 }}>{item.emoji}</span>
       </div>
 
-      <span className="flex-1 min-w-0 truncate" style={{ ...TEXT_STYLE.bodyEmphasis, color: block ? theme.textMuted : theme.textHeading }}>
+      <span className="flex-1 min-w-0 truncate" style={{ ...TEXT_STYLE.pill, color: block ? theme.textMuted : theme.textHeading }}>
         {loc(item.name)}
       </span>
 
       {block ? (
-        <span className="flex items-center gap-1 shrink-0" style={{ padding: "3px 9px", borderRadius: theme.radiusFull, backgroundColor: theme.error }}>
-          <AlertTriangle size={11} color={theme.textInverse} />
+        <span className="flex items-center gap-1 shrink-0" style={{ padding: "2px 7px", borderRadius: theme.radiusFull, backgroundColor: theme.error }}>
+          <AlertTriangle size={10} color={theme.textInverse} />
           <span style={{ ...TEXT_STYLE.micro, color: theme.textInverse }}>{blockLabel}</span>
         </span>
       ) : selected ? (
-        <div className="flex items-center justify-center shrink-0" style={{ width: "26px", height: "26px", borderRadius: theme.radiusFull, backgroundColor: theme.primary }}>
-          <Check size={16} color={theme.textInverse} />
+        <div className="flex items-center justify-center shrink-0" style={{ width: "20px", height: "20px", borderRadius: theme.radiusFull, backgroundColor: theme.primary }}>
+          <Check size={13} color={theme.textInverse} />
         </div>
       ) : (
-        <div className="shrink-0" style={{ width: "26px", height: "26px", borderRadius: theme.radiusFull, border: `2px solid ${theme.borderDefault}` }} />
+        <div className="shrink-0" style={{ width: "20px", height: "20px", borderRadius: theme.radiusFull, border: `2px solid ${theme.borderDefault}` }} />
       )}
     </button>
   );
