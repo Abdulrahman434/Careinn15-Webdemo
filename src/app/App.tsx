@@ -28,6 +28,7 @@ import fakeehSymbol from "../assets/7b9b440667ca2ce8678111ec37e1fb104ae88026.png
 import caremedicalicon from "../assets/caremedicalicon.png";
 import careinnliteVideo from "../assets/careinnlite.mp4";
 import { HospitalConfigurator } from "./components/HospitalConfigurator";
+import { ThemeAppearanceDialog } from "./components/ThemeAppearanceDialog";
 import { TasbihScreenSaver } from "./components/TasbihScreenSaver";
 import { FoodOrdering } from "./components/FoodOrdering";
 import { OrderProvider } from "./components/OrderStore";
@@ -170,7 +171,7 @@ const getSavedLayoutMode = (): 1 | 2 => {
 };
 
 function BedsideScreen() {
-  const { patientAdmitted, setPatientAdmitted, theme, darkMode, switchConfig, prayerAlarm } = useTheme();
+  const { patientAdmitted, setPatientAdmitted, theme, darkMode, switchConfig, prayerAlarm, layout2Theme } = useTheme();
   const { isFullAccess, lockedHospitalId } = useAuth();
   const { t, locale, isRTL, dir, fontFamily } = useLocale();
   const scale = useScreenScale();
@@ -258,6 +259,7 @@ function BedsideScreen() {
   });
   const [layoutMode, setLayoutMode] = useState<1 | 2>(getSavedLayoutMode);
   const [showConfigurator, setShowConfigurator] = useState(false);
+  const [showThemeAppearance, setShowThemeAppearance] = useState(false);
 
   useEffect(() => {
     const handleLayoutModeChange = () => setLayoutMode(getSavedLayoutMode());
@@ -1328,7 +1330,7 @@ function BedsideScreen() {
           transform: `scale(${scale})`,
           transformOrigin: "center center",
           background: theme.gradientCanvas,
-          fontFamily: fontFamily,
+          fontFamily: layoutMode === 2 ? (layout2Theme.typography || fontFamily) : fontFamily,
         }}
         className={`flex flex-col overflow-hidden relative shrink-0 ${isTV ? "careinn-tv" : "careinn-kiosk"}`}
       >
@@ -1370,6 +1372,7 @@ function BedsideScreen() {
               onShowCall={() => setShowCall(true)}
               onOpenNotifications={() => setShowNotifications(true)}
               unreadCount={getUnreadCount()}
+              onDhuhrTap={() => setShowThemeAppearance(true)}
             />
           </div>
         ) : (
@@ -1711,6 +1714,11 @@ function BedsideScreen() {
         {/* Hospital Configurator */}
         {showConfigurator && (
           <HospitalConfigurator onClose={() => setShowConfigurator(false)} />
+        )}
+
+        {/* Theme & Appearance Configurator */}
+        {showThemeAppearance && (
+          <ThemeAppearanceDialog onClose={() => setShowThemeAppearance(false)} />
         )}
 
         {/* CareMe Expanded Overlay */}

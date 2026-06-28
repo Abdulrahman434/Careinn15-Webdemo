@@ -1,8 +1,54 @@
 import { Settings } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import { NewsTicker } from "../app/components/NewsTicker";
 import { TopBar } from "../app/components/TopBar";
+import {
+  useTheme,
+  DEFAULT_TILE_GROUPS,
+  type TileGroupStyle,
+  type ThemeConfig,
+} from "../app/components/ThemeContext";
 import svgPaths from "./svg-jt2c43b1ae";
+
+/**
+ * Resolves one tile group's appearance settings into the CSS custom properties
+ * the tile classes (.ci-tile-small / -large / -accent) read. Defaults fall back
+ * to the active hospital theme so an unconfigured group stays in sync with
+ * Layout 1. `kind` differs because small tiles colour their icons via
+ * --primary-color, while large tiles colour theirs via --fill-0 / --ci-tile-icon.
+ */
+function tileGroupVars(
+  g: TileGroupStyle,
+  theme: ThemeConfig,
+  kind: "small" | "large",
+): CSSProperties {
+  const icon =
+    g.iconColor === "primary"
+      ? theme.primary
+      : g.iconColor === "secondary"
+        ? theme.accent
+        : g.iconCustom || "#ffffff";
+
+  const vars: Record<string, string> = {
+    "--ci-tile-bg-opacity": String(g.opacity),
+    "--ci-tile-scale": String(g.scale),
+  };
+
+  if (kind === "small") {
+    // Background base is always explicit so it stays independent of the
+    // --primary-color override we use below to recolour the icons + label.
+    vars["--ci-tile-bg"] = g.bg || theme.primary;
+    vars["--primary-color"] = icon;
+  } else {
+    // Only force a background when the admin picked one — otherwise large tiles
+    // keep their primary colour and the accent (CareMe) tile keeps its accent.
+    if (g.bg) vars["--ci-tile-bg"] = g.bg;
+    vars["--ci-tile-icon"] = icon;
+    vars["--fill-0"] = icon;
+  }
+
+  return vars as CSSProperties;
+}
 
 interface CiHomescreenProps {
   onOpenSettings: () => void;
@@ -16,6 +62,7 @@ interface CiHomescreenProps {
   onShowCall: () => void;
   onOpenNotifications?: () => void;
   unreadCount?: number;
+  onDhuhrTap?: () => void;
 }
 
 function SimpleLineIconsUserFemale() {
@@ -465,9 +512,9 @@ function Frame47() {
   );
 }
 
-function Frame48() {
+function Frame48({ style }: { style?: CSSProperties }) {
   return (
-    <div data-tile-group="left-small" className="absolute bottom-[30.24px] content-stretch flex gap-[8px] items-center left-[30px]">
+    <div data-tile-group="left-small" style={style} className="absolute bottom-[30.24px] content-stretch flex gap-[8px] items-center left-[30px]">
       <Frame46 />
       <Frame47 />
     </div>
@@ -677,9 +724,9 @@ function Frame51() {
   );
 }
 
-function Frame53() {
+function Frame53({ style }: { style?: CSSProperties }) {
   return (
-    <div data-tile-group="bottom" className="absolute bottom-[29px] content-stretch flex gap-[4px] items-center left-[calc(50%-37px)] translate-x-[-50%]">
+    <div data-tile-group="bottom" style={style} className="absolute bottom-[29px] content-stretch flex gap-[4px] items-center left-[calc(50%-37px)] translate-x-[-50%]">
       <Frame36 />
       <Frame49 />
       <Frame52 />
@@ -889,9 +936,9 @@ function Frame44() {
   );
 }
 
-function Frame45() {
+function Frame45({ style }: { style?: CSSProperties }) {
   return (
-    <div className="absolute bottom-[30px] content-stretch flex flex-col gap-[8px] items-end right-[30px]">
+    <div data-tile-group="main-right" style={style} className="absolute bottom-[30px] content-stretch flex flex-col gap-[8px] items-end right-[30px]">
       {/* Patient name / info — left-aligned, directly above the Live TV / Food Order / Room Service row */}
       <div className="flex flex-col gap-[4px] items-start text-left w-full pl-[2px] pb-[4px]">
         <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold not-italic text-[24px] leading-[30px]" dir="auto" style={{ color: "var(--primary-color)" }}>
@@ -1062,8 +1109,17 @@ export default function CiHomescreen({
   onShowCall,
   onOpenNotifications,
   unreadCount,
+  onDhuhrTap,
 }: CiHomescreenProps) {
+  const { layout2Theme, theme } = useTheme();
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Per-tile-group appearance (Layout 2 only). Unset groups fall back to the
+  // active hospital theme via tileGroupVars(), so they stay in sync with Layout 1.
+  const tileGroups = layout2Theme.tileGroups ?? DEFAULT_TILE_GROUPS;
+  const leftTileVars = tileGroupVars(tileGroups.left, theme, "small");
+  const bottomTileVars = tileGroupVars(tileGroups.bottom, theme, "small");
+  const mainTileVars = tileGroupVars(tileGroups.main, theme, "large");
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -1116,38 +1172,60 @@ export default function CiHomescreen({
   return (
     <div className="bg-transparent relative size-full" data-name="(CI) homescreen" ref={containerRef}>
       <style>{`
+        /* Tile colours are driven by region-scoped CSS vars set per tile group
+           (see tileGroupVars). Each group: --ci-tile-bg (background base),
+           --ci-tile-bg-opacity (0–100), --ci-tile-scale, and the icon colour
+           (--primary-color for small tiles, --ci-tile-icon/--fill-0 for large).
+           Fallbacks reproduce the original look so untouched tiles are unchanged. */
         .ci-tile-small {
-          background-color: color-mix(in srgb, var(--primary-color) 10%, transparent) !important;
+          background-color: color-mix(in srgb, var(--ci-tile-bg, var(--primary-color)) calc(var(--ci-tile-bg-opacity, 10) * 1%), transparent) !important;
           color: var(--primary-color) !important;
         }
         .ci-tile-small:hover {
-          background-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;
+          background-color: color-mix(in srgb, var(--ci-tile-bg, var(--primary-color)) min(100%, calc((var(--ci-tile-bg-opacity, 10) + 10) * 1%)), transparent) !important;
         }
         .ci-tile-large {
-          background-color: var(--primary-color) !important;
+          background-color: color-mix(in srgb, var(--ci-tile-bg, var(--primary-color)) calc(var(--ci-tile-bg-opacity, 100) * 1%), transparent) !important;
         }
         .ci-tile-large:hover {
-          background-color: var(--primary-dark) !important;
+          background-color: color-mix(in srgb, black 12%, var(--ci-tile-bg, var(--primary-color))) !important;
         }
         .ci-tile-accent {
-          background-color: var(--accent-color) !important;
+          background-color: color-mix(in srgb, var(--ci-tile-bg, var(--accent-color)) calc(var(--ci-tile-bg-opacity, 100) * 1%), transparent) !important;
         }
         .ci-tile-accent:hover {
-          background-color: var(--accent-dark) !important;
+          background-color: color-mix(in srgb, black 12%, var(--ci-tile-bg, var(--accent-color))) !important;
+        }
+        /* Per-group scale (skipped while pressed so the active:scale-95 tap stays) */
+        .ci-tile-small:not(:active),
+        .ci-tile-large:not(:active),
+        .ci-tile-accent:not(:active) {
+          scale: var(--ci-tile-scale, 1);
+        }
+        /* Large/accent tile labels follow the group icon colour (icons use --fill-0) */
+        [data-tile-group="main-right"] .ci-tile-large p,
+        [data-tile-group="main-right"] .ci-tile-accent p {
+          color: var(--ci-tile-icon, #ffffff) !important;
         }
       `}</style>
       {/* Header — Layout 1's TopBar (logo left, prayers centered, right cluster:
           time/date, weather, language, notifications, settings). Theme-driven,
           so logo + brand colors follow the active hospital. */}
       <div className="absolute left-0 right-0 top-0 z-20">
-        <TopBar onSettingsTap={onOpenSettings} onBellTap={onOpenNotifications} unreadCount={unreadCount} />
+        <TopBar 
+          onSettingsTap={onOpenSettings} 
+          onBellTap={onOpenNotifications} 
+          unreadCount={unreadCount} 
+          onDhuhrTap={onDhuhrTap}
+          logoUrl={layout2Theme.clientLogo || undefined}
+        />
       </div>
       <div className="absolute left-0 right-0 top-[104px] z-10">
         <NewsTicker />
       </div>
-      <Frame48 />
-      <Frame53 />
-      <Frame45 />
+      <Frame48 style={leftTileVars} />
+      <Frame53 style={bottomTileVars} />
+      <Frame45 style={mainTileVars} />
       {/* Large centered CareInn watermark logo removed — branding now comes from
           Layout 1's hospital config (logo in TopBar + hospital background photo) */}
       {/* Standalone prayer row removed — prayers now live in the TopBar header */}

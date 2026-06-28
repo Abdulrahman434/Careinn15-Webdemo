@@ -36,7 +36,7 @@ function SunIcon() {
   );
 }
 
-export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onMaghribTap, onIshaTap, onWeatherTap, onSettingsTap, onBellTap, unreadCount = 3 }: { showPrayer?: boolean; onFajrTap?: () => void; onDhuhrTap?: () => void; onAsrTap?: () => void; onMaghribTap?: () => void; onIshaTap?: () => void; onWeatherTap?: () => void; onSettingsTap?: () => void; onBellTap?: () => void; unreadCount?: number }) {
+export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onMaghribTap, onIshaTap, onWeatherTap, onSettingsTap, onBellTap, unreadCount = 3, logoUrl }: { showPrayer?: boolean; onFajrTap?: () => void; onDhuhrTap?: () => void; onAsrTap?: () => void; onMaghribTap?: () => void; onIshaTap?: () => void; onWeatherTap?: () => void; onSettingsTap?: () => void; onBellTap?: () => void; unreadCount?: number; logoUrl?: string }) {
   const { theme, castDevice, setLocale, locale: currentLocale } = useTheme();
   const { t, locale, isRTL, fontFamily } = useLocale();
   const [time, setTime] = useState(new Date());
@@ -108,7 +108,7 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
       >
         <ApiImage
           alt={theme.hospitalName}
-          src={theme.logoUrl}
+          src={logoUrl || theme.logoUrl}
           style={{ height: SPACE[10], width: "auto", maxWidth: "300px", objectFit: "contain" }}
         />
       </a>

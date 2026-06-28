@@ -757,7 +757,45 @@ export interface Layout2Theme {
   accent: string;
   accentDark: string;
   accentLight: string;
+  presetName?: "dark" | "gold" | "green" | "light" | "custom";
+  pageBg?: string;
+  tileBg?: string;
+  clientLogo?: string;
+  typography?: string;
+  tileGroups?: Layout2TileGroups;
 }
+
+/**
+ * Per-tile-group appearance overrides for Layout 2 (CareInn homescreen) only.
+ * Each of the three on-screen tile clusters can be styled independently; an
+ * empty `bg` means "follow the active hospital theme" so untouched groups stay
+ * in sync with Layout 1. Consumed by the CSS vars CiHomescreen reads.
+ */
+export type TileIconColor = "primary" | "secondary" | "custom";
+
+export interface TileGroupStyle {
+  bg: string;          // hex background; "" => inherit the active theme color
+  opacity: number;     // background opacity, 0–100
+  scale: number;       // tile scale, 0.80–1.20 (1.00 = default)
+  iconColor: TileIconColor;
+  iconCustom: string;  // hex, used when iconColor === "custom"
+}
+
+export interface Layout2TileGroups {
+  left: TileGroupStyle;    // Left Sidebar Tiles  (Frame48, small tiles)
+  main: TileGroupStyle;    // Main Right Tiles    (Frame45, large tiles)
+  bottom: TileGroupStyle;  // Bottom Action Tiles (Frame53, small tiles)
+}
+
+// Defaults mirror the current dashboard appearance so the controls initialise
+// to exactly what is on screen today:
+//  - left/bottom small tiles: translucent (~10%) primary glass, primary icons
+//  - main large tiles: solid primary, fully opaque, white icons
+export const DEFAULT_TILE_GROUPS: Layout2TileGroups = {
+  left: { bg: "", opacity: 10, scale: 1.0, iconColor: "primary", iconCustom: "#1B2F5B" },
+  main: { bg: "", opacity: 100, scale: 1.0, iconColor: "custom", iconCustom: "#ffffff" },
+  bottom: { bg: "", opacity: 10, scale: 1.0, iconColor: "primary", iconCustom: "#1B2F5B" },
+};
 
 export const DEFAULT_LAYOUT2_THEME: Layout2Theme = {
   primary: "#1B2F5B",
@@ -766,6 +804,12 @@ export const DEFAULT_LAYOUT2_THEME: Layout2Theme = {
   accent: "#4A90D9",
   accentDark: "#3970a9",
   accentLight: "#e7f0fa",
+  presetName: "dark",
+  pageBg: "#ffffff",
+  tileBg: "#16274d",
+  clientLogo: "",
+  typography: "'Inter', sans-serif",
+  tileGroups: DEFAULT_TILE_GROUPS,
 };
 
 // localStorage key — independent from "hospital-configs" (Layout 1 storage)
@@ -776,7 +820,14 @@ function loadLayout2Theme(): Layout2Theme {
     const raw = localStorage.getItem(LAYOUT2_THEME_KEY);
     if (!raw) return DEFAULT_LAYOUT2_THEME;
     const parsed = JSON.parse(raw) as Partial<Layout2Theme>;
-    return { ...DEFAULT_LAYOUT2_THEME, ...parsed };
+    // Deep-merge tileGroups so themes saved before this field existed (or with
+    // only some groups present) still get complete, valid group defaults.
+    const tileGroups: Layout2TileGroups = {
+      left: { ...DEFAULT_TILE_GROUPS.left, ...parsed.tileGroups?.left },
+      main: { ...DEFAULT_TILE_GROUPS.main, ...parsed.tileGroups?.main },
+      bottom: { ...DEFAULT_TILE_GROUPS.bottom, ...parsed.tileGroups?.bottom },
+    };
+    return { ...DEFAULT_LAYOUT2_THEME, ...parsed, tileGroups };
   } catch {
     return DEFAULT_LAYOUT2_THEME;
   }
