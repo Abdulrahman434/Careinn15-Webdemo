@@ -36,7 +36,7 @@ function SunIcon() {
   );
 }
 
-export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onMaghribTap, onIshaTap, onWeatherTap, onSettingsTap, onBellTap, unreadCount = 3, logoUrl }: { showPrayer?: boolean; onFajrTap?: () => void; onDhuhrTap?: () => void; onAsrTap?: () => void; onMaghribTap?: () => void; onIshaTap?: () => void; onWeatherTap?: () => void; onSettingsTap?: () => void; onBellTap?: () => void; unreadCount?: number; logoUrl?: string }) {
+export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onMaghribTap, onIshaTap, onWeatherTap, onSettingsTap, onBellTap, unreadCount = 3, logoUrl, hideSettings = false }: { showPrayer?: boolean; onFajrTap?: () => void; onDhuhrTap?: () => void; onAsrTap?: () => void; onMaghribTap?: () => void; onIshaTap?: () => void; onWeatherTap?: () => void; onSettingsTap?: () => void; onBellTap?: () => void; unreadCount?: number; logoUrl?: string; hideSettings?: boolean }) {
   const { theme, castDevice, setLocale, locale: currentLocale } = useTheme();
   const { t, locale, isRTL, fontFamily } = useLocale();
   const [time, setTime] = useState(new Date());
@@ -319,24 +319,26 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
           </button>
         )}
 
-        {/* Settings — always visible */}
-        <div className="relative">
-          <button
-            data-nav="true"
-            className="rounded-full cursor-pointer flex items-center justify-center transition-transform active:scale-90"
-            style={{ 
-              backgroundColor: theme.primarySubtle, 
-              width: theme.touchTargetMin, 
-              height: theme.touchTargetMin,
-              outline: 'none',
-              border: 'none',
-            }}
-            aria-label="Settings"
-            onClick={onSettingsTap}
-          >
-            <Settings size={20} style={{ color: theme.primary }} />
-          </button>
-        </div>
+        {/* Settings — hidden in the kids layout (hideSettings) */}
+        {!hideSettings && (
+          <div className="relative">
+            <button
+              data-nav="true"
+              className="rounded-full cursor-pointer flex items-center justify-center transition-transform active:scale-90"
+              style={{
+                backgroundColor: theme.primarySubtle,
+                width: theme.touchTargetMin,
+                height: theme.touchTargetMin,
+                outline: 'none',
+                border: 'none',
+              }}
+              aria-label="Settings"
+              onClick={onSettingsTap}
+            >
+              <Settings size={20} style={{ color: theme.primary }} />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

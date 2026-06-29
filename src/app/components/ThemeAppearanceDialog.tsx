@@ -190,8 +190,18 @@ const FONT_OPTIONS = [
 ];
 
 export function ThemeAppearanceDialog({ onClose }: { onClose: () => void }) {
-  const { layout2Theme, saveLayout2Theme, theme } = useTheme();
+  const { layout2Theme, saveLayout2Theme, theme, allConfigs, activeConfigId, saveConfig } = useTheme();
   const tileGroups = layout2Theme.tileGroups ?? DEFAULT_TILE_GROUPS;
+
+  // Background image opacity is stored on the active hospital config
+  // (theme.heroOpacity, percent 0–100, default 40) so it applies live to the
+  // Layout 2 background photo and persists with that hospital after refresh.
+  const heroOpacity = theme.heroOpacity;
+  const setHeroOpacity = (value: number) => {
+    const clamped = Math.max(0, Math.min(100, Number.isNaN(value) ? 0 : value));
+    const activeConfig = allConfigs.find((c) => c.id === activeConfigId);
+    if (activeConfig) saveConfig({ ...activeConfig, heroOpacity: clamped });
+  };
   
   // Local toggle states for sections
   const [sections, setSections] = useState({
@@ -451,6 +461,40 @@ export function ThemeAppearanceDialog({ onClose }: { onClose: () => void }) {
                 <span className="block text-[11px] text-slate-400 font-normal leading-normal">
                   The area behind all tiles. Overridden by a background image if set.
                 </span>
+
+                {/* Background Image Opacity — drives the active hospital's
+                    background photo (theme.heroOpacity); live + persisted. */}
+                <div className="pt-1">
+                  <label className="block text-[10px] font-bold text-slate-400 tracking-wider uppercase mb-1.5">
+                    BACKGROUND IMAGE OPACITY
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={heroOpacity}
+                      onChange={(e) => setHeroOpacity(parseInt(e.target.value, 10))}
+                      className="flex-1 cursor-pointer"
+                      style={{ accentColor: theme.primary }}
+                    />
+                    <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 w-[72px]">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={heroOpacity}
+                        onChange={(e) => setHeroOpacity(parseInt(e.target.value, 10))}
+                        className="bg-transparent text-slate-700 font-mono text-sm focus:outline-none w-full text-right"
+                      />
+                      <span className="text-slate-400 ml-1 text-sm">%</span>
+                    </div>
+                  </div>
+                  <span className="block text-[11px] text-slate-400 font-normal leading-normal mt-2">
+                    Controls the transparency of the background image
+                  </span>
+                </div>
               </div>
             )}
           </div>

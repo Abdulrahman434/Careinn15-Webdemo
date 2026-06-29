@@ -225,7 +225,7 @@ export interface ThemeConfig {
   heroImageUrls: string[];   // multiple hero images for carousel
   heroCropPosition: string;  // object-position for hero image crop, e.g. "50% 15%"
   slideshowInterval: number; // custom interval for slides in seconds
-  heroOpacity: number;       // background photo opacity, percent 0–100 (default 35)
+  heroOpacity: number;       // background photo opacity, percent 0–100 (default 40)
   location: string;
 
   /* ── Brand Colors ── */
@@ -341,7 +341,7 @@ function buildTheme(core: {
     heroImageUrls: c.heroImageUrls && c.heroImageUrls.length > 0 ? c.heroImageUrls : [c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : "")],
     heroCropPosition: c.heroCropPosition || "50% 15%",
     slideshowInterval: c.slideshowInterval || 5,
-    heroOpacity: c.heroOpacity ?? 35,
+    heroOpacity: c.heroOpacity ?? 40,
     location: (c as any).location || "Riyadh",
 
     primary: c.primary,
@@ -731,7 +731,7 @@ export interface HospitalCoreConfig {
   heroImageUrls?: string[];
   heroCropPosition?: string;
   slideshowInterval?: number;
-  heroOpacity?: number;      // background photo opacity, percent 0–100 (default 35)
+  heroOpacity?: number;      // background photo opacity, percent 0–100 (default 40)
   primary: string;
   primaryDark: string;
   primaryLight: string;
@@ -878,10 +878,12 @@ function saveDarkMode(val: boolean) {
   localStorage.setItem("hbs-dark-mode", val ? "true" : "false");
 }
 
-// Layout mode (1 = active hospital design, 2 = CareInn design). Written by
-// MyAccountDialog under "careinn-layout-mode"; broadcast via "layout-mode-changed".
-function loadLayoutMode(): 1 | 2 {
-  return localStorage.getItem("careinn-layout-mode") === "2" ? 2 : 1;
+// Layout mode (1 = active hospital design, 2 = CareInn design, 3 = Kids design).
+// Written by MyAccountDialog under "careinn-layout-mode"; broadcast via
+// "layout-mode-changed". All layouts inherit the active hospital's brand.
+function loadLayoutMode(): 1 | 2 | 3 {
+  const v = localStorage.getItem("careinn-layout-mode");
+  return v === "2" ? 2 : v === "3" ? 3 : 1;
 }
 
 /* ── Context Type ── */
@@ -1008,7 +1010,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   });
 
   const [layout2Theme, setLayout2Theme] = useState<Layout2Theme>(() => loadLayout2Theme());
-  const [layoutMode, setLayoutMode] = useState<1 | 2>(() => loadLayoutMode());
+  const [layoutMode, setLayoutMode] = useState<1 | 2 | 3>(() => loadLayoutMode());
 
   // Keep the effective theme in sync with the active layout mode so that, in
   // Layout 2, the WHOLE app (home, games, tools, settings, overlays) is driven

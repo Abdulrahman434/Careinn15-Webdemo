@@ -1239,7 +1239,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                       Background Image Opacity
                     </span>
                     <span style={{ fontSize: "12px", fontWeight: 700, color: t.primary }}>
-                      {editingConfig.heroOpacity ?? 35}%
+                      {editingConfig.heroOpacity ?? 40}%
                     </span>
                   </div>
                   <input
@@ -1247,13 +1247,13 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                     min="0"
                     max="100"
                     step="1"
-                    value={editingConfig.heroOpacity ?? 35}
+                    value={editingConfig.heroOpacity ?? 40}
                     onChange={(e) => updateField("heroOpacity", parseInt(e.target.value))}
                     style={{ width: "100%", accentColor: t.primary, cursor: "pointer" }}
                   />
                   <span style={{ fontSize: "11px", fontWeight: 500, color: "#C0CAD0", lineHeight: "16px" }}>
                     How visible the hospital background photo appears. 0% is fully transparent,
-                    100% fully visible. Default is 35%.
+                    100% fully visible. Default is 40%.
                   </span>
                 </div>
 

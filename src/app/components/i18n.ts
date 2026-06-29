@@ -43,6 +43,44 @@ const translations: Record<string, TranslationEntry> = {
   "general.go": { en: "Go", ar: "اذهب", ur: "جاؤ" },
   "general.loading": { en: "Loading...", ar: "جاري التحميل...", ur: "لوڈنگ ہو رہی ہے..." },
 
+  /* ─── Kids Layout (Layout 3) ─── */
+  "kids.greeting.morning": { en: "Good Morning", ar: "صباح الخير", ur: "صبح بخیر" },
+  "kids.greeting.afternoon": { en: "Good Afternoon", ar: "مساء الخير", ur: "سہ پہر بخیر" },
+  "kids.greeting.evening": { en: "Good Evening", ar: "مساء الخير", ur: "شام بخیر" },
+  "kids.hi": { en: "Hi {0}!", ar: "أهلاً {0}!", ur: "ہائے {0}!" },
+  "kids.dailyMessage": { en: "Today is a great day to feel better!", ar: "اليوم يومٌ رائع لتشعر بتحسّن!", ur: "آج بہتر محسوس کرنے کا ایک شاندار دن ہے!" },
+  "kids.careTitle": { en: "How are you feeling?", ar: "كيف تشعر اليوم؟", ur: "آپ کیسا محسوس کر رہے ہیں؟" },
+  "kids.nurseLabel": { en: "Your friendly nurse", ar: "ممرضتك اللطيفة", ur: "آپ کی مہربان نرس" },
+  "kids.heart": { en: "Heartbeat", ar: "نبض القلب", ur: "دل کی دھڑکن" },
+  "kids.temperature": { en: "Temperature", ar: "درجة الحرارة", ur: "درجہ حرارت" },
+  "kids.bpm": { en: "BPM", ar: "نبضة/د", ur: "دھڑکن" },
+
+  /* Kids — navigation tiles */
+  "kids.tile.media": { en: "Watch & Videos", ar: "مشاهدة وفيديو", ur: "دیکھیں اور ویڈیوز" },
+  "kids.tile.reading": { en: "Read & Stories", ar: "قراءة وقصص", ur: "پڑھیں اور کہانیاں" },
+  "kids.tile.social": { en: "Chat with Family", ar: "تحدث مع العائلة", ur: "خاندان سے بات" },
+  "kids.tile.games": { en: "Play Games", ar: "العب الألعاب", ur: "گیمز کھیلیں" },
+  "kids.tile.meeting": { en: "Video Call", ar: "مكالمة فيديو", ur: "ویڈیو کال" },
+  "kids.tile.internet": { en: "Browse", ar: "تصفح", ur: "براؤز کریں" },
+  "kids.tile.tools": { en: "My Tools", ar: "أدواتي", ur: "میرے اوزار" },
+  "kids.tile.education": { en: "Learn & Explore", ar: "تعلّم واكتشف", ur: "سیکھیں اور دریافت کریں" },
+  "kids.tile.consultation": { en: "Talk to Doctor", ar: "تحدث مع الطبيب", ur: "ڈاکٹر سے بات کریں" },
+  "kids.tile.housekeeping": { en: "Room Help", ar: "مساعدة الغرفة", ur: "کمرے کی مدد" },
+  "kids.tile.food": { en: "Order Food", ar: "اطلب الطعام", ur: "کھانا منگوائیں" },
+  "kids.tile.call": { en: "Call Someone", ar: "اتصل بشخص", ur: "کسی کو کال کریں" },
+
+  /* Kids — right sidebar quick access */
+  "kids.side.roomControl": { en: "My Room", ar: "غرفتي", ur: "میرا کمرہ" },
+  "kids.side.quran": { en: "Quran", ar: "القرآن", ur: "قرآن" },
+  "kids.side.mirror": { en: "Mirror", ar: "المرآة", ur: "آئینہ" },
+  "kids.side.podcast": { en: "Podcast", ar: "بودكاست", ur: "پوڈکاسٹ" },
+
+  /* Kids — bottom action bar */
+  "kids.action.callNurse": { en: "Call Nurse", ar: "نادِ الممرضة", ur: "نرس کو بلائیں" },
+  "kids.action.needSomething": { en: "I Need Something", ar: "أحتاج شيئاً", ur: "مجھے کچھ چاہیے" },
+  "kids.action.sleep": { en: "Sleep Mode", ar: "وضع النوم", ur: "نیند موڈ" },
+  "kids.sleep.tapWake": { en: "Tap anywhere to wake up", ar: "اضغط في أي مكان للاستيقاظ", ur: "جاگنے کے لیے کہیں بھی تھپتھپائیں" },
+
   /* ─── Idle Screen ─── */
   "idle.welcome": { en: "Welcome to {0}", ar: "مرحباً بك في {0}", ur: "{0} میں خوش آمدید" },
   "idle.ready": { en: "This bedside terminal is ready for use.", ar: "هذه الشاشة جاهزة للاستخدام.", ur: "یہ بیڈ سائیڈ ٹرمینل استعمال کے لیے تیار ہے۔" },

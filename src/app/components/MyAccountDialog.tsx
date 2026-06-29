@@ -246,9 +246,10 @@ export function MyPreferencesDialog({
   const [nfcUid1, setNfcUid1] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [verifyPinVal, setVerifyPinVal] = useState("");
-  const [layoutModeValue, setLayoutModeValue] = useState<1 | 2>(() => {
+  const [layoutModeValue, setLayoutModeValue] = useState<1 | 2 | 3>(() => {
     try {
-      return localStorage.getItem('careinn-layout-mode') === '2' ? 2 : 1;
+      const v = localStorage.getItem('careinn-layout-mode');
+      return v === '2' ? 2 : v === '3' ? 3 : 1;
     } catch {
       return 1;
     }
@@ -276,7 +277,7 @@ export function MyPreferencesDialog({
       const config = getApiConfig();
       setServerIp(config.serverIp);
       setApiKey(config.apiKey);
-      setLayoutModeValue(localStorage.getItem('careinn-layout-mode') === '2' ? 2 : 1);
+      setLayoutModeValue((() => { const v = localStorage.getItem('careinn-layout-mode'); return v === '2' ? 2 : v === '3' ? 3 : 1; })());
     }
   }, [open]);
 
@@ -330,7 +331,7 @@ export function MyPreferencesDialog({
     window.location.reload();
   };
 
-  const saveLayoutMode = (mode: 1 | 2) => {
+  const saveLayoutMode = (mode: 1 | 2 | 3) => {
     try {
       localStorage.setItem('careinn-layout-mode', mode.toString());
     } catch {
@@ -433,7 +434,7 @@ export function MyPreferencesDialog({
                     Layout Mode
                   </span>
                   <span style={{ fontFamily: t.fontFamily, fontSize: "13px", color: t.textMuted }}>
-                    {layoutModeValue === 1 ? 'Layout 1 selected' : 'Layout 2 selected'}
+                    {layoutModeValue === 1 ? 'Layout 1 selected' : layoutModeValue === 2 ? 'Layout 2 selected' : 'Layout 3 selected'}
                   </span>
                 </div>
                 <ChevronRight size={20} style={{ color: t.textMuted, transform: isRTL ? 'rotate(180deg)' : '' }} />
@@ -913,10 +914,11 @@ export function MyPreferencesDialog({
               {[
                 { id: 1, title: "Layout 1", subtitle: "Current layout (existing design)" },
                 { id: 2, title: "Layout 2", subtitle: "CareInn15 design" },
+                { id: 3, title: "Layout 3", subtitle: "Kids mode — playful pediatric design" },
               ].map((option) => (
                 <button
                   key={option.id}
-                  onClick={() => saveLayoutMode(option.id as 1 | 2)}
+                  onClick={() => saveLayoutMode(option.id as 1 | 2 | 3)}
                   className="flex items-center gap-3 w-full text-left cursor-pointer active:scale-[0.98] transition-transform"
                   style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none" }}
                 >

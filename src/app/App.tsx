@@ -13,6 +13,7 @@ import { useCmsHospital, useCmsSectionVisibility } from '../lib/useCmsContent';
 import { CareMe, CareMeExpanded } from "./components/CareMe";
 import { IdleScreen } from "./components/IdleScreen";
 import CiHomescreen from "../imports/CiHomescreen";
+import KidsHomescreen from "./components/KidsHomescreen";
 import { RippleStyles } from "./components/useRipple";
 import { AppLauncher } from "./components/AppLauncher";
 import { SurveyModal } from "./components/SurveyModal";
@@ -162,9 +163,10 @@ const isBeforeToday = (dateStr: string | null | undefined): boolean => {
   return d.getTime() < today.getTime();
 };
 
-const getSavedLayoutMode = (): 1 | 2 => {
+const getSavedLayoutMode = (): 1 | 2 | 3 => {
   try {
-    return localStorage.getItem('careinn-layout-mode') === '2' ? 2 : 1;
+    const v = localStorage.getItem('careinn-layout-mode');
+    return v === '2' ? 2 : v === '3' ? 3 : 1;
   } catch {
     return 1;
   }
@@ -257,7 +259,7 @@ function BedsideScreen() {
       return false;
     }
   });
-  const [layoutMode, setLayoutMode] = useState<1 | 2>(getSavedLayoutMode);
+  const [layoutMode, setLayoutMode] = useState<1 | 2 | 3>(getSavedLayoutMode);
   const [showConfigurator, setShowConfigurator] = useState(false);
   const [showThemeAppearance, setShowThemeAppearance] = useState(false);
 
@@ -1375,6 +1377,17 @@ function BedsideScreen() {
               onDhuhrTap={() => setShowThemeAppearance(true)}
             />
           </div>
+        ) : layoutMode === 3 ? (
+          /* Layout 3 (Kids) — playful pediatric design. Inherits the active
+             hospital's brand colour + logo, same as Layout 1 / Layout 2. */
+          <KidsHomescreen
+            onOpenCategory={handleOpenCategory}
+            onLaunchTool={(id) => setActiveTool(id as any)}
+            onShowCareMeExpanded={() => setShowCareMeExpanded(true)}
+            onOpenSettings={() => setShowSettings(true)}
+            onOpenNotifications={() => setShowNotifications(true)}
+            unreadCount={getUnreadCount()}
+          />
         ) : (
           <>
             {/* Decorative hospital background photo — subtle texture */}
