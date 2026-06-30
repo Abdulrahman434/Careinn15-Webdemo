@@ -50,6 +50,31 @@ const translations: Record<string, TranslationEntry> = {
   "kids.hi": { en: "Hi {0}!", ar: "أهلاً {0}!", ur: "ہائے {0}!" },
   "kids.dailyMessage": { en: "Today is a great day to feel better!", ar: "اليوم يومٌ رائع لتشعر بتحسّن!", ur: "آج بہتر محسوس کرنے کا ایک شاندار دن ہے!" },
   "kids.careTitle": { en: "How are you feeling?", ar: "كيف تشعر اليوم؟", ur: "آپ کیسا محسوس کر رہے ہیں؟" },
+
+  /* Kids — level badge + daily mission */
+  "kids.level": { en: "Level {0}", ar: "المستوى {0}", ur: "لیول {0}" },
+  "kids.starsToNext": { en: "{0} more stars to Level {1}!", ar: "{0} نجوم للوصول إلى المستوى {1}!", ur: "لیول {1} کے لیے {0} مزید ستارے!" },
+  "kids.mission.title": { en: "Today's Mission", ar: "مهمة اليوم", ur: "آج کا مشن" },
+  "kids.mission.watch": { en: "Watch a video", ar: "شاهد فيديو", ur: "ایک ویڈیو دیکھیں" },
+  "kids.mission.read": { en: "Read a story", ar: "اقرأ قصة", ur: "ایک کہانی پڑھیں" },
+  "kids.mission.brave": { en: "Be brave 😊", ar: "كن شجاعاً 😊", ur: "بہادر بنیں 😊" },
+
+  /* Kids — daily mood + nurse thank you */
+  "kids.mood.title": { en: "How are you feeling today?", ar: "كيف تشعر اليوم؟", ur: "آج آپ کیسا محسوس کر رہے ہیں؟" },
+  "kids.mood.happy": { en: "Happy", ar: "سعيد", ur: "خوش" },
+  "kids.mood.okay": { en: "Okay", ar: "بخير", ur: "ٹھیک" },
+  "kids.mood.sad": { en: "Sad", ar: "حزين", ur: "اداس" },
+  "kids.mood.toast.happy": { en: "Yay! Keep smiling, {0}! 🌟", ar: "رائع! استمرّ بالابتسام يا {0}! 🌟", ur: "واہ! مسکراتے رہو، {0}! 🌟" },
+  "kids.mood.toast.okay": { en: "That's okay! We're here for you 💙", ar: "لا بأس! نحن هنا من أجلك 💙", ur: "کوئی بات نہیں! ہم آپ کے ساتھ ہیں 💙" },
+  "kids.mood.toast.sad": { en: "We're sorry you feel that way. Want to talk to your nurse? 💗", ar: "نأسف لشعورك بهذا. هل تودّ التحدث إلى ممرضتك؟ 💗", ur: "ہمیں افسوس ہے کہ آپ ایسا محسوس کر رہے ہیں۔ کیا آپ اپنی نرس سے بات کرنا چاہتے ہیں؟ 💗" },
+  "kids.nurse.thankYou": { en: "Send a thank you 💗", ar: "أرسل شكراً 💗", ur: "شکریہ بھیجیں 💗" },
+  "kids.nurse.thanked": { en: "Thank you sent! 💗", ar: "تم إرسال الشكر! 💗", ur: "شکریہ بھیج دیا! 💗" },
+
+  /* Kids — motivational carousel */
+  "kids.motiv.steps": { en: "Every little step counts. Keep going!", ar: "كل خطوة صغيرة لها قيمة. واصل التقدّم!", ur: "ہر چھوٹا قدم اہم ہے۔ آگے بڑھتے رہو!" },
+  "kids.motiv.strong": { en: "You are strong, smart, and amazing!", ar: "أنت قويّ وذكيّ ورائع!", ur: "تم مضبوط، ذہین اور شاندار ہو!" },
+  "kids.motiv.grow": { en: "Challenges help you grow.", ar: "التحدّيات تساعدك على النموّ.", ur: "چیلنجز تمہیں بڑھنے میں مدد دیتے ہیں۔" },
+  "kids.motiv.better": { en: "You're doing better every day!", ar: "أنت تتحسّن كل يوم!", ur: "تم ہر دن بہتر ہو رہے ہو!" },
   "kids.nurseLabel": { en: "Your friendly nurse", ar: "ممرضتك اللطيفة", ur: "آپ کی مہربان نرس" },
   "kids.yourNurse": { en: "Your nurse", ar: "ممرضتك", ur: "آپ کی نرس" },
   "kids.heart": { en: "Heartbeat", ar: "نبض القلب", ur: "دل کی دھڑکن" },
@@ -59,6 +84,8 @@ const translations: Record<string, TranslationEntry> = {
   /* Kids — navigation tiles */
   "kids.tile.media": { en: "Watch & Videos", ar: "مشاهدة وفيديو", ur: "دیکھیں اور ویڈیوز" },
   "kids.tile.reading": { en: "Read & Stories", ar: "قراءة وقصص", ur: "پڑھیں اور کہانیاں" },
+  "kids.tile.draw": { en: "Draw & Color", ar: "ارسم ولوّن", ur: "ڈرا اور رنگ" },
+  "kids.tile.portal": { en: "Patient Portal", ar: "بوابة المريض", ur: "پیشنٹ پورٹل" },
   "kids.tile.social": { en: "Chat with Family", ar: "تحدث مع العائلة", ur: "خاندان سے بات" },
   "kids.tile.games": { en: "Play Games", ar: "العب الألعاب", ur: "گیمز کھیلیں" },
   "kids.tile.meeting": { en: "Video Call", ar: "مكالمة فيديو", ur: "ویڈیو کال" },
@@ -75,6 +102,8 @@ const translations: Record<string, TranslationEntry> = {
   /* Kids — two big hero buttons */
   "kids.media.sub": { en: "Movies · Shows · Cartoons", ar: "أفلام · برامج · كرتون", ur: "فلمیں · شوز · کارٹون" },
   "kids.games.sub": { en: "Puzzles · Fun · Challenges", ar: "ألغاز · مرح · تحديات", ur: "پزلز · مزہ · چیلنجز" },
+  "kids.reading.sub": { en: "Books · Tales · Stories", ar: "كتب · حكايات · قصص", ur: "کتابیں · کہانیاں · قصے" },
+  "kids.draw.sub": { en: "Paint · Colors · Art", ar: "رسم · ألوان · فن", ur: "پینٹ · رنگ · آرٹ" },
   "kids.more": { en: "More", ar: "المزيد", ur: "مزید" },
   "kids.more.title": { en: "Explore More", ar: "اكتشف المزيد", ur: "مزید دریافت کریں" },
 
