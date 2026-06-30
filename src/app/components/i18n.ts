@@ -51,6 +51,7 @@ const translations: Record<string, TranslationEntry> = {
   "kids.dailyMessage": { en: "Today is a great day to feel better!", ar: "اليوم يومٌ رائع لتشعر بتحسّن!", ur: "آج بہتر محسوس کرنے کا ایک شاندار دن ہے!" },
   "kids.careTitle": { en: "How are you feeling?", ar: "كيف تشعر اليوم؟", ur: "آپ کیسا محسوس کر رہے ہیں؟" },
   "kids.nurseLabel": { en: "Your friendly nurse", ar: "ممرضتك اللطيفة", ur: "آپ کی مہربان نرس" },
+  "kids.yourNurse": { en: "Your nurse", ar: "ممرضتك", ur: "آپ کی نرس" },
   "kids.heart": { en: "Heartbeat", ar: "نبض القلب", ur: "دل کی دھڑکن" },
   "kids.temperature": { en: "Temperature", ar: "درجة الحرارة", ur: "درجہ حرارت" },
   "kids.bpm": { en: "BPM", ar: "نبضة/د", ur: "دھڑکن" },
@@ -68,6 +69,14 @@ const translations: Record<string, TranslationEntry> = {
   "kids.tile.housekeeping": { en: "Room Help", ar: "مساعدة الغرفة", ur: "کمرے کی مدد" },
   "kids.tile.food": { en: "Order Food", ar: "اطلب الطعام", ur: "کھانا منگوائیں" },
   "kids.tile.call": { en: "Call Someone", ar: "اتصل بشخص", ur: "کسی کو کال کریں" },
+  "kids.tile.feedback": { en: "Your Feedback", ar: "رأيك", ur: "آپ کی رائے" },
+  "kids.tile.roomcontrol": { en: "Room Control", ar: "التحكم بالغرفة", ur: "روم کنٹرول" },
+
+  /* Kids — two big hero buttons */
+  "kids.media.sub": { en: "Movies · Shows · Cartoons", ar: "أفلام · برامج · كرتون", ur: "فلمیں · شوز · کارٹون" },
+  "kids.games.sub": { en: "Puzzles · Fun · Challenges", ar: "ألغاز · مرح · تحديات", ur: "پزلز · مزہ · چیلنجز" },
+  "kids.more": { en: "More", ar: "المزيد", ur: "مزید" },
+  "kids.more.title": { en: "Explore More", ar: "اكتشف المزيد", ur: "مزید دریافت کریں" },
 
   /* Kids — right sidebar quick access */
   "kids.side.roomControl": { en: "My Room", ar: "غرفتي", ur: "میرا کمرہ" },

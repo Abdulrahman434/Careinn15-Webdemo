@@ -36,7 +36,7 @@ function SunIcon() {
   );
 }
 
-export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onMaghribTap, onIshaTap, onWeatherTap, onSettingsTap, onBellTap, unreadCount = 3, logoUrl, hideSettings = false }: { showPrayer?: boolean; onFajrTap?: () => void; onDhuhrTap?: () => void; onAsrTap?: () => void; onMaghribTap?: () => void; onIshaTap?: () => void; onWeatherTap?: () => void; onSettingsTap?: () => void; onBellTap?: () => void; unreadCount?: number; logoUrl?: string; hideSettings?: boolean }) {
+export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onMaghribTap, onIshaTap, onWeatherTap, onSettingsTap, onBellTap, unreadCount = 3, logoUrl, hideSettings = false, greeting }: { showPrayer?: boolean; onFajrTap?: () => void; onDhuhrTap?: () => void; onAsrTap?: () => void; onMaghribTap?: () => void; onIshaTap?: () => void; onWeatherTap?: () => void; onSettingsTap?: () => void; onBellTap?: () => void; unreadCount?: number; logoUrl?: string; hideSettings?: boolean; greeting?: string }) {
   const { theme, castDevice, setLocale, locale: currentLocale } = useTheme();
   const { t, locale, isRTL, fontFamily } = useLocale();
   const [time, setTime] = useState(new Date());
@@ -169,6 +169,21 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
 
       {/* Right: Clock/Date + Weather + Lang + Settings — always right-aligned */}
       <div className="flex items-center justify-end gap-4">
+        {/* Optional friendly greeting (kids layout) — renders only when provided */}
+        {greeting && (
+          <span
+            style={{
+              fontFamily: fontFamily,
+              ...TEXT_STYLE.bodyEmphasis,
+              fontWeight: WEIGHT.bold,
+              color: theme.textHeading,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {greeting}
+          </span>
+        )}
+
         {/* Clock + Date stacked */}
         <div className="flex flex-col items-end">
           <span

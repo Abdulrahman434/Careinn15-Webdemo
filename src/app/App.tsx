@@ -1386,6 +1386,7 @@ function BedsideScreen() {
             onShowCareMeExpanded={() => setShowCareMeExpanded(true)}
             onOpenSettings={() => setShowSettings(true)}
             onOpenNotifications={() => setShowNotifications(true)}
+            onOpenSurvey={() => setShowSurvey(true)}
             unreadCount={getUnreadCount()}
           />
         ) : (
@@ -1545,112 +1546,112 @@ function BedsideScreen() {
 
                       {/* Right — Shortcuts */}
                       <div className="flex flex-col shrink-0 min-h-0" style={{ width: "280px" }}>
-                    <ShortcutsColumn
-                      onOpenSurvey={() => setShowSurvey(true)}
-                      onLaunchTool={(id) => setActiveTool(id as any)}
-                      onRequestPinSetup={() => {
-                        setOpenAccountDirectly(true);
-                        setShowSettings(true);
-                      }}
-                    />
-                  </div>
-                </div>
-              </>
-            ) : (
-              /* ─── V2 Layout: Shortcuts in container ─── */
-              <>
-                {/* Left Column — PatientGreeting + CareMe */}
-                <div className="flex flex-col gap-5 shrink-0 min-h-0 h-full" style={{ width: "400px" }}>
-                  <PatientGreeting
-                    onOpenAboutUs={() => setShowAboutUs(true)}
-                    onOpenTour={() => setShowTour(true)}
-                    onImageTap={(url) => setCtaMediaConfig({ type: "image", url, title: t("general.aboutUs") })}
-                  />
-                  <div className="flex-1 min-h-0 flex flex-col">
-                    {(!isGuest || careMeUnlocked) ? (
-                      <CareMe onExpand={() => setShowCareMeExpanded(true)} />
-                    ) : (
-                      <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex-1 flex flex-row gap-[40px] min-w-0 min-h-0">
-                  {/* Center — Hub grid with shortcuts at bottom */}
-                  <div className="flex-1 min-w-0 flex flex-col gap-5 min-h-0">
-                    <ServicesGrid
-                      onOpenCategory={handleOpenCategory}
-                      swapped
-                      onLaunchTool={(id) => setActiveTool(id as any)}
-                      visibility={v}
-                      onRequestPinSetup={() => {
-                        setOpenAccountDirectly(true);
-                        setShowSettings(true);
-                      }}
-                      lockMenu={lockMenuApp}
-                      onLockMenuChange={setLockMenuApp}
-                    />
-                  </div>
-
-                  {/* Right — Services stacked vertically */}
-                  <div className="flex flex-col shrink-0 min-h-0" style={{ width: "280px" }}>
-                    <ShortcutsColumn
-                      contained
-                      onOpenSurvey={() => setShowSurvey(true)}
-                      swapped
-                      onLaunchTool={(id) => setActiveTool(id as any)}
-                      onRequestPinSetup={() => {
-                        setOpenAccountDirectly(true);
-                        setShowSettings(true);
-                      }}
-                    />
-                  </div>
-                </div>
-              </>
-            )
-          ) : (
-            <>
-              {/* Left Column — Awaiting */}
-              <div className="flex flex-col gap-5 shrink-0 min-h-0" style={{ width: "400px" }}>
-                <div
-                  className="flex-1 flex flex-col items-center justify-center relative overflow-hidden"
-                  style={{
-                    backgroundColor: theme.background,
-                    borderRadius: theme.radiusCard,
-                    boxShadow: SHADOW.md,
-                    border: theme.cardBorder,
-                  }}
-                >
-                  <div className="relative z-10 text-center px-8">
-                    <div
-                      className="mx-auto mb-5 flex items-center justify-center rounded-2xl"
-                      style={{ width: SPACE[8] + SPACE[1], height: SPACE[8] + SPACE[1], backgroundColor: theme.primarySubtle }}
-                    >
-                      <div
-                        className="w-8 h-8 rounded-full"
-                        style={{
-                          border: `2px solid ${theme.primarySubtle}`,
-                          borderTopColor: theme.primary,
-                          animation: "spin 2s linear infinite",
-                        }}
-                      />
+                        <ShortcutsColumn
+                          onOpenSurvey={() => setShowSurvey(true)}
+                          onLaunchTool={(id) => setActiveTool(id as any)}
+                          onRequestPinSetup={() => {
+                            setOpenAccountDirectly(true);
+                            setShowSettings(true);
+                          }}
+                        />
+                      </div>
                     </div>
-                    <p style={{ fontFamily: fontFamily, color: theme.textHeading, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.semibold, lineHeight: 1.3 }}>
-                      {t("idle.awaiting")}
-                    </p>
-                    <p className="mt-2" style={{ fontFamily: fontFamily, color: theme.textMuted, fontSize: TYPE_SCALE.base, lineHeight: 1.5 }}>
-                      {t("idle.awaitingDesc")}
-                    </p>
-                  </div>
-                </div>
-              </div>
+                  </>
+                ) : (
+                  /* ─── V2 Layout: Shortcuts in container ─── */
+                  <>
+                    {/* Left Column — PatientGreeting + CareMe */}
+                    <div className="flex flex-col gap-5 shrink-0 min-h-0 h-full" style={{ width: "400px" }}>
+                      <PatientGreeting
+                        onOpenAboutUs={() => setShowAboutUs(true)}
+                        onOpenTour={() => setShowTour(true)}
+                        onImageTap={(url) => setCtaMediaConfig({ type: "image", url, title: t("general.aboutUs") })}
+                      />
+                      <div className="flex-1 min-h-0 flex flex-col">
+                        {(!isGuest || careMeUnlocked) ? (
+                          <CareMe onExpand={() => setShowCareMeExpanded(true)} />
+                        ) : (
+                          <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />
+                        )}
+                      </div>
+                    </div>
 
-              <div className="flex-1 min-w-0 flex flex-col gap-5 min-h-0">
-                <IdleScreen />
-              </div>
-            </>
-          )}
-        </div>
+                    <div className="flex-1 flex flex-row gap-[40px] min-w-0 min-h-0">
+                      {/* Center — Hub grid with shortcuts at bottom */}
+                      <div className="flex-1 min-w-0 flex flex-col gap-5 min-h-0">
+                        <ServicesGrid
+                          onOpenCategory={handleOpenCategory}
+                          swapped
+                          onLaunchTool={(id) => setActiveTool(id as any)}
+                          visibility={v}
+                          onRequestPinSetup={() => {
+                            setOpenAccountDirectly(true);
+                            setShowSettings(true);
+                          }}
+                          lockMenu={lockMenuApp}
+                          onLockMenuChange={setLockMenuApp}
+                        />
+                      </div>
+
+                      {/* Right — Services stacked vertically */}
+                      <div className="flex flex-col shrink-0 min-h-0" style={{ width: "280px" }}>
+                        <ShortcutsColumn
+                          contained
+                          onOpenSurvey={() => setShowSurvey(true)}
+                          swapped
+                          onLaunchTool={(id) => setActiveTool(id as any)}
+                          onRequestPinSetup={() => {
+                            setOpenAccountDirectly(true);
+                            setShowSettings(true);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )
+              ) : (
+                <>
+                  {/* Left Column — Awaiting */}
+                  <div className="flex flex-col gap-5 shrink-0 min-h-0" style={{ width: "400px" }}>
+                    <div
+                      className="flex-1 flex flex-col items-center justify-center relative overflow-hidden"
+                      style={{
+                        backgroundColor: theme.background,
+                        borderRadius: theme.radiusCard,
+                        boxShadow: SHADOW.md,
+                        border: theme.cardBorder,
+                      }}
+                    >
+                      <div className="relative z-10 text-center px-8">
+                        <div
+                          className="mx-auto mb-5 flex items-center justify-center rounded-2xl"
+                          style={{ width: SPACE[8] + SPACE[1], height: SPACE[8] + SPACE[1], backgroundColor: theme.primarySubtle }}
+                        >
+                          <div
+                            className="w-8 h-8 rounded-full"
+                            style={{
+                              border: `2px solid ${theme.primarySubtle}`,
+                              borderTopColor: theme.primary,
+                              animation: "spin 2s linear infinite",
+                            }}
+                          />
+                        </div>
+                        <p style={{ fontFamily: fontFamily, color: theme.textHeading, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.semibold, lineHeight: 1.3 }}>
+                          {t("idle.awaiting")}
+                        </p>
+                        <p className="mt-2" style={{ fontFamily: fontFamily, color: theme.textMuted, fontSize: TYPE_SCALE.base, lineHeight: 1.5 }}>
+                          {t("idle.awaitingDesc")}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-w-0 flex flex-col gap-5 min-h-0">
+                    <IdleScreen />
+                  </div>
+                </>
+              )}
+            </div>
           </>
         )}
 

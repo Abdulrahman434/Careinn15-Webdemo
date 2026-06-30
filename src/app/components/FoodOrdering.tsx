@@ -613,9 +613,6 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
     return init;
   });
 
-  /* ── Visual-confirmation preview for the most recently selected item ── */
-  const [preview, setPreview] = useState<MenuItem | null>(null);
-
   /* ── Which meal's menu is shown in the single panel below the selector ── */
   const [activeMeal, setActiveMeal] = useState<Meal["id"]>("breakfast");
   const activeMealObj = meals.find((m) => m.id === activeMeal)!;
@@ -634,15 +631,12 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
 
   const selectItem = (group: FoodGroup, item: MenuItem) => {
     if (blockReason(item)) return;
-    const wasSelected = selections[group.id] === item.id;
     setSelections((prev) => {
       const next = { ...prev };
       if (next[group.id] === item.id) delete next[group.id];
       else next[group.id] = item.id;
       return next;
     });
-    // Selecting (or switching to) an item shows its photo; deselecting closes it.
-    setPreview(wasSelected ? null : item);
   };
 
   const totalSelected = useMemo(
@@ -1095,19 +1089,6 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
         )}
       </AnimatePresence>
 
-      {/* ── Selected-item photo preview (visual confirmation, non-blocking) ── */}
-      <AnimatePresence>
-        {preview && (
-          <PreviewModal
-            item={preview}
-            photo={DISH_PHOTOS[preview.name.en] ?? ""}
-            theme={theme}
-            loc={loc}
-            onClose={() => setPreview(null)}
-          />
-        )}
-      </AnimatePresence>
-
       {/* ── My Orders overlay ── */}
       <AnimatePresence>
         {showOrders && <MyOrders orders={orders} theme={theme} loc={loc} isRTL={isRTL} onClose={() => setShowOrders(false)} />}
@@ -1134,95 +1115,6 @@ function DishPhoto({ src, emoji, alt, theme }: { src: string; emoji: string; alt
         <span style={{ fontSize: "84px", lineHeight: 1 }}>{emoji}</span>
       )}
     </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * SELECTION PREVIEW MODAL — quick visual confirmation of the chosen dish
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-function PreviewModal({
-  item,
-  photo,
-  theme,
-  loc,
-  onClose,
-}: {
-  item: MenuItem;
-  photo: string;
-  theme: any;
-  loc: (v: Locale) => string;
-  onClose: () => void;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="absolute inset-0 z-[60] flex items-center justify-center"
-      style={{ backgroundColor: theme.overlay }}
-      onClick={onClose}
-    >
-      <motion.div
-        key={item.id}
-        initial={{ scale: 0.92, y: 16 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.92, y: 16 }}
-        transition={{ type: "spring", stiffness: 300, damping: 26 }}
-        onClick={(e) => e.stopPropagation()}
-        className="relative flex flex-col"
-        style={{ backgroundColor: theme.surface, borderRadius: theme.radiusXl, padding: SPACE[3], width: "400px", boxShadow: SHADOW.xl }}
-      >
-        <button
-          onClick={onClose}
-          className="absolute flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
-          style={{ top: SPACE[3], insetInlineEnd: SPACE[3], width: "40px", height: "40px", borderRadius: theme.radiusFull, backgroundColor: "rgba(255,255,255,0.85)", boxShadow: SHADOW.md, zIndex: 2 }}
-        >
-          <X size={20} color={theme.primaryDark} />
-        </button>
-
-        <DishPhoto src={photo} emoji={item.emoji} alt={loc(item.name)} theme={theme} />
-
-        <div className="flex items-center gap-1.5" style={{ marginTop: SPACE[2] }}>
-          <Check size={16} color={theme.success} />
-          <span style={{ ...TEXT_STYLE.label, color: theme.success }}>{loc({ en: "Selected", ar: "تم الاختيار" })}</span>
-        </div>
-
-        <h3 style={{ ...TEXT_STYLE.cardTitle, color: theme.primaryDark, marginTop: "4px" }}>{loc(item.name)}</h3>
-
-        <div className="flex flex-wrap gap-2" style={{ marginTop: SPACE[2] }}>
-          {item.allergens.length > 0 ? (
-            item.allergens.map((a) => (
-              <span
-                key={a}
-                className="flex items-center gap-1.5"
-                style={{ padding: "5px 12px", borderRadius: theme.radiusFull, backgroundColor: theme.errorSubtle, border: `1px solid ${theme.error}33` }}
-              >
-                <AlertTriangle size={12} color={theme.error} />
-                <span style={{ ...TEXT_STYLE.pill, color: theme.error }}>{loc(ALLERGEN_META[a].label)}</span>
-              </span>
-            ))
-          ) : (
-            <span
-              className="flex items-center gap-1.5"
-              style={{ padding: "5px 12px", borderRadius: theme.radiusFull, backgroundColor: theme.successSubtle, border: `1px solid ${theme.success}33` }}
-            >
-              <Check size={12} color={theme.success} />
-              <span style={{ ...TEXT_STYLE.pill, color: theme.success }}>{loc({ en: "No major allergens", ar: "لا تحتوي على مسببات حساسية رئيسية" })}</span>
-            </span>
-          )}
-        </div>
-
-        <button
-          onClick={onClose}
-          className="flex items-center justify-center gap-2 active:scale-95 transition-transform cursor-pointer"
-          style={{ height: "52px", borderRadius: theme.radiusFull, backgroundColor: theme.primary, marginTop: SPACE[3] }}
-        >
-          <Check size={20} color={theme.textInverse} />
-          <span style={{ ...TEXT_STYLE.buttonSm, color: theme.textInverse }}>{loc({ en: "Confirm", ar: "تأكيد" })}</span>
-        </button>
-      </motion.div>
-    </motion.div>
   );
 }
 
