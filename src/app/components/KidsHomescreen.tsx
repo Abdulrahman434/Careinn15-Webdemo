@@ -383,13 +383,12 @@ export default function KidsHomescreen({
         ))}
       </div>
 
-      {/* Header — hospital logo, prayer times, greeting. Settings gear hidden;
-          staff escape hatch = long-press / tap the Dhuhr prayer tile. */}
+      {/* Header — hospital logo, prayer times, greeting. Settings gear shown
+          top-right (same as Layout 1 / Layout 2); prayer times are not clickable. */}
       <div className="relative z-20 shrink-0">
         <TopBar
-          hideSettings
           greeting={`${greetingEmoji} ${t(greetingKey)}, ${firstName}!`}
-          onDhuhrTap={onOpenSettings}
+          onSettingsTap={onOpenSettings}
           onBellTap={onOpenNotifications}
           unreadCount={unreadCount}
         />
