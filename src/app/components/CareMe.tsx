@@ -78,10 +78,21 @@ const carePlan = [
   { labelKey: "care.plan.motherBabyCheck", minutes: 30, done: false, day: 4 },
 ];
 
-const dietCodes = [
-  { code: "NAS", labelKey: "care.diet.nas" },
-  { code: "DM", labelKey: "care.diet.dm" },
-];
+/** Maps patientDiet store values → human-readable display labels */
+const DIET_DISPLAY_LABELS: Record<string, string> = {
+  regular:        "Regular",
+  diabetic:       "Diabetic",
+  "low-sodium":   "Low Sodium",
+  "low-potassium":"Low Potassium",
+  "soft-diet":    "Soft Diet",
+  chemotherapy:   "Chemotherapy",
+  ob:             "OB Patients",
+  kids:           "Kids Menu",
+  npo:            "NPO / Fasting",
+  // Legacy aliases (backward-compat for any cached state)
+  soft:           "Soft Diet",
+  chemo:          "Chemotherapy",
+};
 
 const allergies = [
   { nameKey: "care.allergy.penicillin" },
@@ -322,7 +333,8 @@ function CareOverviewSlide({ theme, isExpanded = false }: { theme: any, isExpand
   const { t } = useLocale();
   const nurseStore = useNurseStore();
   const storeAllergies = nurseStore.allergies;
-  const storeDietCodes = nurseStore.dietCodes.map(d => d.code);
+  const patientDietLabel = DIET_DISPLAY_LABELS[nurseStore.patientDiet] || nurseStore.patientDiet;
+  const isNpo = nurseStore.patientDiet === "npo";
   const storePainScore = nurseStore.painScore;
   const labelSize = isExpanded ? "16px" : "13px";
 
@@ -361,7 +373,7 @@ function CareOverviewSlide({ theme, isExpanded = false }: { theme: any, isExpand
       {/* Module 3: Clinical Nutrition, Allergies & Pain */}
       <SectionContainer theme={theme} isExpanded={isExpanded}>
         <div className="flex flex-col gap-7">
-          {/* Diet Codes */}
+          {/* Diet */}
           <div className="flex items-start gap-4">
             <div
               className="flex items-center justify-center shrink-0"
@@ -369,23 +381,19 @@ function CareOverviewSlide({ theme, isExpanded = false }: { theme: any, isExpand
                 width: isExpanded ? "40px" : "36px",
                 height: isExpanded ? "40px" : "36px",
                 borderRadius: theme.radiusFull,
-                backgroundColor: theme.primarySubtle
+                backgroundColor: isNpo ? "#EF444415" : theme.primarySubtle
               }}
             >
-              <Utensils size={isExpanded ? 18 : 14} style={{ color: theme.primary }} strokeWidth={2.5} />
+              <Utensils size={isExpanded ? 18 : 14} style={{ color: isNpo ? "#EF4444" : theme.primary }} strokeWidth={2.5} />
             </div>
             <div className="flex flex-col gap-2">
               <p style={{ fontFamily: theme.fontFamily, fontSize: labelSize, color: theme.textMuted }}>{t("care.diet.title")}</p>
-              <div className="flex flex-wrap gap-2.5">
-                {storeDietCodes.map(d => (
-                  <span key={d} className="px-3 py-1.5 rounded-md border font-bold" style={{
-                    fontSize: isExpanded ? "15px" : "13px",
-                    backgroundColor: theme.primarySubtle,
-                    borderColor: `${theme.primary}35`,
-                    color: theme.primary
-                  }}>{d}</span>
-                ))}
-              </div>
+              <span className="px-3 py-1.5 rounded-md border font-bold" style={{
+                fontSize: isExpanded ? "15px" : "13px",
+                backgroundColor: isNpo ? "#EF444415" : theme.primarySubtle,
+                borderColor: isNpo ? "#EF444435" : `${theme.primary}35`,
+                color: isNpo ? "#EF4444" : theme.primary
+              }}>{patientDietLabel}</span>
             </div>
           </div>
 
@@ -687,24 +695,23 @@ function TimelineSlide({
 }
 
 function DietSlide({ theme }: { theme: any }) {
-  const { t } = useLocale();
+  const nurseStore = useNurseStore();
+  const dietLabel = DIET_DISPLAY_LABELS[nurseStore.patientDiet] || nurseStore.patientDiet;
+  const isNpo = nurseStore.patientDiet === "npo";
   return (
     <div className="flex flex-col gap-2">
-      {dietCodes.map((d) => (
+      <div
+        className="flex items-center gap-3 px-4 py-3"
+        style={{ backgroundColor: isNpo ? "#EF444415" : theme.primarySubtle, border: `1px solid ${isNpo ? "#EF444420" : theme.primarySubtle}`, borderRadius: theme.radiusLg }}
+      >
         <div
-          key={d.code}
-          className="flex items-center gap-3 px-4 py-3"
-          style={{ backgroundColor: theme.primarySubtle, border: `1px solid ${theme.primarySubtle}`, borderRadius: theme.radiusLg }}
+          className="w-9 h-9 flex items-center justify-center shrink-0"
+          style={{ backgroundColor: isNpo ? "#EF444420" : theme.primarySubtle, borderRadius: theme.radiusMd }}
         >
-          <div
-            className="w-9 h-9 flex items-center justify-center shrink-0"
-            style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusMd }}
-          >
-            <span style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.micro, fontWeight: WEIGHT.bold, color: theme.primary, fontSize: "14px", letterSpacing: "0.5px" }}>{d.code}</span>
-          </div>
-          <span style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.subtitle, color: theme.textHeading, fontSize: "16px" }}>{t(d.labelKey)}</span>
+          <Utensils size={18} style={{ color: isNpo ? "#EF4444" : theme.primary }} />
         </div>
-      ))}
+        <span style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.subtitle, color: isNpo ? "#EF4444" : theme.textHeading, fontSize: "16px", fontWeight: WEIGHT.bold }}>{dietLabel}</span>
+      </div>
     </div>
   );
 }

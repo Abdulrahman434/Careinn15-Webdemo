@@ -164,6 +164,7 @@ function BedsideScreen() {
   const { t, locale, isRTL, dir, fontFamily } = useLocale();
   const scale = useScreenScale();
   const isOnline = useNetworkStatus();
+
   const [bypassOffline, setBypassOffline] = useState(false);
 
   useEffect(() => {
