@@ -861,7 +861,8 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, fontFamily, isRTL, su
       <div className="flex-1 min-h-0 flex items-center justify-center gap-[28px]" dir={isRTL ? "rtl" : "ltr"}>
         {meals.map((meal) => {
           const submitted = submittedMealIds.has(meal.id);
-          const orderable = !submitted && isMealOrderable(meal);
+          const timeOpen = isMealOrderable(meal);
+          const orderable = !submitted && timeOpen;
           const selected = selectedMealId === meal.id;
           const cutoffStr = formatHour(meal.orderCutoff, isRTL);
 
@@ -961,12 +962,12 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, fontFamily, isRTL, su
                 {/* Last time to order */}
                 <div className="flex items-center justify-center gap-2" style={{
                   padding: "10px 14px", borderRadius: "12px",
-                  backgroundColor: orderable ? "#FFFBEB" : "#F3F4F6",
-                  border: `1px solid ${orderable ? "#FDE68A" : "rgba(0,0,0,0.06)"}`,
+                  backgroundColor: timeOpen ? "#FFFBEB" : "#F3F4F6",
+                  border: `1px solid ${timeOpen ? "#FDE68A" : "rgba(0,0,0,0.06)"}`,
                 }}>
-                  <Clock size={16} color={orderable ? "#D97706" : "#9CA3AF"} />
-                  <span style={{ fontFamily, fontSize: "15px", fontWeight: WEIGHT.bold, color: orderable ? "#D97706" : "#9CA3AF" }}>
-                    {orderable
+                  <Clock size={16} color={timeOpen ? "#D97706" : "#9CA3AF"} />
+                  <span style={{ fontFamily, fontSize: "15px", fontWeight: WEIGHT.bold, color: timeOpen ? "#D97706" : "#9CA3AF" }}>
+                    {timeOpen
                       ? (isRTL ? `آخر وقت للطلب ${cutoffStr}` : `Order by ${cutoffStr}`)
                       : (isRTL ? "انتهى وقت الطلب" : "Ordering window closed")}
                   </span>
