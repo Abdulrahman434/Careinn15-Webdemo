@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowLeft,
@@ -8,11 +8,11 @@ import {
   Moon,
   Clock,
   Check,
-  AlertTriangle,
   RotateCcw,
   ClipboardList,
   ShieldAlert,
   ShoppingBag,
+  Lock,
   X,
   CheckCircle2,
   Utensils,
@@ -33,7 +33,7 @@ import { useNurseStore } from "./NurseDataStore";
 
 type Locale = { en: string; ar: string };
 
-/** The ten major allergens surfaced in the staff filter row. */
+/** The ten major food allergens matched against the patient's chart allergies. */
 type Allergen =
   | "gluten" | "dairy" | "eggs" | "tree-nuts" | "fish"
   | "shellfish" | "sesame" | "soy" | "peanuts" | "sulphites";
@@ -67,24 +67,6 @@ interface Meal {
   includedForAll: MenuItem[];
 }
 
-const ALLERGEN_ORDER: Allergen[] = [
-  "gluten", "dairy", "eggs", "tree-nuts", "fish",
-  "shellfish", "sesame", "soy", "peanuts", "sulphites",
-];
-
-const ALLERGEN_META: Record<Allergen, { label: Locale; emoji: string }> = {
-  gluten: { label: { en: "Gluten", ar: "غلوتين" }, emoji: "🌾" },
-  dairy: { label: { en: "Dairy", ar: "ألبان" }, emoji: "🥛" },
-  eggs: { label: { en: "Eggs", ar: "بيض" }, emoji: "🥚" },
-  "tree-nuts": { label: { en: "Tree Nuts", ar: "مكسرات" }, emoji: "🌰" },
-  fish: { label: { en: "Fish", ar: "سمك" }, emoji: "🐟" },
-  shellfish: { label: { en: "Shellfish", ar: "محار" }, emoji: "🦐" },
-  sesame: { label: { en: "Sesame", ar: "سمسم" }, emoji: "🟤" },
-  soy: { label: { en: "Soy", ar: "صويا" }, emoji: "🫛" },
-  peanuts: { label: { en: "Peanuts", ar: "فول سوداني" }, emoji: "🥜" },
-  sulphites: { label: { en: "Sulphites", ar: "كبريتات" }, emoji: "🍇" },
-};
-
 const DIET_LABELS: Record<DietCode, Locale> = {
   NAS: { en: "No Added Salt", ar: "بدون ملح مضاف" },
   DM: { en: "Diabetic Diet", ar: "حمية السكري" },
@@ -112,6 +94,37 @@ function normalizeAllergen(raw: string): Allergen | null {
     sulphite: "sulphites", sulphites: "sulphites", sulfite: "sulphites",
   };
   return map[s] ?? null;
+}
+
+/**
+ * Diet-order codes an item is unsuitable for. Combines the item's explicit
+ * chart tags (`restrictedFor`) with clinical rules so EVERY diet code that can
+ * appear on a patient's chart actually filters the menu — not just NAS/DM:
+ *   • Low Sodium (LS) ≡ No Added Salt (NAS) — same sodium-restricted items.
+ *   • Low Fat (LF) — fried/breaded dishes, pastries, desserts, full-fat dairy
+ *     (cheese, butter, cream, labna, full-fat milk).
+ *   • Renal (RD) — high sodium plus high potassium/phosphorus foods
+ *     (NAS items, cheese, processed meats, chocolate, banana, nuts).
+ * Rules are name-based heuristics tuned to this menu; when in doubt they
+ * over-restrict (hide the item), which is the safe direction clinically.
+ */
+function dietViolations(item: MenuItem): Set<DietCode> {
+  const codes = new Set<DietCode>(item.restrictedFor ?? []);
+  const name = item.name.en.toLowerCase();
+
+  // Low Sodium is clinically equivalent to No Added Salt.
+  if (codes.has("NAS")) codes.add("LS");
+  if (codes.has("LS")) codes.add("NAS");
+
+  // Low Fat — high-fat preparations and full-fat dairy.
+  if (codes.has("DM") || /pann|fried|croissant|pastry|danish|muffin|cinnamon|cheese|butter|cream|labna|bacon|full fat/.test(name))
+    codes.add("LF");
+
+  // Renal — high sodium + high potassium/phosphorus.
+  if (codes.has("NAS") || /cheese|labna|chocolate|banana|nut|ham|mortadella|bacon/.test(name))
+    codes.add("RD");
+
+  return codes;
 }
 
 /** Lunch & Dinner share an identical menu; build the groups for a given prefix. */
@@ -537,8 +550,10 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
   const [patientName, setPatientName] = useState(nurse.patient.name);
   const [roomNumber, setRoomNumber] = useState(nurse.patient.room);
 
-  /* Patient → OB menu (chart-aware). Guest → Regular menu. */
-  const meals = orderFor === "guest" ? REGULAR_MEALS : MEALS;
+  /* Patient → OB menu (chart-aware). Guest → Regular menu. This is the RAW,
+   * unfiltered catalogue — never render or order from it directly; use the
+   * sanitized `meals` derived below, which has restricted items removed. */
+  const rawMeals = orderFor === "guest" ? REGULAR_MEALS : MEALS;
 
   /* ── Chart-derived defaults (the patient's clinical restrictions) ── */
   const defaults = useMemo(() => {
@@ -557,20 +572,29 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
   const [activeDiet, setActiveDiet] = useState<Set<DietCode>>(() => new Set(defaults.dietCodes));
   const [activeNonFood, setActiveNonFood] = useState<Set<string>>(() => new Set(defaults.nonFood));
 
+  /* Restrictions sourced from the patient's clinical chart are permanent: they
+   * are always applied and the patient may not toggle them off. */
+  const lockedAllergens = useMemo(() => new Set(defaults.foodAllergens), [defaults.foodAllergens]);
+  const lockedNonFood = useMemo(() => new Set(defaults.nonFood), [defaults.nonFood]);
+  const lockedDiet = useMemo(() => new Set(defaults.dietCodes), [defaults.dietCodes]);
+
   const toggleAllergen = (a: Allergen) =>
     setActiveAllergens((prev) => {
+      if (lockedAllergens.has(a)) return prev; // clinical restriction — permanent
       const next = new Set(prev);
       next.has(a) ? next.delete(a) : next.add(a);
       return next;
     });
   const toggleDiet = (c: DietCode) =>
     setActiveDiet((prev) => {
+      if (lockedDiet.has(c)) return prev; // clinical restriction — permanent
       const next = new Set(prev);
       next.has(c) ? next.delete(c) : next.add(c);
       return next;
     });
   const toggleNonFood = (raw: string) =>
     setActiveNonFood((prev) => {
+      if (lockedNonFood.has(raw)) return prev; // clinical restriction — permanent
       const next = new Set(prev);
       next.has(raw) ? next.delete(raw) : next.add(raw);
       return next;
@@ -582,34 +606,67 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
     setActiveNonFood(new Set(defaults.nonFood));
   };
 
+  /* The active-filter state is seeded from `defaults` only once (useState init).
+   * If the CareMe profile loads or changes AFTER mount (async API/localStorage,
+   * patient switch), that seed would be stale and clinical restrictions would
+   * silently stop applying. Re-merge the locked restrictions whenever the
+   * profile changes so they are always enforced. */
+  useEffect(() => {
+    setActiveAllergens((prev) => new Set([...prev, ...defaults.foodAllergens]));
+    setActiveDiet((prev) => new Set([...prev, ...defaults.dietCodes]));
+    setActiveNonFood((prev) => new Set([...prev, ...defaults.nonFood]));
+  }, [defaults]);
+
   /* ── Blocking logic shared across all three meal columns ── */
+  /* Clinical restrictions from the CareMe profile (lockedAllergens / lockedDiet)
+   * are enforced DIRECTLY here, unioned with the mutable filter state. This is
+   * the single source of truth used for both hiding items AND guarding
+   * selection, so a flagged item can never be blockReason()-null — even if the
+   * toggle state is stale or was tampered with. */
   const blockReason = useCallback(
     (item: MenuItem): BlockReason | null => {
-      const a = item.allergens.find((x) => activeAllergens.has(x));
+      const a = item.allergens.find((x) => activeAllergens.has(x) || lockedAllergens.has(x));
       if (a) return { type: "allergen", allergen: a };
-      const d = (item.restrictedFor ?? []).find((c) => activeDiet.has(c));
+      const dv = dietViolations(item);
+      const d = [...activeDiet, ...lockedDiet].find((c) => dv.has(c));
       if (d) return { type: "diet", code: d };
       return null;
     },
-    [activeAllergens, activeDiet]
+    [activeAllergens, activeDiet, lockedAllergens, lockedDiet]
   );
 
-  const blockedCount = useMemo(() => {
-    let n = 0;
-    for (const meal of meals)
-      for (const group of meal.groups)
-        for (const item of group.items) if (blockReason(item)) n++;
-    return n;
-  }, [blockReason, meals]);
+  /* ── Sanitized menu — the ONLY menu the UI and order flow ever see ──────────
+   * Restricted items are stripped out of the data structure here, at the
+   * business-logic layer. Empty groups collapse away entirely. Downstream code
+   * (rendering, selection, order submission) is physically incapable of
+   * surfacing a restricted item because it never receives one. */
+  const meals = useMemo(
+    () =>
+      rawMeals.map((meal) => ({
+        ...meal,
+        groups: meal.groups
+          .map((g) => ({ ...g, items: g.items.filter((item) => !blockReason(item)) }))
+          .filter((g) => g.items.length > 0),
+        includedForAll: meal.includedForAll.filter((item) => !blockReason(item)),
+      })),
+    [rawMeals, blockReason]
+  );
 
   /* ── Selection state: one item per group ── */
-  /* Every group starts with its first item pre-selected (across both menus). */
+  /* Every group starts with its first *allowed* item pre-selected (across both
+   * menus) — restricted items are hidden, so they can never be pre-selected. */
   const [selections, setSelections] = useState<Record<string, string>>(() => {
+    const alg = new Set(defaults.foodAllergens);
+    const diet = new Set(defaults.dietCodes);
+    const allowed = (it: MenuItem) =>
+      !it.allergens.some((a) => alg.has(a)) && !(it.restrictedFor ?? []).some((c) => diet.has(c));
     const init: Record<string, string> = {};
     for (const dataset of [MEALS, REGULAR_MEALS])
       for (const meal of dataset)
-        for (const group of meal.groups)
-          if (group.items[0]) init[group.id] = group.items[0].id;
+        for (const group of meal.groups) {
+          const first = group.items.find(allowed);
+          if (first) init[group.id] = first.id;
+        }
     return init;
   });
 
@@ -659,7 +716,8 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
       if (chosen.length === 0) continue;
       mealTypes.push(loc(meal.label));
       for (const it of chosen) items.push({ id: it.id, name: it.name, quantity: 1, calories: 0, image: "" });
-      for (const inc of meal.includedForAll) items.push({ id: inc.id, name: inc.name, quantity: 1, calories: 0, image: "" });
+      for (const inc of meal.includedForAll)
+        if (!blockReason(inc)) items.push({ id: inc.id, name: inc.name, quantity: 1, calories: 0, image: "" });
     }
     const whoLabel = orderFor === "patient" ? "Patient" : "Guest";
     const specialNotes = [
@@ -705,6 +763,13 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
     if (chip.kind === "diet" && chip.code) return toggleDiet(chip.code);
     if (chip.token) return toggleAllergen(chip.token);
     return toggleNonFood(chip.raw);
+  };
+  /* Every chip in this banner comes from the clinical chart, so it is locked and
+   * cannot be toggled off by the patient. */
+  const chipLocked = (chip: (typeof chartChips)[number]) => {
+    if (chip.kind === "diet" && chip.code) return lockedDiet.has(chip.code);
+    if (chip.token) return lockedAllergens.has(chip.token);
+    return lockedNonFood.has(chip.raw);
   };
 
   const isDirty =
@@ -851,11 +916,15 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
             )}
             {chartChips.map((chip) => {
               const active = chipActive(chip);
+              const locked = chipLocked(chip);
               return (
                 <button
                   key={chip.key}
-                  onClick={() => toggleChip(chip)}
-                  className="flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                  onClick={locked ? undefined : () => toggleChip(chip)}
+                  disabled={locked}
+                  aria-disabled={locked}
+                  title={locked ? loc({ en: "Clinical restriction — locked", ar: "قيد سريري — مقفل" }) : undefined}
+                  className={`flex items-center gap-1.5 transition-all ${locked ? "cursor-not-allowed" : "active:scale-95 cursor-pointer"}`}
                   style={{
                     padding: "6px 14px",
                     borderRadius: theme.radiusFull,
@@ -864,7 +933,7 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
                     opacity: active ? 1 : 0.55,
                   }}
                 >
-                  {active && <Check size={14} color={theme.textInverse} />}
+                  {locked ? <Lock size={13} color={theme.textInverse} /> : active && <Check size={14} color={theme.textInverse} />}
                   <span style={{ ...TEXT_STYLE.pill, color: active ? theme.textInverse : theme.textMuted }}>{chip.label}</span>
                 </button>
               );
@@ -881,44 +950,6 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
               <span style={{ ...TEXT_STYLE.pill, color: theme.primary }}>{loc({ en: "Reset to defaults", ar: "إعادة التعيين" })}</span>
             </button>
           )}
-        </div>
-
-        {/* Allergen filter row */}
-        <div className="flex items-center gap-3 flex-wrap" style={{ backgroundColor: theme.surface, borderRadius: theme.radiusLg, padding: `${SPACE[2]} ${SPACE[3]}`, boxShadow: SHADOW.sm }}>
-          <span style={{ ...TEXT_STYLE.label, color: theme.textMuted, whiteSpace: "nowrap" }}>{loc({ en: "Flag allergy", ar: "إضافة حساسية" })}</span>
-          <div className="flex items-center gap-2 flex-wrap flex-1">
-            {ALLERGEN_ORDER.map((a) => {
-              const active = activeAllergens.has(a);
-              const meta = ALLERGEN_META[a];
-              return (
-                <button
-                  key={a}
-                  onClick={() => toggleAllergen(a)}
-                  className="flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: theme.radiusFull,
-                    backgroundColor: active ? theme.primary : theme.primarySubtle,
-                    border: `1.5px solid ${active ? theme.primary : "transparent"}`,
-                  }}
-                >
-                  <span style={{ fontSize: TYPE_SCALE.sm, lineHeight: 1 }}>{meta.emoji}</span>
-                  <span style={{ ...TEXT_STYLE.pill, color: active ? theme.textInverse : theme.primaryDark }}>{loc(meta.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-          <div
-            className="flex items-center gap-2 shrink-0"
-            style={{ padding: "4px 12px", borderRadius: theme.radiusFull, backgroundColor: blockedCount > 0 ? theme.errorSubtle : theme.successSubtle }}
-          >
-            <AlertTriangle size={15} color={blockedCount > 0 ? theme.error : theme.success} />
-            <span style={{ ...TEXT_STYLE.caption, color: blockedCount > 0 ? theme.error : theme.success }}>
-              {blockedCount > 0
-                ? loc({ en: `${blockedCount} menu items currently hidden by active restrictions / allergies`, ar: `${blockedCount} صنفاً مخفياً حالياً بسبب القيود / الحساسية النشطة` })
-                : loc({ en: "No conflicts — full menu available", ar: "لا تعارض — القائمة كاملة متاحة" })}
-            </span>
-          </div>
         </div>
       </div>
 
@@ -1000,7 +1031,6 @@ export function FoodOrdering({ onClose }: { onClose: () => void }) {
           theme={theme}
           loc={loc}
           isRTL={isRTL}
-          blockReason={blockReason}
           selectedItemFor={selectedItemFor}
           onSelect={selectItem}
           count={mealSelectedCount(activeMealObj)}
@@ -1127,16 +1157,16 @@ function MealColumn({
   theme,
   loc,
   isRTL,
-  blockReason,
   selectedItemFor,
   onSelect,
   count,
 }: {
+  // `meal` is already sanitized upstream — its groups/items contain only items
+  // the patient is eligible to order. The view does no restriction logic itself.
   meal: Meal;
   theme: any;
   loc: (v: Locale) => string;
   isRTL: boolean;
-  blockReason: (item: MenuItem) => BlockReason | null;
   selectedItemFor: (g: FoodGroup) => MenuItem | undefined;
   onSelect: (g: FoodGroup, item: MenuItem) => void;
   count: number;
@@ -1165,6 +1195,7 @@ function MealColumn({
       {/* Group grid — 3 equal columns wrapping into rows (A B C / D E F / …) */}
       <div className="grid" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: SPACE[2], alignItems: "start" }}>
         {meal.groups.map((group) => {
+          const items = group.items;
           const selected = selectedItemFor(group);
           return (
             <div
@@ -1185,14 +1216,13 @@ function MealColumn({
                 </span>
               </div>
               <div className="flex flex-col" style={{ gap: "4px" }}>
-                {group.items.map((item) => (
+                {items.map((item) => (
                   <ItemRow
                     key={item.id}
                     item={item}
                     theme={theme}
                     loc={loc}
                     isRTL={isRTL}
-                    block={blockReason(item)}
                     selected={selected?.id === item.id}
                     onClick={() => onSelect(group, item)}
                   />
@@ -1202,7 +1232,7 @@ function MealColumn({
           );
         })}
 
-        {/* Included for all — final card in the grid */}
+        {/* Included for all — final card in the grid (already sanitized upstream) */}
         {meal.includedForAll.length > 0 && (
           <div
             className="flex flex-col"
@@ -1237,7 +1267,6 @@ function ItemRow({
   theme,
   loc,
   isRTL,
-  block,
   selected,
   onClick,
 }: {
@@ -1245,29 +1274,20 @@ function ItemRow({
   theme: any;
   loc: (v: Locale) => string;
   isRTL: boolean;
-  block: BlockReason | null;
   selected: boolean;
   onClick: () => void;
 }) {
-  const blockLabel = block
-    ? block.type === "allergen"
-      ? loc(ALLERGEN_META[block.allergen].label)
-      : loc(DIET_LABELS[block.code])
-    : "";
-
   return (
     <button
       onClick={onClick}
-      disabled={!!block}
       className="flex items-center gap-2 w-full transition-all"
       style={{
         padding: "5px 8px",
         borderRadius: theme.radiusMd,
         textAlign: isRTL ? "right" : "left",
-        cursor: block ? "not-allowed" : "pointer",
-        backgroundColor: block ? theme.errorSubtle : selected ? theme.primarySubtle : theme.surface,
-        border: `1.5px solid ${block ? `${theme.error}33` : selected ? theme.primary : theme.borderDefault}`,
-        opacity: block ? 0.6 : 1,
+        cursor: "pointer",
+        backgroundColor: selected ? theme.primarySubtle : theme.surface,
+        border: `1.5px solid ${selected ? theme.primary : theme.borderDefault}`,
       }}
     >
       <div
@@ -1278,22 +1298,16 @@ function ItemRow({
           borderRadius: theme.radiusFull,
           backgroundColor: selected ? theme.primary : theme.background,
           border: `1px solid ${theme.borderDefault}`,
-          filter: block ? "grayscale(1)" : "none",
         }}
       >
         <span style={{ fontSize: TYPE_SCALE.sm, lineHeight: 1 }}>{item.emoji}</span>
       </div>
 
-      <span className="flex-1 min-w-0 truncate" style={{ ...TEXT_STYLE.pill, color: block ? theme.textMuted : theme.textHeading }}>
+      <span className="flex-1 min-w-0 truncate" style={{ ...TEXT_STYLE.pill, color: theme.textHeading }}>
         {loc(item.name)}
       </span>
 
-      {block ? (
-        <span className="flex items-center gap-1 shrink-0" style={{ padding: "2px 7px", borderRadius: theme.radiusFull, backgroundColor: theme.error }}>
-          <AlertTriangle size={10} color={theme.textInverse} />
-          <span style={{ ...TEXT_STYLE.micro, color: theme.textInverse }}>{blockLabel}</span>
-        </span>
-      ) : selected ? (
+      {selected ? (
         <div className="flex items-center justify-center shrink-0" style={{ width: "20px", height: "20px", borderRadius: theme.radiusFull, backgroundColor: theme.primary }}>
           <Check size={13} color={theme.textInverse} />
         </div>
