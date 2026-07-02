@@ -387,7 +387,6 @@ export default function KidsHomescreen({
           top-right (same as Layout 1 / Layout 2); prayer times are not clickable. */}
       <div className="relative z-20 shrink-0">
         <TopBar
-          greeting={`${greetingEmoji} ${t(greetingKey)}, ${firstName}!`}
           onSettingsTap={onOpenSettings}
           onBellTap={onOpenNotifications}
           unreadCount={unreadCount}
@@ -435,11 +434,15 @@ export default function KidsHomescreen({
                     👋
                   </span>
                 </div>
-                <p style={{ fontFamily: headFont, fontSize: 26, fontWeight: 800, color: brandInk, lineHeight: 1.1 }}>
-                  {t("kids.hi", firstName)}
+                {/* Time-of-day greeting — same emoji + logic as the header */}
+                <p style={{ fontFamily: headFont, fontSize: 15, fontWeight: 700, color: theme.primary, textAlign: "center", lineHeight: 1.2 }}>
+                  {greetingEmoji} {t(greetingKey)},
+                </p>
+                <p style={{ fontFamily: headFont, fontSize: 30, fontWeight: 800, color: brandInk, textAlign: "center", lineHeight: 1.1 }}>
+                  {t("kids.name", firstName)}
                 </p>
                 <p style={{ fontSize: 13, fontWeight: 700, color: theme.primary, textAlign: "center", lineHeight: 1.3 }}>
-                  {t("kids.dailyMessage")}
+                  {t("kids.happyHere")}
                 </p>
               </div>
 

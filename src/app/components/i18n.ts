@@ -48,6 +48,8 @@ const translations: Record<string, TranslationEntry> = {
   "kids.greeting.afternoon": { en: "Good Afternoon", ar: "مساء الخير", ur: "سہ پہر بخیر" },
   "kids.greeting.evening": { en: "Good Evening", ar: "مساء الخير", ur: "شام بخیر" },
   "kids.hi": { en: "Hi {0}!", ar: "أهلاً {0}!", ur: "ہائے {0}!" },
+  "kids.name": { en: "{0}!", ar: "{0}!", ur: "{0}!" },
+  "kids.happyHere": { en: "We're happy you're here 💛", ar: "سعداء بوجودك هنا 💛", ur: "ہم خوش ہیں کہ آپ یہاں ہیں 💛" },
   "kids.dailyMessage": { en: "Today is a great day to feel better!", ar: "اليوم يومٌ رائع لتشعر بتحسّن!", ur: "آج بہتر محسوس کرنے کا ایک شاندار دن ہے!" },
   "kids.careTitle": { en: "How are you feeling?", ar: "كيف تشعر اليوم؟", ur: "آپ کیسا محسوس کر رہے ہیں؟" },
 
