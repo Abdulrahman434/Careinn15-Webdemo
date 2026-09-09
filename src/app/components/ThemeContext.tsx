@@ -221,6 +221,8 @@ export interface ThemeConfig {
 
   /* ── Assets ── */
   logoUrl: string;           // hospital logo (360×190 recommended)
+  /** Looping video screensaver for this brand, when supplied */
+  screensaverVideoUrl?: string;
   heroImageUrl: string;      // hospital exterior photo (1920×600 recommended)
   heroImageUrls: string[];   // multiple hero images for carousel
   heroCropPosition: string;  // object-position for hero image crop, e.g. "50% 15%"
@@ -436,6 +438,7 @@ function buildTheme(core: {
     fontFamilyMono: `${c.fontFamily.split(",")[0]}, monospace`,
 
     // Dark mode prefers a light-on-dark mark when the brand supplies one.
+    screensaverVideoUrl: c.screensaverVideoUrl,
     logoUrl: (dark && c.logoUrlDark) || c.logoUrl || (c.id === "dsfh" ? DSFH_LOGO : c.id === "burjeel" ? burjeelLogo : c.id === "slh" ? slhLogo : c.id === "dallah" ? dallahLogo : c.id === "caremed" ? caremedLogo : c.id === "imc" ? imcLogo : c.id === "careinn" ? careinnLogo : c.id === "prime" ? primeLogo : c.id === "kauh" ? kauhLogo : c.id === "andalusia" ? andalusiaLogo : ""),
     heroImageUrl: c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : c.id === "kauh" ? kauhHero : c.id === "andalusia" ? andalusiaHero : ""),
     heroImageUrls: c.heroImageUrls && c.heroImageUrls.length > 0 ? c.heroImageUrls : [c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : c.id === "kauh" ? kauhHero : c.id === "andalusia" ? andalusiaHero : "")],
@@ -960,8 +963,10 @@ export function primaryRgba(theme: ThemeConfig, alpha: number): string {
  * BUILT-IN CONFIGS — the default hospital(s) that ship with the system
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-import logoImage from "../../assets/fakeeh-jeddah-logo.svg";
-import logoImageDark from "../../assets/logos/Fakeeh-Hospitals-Dark-Mode.svg";
+// Confirmed marks supplied by the Fakeeh brand team (cropped to content).
+import logoImage from "../../assets/logos/fakeeh-logo-light.png";
+import logoImageDark from "../../assets/logos/fakeeh-logo-dark.png";
+import fakeehScreensaver from "../../assets/fakeeh-screensaver.mp4";
 import hospitalImg from "../../assets/fakeeh-jeddah-hero.png";
 
 import burjeelLogo from "../../assets/c8626cd3ed1ce90e9b3bab4a5f97a7315203f204.png";
@@ -1007,6 +1012,7 @@ export const DSFH_CORE: HospitalCoreConfig = {
   fontFamilyAr: "'Almarai', sans-serif",
   logoUrl: logoImage,
   logoUrlDark: logoImageDark,
+  screensaverVideoUrl: fakeehScreensaver,
   hospitalWebsiteUrl: "https://en.dsfhriyadh.fakeeh.care/",
   heroImageUrl: hospitalImg,
   primary: "#008AAB",
@@ -1216,6 +1222,9 @@ export interface HospitalCoreConfig {
   /** Optional light-on-dark logo. Used automatically in dark mode; falls back
    *  to `logoUrl` when a brand hasn't supplied one. */
   logoUrlDark?: string;
+  /** Optional looping video screensaver. When set, it replaces the tasbih
+   *  screensaver for that hospital. */
+  screensaverVideoUrl?: string;
   heroImageUrl: string;
   heroImageUrls?: string[];
   heroCropPosition?: string;

@@ -625,7 +625,10 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
             rel="noopener noreferrer"
             className="rounded-3xl overflow-hidden flex items-center justify-center transition-transform hover:scale-[1.02] active:scale-[0.98]"
             style={{
-              backgroundColor: "#FFFFFF",
+              // Must follow the theme: theme.logoUrl serves the white mark in
+              // dark mode, which would be invisible on a hardcoded white plate.
+              backgroundColor: theme.surface,
+              border: theme.engagementCardBorder,
               boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
               padding: "20px 28px",
               height: "140px",

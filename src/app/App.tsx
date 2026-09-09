@@ -33,6 +33,7 @@ import careinnliteVideo from "../assets/careinnlite.mp4";
 import { HospitalConfigurator } from "./components/HospitalConfigurator";
 import { ThemeAppearanceDialog } from "./components/ThemeAppearanceDialog";
 import { TasbihScreenSaver } from "./components/TasbihScreenSaver";
+import { VideoScreenSaver } from "./components/VideoScreenSaver";
 import { FoodOrdering } from "./components/FoodOrdering";
 import { NeedSomething } from "./components/NeedSomething";
 import { OrderProvider, useOrders } from "./components/OrderStore";
@@ -1386,6 +1387,19 @@ function BedsideScreen() {
 
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // ── Typing into a field wins over every global shortcut ──
+      // Handset bindings map bare digits to `dial_digit`, so without this a
+      // nurse typing an MRN would open the Call screen and dial what they
+      // typed. Escape still passes through so overlays stay closable.
+      const tgt = e.target as HTMLElement | null;
+      const isTyping =
+        !!tgt &&
+        (tgt.tagName === "INPUT" ||
+          tgt.tagName === "TEXTAREA" ||
+          tgt.tagName === "SELECT" ||
+          tgt.isContentEditable);
+      if (isTyping && e.key !== "Escape") return;
+
       // ── Block ALL handset actions when lock dialog is active ──
       if (lockActiveRef.current) {
         // Only allow digit keys for PIN entry (handled by lock screen)
@@ -2124,15 +2138,19 @@ function BedsideScreen() {
         )}
 
         {/* Tasbih Screen Saver */}
-        {showTasbih && (
-          <TasbihScreenSaver onClose={() => {
+        {showTasbih && (() => {
+          const closeSaver = () => {
             if (isAccountSet()) {
               setIsLocked(true);
             } else {
               setShowTasbih(false);
             }
-          }} />
-        )}
+          };
+          // Brands that supply a screensaver video get it instead of the tasbih.
+          return theme.screensaverVideoUrl
+            ? <VideoScreenSaver src={theme.screensaverVideoUrl} onClose={closeSaver} />
+            : <TasbihScreenSaver onClose={closeSaver} />;
+        })()}
 
         {/* Hospital Broadcast Overlay */}
         {activeBroadcast && (

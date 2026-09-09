@@ -7,8 +7,26 @@ import { Eye, EyeOff, X } from "lucide-react";
  * Frosted-glass login card centered on a full-page luxury hospital room image
  * ═══════════════════════════════════════════════════════════════════════════ */
 
+import fakeehLoginBg from "../../assets/bg/login-background-fakeeh.png";
+
 const SKY = "#6CC4E0";
 const NAVY = "#1B2F5B";
+const INK = "#16294A";
+const INK_MUTED = "#5A6B82";
+const FIELD_LINE = "#D5DDE7";
+
+/* The gate renders before ThemeProvider, so there is no `theme` here. The last
+   signed-in hospital is remembered in localStorage, which is enough to pick the
+   right wallpaper; anything unknown falls back to the neutral CareInn one. */
+const LOGIN_BACKGROUNDS: Record<string, string> = { dsfh: fakeehLoginBg };
+
+function loginBackground(): string {
+  try {
+    return LOGIN_BACKGROUNDS[localStorage.getItem("active-hospital-id") || ""] || "/assets/bg/careinnbak.jpg";
+  } catch {
+    return "/assets/bg/careinnbak.jpg";
+  }
+}
 
 export function PasswordGate() {
   const { login, loginAsGuest } = useAuth();
@@ -85,6 +103,9 @@ export function PasswordGate() {
     setSuccess(true);
   };
 
+  const bgUrl = loginBackground();
+  const branded = bgUrl !== "/assets/bg/careinnbak.jpg";
+
   return (
     <div
       style={{
@@ -107,12 +128,12 @@ export function PasswordGate() {
           position: "absolute",
           inset: 0,
           zIndex: 1,
-          animation: "kenburns 24s ease-in-out infinite alternate",
+          animation: branded ? "none" : "kenburns 24s ease-in-out infinite alternate",
           willChange: "transform",
         }}
       >
         <img
-          src="/assets/bg/careinnbak.jpg"
+          src={bgUrl}
           alt=""
           style={{
             width: "100%",
@@ -129,7 +150,7 @@ export function PasswordGate() {
           position: "absolute",
           inset: 0,
           zIndex: 2,
-          background: "rgba(0, 0, 0, 0.25)",
+          background: branded ? "none" : "rgba(0, 0, 0, 0.25)",
           pointerEvents: "none",
         }}
       />
@@ -154,7 +175,9 @@ export function PasswordGate() {
           // actually see rather than in the full (possibly occluded) viewport.
           height: visibleH !== null ? `${visibleH}px` : "100%",
           display: "flex",
-          justifyContent: "center",
+          // Branded wallpapers keep their subject on the right, so the card sits
+          // left rather than covering it.
+          justifyContent: branded ? "flex-start" : "center",
           // Same 5% / 7.5% proportions as before, but measured against the
           // visible height. Vertical percentage padding resolves against WIDTH
           // in CSS, so this has to be computed rather than expressed as a %.
@@ -173,11 +196,12 @@ export function PasswordGate() {
             width: "420px",
             flexShrink: 0,
             margin: "auto",
-            background: "rgba(255, 255, 255, 0.15)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
+            background: branded ? "#FFFFFF" : "rgba(255, 255, 255, 0.15)",
+            backdropFilter: branded ? "none" : "blur(16px)",
+            WebkitBackdropFilter: branded ? "none" : "blur(16px)",
             borderRadius: "20px",
-            border: "1px solid rgba(255, 255, 255, 0.3)",
+            border: branded ? "none" : "1px solid rgba(255, 255, 255, 0.3)",
+            marginLeft: branded ? "clamp(32px, 7vw, 132px)" : undefined,
             // Navy-tinted ambient shadow (calmer than pure black) + a soft
             // white top highlight so the glass edge reads crisp on any wallpaper.
             boxShadow:
@@ -198,7 +222,7 @@ export function PasswordGate() {
               margin: compact ? "0 0 8px" : "0 0 12px",
               letterSpacing: "-0.5px",
               textAlign: "center",
-              textShadow: "0 1px 2px rgba(255, 255, 255, 0.35)",
+              textShadow: branded ? "none" : "0 1px 2px rgba(255, 255, 255, 0.35)",
             }}
           >
             Welcome!
@@ -206,7 +230,7 @@ export function PasswordGate() {
           
           <p
             style={{
-              color: "rgba(255, 255, 255, 0.85)",
+              color: branded ? INK_MUTED : "rgba(255, 255, 255, 0.85)",
               fontSize: "14px",
               fontWeight: 600,
               margin: compact ? "0 0 22px" : "0 0 44px",
@@ -224,6 +248,7 @@ export function PasswordGate() {
               <div
                 style={{
                   display: "flex",
+                  flexDirection: branded ? "column" : "row",
                   alignItems: "stretch",
                   gap: "10px",
                 }}
@@ -235,9 +260,9 @@ export function PasswordGate() {
                     height: "48px",
                     display: "flex",
                     alignItems: "center",
-                    border: `1.5px solid ${error ? "#EF4444" : isFocused ? SKY : "rgba(255, 255, 255, 0.25)"}`,
+                    border: `1.5px solid ${error ? "#EF4444" : isFocused ? SKY : branded ? FIELD_LINE : "rgba(255, 255, 255, 0.25)"}`,
                     borderRadius: "10px",
-                    background: error ? "rgba(239, 68, 68, 0.15)" : "rgba(255, 255, 255, 0.08)",
+                    background: error ? (branded ? "#FEF2F2" : "rgba(239, 68, 68, 0.15)") : branded ? "#FFFFFF" : "rgba(255, 255, 255, 0.08)",
                     transition: "border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease",
                     boxShadow: error ? "0 0 0 3px rgba(239, 68, 68, 0.25)" : isFocused ? `0 0 0 3px ${SKY}40` : "none",
                   }}
@@ -261,7 +286,7 @@ export function PasswordGate() {
                       background: "transparent",
                       border: "none",
                       outline: "none",
-                      color: "#FFFFFF",
+                      color: branded ? INK : "#FFFFFF",
                       fontSize: "15px",
                       fontWeight: 500,
                       padding: "0 4px 0 16px",
@@ -295,9 +320,9 @@ export function PasswordGate() {
                     }}
                   >
                     {showPassword ? (
-                      <EyeOff size={18} color="rgba(255, 255, 255, 0.6)" />
+                      <EyeOff size={18} color={branded ? INK_MUTED : "rgba(255, 255, 255, 0.6)"} />
                     ) : (
-                      <Eye size={18} color="rgba(255, 255, 255, 0.6)" />
+                      <Eye size={18} color={branded ? INK_MUTED : "rgba(255, 255, 255, 0.6)"} />
                     )}
                   </button>
                 </div>
@@ -307,7 +332,7 @@ export function PasswordGate() {
                   type="submit"
                   style={{
                     flexShrink: 0,
-                    width: "116px",
+                    width: branded ? "100%" : "116px",
                     height: "48px",
                     border: "none",
                     borderRadius: "10px",
@@ -341,7 +366,7 @@ export function PasswordGate() {
                 {error && (
                   <p
                     style={{
-                      color: theme.errorOn,
+                      color: "#FF6B6B",
                       fontSize: "13px",
                       fontWeight: 500,
                       margin: 0,
@@ -354,6 +379,14 @@ export function PasswordGate() {
                 )}
               </div>
 
+              {branded && (
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "2px 0 14px" }}>
+                  <span style={{ flex: 1, height: "1px", background: FIELD_LINE }} />
+                  <span style={{ color: INK_MUTED, fontSize: "13px", fontWeight: 600 }}>or</span>
+                  <span style={{ flex: 1, height: "1px", background: FIELD_LINE }} />
+                </div>
+              )}
+
               {/* Secondary action — full width, outline treatment: no fill,
                   lighter weight, no shadow. */}
               <button
@@ -364,22 +397,22 @@ export function PasswordGate() {
                   height: "48px",
                   borderRadius: "10px",
                   background: "transparent",
-                  border: "1.5px solid rgba(255, 255, 255, 0.5)",
-                  color: "#FFFFFF",
+                  border: `1.5px solid ${branded ? "#1B7E9E" : "rgba(255, 255, 255, 0.5)"}`,
+                  color: branded ? "#1B7E9E" : "#FFFFFF",
                   fontSize: "15px",
-                  fontWeight: 600,
+                  fontWeight: 700,
                   cursor: "pointer",
                   fontFamily: "inherit",
                   letterSpacing: "0.3px",
                   transition: "background 0.2s ease, border-color 0.2s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.14)";
-                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.7)";
+                  e.currentTarget.style.background = branded ? "rgba(27, 126, 158, 0.08)" : "rgba(255, 255, 255, 0.14)";
+                  e.currentTarget.style.borderColor = branded ? "#1B7E9E" : "rgba(255, 255, 255, 0.7)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.5)";
+                  e.currentTarget.style.borderColor = branded ? "#1B7E9E" : "rgba(255, 255, 255, 0.5)";
                 }}
               >
                 Continue as Guest

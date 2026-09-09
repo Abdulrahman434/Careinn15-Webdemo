@@ -121,6 +121,13 @@ export function useKeyboardNav(
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
+    // Never hijack keys while the user is typing in a field.
+    const tgt = e.target as HTMLElement | null;
+    if (tgt && (tgt.tagName === "INPUT" || tgt.tagName === "TEXTAREA" ||
+                tgt.tagName === "SELECT" || tgt.isContentEditable)) {
+      if (e.key !== "Escape") return;
+    }
+
       if (!enabled) return;
       const container = containerRef.current;
       if (!container) return;
