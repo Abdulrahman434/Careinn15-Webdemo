@@ -1,7 +1,7 @@
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, LEADING, TEXT_STYLE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, MessageSquareHeart, FileText, AlertTriangle, Heart, Mic, CheckCircle2, Play, Pause, Square, RotateCcw, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageSquareHeart, MessageSquareWarning, FileText, AlertTriangle, Heart, Mic, CheckCircle2, Play, Pause, Square, RotateCcw, Trash2 } from "lucide-react";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { ApiImage } from "./ApiImage";
 import { QuestionProgress, QuestionProgressBar } from "./QuestionProgress";
@@ -285,6 +285,9 @@ const APPRECIATION_COLOR = "#1B7F5A";
 const APPRECIATION_SUBTLE = "rgba(27,127,90,0.08)";
 const APPRECIATION_BORDER = "rgba(27,127,90,0.18)";
 
+/* Dr. Soliman Fakeeh Hospital's own occurrence-reporting form */
+const FAKEEH_OVR_URL = "https://e-ovr.fakeeh.care:173/cmsregisterarabic";
+
 type FeedbackPath = "hub" | "survey" | "concern" | "appreciation";
 
 export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) {
@@ -293,6 +296,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
 
   const BRAND = theme.primary;
   const BRAND_DARK = theme.primaryDark;
+  const isFakeeh = theme.id === "dsfh";
 
   // Hub state
   const [path, setPath] = useState<FeedbackPath>(initialPath);
@@ -354,7 +358,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
   };
 
   /* ═══════════════════════════════════════════════════════════════
-   * RENDER: HUB SCREEN (3 cards side-by-side)
+   * RENDER: HUB SCREEN (cards side-by-side)
    * ═══════════════════════════════════════════════════════════════ */
   const renderHubScreen = () => (
     <div className="flex flex-col items-center justify-center h-full px-16 text-center">
@@ -386,6 +390,35 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
           </span>
         </button>
 
+        {/* Fakeeh routes concerns + appreciation to the hospital's own OVR form */}
+        {isFakeeh ? (
+        <button
+          onClick={() => window.open(FAKEEH_OVR_URL, "_blank", "noopener,noreferrer")}
+          className="sm-card flex-1 flex flex-col items-center cursor-pointer"
+          style={{
+            padding: "48px 24px",
+            borderRadius: theme.radiusCard,
+            backgroundColor: theme.surface,
+            border: `1.5px solid ${theme.borderDefault}`,
+            boxShadow: SHADOW.sm,
+            outline: "none",
+          }}
+        >
+          <div
+            className="sm-iconbox flex items-center justify-center mb-6"
+            style={{ width: 80, height: 80, borderRadius: theme.radiusFull, backgroundColor: theme.accentSubtle }}
+          >
+            <MessageSquareWarning size={40} style={{ color: theme.accent }} />
+          </div>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "8px" }}>
+            {t("feedback.suggestionsComplaints")}
+          </span>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.medium, color: theme.textMuted }}>
+            {t("feedback.suggestionsComplaintsDesc")}
+          </span>
+        </button>
+        ) : (
+        <>
         {/* Raise a Concern Card */}
         <button
           onClick={() => setPath("concern")}
@@ -439,6 +472,8 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
             {isRTL ? "اشكر فريقنا · ٣٠ ثانية" : "Thank our team · 30 sec"}
           </span>
         </button>
+        </>
+        )}
       </div>
     </div>
   );
