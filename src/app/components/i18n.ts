@@ -529,8 +529,8 @@ const translations: Record<string, TranslationEntry> = {
   "care.imaging.pending": { en: "Processing...", ar: "قيد المعالجة...", ur: "پروسیسنگ ہو رہی ہے..." },
 
   /* ─── Care Team ─── */
-  "care.team.name.nura": { en: "Nura Al-Rashid", ar: "نورا الرشيد", ur: "نورہ الرشید" },
-  "care.team.name.omar": { en: "Dr. Walt Disney", ar: "د. والت ديزني", ur: "ڈاکٹر عمر عبدالحلیم" },
+  "care.team.name.nura": { en: "Nura Al-Rashid", ar: "نورة الرشيد", ur: "نورہ الرشید" },
+  "care.team.name.omar": { en: "Dr. Omar Abdulhalim", ar: "د. عمر عبدالحليم", ur: "ڈاکٹر عمر عبدالحلیم" },
   "care.team.primaryNurse": { en: "Primary Nurse", ar: "الممرضة الرئيسية", ur: "پرائمری نرس" },
   "care.team.attendingDoctor": { en: "Attending Doctor", ar: "الطبيب المعالج", ur: "علاج کرنے والا ڈاکٹر" },
   "care.team.specialty.icu": { en: "ICU", ar: "العناية المركزة", ur: "آئی سی یو" },

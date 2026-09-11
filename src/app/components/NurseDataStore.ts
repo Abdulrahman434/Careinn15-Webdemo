@@ -412,6 +412,20 @@ function loadCachedState(): Partial<NurseStoreState> {
       if (parsed.patient.admissionDate === "10 Mar 2026") delete parsed.patient.admissionDate;
       if (parsed.patient.mrn === "00-284619") delete parsed.patient.mrn;
     }
+    // Revive Date fields. JSON.stringify turns them into ISO strings, so
+    // without this every persisted observation comes back with a string
+    // timestamp and renders as "—" instead of its date.
+    if (Array.isArray(parsed.observations)) {
+      parsed.observations = parsed.observations.map((o: any) => ({
+        ...o,
+        timestamp: o?.timestamp ? new Date(o.timestamp) : o?.timestamp,
+      }));
+    }
+    if (Array.isArray(parsed.careTeam)) {
+      parsed.careTeam = parsed.careTeam.map((m: any) =>
+        m?.addedAt ? { ...m, addedAt: new Date(m.addedAt) } : m);
+    }
+
     const activeMrn = localStorage.getItem('careinn-active-mrn-passcode') || localStorage.getItem('careinn-last-mrn');
     if (activeMrn) {
       if (!parsed.patient) parsed.patient = {};
@@ -693,7 +707,8 @@ const nurseStore = (() => {
       notify();
     },
 
-    // ── Pain Score ──
+    /** @deprecated Pain now lives on each observation — see latestPainLevel().
+     *  Kept so older cached state and any stray caller stay harmless. */
     setPainScore: (score: number) => {
       state = { ...state, painScore: Math.max(0, Math.min(10, score)) };
       notify();
@@ -849,6 +864,23 @@ const nurseStore = (() => {
  * ═══════════════════════════════════════════════════════════════ */
 
 /** Subscribe to the full nurse data store. Re-renders on any change. */
+/**
+ * Pain is owned by the observations record — there is no separate editable
+ * pain value any more. Reads the newest observation by timestamp so Care
+ * Overview and the patient-facing card can never disagree.
+ * Returns null when no observation has been recorded yet.
+ */
+export function latestPainLevel(st: Pick<NurseStoreState, "observations">): number | null {
+  const obs = st.observations;
+  if (!Array.isArray(obs) || obs.length === 0) return null;
+  const newest = obs.reduce((a, b) => {
+    const ta = new Date(a.timestamp as any).getTime();
+    const tb = new Date(b.timestamp as any).getTime();
+    return tb >= ta ? b : a;
+  });
+  return typeof newest?.painLevel === "number" ? newest.painLevel : null;
+}
+
 export function useNurseStore() {
   const [state, setState] = useState<NurseStoreState>(nurseStore.get());
   useEffect(() => nurseStore.subscribe(setState), []);

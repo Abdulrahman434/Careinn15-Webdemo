@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Activity, Droplet, Thermometer, Wind, Save, CheckCircle2,
   Clock, Trash2, Stethoscope, AlertTriangle, ClipboardList, Eye
@@ -20,7 +20,7 @@ function painColor(n: number) {
   return "#EF4444";
 }
 
-export function ObservationsTab({ role }: { role: "nurse" | "doctor" }) {
+export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "doctor"; addNonce?: number }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLocale();
   const store = useNurseStore();
@@ -33,6 +33,18 @@ export function ObservationsTab({ role }: { role: "nurse" | "doctor" }) {
   // Form state
   const blankForm = { vitals: { bp: "", hr: "", temp: "", spo2: "" }, painLevel: 0, risks: { fall: false, pressure: false, allergies: false, other: false }, nurseNotes: "" };
   const [form, setForm] = useState(blankForm);
+
+  // "Add Observation" in the header bumps `addNonce`. A counter rather than a
+  // boolean so repeat presses re-open the form even when the tab is already
+  // showing — a plain flag would only ever fire once.
+  useEffect(() => {
+    if (addNonce > 0 && role === "nurse") {
+      setIsAdding(true);
+      setSelectedId(null);
+      setForm(blankForm);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addNonce]);
 
   // Doctor note
   const [docNote, setDocNote] = useState("");
@@ -104,7 +116,7 @@ export function ObservationsTab({ role }: { role: "nurse" | "doctor" }) {
             {/* Vitals */}
             <div className="grid grid-cols-4 gap-3 mb-5">
               {[
-                { key: "bp", label: "Blood Pressure", unit: "mmHg", icon: <Droplet size={14} color={theme.errorOn} />, placeholder: "120/80" },
+                { key: "bp", label: "Blood Pressure", unit: "mmHg", icon: <Droplet size={14} color={t.errorOn} />, placeholder: "120/80" },
                 { key: "hr", label: "Heart Rate", unit: "BPM", icon: <Activity size={14} color="#F43F5E" />, placeholder: "72" },
                 { key: "temp", label: "Temperature", unit: "°C", icon: <Thermometer size={14} color="#F59E0B" />, placeholder: "37.0" },
                 { key: "spo2", label: "O₂ Saturation", unit: "%", icon: <Wind size={14} style={{ color: t.primary }} />, placeholder: "98" },
@@ -200,7 +212,7 @@ export function ObservationsTab({ role }: { role: "nurse" | "doctor" }) {
             {/* Vitals */}
             <div className="grid grid-cols-4 gap-3 mb-5">
               {[
-                { val: activeObs.vitals.bp, label: "BP", unit: "mmHg", icon: <Droplet size={14} color={theme.errorOn} /> },
+                { val: activeObs.vitals.bp, label: "BP", unit: "mmHg", icon: <Droplet size={14} color={t.errorOn} /> },
                 { val: activeObs.vitals.hr, label: "HR", unit: "BPM", icon: <Activity size={14} color="#F43F5E" /> },
                 { val: activeObs.vitals.temp, label: "Temp", unit: "°C", icon: <Thermometer size={14} color="#F59E0B" /> },
                 { val: activeObs.vitals.spo2, label: "SpO₂", unit: "%", icon: <Wind size={14} style={{ color: t.primary }} /> },

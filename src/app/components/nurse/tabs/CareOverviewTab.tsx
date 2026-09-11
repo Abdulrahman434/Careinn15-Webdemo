@@ -3,7 +3,7 @@ import { ApiImage } from "../../ApiImage";
 import { Users, AlertTriangle, Apple, Plus, X, Activity, Eye, EyeOff, Info } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
 import { useLocale } from "../../i18n";
-import { useNurseStore, nurseActions } from "../../NurseDataStore";
+import { latestPainLevel, useNurseStore, nurseActions } from "../../NurseDataStore";
 
 const DIET_OPTIONS = [
   { value: "regular",        label: "Regular" },
@@ -38,7 +38,9 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
 
   const [newAllergy, setNewAllergy] = useState("");
 
-  const pc = painColor(store.painScore);
+  // Pain is owned by observations now; this mirrors the newest one.
+  const pain = latestPainLevel(store);
+  const pc = painColor(pain ?? 0);
 
   return (
     <div className="space-y-5">
@@ -182,19 +184,20 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
       {/* Pain Score */}
       <div className="nurse-card">
         <h3 style={{ color: t.textHeading }}><Activity size={18} style={{ color: pc }} /> Pain Score</h3>
-        <div className="flex items-center gap-4">
-          <span style={{ fontSize: "36px", fontWeight: 900, color: pc }}>{store.painScore}<span style={{ fontSize: "18px", color: t.textMuted }}>/10</span></span>
-          <span style={{ fontSize: "12px", fontWeight: 800, color: pc, backgroundColor: `${pc}18`, padding: "4px 12px", borderRadius: 99 }}>{painLabel(store.painScore).toUpperCase()}</span>
-        </div>
-        {isNurse && (
-          <div className="mt-4">
-            <input type="range" min={0} max={10} value={store.painScore}
-              onChange={(e) => nurseActions.setPainScore(Number(e.target.value))}
-              className="w-full cursor-pointer" style={{ accentColor: pc }} />
-            <div className="flex justify-between mt-1" style={{ fontSize: "11px", color: t.textMuted }}>
-              <span>0 — None</span><span>10 — Severe</span>
+        {pain === null ? (
+          <span style={{ fontSize: "14px", color: t.textMuted }}>
+            No observation recorded yet
+          </span>
+        ) : (
+          <>
+            <div className="flex items-center gap-4">
+              <span style={{ fontSize: "36px", fontWeight: 900, color: pc }}>{pain}<span style={{ fontSize: "18px", color: t.textMuted }}>/10</span></span>
+              <span style={{ fontSize: "12px", fontWeight: 800, color: pc, backgroundColor: `${pc}18`, padding: "4px 12px", borderRadius: 99 }}>{painLabel(pain).toUpperCase()}</span>
             </div>
-          </div>
+            <div className="mt-2" style={{ fontSize: "11px", color: t.textMuted }}>
+              From the latest observation — record a new observation to update it.
+            </div>
+          </>
         )}
       </div>
       {/* HIS Disclaimer Note */}

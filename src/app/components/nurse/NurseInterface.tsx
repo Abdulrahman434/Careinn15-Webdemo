@@ -29,12 +29,12 @@ const TABS: TabDef[] = [
   { key: "profile", label: "Patient Profile", icon: User, hasVisibility: false },
   { key: "careOverview", label: "Care Overview", icon: Heart, hasVisibility: true },
   { key: "carePlan", label: "My Care Plan", icon: ClipboardList, hasVisibility: true },
-  { key: "financial", label: "Financial", icon: DollarSign, hasVisibility: true },
   { key: "labs", label: "Lab Results", icon: FlaskConical, hasVisibility: true },
   { key: "imaging", label: "Imaging", icon: ImageIcon, hasVisibility: true },
   { key: "baby", label: "Baby Camera", icon: Baby, hasVisibility: true },
   { key: "discharge", label: "Discharge Plan", icon: LogOut, hasVisibility: true },
   { key: "observations", label: "Observations", icon: Activity, hasVisibility: true },
+  { key: "financial", label: "Financial", icon: DollarSign, hasVisibility: true },
   { key: "nfc", label: "Update Nurse Info", icon: CreditCard, hasVisibility: false },
 ];
 
@@ -48,6 +48,9 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
   const { t: tr } = useLocale();
   const store = useNurseStore();
   const [activeTab, setActiveTab] = useState<SectionKey>("profile");
+  // Bumped by the header's "Add Observation" so the observations tab opens its
+  // form — switching tab alone did nothing when that tab was already active.
+  const [addObsNonce, setAddObsNonce] = useState(0);
 
   const patient = store.patient;
 
@@ -61,7 +64,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
       case "imaging": return <ImagingTab role={role} />;
       case "baby": return <BabyCameraTab role={role} />;
       case "discharge": return <DischargePlanTab role={role} />;
-      case "observations": return <ObservationsTab role={role} />;
+      case "observations": return <ObservationsTab role={role} addNonce={addObsNonce} />;
       case "nfc": return <NfcTab />;
       default: return null;
     }
@@ -136,7 +139,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
         </div>
         {role === "nurse" && (
           <button
-            onClick={() => setActiveTab("observations")}
+            onClick={() => { setActiveTab("observations"); setAddObsNonce((n) => n + 1); }}
             className="flex items-center gap-2 px-5 py-3 cursor-pointer transition-all active:scale-95"
             style={{ backgroundColor: t.primary, color: "#fff", fontSize: "14px", fontWeight: 800, borderRadius: "14px", border: "none" }}
           >

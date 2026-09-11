@@ -1,7 +1,7 @@
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, primaryRgba, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { ApiImage } from "./ApiImage";
 import { useLocale } from "./i18n";
-import { useNurseStore, type SectionKey } from "./NurseDataStore";
+import { latestPainLevel, useNurseStore, type SectionKey } from "./NurseDataStore";
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -126,11 +126,11 @@ const ALL_SLIDES: SlideConfig[] = [
   { key: "profile", title: "Patient Profile", titleKey: "care.profile.title", icon: IdCard },
   { key: "overview", title: "Care Overview", titleKey: "care.overview.title", icon: Activity },
   { key: "plan", title: "My Care Plan", titleKey: "care.plan.title", icon: ClipboardList },
-  { key: "observations", title: "Observations", titleKey: "care.observations.title", icon: Activity },
   { key: "labs", title: "Lab Results", titleKey: "care.labs.title", icon: FlaskConical },
   { key: "imaging", title: "Scans & Imaging", titleKey: "care.imaging.title", icon: ImageIcon },
   { key: "baby", title: "Baby Camera", titleKey: "care.baby.title", icon: Baby },
   { key: "discharge", title: "Discharge Plan", titleKey: "care.discharge.title", icon: LogOut },
+  { key: "observations", title: "Observations", titleKey: "care.observations.title", icon: Activity },
   { key: "billing", title: "Financial Summary", titleKey: "care.billing.title", icon: CreditCard },
 ];
 
@@ -513,7 +513,8 @@ function CareOverviewSlide({ theme, isExpanded = false }: { theme: any, isExpand
   const storeAllergies = nurseStore.allergies;
   const patientDietLabel = DIET_DISPLAY_LABELS[nurseStore.patientDiet] || nurseStore.patientDiet;
   const isNpo = nurseStore.patientDiet === "npo";
-  const storePainScore = nurseStore.painScore;
+  // Mirrors the newest observation so the patient never sees a stale score.
+  const storePainScore = latestPainLevel(nurseStore);
   const labelSize = isExpanded ? "16px" : "13px";
 
   const hasHisData = nurseStore.isHisConnected ? !!nurseStore.hisSections?.careOverview : true;
@@ -640,13 +641,13 @@ function CareOverviewSlide({ theme, isExpanded = false }: { theme: any, isExpand
                   color: theme.warningOn,
                   fontWeight: 900,
                   lineHeight: 1
-                }}>{storePainScore} / 10</span>
+                }}>{storePainScore === null ? "—" : `${storePainScore} / 10`}</span>
               </div>
               <div className="relative h-2.5 w-full rounded-full overflow-hidden" style={{ backgroundColor: theme.primarySubtle }}>
                 <div
                   className="h-full rounded-full transition-transform duration-500"
                   style={{
-                    width: `${storePainScore * 10}%`,
+                    width: `${(storePainScore ?? 0) * 10}%`,
                     background: `linear-gradient(90deg, #4ADE80 0%, #FACC15 50%, #EF4444 100%)`,
                     backgroundSize: '200% 100%'
                   }}
@@ -1233,9 +1234,16 @@ function ClinicalObservationsSlide({ theme, isExpanded = false }: { theme: any, 
                 <span style={{ fontFamily: theme.fontFamily, fontSize: labelSize, color: idx === 0 ? theme.primaryOn : theme.textMuted, fontWeight: idx === 0 ? 700 : 500 }}>Vitals Update</span>
               </div>
               <span style={{ fontSize: "11px", color: theme.textDisabled, fontWeight: 700 }}>
-                {item.timestamp instanceof Date ? item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
-                {" • "}
-                {item.timestamp instanceof Date ? item.timestamp.toLocaleDateString([], { day: '2-digit', month: 'short' }) : ''}
+                {(() => {
+                  // Tolerate a string/number too: cached observations arrive as
+                  // ISO strings, and `instanceof Date` would render them as "—".
+                  const d = item.timestamp instanceof Date ? item.timestamp
+                    : item.timestamp ? new Date(item.timestamp as any) : null;
+                  const valid = d && !isNaN(d.getTime());
+                  return valid
+                    ? `${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • ${d.toLocaleDateString([], { day: '2-digit', month: 'short' })}`
+                    : '';
+                })()}
               </span>
             </div>
             
