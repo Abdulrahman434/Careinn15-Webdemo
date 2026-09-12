@@ -73,6 +73,20 @@ const STEP_SEQUENCE: StepDef[] = [
   { id: "consent" },
 ];
 
+/* Fakeeh runs a deliberately short intro: welcome, language, PIN, consent.
+ * Everything else keeps the full setup flow. The five preferences the trimmed
+ * steps used to set (display name, prayer alarm, theme, data-clear policy,
+ * screensaver timeout) fall back to their defaults for that brand. */
+const SHORT_SEQUENCE: StepDef[] = [
+  { id: "welcome" },
+  { id: "language" },
+  { id: "pin" },
+  { id: "consent" },
+];
+
+const sequenceFor = (hospitalId: string): StepDef[] =>
+  hospitalId === "dsfh" ? SHORT_SEQUENCE : STEP_SEQUENCE;
+
 const STEP_ICONS: Record<StepId, any> = {
   welcome: Hand,
   language: Globe,
@@ -156,9 +170,13 @@ export function OnboardingWizard({
   const [overlay, setOverlay] = useState<"pin" | "bluetooth" | null>(null);
   const [btDevice, setBtDevice] = useState<string | null>(null);
 
+  const sequence = useMemo(() => sequenceFor(activeConfigId), [activeConfigId]);
+  const shortFlow = activeConfigId === "dsfh";
+  // Without the slideshow checkbox, consent rests on the terms alone.
+  const consentReady = shortFlow ? termsAgreed : (tourSeen && termsAgreed);
   const visibleSteps = useMemo(
-    () => STEP_SEQUENCE.filter(s => !s.extendedOnly || extended),
-    [extended]
+    () => sequence.filter(s => !s.extendedOnly || extended),
+    [sequence, extended]
   );
   const stepIndex = visibleSteps.findIndex(s => s.id === stepId);
 
@@ -499,8 +517,8 @@ export function OnboardingWizard({
       case "decision":
         return (
           <div className="flex items-center gap-3 w-full">
-            <div className="flex-1"><GhostButton label={tr("onboarding.decision.no")} onClick={() => { setExtended(false); goNext(STEP_SEQUENCE.filter(s => !s.extendedOnly)); }} /></div>
-            <div className="flex-1"><PrimaryButton label={tr("onboarding.yes")} onClick={() => { setExtended(true); goNext(STEP_SEQUENCE); }} /></div>
+            <div className="flex-1"><GhostButton label={tr("onboarding.decision.no")} onClick={() => { setExtended(false); goNext(sequence.filter(s => !s.extendedOnly)); }} /></div>
+            <div className="flex-1"><PrimaryButton label={tr("onboarding.yes")} onClick={() => { setExtended(true); goNext(sequence); }} /></div>
           </div>
         );
 
@@ -585,14 +603,18 @@ export function OnboardingWizard({
         return (
           <>
             <div className="flex flex-col gap-3 w-full" style={{ marginBottom: "8px" }}>
-              <ConsentCheckbox
-                checked={tourSeen}
-                onToggle={() => setTourSeen(!tourSeen)}
-                before={tr("onboarding.consent.tour.before")}
-                link={tr("onboarding.consent.tour.link")}
-                after={tr("onboarding.consent.tour.after")}
-                onLinkClick={onStartSlideshow}
-              />
+              {/* Fakeeh drops the welcome-slideshow acknowledgement; other
+                  brands still gate on it. */}
+              {!shortFlow && (
+                <ConsentCheckbox
+                  checked={tourSeen}
+                  onToggle={() => setTourSeen(!tourSeen)}
+                  before={tr("onboarding.consent.tour.before")}
+                  link={tr("onboarding.consent.tour.link")}
+                  after={tr("onboarding.consent.tour.after")}
+                  onLinkClick={onStartSlideshow}
+                />
+              )}
               <ConsentCheckbox
                 checked={termsAgreed}
                 onToggle={() => setTermsAgreed(!termsAgreed)}
@@ -602,8 +624,8 @@ export function OnboardingWizard({
               />
             </div>
             <div className="flex items-center gap-3 w-full">
-              <div className="flex-1"><GhostButton label={tr("onboarding.consent.startWithTour")} onClick={() => (tourSeen && termsAgreed) && finish(true)} /></div>
-              <div className="flex-1"><PrimaryButton label={tr("onboarding.consent.startNow")} disabled={!tourSeen || !termsAgreed} onClick={() => finish(false)} /></div>
+              <div className="flex-1"><GhostButton label={tr("onboarding.consent.startWithTour")} onClick={() => consentReady && finish(true)} /></div>
+              <div className="flex-1"><PrimaryButton label={tr("onboarding.consent.startNow")} disabled={!consentReady} onClick={() => finish(false)} /></div>
             </div>
           </>
         );
@@ -628,8 +650,8 @@ export function OnboardingWizard({
   }, [stepId, tr]);
 
   const Icon = STEP_ICONS[stepId];
-  const stepIndexInFull = STEP_SEQUENCE.findIndex(s => s.id === stepId);
-  const totalSteps = STEP_SEQUENCE.length;
+  const stepIndexInFull = sequence.findIndex(s => s.id === stepId);
+  const totalSteps = sequence.length;
   const progress = totalSteps > 1 ? (stepIndexInFull + 1) / totalSteps : 1;
 
   const HeaderButton = ({ onClick, children, ariaLabel }: { onClick: () => void; children: React.ReactNode; ariaLabel: string }) => (

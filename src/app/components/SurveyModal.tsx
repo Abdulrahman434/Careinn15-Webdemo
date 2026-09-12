@@ -407,7 +407,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
             className="sm-iconbox flex items-center justify-center mb-6"
             style={{ width: 80, height: 80, borderRadius: theme.radiusFull, backgroundColor: theme.accentSubtle }}
           >
-            <MessageSquareWarning size={40} style={{ color: theme.accent }} />
+            <MessageSquareWarning size={40} style={{ color: theme.accentOn }} />
           </div>
           <span style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "8px" }}>
             {t("feedback.suggestionsComplaints")}
