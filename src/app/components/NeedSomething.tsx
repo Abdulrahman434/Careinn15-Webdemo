@@ -10,7 +10,7 @@ import {
   BedDouble, GlassWater, BedSingle, Shirt, SprayCan, Layers, Footprints,
   AirVent, Lightbulb, Tv, ShowerHead, Plug,
   Ear, Eye, Accessibility, ShieldCheck, BookOpen, PersonStanding,
-  Scissors, Brush, Droplets, Sparkles, Trash2,
+  Scissors, Brush, Droplets, Sparkles, Trash2, Languages, HeartHandshake,
   createLucideIcon, type LucideIcon,
 } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW, SPACE, LEADING } from "./ThemeContext";
@@ -39,6 +39,7 @@ import imgCrutches from "../../assets/Housekeeping/crutches.jpg";
 import imgDentalKit from "../../assets/Housekeeping/dental kit.jpg";
 import imgComb from "../../assets/Housekeeping/comb.jpg";
 import imgWetWipes from "../../assets/Housekeeping/wet wipes.jpg";
+import imgNonSlipSocks from "../../assets/Housekeeping/non-slip socks.png";
 
 /**
  * Patient Services — "I Need Something" flow.
@@ -63,7 +64,7 @@ const STORAGE_KEY = "careinn-need-requests";
 
 interface NeedRequest {
   id: string;
-  kind: "request" | "report" | "roomcare";
+  kind: "request" | "report" | "roomcare" | "support";
   itemKey: string; // i18n key, e.g. "need.item.blanket"
   emoji: string;
   note: string;
@@ -113,8 +114,9 @@ const REQUEST_ITEMS: CardDef[] = [
   { key: "need.item.toiletries", emoji: "🧼", Icon: SprayCan, image: imgToiletries },
   { key: "need.item.tissues", emoji: "🧻", Icon: TissueBox, image: imgTissues },
   { key: "need.item.sheets", emoji: "🛌", Icon: Layers, image: imgSheets },
-  { key: "need.item.slippers", emoji: "🩴", Icon: Footprints, image: imgSlippers },
+  { key: "need.item.nonslipsocks", emoji: "🧦", Icon: Footprints, image: imgNonSlipSocks },
   /* ── Page 2 ── */
+  { key: "need.item.slippers", emoji: "🩴", Icon: Footprints, image: imgSlippers },
   { key: "need.item.earplugs", emoji: "👂", Icon: Ear, image: imgEarplugs },
   { key: "need.item.sleepmask", emoji: "😴", Icon: Eye, image: imgSleepMask },
   { key: "need.item.wheelchair", emoji: "♿", Icon: Accessibility, image: imgWheelchair },
@@ -148,8 +150,17 @@ const ROOM_CARE_ITEMS: CardDef[] = [
   { key: "need.care.bathroom", emoji: "🚿", Icon: ShowerHead, subtitle: "need.care.bathroom.sub" },
 ];
 
+/* Services that come from a person rather than a supply cupboard: a language,
+   a faith, a pair of scissors, a hand with washing. */
+const SUPPORT_ITEMS: CardDef[] = [
+  { key: "need.support.personal", emoji: "🤝", Icon: HandHelping, subtitle: "need.support.personal.sub" },
+  { key: "need.support.interpreter", emoji: "🗣️", Icon: Languages, subtitle: "need.support.interpreter.sub" },
+  { key: "need.support.clergy", emoji: "🕌", Icon: BookOpen, subtitle: "need.support.clergy.sub" },
+  { key: "need.support.barber", emoji: "💈", Icon: Scissors, subtitle: "need.support.barber.sub" },
+];
+
 const ICON_BY_KEY: Record<string, LucideIcon> = Object.fromEntries(
-  [...REQUEST_ITEMS, ...REPORT_ITEMS, ...ROOM_CARE_ITEMS].map((c) => [c.key, c.Icon]),
+  [...REQUEST_ITEMS, ...REPORT_ITEMS, ...ROOM_CARE_ITEMS, ...SUPPORT_ITEMS].map((c) => [c.key, c.Icon]),
 );
 
 /* ── Status: derived from elapsed time (no backend). ── */
@@ -169,7 +180,7 @@ interface NeedSomethingProps {
   initialTab?: Tab;
 }
 
-type Tab = "request" | "roomcare" | "report";
+type Tab = "request" | "roomcare" | "support" | "report";
 
 export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
   const { theme, setLocale } = useTheme();
@@ -195,7 +206,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
   /* ── View state ── */
   const [tab, setTab] = useState<Tab>(initialTab || "request");
   const [showRequestsOverlay, setShowRequestsOverlay] = useState(false);
-  const [selected, setSelected] = useState<{ card: CardDef; kind: "request" | "report" | "roomcare" } | null>(null);
+  const [selected, setSelected] = useState<{ card: CardDef; kind: "request" | "report" | "roomcare" | "support" } | null>(null);
   const [note, setNote] = useState("");
   const [selectedChip, setSelectedChip] = useState<string | null>(null);
   const [success, setSuccess] = useState<null | "request" | "report">(null);
@@ -240,7 +251,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
     };
   }, [success]);
 
-  const openSheet = (card: CardDef, kind: "request" | "report" | "roomcare") => {
+  const openSheet = (card: CardDef, kind: "request" | "report" | "roomcare" | "support") => {
     setSelected({ card, kind });
     setNote("");
     setSelectedChip(null);
@@ -309,8 +320,8 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
     return t(`need.status.${status}`);
   };
 
-  const allGridItems = tab === "report" ? REPORT_ITEMS : tab === "roomcare" ? ROOM_CARE_ITEMS : REQUEST_ITEMS;
-  const gridKind: "request" | "report" | "roomcare" = tab === "report" ? "report" : tab === "roomcare" ? "roomcare" : "request";
+  const allGridItems = tab === "report" ? REPORT_ITEMS : tab === "roomcare" ? ROOM_CARE_ITEMS : tab === "support" ? SUPPORT_ITEMS : REQUEST_ITEMS;
+  const gridKind: "request" | "report" | "roomcare" | "support" = tab === "report" ? "report" : tab === "roomcare" ? "roomcare" : tab === "support" ? "support" : "request";
 
   /* ── Pagination (8 items per page) ── */
   const ITEMS_PER_PAGE = 8;
@@ -347,12 +358,16 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
   const tabs: { key: Tab; Icon: typeof HandHelping; label: string; count?: number }[] = [
     { key: "request", Icon: HandHelping, label: t("need.tab.request") },
     { key: "roomcare", Icon: Sparkles, label: t("need.tab.roomcare") },
+    { key: "support", Icon: HeartHandshake, label: t("need.tab.support") },
     { key: "report", Icon: Wrench, label: t("need.tab.report") },
   ];
 
   const titleKey =
-    tab === "report" ? "need.title.report" : tab === "roomcare" ? "need.title.roomcare" : "need.title.request";
-  const subKey = tab === "report" ? "need.sub.report" : tab === "roomcare" ? "need.sub.roomcare" : "need.sub.request";
+    tab === "report" ? "need.title.report" : tab === "roomcare" ? "need.title.roomcare"
+      : tab === "support" ? "need.title.support" : "need.title.request";
+  const subKey =
+    tab === "report" ? "need.sub.report" : tab === "roomcare" ? "need.sub.roomcare"
+      : tab === "support" ? "need.sub.support" : "need.sub.request";
 
   return (
     <motion.div
@@ -625,7 +640,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       onDragEnd={handleDragEnd}
                       className="grid w-full"
                       style={{
-                        gridTemplateColumns: (tab === "report" || tab === "roomcare") ? "repeat(3, 1fr)" : "repeat(4, 1fr)",
+                        gridTemplateColumns: (tab === "report" || tab === "roomcare" || tab === "support") ? "repeat(3, 1fr)" : "repeat(4, 1fr)",
                         gridTemplateRows: "repeat(2, 1fr)",
                         columnGap: "24px",
                         rowGap: "20px",
@@ -638,7 +653,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                     >
                     {gridItems.map((card) => {
                       const CardIcon = card.Icon;
-                      const isCompactCard = tab === "report" || tab === "roomcare";
+                      const isCompactCard = tab === "report" || tab === "roomcare" || tab === "support";
                       const isReport = tab === "report";
                       const isCardSelected = isCompactCard && selected?.card.key === card.key;
                       /* Dynamic colour: red for report, brand primary for room care */

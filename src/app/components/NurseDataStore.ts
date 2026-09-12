@@ -143,22 +143,52 @@ export interface FinancialItem {
   date: string;
 }
 
-export interface DoctorNote {
-  text: string;
-  addedAt: Date;
-  doctorName: string;
+/** Alerts the ward raises against a bed rather than against a diagnosis.
+ *
+ *  `similarName` guards against patient misidentification: two patients on the
+ *  ward whose names read alike. It is staff-facing — the bedside screen does
+ *  not show it, because it is about a patient who is not in this room.
+ *  `isolation` is shown to patient and visitors too, since the precautions
+ *  apply to anyone entering. */
+export interface SafetyAlerts {
+  similarName: boolean;
+  /** The other patient's name, so the nurse knows who to check against. */
+  similarNameWith: string;
+  isolation: boolean;
+  /** Free text: "Contact", "Droplet", "Airborne", "Protective" … */
+  isolationType: string;
 }
 
 export interface ClinicalObservation {
   id: string;
   timestamp: Date;
   nurseName: string;
-  vitals: { bp: string; hr: string; temp: string; spo2: string };
+  vitals: { bp: string; hr: string; temp: string; spo2: string; resp?: string };
   painLevel: number;
   risks: { fall: boolean; pressure: boolean; allergies: boolean; other: boolean };
   otherRiskNotes?: string;
-  nurseNotes: string;
-  doctorNote: DoctorNote | null;
+}
+
+/** What the patient leaves with, alongside the discharge step list: where to
+ *  come back to, who to call, and what to do at home. */
+export interface FollowUpAppointment {
+  id: string;
+  /** Clinic or specialty the appointment is with. */
+  label: string;
+  /** Free text — the HIS is not the source for this yet. */
+  when: string;
+}
+
+export interface PostDischargeContact {
+  id: string;
+  label: string;
+  value: string;
+}
+
+export interface DischargeInfo {
+  followUps: FollowUpAppointment[];
+  contacts: PostDischargeContact[];
+  instructions: string;
 }
 
 /** Section keys matching CareMe slides + new nurse-only sections */
@@ -171,6 +201,7 @@ export type SectionKey =
   | "imaging"
   | "baby"
   | "discharge"
+  | "dischargePlan"
   | "observations"
   | "nfc";
 
@@ -197,6 +228,9 @@ export interface NurseStoreState {
   /** Pain score 0–10 */
   painScore: number;
 
+  /** Ward safety alerts shown on Care Overview. */
+  alerts: SafetyAlerts;
+
   /** Care plan items (orderable) */
   carePlan: CarePlanItem[];
 
@@ -214,6 +248,9 @@ export interface NurseStoreState {
 
   /** Discharge plan items (orderable) */
   dischargePlan: CarePlanItem[];
+
+  /** Follow-ups, contacts and take-home instructions. */
+  dischargeInfo: DischargeInfo;
 
   /** Clinical observations */
   observations: ClinicalObservation[];
@@ -275,17 +312,21 @@ function createDefaultState(): NurseStoreState {
       imaging: false,
       baby: false,
       discharge: false,
+      dischargePlan: false,
       observations: false,
     },
     sectionVisibility: {
       profile: true,
       careOverview: true,
       carePlan: true,
+      // Financial Summary and Baby Camera were withdrawn from both the bedside
+      // carousel and the nurse tabs; the data and their components remain.
       financial: false,
       labs: true,
       imaging: true,
-      baby: true,
+      baby: false,
       discharge: true,
+      dischargePlan: true,
       observations: true,
       nfc: false, // Not a patient-facing CareMe slide
     },
@@ -316,6 +357,12 @@ function createDefaultState(): NurseStoreState {
     allergies: ["Penicillin", "Latex", "Shellfish"],
 
     patientDiet: "regular",
+    alerts: {
+      similarName: false,
+      similarNameWith: "",
+      isolation: false,
+      isolationType: "",
+    },
 
     painScore: 5,
 
@@ -357,13 +404,27 @@ function createDefaultState(): NurseStoreState {
     ],
 
     dischargePlan: [
-      { id: "dp-1", labelKey: "care.discharge.order", done: true, timeKey: "care.plan.done" },
-      { id: "dp-2", labelKey: "care.discharge.insurance", done: true, timeKey: "care.plan.done" },
-      { id: "dp-3", labelKey: "care.discharge.medication", done: false, active: true, minutes: 45 },
-      { id: "dp-4", labelKey: "care.discharge.education", done: false, minutes: 20 },
-      { id: "dp-5", labelKey: "care.discharge.finalCheckup", done: false, minutes: 25 },
-      { id: "dp-6", labelKey: "care.discharge.confirm", done: false, minutes: 10 },
+      { id: "dp-1", labelKey: "care.discharge.instructionsEntered", done: true, timeKey: "care.plan.done" },
+      { id: "dp-2", labelKey: "care.discharge.confirmed", done: true, timeKey: "care.plan.done" },
+      { id: "dp-3", labelKey: "care.discharge.takeHomeMeds", done: false, active: true, minutes: 45 },
+      { id: "dp-4", labelKey: "care.discharge.financialClearance", done: false, minutes: 30 },
+      { id: "dp-5", labelKey: "care.discharge.physicalDischarge", done: false, minutes: 20 },
+      { id: "dp-6", labelKey: "care.discharge.cleaning", done: false, minutes: 45 },
+      { id: "dp-7", labelKey: "care.discharge.roomReady", done: false, minutes: 15 },
     ],
+
+    dischargeInfo: {
+      followUps: [
+        { id: "fu-1", label: "Cardiology clinic", when: formatPatientDate(shift(now, 9)) + " · 10:30" },
+        { id: "fu-2", label: "Wound review — day surgery", when: formatPatientDate(shift(now, 16)) + " · 09:00" },
+      ],
+      contacts: [
+        { id: "pc-1", label: "Ward nursing station", value: "+966 12 665 0000 ext. 1412" },
+        { id: "pc-2", label: "24/7 nurse advice line", value: "+966 12 665 0500" },
+        { id: "pc-3", label: "Pharmacy enquiries", value: "+966 12 665 0310" },
+      ],
+      instructions: "Take the discharge medication exactly as written on the label. Keep the dressing dry for 48 hours. Walk short distances daily and avoid lifting anything over 5 kg for two weeks. Come back to the emergency department if you develop a fever above 38°C, increasing pain, or bleeding from the wound.",
+    },
 
     observations: [
       {
@@ -373,12 +434,6 @@ function createDefaultState(): NurseStoreState {
         vitals: { bp: "118/78", hr: "68", temp: "37.0", spo2: "99" },
         painLevel: 1,
         risks: { fall: true, pressure: false, allergies: true, other: false },
-        nurseNotes: "Patient resting comfortably. Vitals stable. Tolerating oral intake.",
-        doctorNote: {
-          text: "Continue current plan. Reassess in the morning.",
-          addedAt: new Date(Date.now() - 3600000 * 2),
-          doctorName: "Dr. Omar Abdulhalim",
-        },
       },
     ],
     nurseViewShortcutVisible: false,
@@ -411,6 +466,19 @@ function loadCachedState(): Partial<NurseStoreState> {
       if (parsed.patient.dischargeDate === "12 Mar 2026") delete parsed.patient.dischargeDate;
       if (parsed.patient.admissionDate === "10 Mar 2026") delete parsed.patient.admissionDate;
       if (parsed.patient.mrn === "00-284619") delete parsed.patient.mrn;
+    }
+    // Legacy migration: the discharge plan was re-sequenced to the ward's
+    // seven-step flow. An untouched cache of the old six seeded steps is
+    // dropped so the new defaults take effect; a plan a nurse has edited,
+    // added to or reordered is left alone.
+    if (Array.isArray(parsed.dischargePlan)) {
+      const legacyKeys = [
+        "care.discharge.order", "care.discharge.insurance", "care.discharge.medication",
+        "care.discharge.education", "care.discharge.finalCheckup", "care.discharge.confirm",
+      ];
+      const untouched = parsed.dischargePlan.length === legacyKeys.length &&
+        parsed.dischargePlan.every((i: any, n: number) => i?.labelKey === legacyKeys[n]);
+      if (untouched) delete parsed.dischargePlan;
     }
     // Revive Date fields. JSON.stringify turns them into ISO strings, so
     // without this every persisted observation comes back with a string
@@ -448,6 +516,14 @@ const nurseStore = (() => {
     sectionVisibility: {
       ...defaultState.sectionVisibility,
       ...(cachedState.sectionVisibility || {}),
+    },
+    alerts: {
+      ...defaultState.alerts,
+      ...(cachedState.alerts || {}),
+    },
+    dischargeInfo: {
+      ...defaultState.dischargeInfo,
+      ...(cachedState.dischargeInfo || {}),
     },
   };
   const listeners = new Set<StoreListener>();
@@ -707,6 +783,11 @@ const nurseStore = (() => {
       notify();
     },
 
+    setAlerts: (updates: Partial<SafetyAlerts>) => {
+      state = { ...state, alerts: { ...state.alerts, ...updates } };
+      notify();
+    },
+
     /** @deprecated Pain now lives on each observation — see latestPainLevel().
      *  Kept so older cached state and any stray caller stay harmless. */
     setPainScore: (score: number) => {
@@ -824,6 +905,11 @@ const nurseStore = (() => {
     },
 
     // ── Discharge Plan ──
+    setDischargeInfo: (updates: Partial<DischargeInfo>) => {
+      state = { ...state, dischargeInfo: { ...state.dischargeInfo, ...updates } };
+      notify();
+    },
+
     setDischargePlan: (items: CarePlanItem[]) => {
       state = { ...state, dischargePlan: items };
       notify();
@@ -840,15 +926,6 @@ const nurseStore = (() => {
     },
     deleteObservation: (id: string) => {
       state = { ...state, observations: state.observations.filter((o) => o.id !== id) };
-      notify();
-    },
-    addDoctorNote: (obsId: string, note: DoctorNote) => {
-      state = {
-        ...state,
-        observations: state.observations.map((o) =>
-          o.id === obsId ? { ...o, doctorNote: note } : o
-        ),
-      };
       notify();
     },
 

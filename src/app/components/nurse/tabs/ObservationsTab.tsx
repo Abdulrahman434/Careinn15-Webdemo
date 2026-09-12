@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import {
   Activity, Droplet, Thermometer, Wind, Save, CheckCircle2,
-  Clock, Trash2, Stethoscope, AlertTriangle, ClipboardList, Eye
+  Clock, Trash2, AlertTriangle, ClipboardList, Eye
 } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
 import { useLocale } from "../../i18n";
-import { useNurseStore, nurseActions, type ClinicalObservation, type DoctorNote } from "../../NurseDataStore";
+import { useNurseStore, nurseActions, type ClinicalObservation } from "../../NurseDataStore";
 
 function fmtFull(d: any) {
   if (!d) return "";
@@ -32,7 +32,7 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
   const [saved, setSaved] = useState(false);
 
   // Form state
-  const blankForm = { vitals: { bp: "", hr: "", temp: "", spo2: "" }, painLevel: 0, risks: { fall: false, pressure: false, allergies: false, other: false }, nurseNotes: "" };
+  const blankForm = { vitals: { bp: "", hr: "", temp: "", spo2: "", resp: "" }, painLevel: 0, risks: { fall: false, pressure: false, allergies: false, other: false } };
   const [form, setForm] = useState(blankForm);
 
   // "Add Observation" in the header bumps `addNonce`. A counter rather than a
@@ -47,10 +47,6 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addNonce]);
 
-  // Doctor note
-  const [docNote, setDocNote] = useState("");
-  const [docSaved, setDocSaved] = useState(false);
-
   const activeObs = store.observations.find((o) => o.id === selectedId) || store.observations[store.observations.length - 1] || null;
 
   const handleSave = () => {
@@ -61,8 +57,6 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
       vitals: form.vitals,
       painLevel: form.painLevel,
       risks: form.risks,
-      nurseNotes: form.nurseNotes,
-      doctorNote: null,
     };
     nurseActions.addObservation(obs);
     setSelectedId(obs.id);
@@ -72,13 +66,6 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const handleDocSave = () => {
-    if (!activeObs || !docNote.trim()) return;
-    nurseActions.addDoctorNote(activeObs.id, { text: docNote.trim(), addedAt: new Date(), doctorName: "Dr. Omar Abdulhalim" });
-    setDocNote("");
-    setDocSaved(true);
-    setTimeout(() => setDocSaved(false), 2000);
-  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -115,12 +102,13 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
             <p style={{ fontSize: "13px", color: t.textMuted, marginBottom: 16 }}>{fmtFull(new Date())}</p>
 
             {/* Vitals */}
-            <div className="grid grid-cols-4 gap-3 mb-5">
+            <div className="grid grid-cols-5 gap-3 mb-5">
               {[
                 { key: "bp", label: "Blood Pressure", unit: "mmHg", icon: <Droplet size={14} color={t.errorOn} />, placeholder: "120/80" },
                 { key: "hr", label: "Heart Rate", unit: "BPM", icon: <Activity size={14} color="#F43F5E" />, placeholder: "72" },
                 { key: "temp", label: "Temperature", unit: "°C", icon: <Thermometer size={14} color="#F59E0B" />, placeholder: "37.0" },
                 { key: "spo2", label: "O₂ Saturation", unit: "%", icon: <Wind size={14} style={{ color: t.primaryOn }} />, placeholder: "98" },
+                { key: "resp", label: "Respiratory Rate", unit: "/min", icon: <Wind size={14} style={{ color: t.infoOn }} />, placeholder: "16" },
               ].map((v) => (
                 <div key={v.key} className="p-3 rounded-xl" style={{ backgroundColor: t.surfaceInset, border: `1px solid ${t.borderDefault}` }}>
                   <div className="flex items-center gap-1.5 mb-2">{v.icon}<span style={{ fontSize: "10px", fontWeight: 700, color: t.textMuted }}>{v.label}</span></div>
@@ -132,6 +120,8 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
                         
                         if (v.key === "hr") {
                           val = val.replace(/\D/g, "").slice(0, 3);
+                        } else if (v.key === "resp") {
+                          val = val.replace(/\D/g, "").slice(0, 2);
                         } else if (v.key === "spo2") {
                           val = val.replace(/\D/g, "");
                           if (Number(val) > 100) val = "100";
@@ -183,11 +173,6 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
               </div>
             </div>
 
-            {/* Notes */}
-            <textarea value={form.nurseNotes} onChange={(e) => setForm({ ...form, nurseNotes: e.target.value })}
-              placeholder="Progress notes..." rows={3} className="w-full resize-none outline-none mb-4"
-              style={{ padding: "10px 14px", borderRadius: 12, border: `1.5px solid ${t.borderDefault}`, fontSize: "14px", fontFamily: "inherit" }} />
-
             <div className="flex items-center gap-3">
               <button onClick={handleSave} className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all active:scale-95 cursor-pointer"
                 style={{ backgroundColor: saved ? t.success : t.primary, color: saved ? t.successOn : t.brandOnPrimary, fontSize: "14px", border: "none" }}>
@@ -211,12 +196,13 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
             </div>
 
             {/* Vitals */}
-            <div className="grid grid-cols-4 gap-3 mb-5">
+            <div className="grid grid-cols-5 gap-3 mb-5">
               {[
                 { val: activeObs.vitals.bp, label: "BP", unit: "mmHg", icon: <Droplet size={14} color={t.errorOn} /> },
                 { val: activeObs.vitals.hr, label: "HR", unit: "BPM", icon: <Activity size={14} color="#F43F5E" /> },
                 { val: activeObs.vitals.temp, label: "Temp", unit: "°C", icon: <Thermometer size={14} color="#F59E0B" /> },
                 { val: activeObs.vitals.spo2, label: "SpO₂", unit: "%", icon: <Wind size={14} style={{ color: t.primaryOn }} /> },
+                { val: activeObs.vitals.resp, label: "Resp", unit: "/min", icon: <Wind size={14} style={{ color: t.infoOn }} /> },
               ].map((v) => (
                 <div key={v.label} className="p-3 rounded-xl" style={{ backgroundColor: t.surfaceInset, border: `1px solid ${t.borderDefault}` }}>
                   <div className="flex items-center gap-1.5 mb-2">{v.icon}<span style={{ fontSize: "10px", fontWeight: 700, color: t.textMuted }}>{v.label}</span></div>
@@ -226,43 +212,15 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
               ))}
             </div>
 
-            {/* Pain + Notes */}
-            <div className="grid grid-cols-2 gap-4 mb-5">
+            {/* Pain */}
+            <div className="mb-5">
               <div className="p-4 rounded-xl" style={{ backgroundColor: t.surfaceInset, border: `1px solid ${t.borderDefault}` }}>
                 <span style={{ fontSize: "12px", fontWeight: 600, color: t.textMuted }}>Pain</span>
                 <div className="flex items-center gap-2 mt-2">
                   <span style={{ fontSize: "28px", fontWeight: 900, color: painColor(activeObs.painLevel, darkMode) }}>{activeObs.painLevel}<span style={{ fontSize: "14px", color: t.textMuted }}>/10</span></span>
                 </div>
               </div>
-              <div className="p-4 rounded-xl" style={{ backgroundColor: t.surfaceInset, border: `1px solid ${t.borderDefault}` }}>
-                <span style={{ fontSize: "12px", fontWeight: 600, color: t.textMuted }}>Notes</span>
-                <p className="mt-2" style={{ fontSize: "14px", color: t.textBody, lineHeight: 1.6 }}>{activeObs.nurseNotes || "—"}</p>
-              </div>
             </div>
-
-            {/* Doctor Note */}
-            {activeObs.doctorNote && (
-              <div className="p-4 rounded-xl mb-4" style={{ backgroundColor: t.primarySubtle, border: `1px solid ${t.borderDefault}` }}>
-                <div className="flex items-center gap-2 mb-2"><Stethoscope size={14} style={{ color: t.primaryOn }} /><span style={{ fontSize: "13px", fontWeight: 700, color: t.primaryOn }}>Physician Note</span></div>
-                <p style={{ fontSize: "14px", color: t.textBody, fontStyle: "italic" }}>{activeObs.doctorNote.text}</p>
-                <p style={{ fontSize: "12px", color: t.primaryOn, fontWeight: 700, marginTop: 6 }}>{activeObs.doctorNote.doctorName} · {fmtFull(activeObs.doctorNote.addedAt)}</p>
-              </div>
-            )}
-
-            {/* Doctor add note */}
-            {role === "doctor" && (
-              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${t.borderDefault}` }}>
-                <div className="flex items-center gap-2 mb-3"><Stethoscope size={14} style={{ color: t.primaryOn }} /><span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading }}>Add Physician Note</span></div>
-                <textarea value={docNote} onChange={(e) => setDocNote(e.target.value)} placeholder="Enter physician note..."
-                  rows={2} className="w-full resize-none outline-none mb-3"
-                  style={{ padding: "10px 14px", borderRadius: 12, border: `1.5px solid ${t.borderDefault}`, fontSize: "14px", fontFamily: "inherit" }} />
-                <button onClick={handleDocSave} disabled={!docNote.trim()}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 cursor-pointer"
-                  style={{ backgroundColor: docSaved ? t.success : (docNote.trim() ? t.primary : t.borderDefault), color: docSaved ? t.successOn : t.brandOnPrimary, fontSize: "13px", border: "none" }}>
-                  {docSaved ? <CheckCircle2 size={14} /> : <Save size={14} />} {docSaved ? "Saved" : "Save Note"}
-                </button>
-              </div>
-            )}
 
             {isNurse && (
               <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${t.borderDefault}` }}>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
-  X, ClipboardList, Stethoscope, User, Heart, DollarSign,
-  FlaskConical, Image as ImageIcon, Baby, LogOut, Activity,
+  X, ClipboardList, Stethoscope, User, Heart,
+  FlaskConical, Image as ImageIcon, LogOut, Activity,
   Hash, DoorOpen, Clock, Plus, Bed, CreditCard, ExternalLink,
 } from "lucide-react";
 import { useTheme } from "../ThemeContext";
@@ -10,10 +10,8 @@ import { useNurseStore, nurseActions, type SectionKey } from "../NurseDataStore"
 import { PatientProfileTab } from "./tabs/PatientProfileTab";
 import { CareOverviewTab } from "./tabs/CareOverviewTab";
 import { CarePlanTab } from "./tabs/CarePlanTab";
-import { FinancialTab } from "./tabs/FinancialTab";
 import { LabResultsTab } from "./tabs/LabResultsTab";
 import { ImagingTab } from "./tabs/ImagingTab";
-import { BabyCameraTab } from "./tabs/BabyCameraTab";
 import { DischargePlanTab } from "./tabs/DischargePlanTab";
 import { ObservationsTab } from "./tabs/ObservationsTab";
 import { NfcTab } from "./tabs/NfcTab";
@@ -31,10 +29,8 @@ const TABS: TabDef[] = [
   { key: "carePlan", label: "My Care Plan", icon: ClipboardList, hasVisibility: true },
   { key: "labs", label: "Lab Results", icon: FlaskConical, hasVisibility: true },
   { key: "imaging", label: "Imaging", icon: ImageIcon, hasVisibility: true },
-  { key: "baby", label: "Baby Camera", icon: Baby, hasVisibility: true },
-  { key: "discharge", label: "Discharge Plan", icon: LogOut, hasVisibility: true },
+  { key: "discharge", label: "Discharge Process", icon: LogOut, hasVisibility: true },
   { key: "observations", label: "Observations", icon: Activity, hasVisibility: true },
-  { key: "financial", label: "Financial", icon: DollarSign, hasVisibility: true },
   { key: "nfc", label: "Update Nurse Info", icon: CreditCard, hasVisibility: false },
 ];
 
@@ -59,10 +55,8 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
       case "profile": return <PatientProfileTab role={role} />;
       case "careOverview": return <CareOverviewTab role={role} />;
       case "carePlan": return <CarePlanTab role={role} />;
-      case "financial": return <FinancialTab role={role} />;
       case "labs": return <LabResultsTab role={role} />;
       case "imaging": return <ImagingTab role={role} />;
-      case "baby": return <BabyCameraTab role={role} />;
       case "discharge": return <DischargePlanTab role={role} />;
       case "observations": return <ObservationsTab role={role} addNonce={addObsNonce} />;
       case "nfc": return <NfcTab />;

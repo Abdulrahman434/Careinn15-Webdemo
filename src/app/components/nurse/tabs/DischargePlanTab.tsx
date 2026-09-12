@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LogOut, Plus, Trash2, Check, Clock, GripVertical, Edit2, Save, Eye } from "lucide-react";
+import { LogOut, Plus, Trash2, Check, GripVertical, Edit2, Save, Eye, CalendarDays, Phone, FileText } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
 import { useLocale } from "../../i18n";
 import { useNurseStore, nurseActions } from "../../NurseDataStore";
@@ -11,7 +11,6 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
   const isNurse = role === "nurse";
   const [newLabel, setNewLabel] = useState("");
   const [newLabelAr, setNewLabelAr] = useState("");
-  const [newMinutes, setNewMinutes] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editLabelAr, setEditLabelAr] = useState("");
@@ -25,12 +24,21 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
       label: newLabel.trim(),
       labelAr: newLabelAr.trim(),
       done: false,
-      minutes: Number(newMinutes) || 30,
     });
     setNewLabel("");
     setNewLabelAr("");
-    setNewMinutes("");
   };
+
+  const info = store.dischargeInfo;
+  const rowField = {
+    padding: "10px 14px", borderRadius: 12, fontSize: "14px",
+    color: t.textHeading, backgroundColor: t.surfaceInset,
+    border: `1.5px solid ${t.borderDefault}`,
+  };
+  const patchFollowUp = (id: string, updates: Partial<{ label: string; when: string }>) =>
+    nurseActions.setDischargeInfo({ followUps: info.followUps.map((f) => f.id === id ? { ...f, ...updates } : f) });
+  const patchContact = (id: string, updates: Partial<{ label: string; value: string }>) =>
+    nurseActions.setDischargeInfo({ contacts: info.contacts.map((c) => c.id === id ? { ...c, ...updates } : c) });
 
   const handleDragStart = (idx: number) => setDragIdx(idx);
   const handleDragOver = (e: React.DragEvent, idx: number) => {
@@ -54,7 +62,7 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
             </div>
             <div>
               <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading, display: "block" }}>Show Section to Patient</span>
-              <span style={{ fontSize: "12px", color: t.textMuted }}>Toggle visibility for "Discharge Plan" on the bedside screen</span>
+              <span style={{ fontSize: "12px", color: t.textMuted }}>Toggle visibility for "Discharge Process" on the bedside screen</span>
             </div>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
@@ -71,7 +79,19 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
       )}
 
       <div className="nurse-card">
-      <h3 style={{ color: t.textHeading }}><LogOut size={18} style={{ color: t.primaryOn }} /> Discharge Plan</h3>
+        <h3 style={{ color: t.textHeading }}><CalendarDays size={18} style={{ color: t.primaryOn }} /> Expected Discharge</h3>
+        <input
+          value={store.patient.dischargeDate}
+          readOnly={!isNurse}
+          onChange={(e) => nurseActions.updatePatientFromNurse({ dischargeDate: e.target.value })}
+          placeholder="e.g. 18 Sep 2026"
+          className="w-full outline-none"
+          style={{ padding: "10px 14px", borderRadius: 12, fontSize: "14px", color: t.textHeading, backgroundColor: t.surfaceInset, border: `1.5px solid ${t.borderDefault}` }}
+        />
+      </div>
+
+      <div className="nurse-card">
+      <h3 style={{ color: t.textHeading }}><LogOut size={18} style={{ color: t.primaryOn }} /> Discharge Process</h3>
       <div className="space-y-2">
         {store.dischargePlan.map((item, idx) => (
           <div key={item.id} draggable={isNurse} onDragStart={() => handleDragStart(idx)}
@@ -115,11 +135,6 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
                 </span>
               )}
             </div>
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-md shrink-0"
-              style={{ fontSize: "12px", fontWeight: 600, color: item.done ? t.successOn : item.active ? t.primaryOn : t.textMuted }}>
-              {item.done ? <Check size={10} /> : <Clock size={10} />}
-              {item.timeKey ? tr(item.timeKey) : `${item.minutes || 30} min`}
-            </span>
             {isNurse && editingId !== item.id && (
               <div className="flex items-center gap-1">
                 <button onClick={() => { 
@@ -141,8 +156,6 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
             <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="New item (English)..."
               className="flex-1 outline-none" style={{ padding: "10px 14px", borderRadius: 12, fontSize: "14px", border: `1.5px solid ${t.borderDefault}` }}
               onKeyDown={(e) => e.key === "Enter" && handleAdd()} />
-            <input value={newMinutes} onChange={(e) => setNewMinutes(e.target.value)} placeholder="Min" type="number"
-              className="outline-none" style={{ width: 70, padding: "10px 12px", borderRadius: 12, fontSize: "14px", border: `1.5px solid ${t.borderDefault}` }} />
             <button onClick={handleAdd} className="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all active:scale-95"
               style={{ backgroundColor: t.primary, color: t.brandOnPrimary, fontSize: "13px", fontWeight: 700, border: "none" }}>
               <Plus size={16} /> Add
@@ -153,6 +166,104 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
             onKeyDown={(e) => e.key === "Enter" && handleAdd()} />
         </div>
       )}
+      </div>
+
+      {/* Going-home information — its own bedside section, "Discharge Plan" */}
+      {isNurse && (
+        <div className="nurse-card flex items-center justify-between" style={{ marginBottom: 0 }}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: t.primarySubtle }}>
+              <Eye size={18} style={{ color: t.primaryOn }} />
+            </div>
+            <div>
+              <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading, display: "block" }}>Show Section to Patient</span>
+              <span style={{ fontSize: "12px", color: t.textMuted }}>Toggle visibility for "Discharge Plan" on the bedside screen</span>
+            </div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={store.sectionVisibility.dischargePlan}
+              onChange={(e) => nurseActions.setSectionVisible("dischargePlan", e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="ni-switch"
+              style={{ backgroundColor: store.sectionVisibility.dischargePlan ? t.primary : undefined }} />
+          </label>
+        </div>
+      )}
+
+      <div className="nurse-card">
+        <h3 style={{ color: t.textHeading }}><CalendarDays size={18} style={{ color: t.primaryOn }} /> Follow-up Appointments</h3>
+        <div className="space-y-2">
+          {info.followUps.map((f) => (
+            <div key={f.id} className="flex items-center gap-2">
+              <input value={f.label} readOnly={!isNurse}
+                onChange={(e) => patchFollowUp(f.id, { label: e.target.value })}
+                placeholder="Clinic or specialty"
+                className="flex-1 outline-none" style={rowField} />
+              <input value={f.when} readOnly={!isNurse}
+                onChange={(e) => patchFollowUp(f.id, { when: e.target.value })}
+                placeholder="Date and time"
+                className="flex-1 outline-none" style={rowField} />
+              {isNurse && (
+                <button onClick={() => nurseActions.setDischargeInfo({ followUps: info.followUps.filter((x) => x.id !== f.id) })}
+                  className="p-2 cursor-pointer" style={{ color: t.errorOn, background: "none", border: "none" }}><Trash2 size={14} /></button>
+              )}
+            </div>
+          ))}
+        </div>
+        {isNurse && (
+          <button
+            onClick={() => nurseActions.setDischargeInfo({ followUps: [...info.followUps, { id: `fu-${Date.now().toString(36)}`, label: "", when: "" }] })}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all active:scale-95 mt-3"
+            style={{ backgroundColor: t.primary, color: t.brandOnPrimary, fontSize: "13px", fontWeight: 700, border: "none" }}>
+            <Plus size={16} /> Add appointment
+          </button>
+        )}
+      </div>
+
+      <div className="nurse-card">
+        <h3 style={{ color: t.textHeading }}><Phone size={18} style={{ color: t.primaryOn }} /> Post-Discharge Contacts</h3>
+        <div className="space-y-2">
+          {info.contacts.map((c) => (
+            <div key={c.id} className="flex items-center gap-2">
+              <input value={c.label} readOnly={!isNurse}
+                onChange={(e) => patchContact(c.id, { label: e.target.value })}
+                placeholder="Who to call"
+                className="flex-1 outline-none" style={rowField} />
+              <input value={c.value} readOnly={!isNurse}
+                onChange={(e) => patchContact(c.id, { value: e.target.value })}
+                placeholder="Number"
+                className="flex-1 outline-none" style={rowField} />
+              {isNurse && (
+                <button onClick={() => nurseActions.setDischargeInfo({ contacts: info.contacts.filter((x) => x.id !== c.id) })}
+                  className="p-2 cursor-pointer" style={{ color: t.errorOn, background: "none", border: "none" }}><Trash2 size={14} /></button>
+              )}
+            </div>
+          ))}
+        </div>
+        {isNurse && (
+          <button
+            onClick={() => nurseActions.setDischargeInfo({ contacts: [...info.contacts, { id: `pc-${Date.now().toString(36)}`, label: "", value: "" }] })}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all active:scale-95 mt-3"
+            style={{ backgroundColor: t.primary, color: t.brandOnPrimary, fontSize: "13px", fontWeight: 700, border: "none" }}>
+            <Plus size={16} /> Add contact
+          </button>
+        )}
+      </div>
+
+      <div className="nurse-card">
+        <h3 style={{ color: t.textHeading }}><FileText size={18} style={{ color: t.primaryOn }} /> Patient Instructions</h3>
+        <textarea
+          value={info.instructions}
+          readOnly={!isNurse}
+          onChange={(e) => nurseActions.setDischargeInfo({ instructions: e.target.value })}
+          rows={5}
+          placeholder="What the patient should do once they are home…"
+          className="w-full resize-none outline-none"
+          style={{ padding: "12px 14px", borderRadius: 12, fontSize: "14px", lineHeight: 1.6, fontFamily: "inherit", color: t.textHeading, backgroundColor: t.surfaceInset, border: `1.5px solid ${t.borderDefault}` }}
+        />
       </div>
     </div>
   );

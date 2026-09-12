@@ -106,7 +106,7 @@ const STEPS: TourStep[] = [
     icon: HeartPulse,
     title: "CareMe — Your Health Hub",
     titleKey: "tour.step.careme.title",
-    body: "Access your Care Team, Care Plan, Diet & Allergies, Baby Camera, and Discharge Plan — all in one rotating card.",
+    body: "Access your Care Team, Care Plan, Diet & Allergies, and Discharge Process — all in one rotating card.",
     bodyKey: "tour.step.careme.body",
     detail: "Tap any card to expand it into a full-screen detailed view.",
     detailKey: "tour.step.careme.detail",

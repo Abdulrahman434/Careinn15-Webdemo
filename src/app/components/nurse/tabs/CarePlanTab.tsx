@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { ClipboardList, Plus, Trash2, Check, Clock, GripVertical, Edit2, Save, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { ClipboardList, Plus, Trash2, Check, GripVertical, Edit2, Save, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
 import { useLocale } from "../../i18n";
 import { useNurseStore, nurseActions, type CarePlanItem } from "../../NurseDataStore";
@@ -24,7 +24,6 @@ export function CarePlanTab({ role }: { role: "nurse" | "doctor" }) {
   const isNurse = role === "nurse";
   const [newLabel, setNewLabel] = useState("");
   const [newLabelAr, setNewLabelAr] = useState("");
-  const [newMinutes, setNewMinutes] = useState("");
   const [newDay, setNewDay] = useState("1");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
@@ -56,13 +55,11 @@ export function CarePlanTab({ role }: { role: "nurse" | "doctor" }) {
       label: newLabel.trim(),
       labelAr: newLabelAr.trim(),
       done: false,
-      minutes: mode === "daily" ? (Number(newMinutes) || 30) : undefined,
       day: mode === "overall" ? (Number(newDay) || 1) : undefined,
       date: mode === "daily" ? store.carePlanSelectedDate : undefined,
     });
     setNewLabel("");
     setNewLabelAr("");
-    setNewMinutes("");
     setNewDay("1");
   };
 
@@ -235,14 +232,12 @@ export function CarePlanTab({ role }: { role: "nurse" | "doctor" }) {
               )}
             </div>
 
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-md shrink-0"
-              style={{ fontSize: "12px", fontWeight: 600, color: item.done ? t.successOn : item.active ? t.primaryOn : t.textMuted, backgroundColor: item.done ? t.successSubtle : item.active ? t.primarySubtle : "transparent" }}>
-              {item.done ? <Check size={10} /> : <Clock size={10} />}
-              {mode === "overall" 
-                ? `${tr("careplan.dayLabel")} ${item.day || 1}`
-                : (item.timeKey ? tr(item.timeKey) : `${item.minutes || 30} min`)
-              }
-            </span>
+            {mode === "overall" && (
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-md shrink-0"
+                style={{ fontSize: "12px", fontWeight: 600, color: item.active ? t.primaryOn : t.textMuted, backgroundColor: item.active ? t.primarySubtle : "transparent" }}>
+                {`${tr("careplan.dayLabel")} ${item.day || 1}`}
+              </span>
+            )}
 
             {isNurse && editingId !== item.id && (
               <div className="flex items-center gap-1">
@@ -266,10 +261,7 @@ export function CarePlanTab({ role }: { role: "nurse" | "doctor" }) {
           <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="New care plan item..."
             className="flex-1 outline-none" style={{ padding: "10px 14px", borderRadius: 12, fontSize: "14px", border: `1.5px solid ${t.borderDefault}` }}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()} />
-          {mode === "daily" ? (
-            <input value={newMinutes} onChange={(e) => setNewMinutes(e.target.value)} placeholder="Min" type="number"
-              className="outline-none" style={{ width: 70, padding: "10px 12px", borderRadius: 12, fontSize: "14px", border: `1.5px solid ${t.borderDefault}` }} />
-          ) : (
+          {mode === "overall" && (
             <select value={newDay} onChange={(e) => setNewDay(e.target.value)}
               className="outline-none appearance-none" style={{ width: 85, padding: "10px 12px", borderRadius: 12, fontSize: "14px", border: `1.5px solid ${t.borderDefault}`, backgroundColor: t.surface }}>
               {[1,2,3,4,5,6,7,8,9,10,11,12,13,14].map(d => <option key={d} value={d}>{tr("careplan.dayLabel")} {d}</option>)}

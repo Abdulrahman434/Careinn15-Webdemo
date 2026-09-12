@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { ApiImage } from "../../ApiImage";
-import { Users, AlertTriangle, Apple, Plus, X, Activity, Eye, EyeOff, Info } from "lucide-react";
+import { Users, AlertTriangle, Apple, Plus, X, ShieldAlert, Eye, EyeOff, Info } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
 import { useLocale } from "../../i18n";
-import { latestPainLevel, useNurseStore, nurseActions } from "../../NurseDataStore";
+import { useNurseStore, nurseActions } from "../../NurseDataStore";
 
 const DIET_OPTIONS = [
   { value: "regular",        label: "Regular" },
@@ -17,31 +17,15 @@ const DIET_OPTIONS = [
   { value: "npo",            label: "NPO" },
 ];
 
-function painColor(n: number, dark: boolean) {
-  // Lifted variants for dark surfaces; the base hues fail AA below ~4.5:1 there.
-  if (n <= 0) return dark ? "#B7C4CE" : "#64748B";
-  if (n < 4) return dark ? "#34D399" : "#047857";
-  if (n < 7) return dark ? "#FBBF24" : "#B45309";
-  return dark ? "#FF7B7B" : "#DC2626";
-}
-function painLabel(n: number) {
-  if (n <= 0) return "None";
-  if (n < 4) return "Mild";
-  if (n < 7) return "Moderate";
-  return "Severe";
-}
+const ISOLATION_TYPES = ["Contact", "Droplet", "Airborne", "Protective"];
 
 export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
-  const { theme: t, darkMode } = useTheme();
+  const { theme: t } = useTheme();
   const { t: tr } = useLocale();
   const store = useNurseStore();
   const isNurse = role === "nurse";
 
   const [newAllergy, setNewAllergy] = useState("");
-
-  // Pain is owned by observations now; this mirrors the newest one.
-  const pain = latestPainLevel(store);
-  const pc = painColor(pain ?? 0, darkMode);
 
   return (
     <div className="space-y-5">
@@ -182,23 +166,84 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
         )}
       </div>
 
-      {/* Pain Score */}
+      {/* Safety Alerts */}
       <div className="nurse-card">
-        <h3 style={{ color: t.textHeading }}><Activity size={18} style={{ color: pc }} /> Pain Score</h3>
-        {pain === null ? (
-          <span style={{ fontSize: "14px", color: t.textMuted }}>
-            No observation recorded yet
-          </span>
-        ) : (
-          <>
-            <div className="flex items-center gap-4">
-              <span style={{ fontSize: "36px", fontWeight: 900, color: pc }}>{pain}<span style={{ fontSize: "18px", color: t.textMuted }}>/10</span></span>
-              <span style={{ fontSize: "12px", fontWeight: 800, color: pc, backgroundColor: `${pc}18`, padding: "4px 12px", borderRadius: 99 }}>{painLabel(pain).toUpperCase()}</span>
+        <h3 style={{ color: t.textHeading }}><ShieldAlert size={18} style={{ color: t.errorOn }} /> Safety Alerts</h3>
+
+        {/* Similar-name alert — staff-facing. It names a patient in another
+            bed, so it is deliberately not mirrored to the bedside screen. */}
+        <div className="flex items-center justify-between py-3 border-b ni-line">
+          <div className="flex-1 min-w-0 pr-4">
+            <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading, display: "block" }}>Similar Name Alert</span>
+            <span style={{ fontSize: "12px", color: t.textMuted }}>Another patient on the ward has a similar name — verify two identifiers before every intervention</span>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              checked={store.alerts.similarName}
+              disabled={!isNurse}
+              onChange={(e) => nurseActions.setAlerts({ similarName: e.target.checked })}
+              className="sr-only peer"
+            />
+            <div className="ni-switch" style={{ backgroundColor: store.alerts.similarName ? t.error : undefined }} />
+          </label>
+        </div>
+        {store.alerts.similarName && (
+          <div className="py-3 border-b ni-line">
+            <p style={{ fontSize: "12px", fontWeight: 700, color: t.textMuted, marginBottom: 6 }}>Similar to patient</p>
+            <input
+              value={store.alerts.similarNameWith}
+              readOnly={!isNurse}
+              onChange={(e) => nurseActions.setAlerts({ similarNameWith: e.target.value })}
+              placeholder="Name and room of the other patient"
+              className="w-full outline-none"
+              style={{ padding: "8px 12px", borderRadius: 10, fontSize: "14px", color: t.textHeading, backgroundColor: t.surfaceInset, border: `1px solid ${t.borderDefault}` }}
+            />
+          </div>
+        )}
+
+        {/* Isolation — shown to the patient and visitors too: the precautions
+            apply to anyone entering the room. */}
+        <div className="flex items-center justify-between py-3">
+          <div className="flex-1 min-w-0 pr-4">
+            <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading, display: "block" }}>Isolation Precautions</span>
+            <span style={{ fontSize: "12px", color: t.textMuted }}>Shown on the bedside screen so visitors see the precautions</span>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              checked={store.alerts.isolation}
+              disabled={!isNurse}
+              onChange={(e) => nurseActions.setAlerts({ isolation: e.target.checked })}
+              className="sr-only peer"
+            />
+            <div className="ni-switch" style={{ backgroundColor: store.alerts.isolation ? t.error : undefined }} />
+          </label>
+        </div>
+        {store.alerts.isolation && (
+          <div className="pb-1">
+            <p style={{ fontSize: "12px", fontWeight: 700, color: t.textMuted, marginBottom: 8 }}>Precaution type</p>
+            <div className="flex flex-wrap gap-2">
+              {ISOLATION_TYPES.map((iso) => {
+                const isActive = store.alerts.isolationType === iso;
+                return (
+                  <button
+                    key={iso}
+                    onClick={() => isNurse && nurseActions.setAlerts({ isolationType: isActive ? "" : iso })}
+                    className="px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all"
+                    style={{
+                      backgroundColor: isActive ? t.errorSubtle : t.surfaceInset,
+                      color: isActive ? t.errorOn : t.textMuted,
+                      border: `1px solid ${isActive ? t.errorOn : "transparent"}`,
+                      cursor: isNurse ? "pointer" : "default",
+                    }}
+                  >
+                    {iso}
+                  </button>
+                );
+              })}
             </div>
-            <div className="mt-2" style={{ fontSize: "11px", color: t.textMuted }}>
-              From the latest observation — record a new observation to update it.
-            </div>
-          </>
+          </div>
         )}
       </div>
       {/* HIS Disclaimer Note */}
