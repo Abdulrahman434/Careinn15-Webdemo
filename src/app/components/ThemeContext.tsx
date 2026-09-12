@@ -223,6 +223,9 @@ export interface ThemeConfig {
   logoUrl: string;           // hospital logo (360×190 recommended)
   /** Looping video screensaver for this brand, when supplied */
   screensaverVideoUrl?: string;
+  /** Bundled patient-guide PDF. The Patient Guide shortcut only appears for
+   *  brands that supply one, so this is the whole opt-in. */
+  patientGuidePdf?: string;
   heroImageUrl: string;      // hospital exterior photo (1920×600 recommended)
   heroImageUrls: string[];   // multiple hero images for carousel
   heroCropPosition: string;  // object-position for hero image crop, e.g. "50% 15%"
@@ -439,6 +442,7 @@ function buildTheme(core: {
 
     // Dark mode prefers a light-on-dark mark when the brand supplies one.
     screensaverVideoUrl: c.screensaverVideoUrl,
+    patientGuidePdf: c.patientGuidePdf,
     logoUrl: (dark && c.logoUrlDark) || c.logoUrl || (c.id === "dsfh" ? DSFH_LOGO : c.id === "burjeel" ? burjeelLogo : c.id === "slh" ? slhLogo : c.id === "dallah" ? dallahLogo : c.id === "caremed" ? caremedLogo : c.id === "imc" ? imcLogo : c.id === "careinn" ? careinnLogo : c.id === "prime" ? primeLogo : c.id === "kauh" ? kauhLogo : c.id === "andalusia" ? andalusiaLogo : ""),
     heroImageUrl: c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : c.id === "kauh" ? kauhHero : c.id === "andalusia" ? andalusiaHero : ""),
     heroImageUrls: c.heroImageUrls && c.heroImageUrls.length > 0 ? c.heroImageUrls : [c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : c.id === "kauh" ? kauhHero : c.id === "andalusia" ? andalusiaHero : "")],
@@ -1013,6 +1017,7 @@ export const DSFH_CORE: HospitalCoreConfig = {
   logoUrl: logoImage,
   logoUrlDark: logoImageDark,
   screensaverVideoUrl: fakeehScreensaver,
+  patientGuidePdf: "/guides/fakeeh-patient-guide.pdf",
   hospitalWebsiteUrl: "https://en.dsfhriyadh.fakeeh.care/",
   heroImageUrl: hospitalImg,
   primary: "#008AAB",
@@ -1225,6 +1230,8 @@ export interface HospitalCoreConfig {
   /** Optional looping video screensaver. When set, it replaces the tasbih
    *  screensaver for that hospital. */
   screensaverVideoUrl?: string;
+  /** Optional patient-guide PDF (public path) */
+  patientGuidePdf?: string;
   heroImageUrl: string;
   heroImageUrls?: string[];
   heroCropPosition?: string;

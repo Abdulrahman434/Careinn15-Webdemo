@@ -4,7 +4,7 @@ import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./Theme
 import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
 import svgPaths from "../../imports/svg-ca68x68c4i";
-import { Stethoscope, BookOpenText, MessageSquareMore, Utensils } from "lucide-react";
+import { type LucideIcon, BookMarked, Stethoscope, BookOpenText, MessageSquareMore, Utensils } from "lucide-react";
 import roomControlIcon from "@/assets/room-control-icon.png";
 import quranIcon from "@/assets/5303963df7d14bbca33ccffa43f982a464344809.png";
 import mirrorIcon from "@/assets/0ab7565691ddb8401a21da44af1864e8f4058536.png";
@@ -48,9 +48,11 @@ interface ShortcutItem {
   labelKey: string;
   icon: string;
   url: string;
+  /** Rendered in a brand-tinted square instead of `icon` when the tile has no artwork. */
+  lucideIcon?: LucideIcon;
 }
 
-const getShortcutItems = (hospitalId: string): ShortcutItem[] => {
+const getShortcutItems = (hospitalId: string, patientGuidePdf?: string): ShortcutItem[] => {
   let podcastData;
   if (hospitalId === "careinn") {
     podcastData = { labelKey: "shortcut.adminPortal", icon: careinnAdminPortalIcon, url: "https://dashboard.careinn.com" };
@@ -74,7 +76,11 @@ const getShortcutItems = (hospitalId: string): ShortcutItem[] => {
       : hospitalId === "dallah"
       ? { labelKey: "shortcut.patientPortal", icon: patientPortalIcon, url: "https://www.dallah-hospital.com/arabic/book-an-appointment/home" }
       : { labelKey: "shortcut.mirror", icon: mirrorIcon, url: "" },
-    podcastData,
+    // The rail holds four tiles. A brand that ships a guide PDF gets it in the
+    // podcast slot rather than as a fifth tile, which would overflow the rail.
+    patientGuidePdf
+      ? { labelKey: "shortcut.patientGuide", icon: "", url: "patientguide", lucideIcon: BookMarked }
+      : podcastData,
   ];
 };
 
@@ -497,7 +503,21 @@ function ShortcutTile({ item, contained, onTap, onLongPress, isLocked }: { item:
       aria-label={t(item.labelKey)}
     >
       {isLocked && <LockBadge />}
-      {item.labelKey === "shortcut.patientPortal" || item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.burjeelPodcast" || item.labelKey === "shortcut.adminPortal" ? (
+      {item.lucideIcon ? (
+        <div
+          style={{
+            width: SPACE[12],
+            height: SPACE[12],
+            backgroundColor: theme.primary,
+            borderRadius: theme.radiusXl,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <item.lucideIcon size={48} color={theme.brandOnPrimary} strokeWidth={1.75} />
+        </div>
+      ) : item.labelKey === "shortcut.patientPortal" || item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.burjeelPodcast" || item.labelKey === "shortcut.adminPortal" ? (
         <div 
           style={{
             width: SPACE[12],
@@ -579,7 +599,21 @@ function ShortcutTileCompact({ item, onTap, onLongPress, isLocked }: { item: Sho
       aria-label={t(item.labelKey)}
     >
       {isLocked && <LockBadge />}
-      {item.labelKey === "shortcut.patientPortal" || item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.burjeelPodcast" || item.labelKey === "shortcut.adminPortal" ? (
+      {item.lucideIcon ? (
+        <div
+          style={{
+            width: "88px",
+            height: "88px",
+            backgroundColor: theme.primary,
+            borderRadius: theme.radiusLg,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <item.lucideIcon size={44} color={theme.brandOnPrimary} strokeWidth={1.75} />
+        </div>
+      ) : item.labelKey === "shortcut.patientPortal" || item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.burjeelPodcast" || item.labelKey === "shortcut.adminPortal" ? (
         <div 
           style={{
             width: "88px",
@@ -662,7 +696,21 @@ function ShortcutTileBare({ item, onTap, onLongPress, isLocked }: { item: Shortc
       aria-label={t(item.labelKey)}
     >
       {isLocked && <LockBadge />}
-      {item.labelKey === "shortcut.patientPortal" || item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.burjeelPodcast" || item.labelKey === "shortcut.adminPortal" ? (
+      {item.lucideIcon ? (
+        <div
+          style={{
+            width: "120px",
+            height: "120px",
+            backgroundColor: theme.primary,
+            borderRadius: theme.radiusXl,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <item.lucideIcon size={60} color={theme.brandOnPrimary} strokeWidth={1.75} />
+        </div>
+      ) : item.labelKey === "shortcut.patientPortal" || item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.burjeelPodcast" || item.labelKey === "shortcut.adminPortal" ? (
         <div
           style={{
             width: "120px",
@@ -810,7 +858,7 @@ export function ServicesGrid({
   const [tutorialTarget, setTutorialTarget] = useState<TargetTileInfo | null>(null);
   const [setupTarget, setSetupTarget] = useState<{ id: string; name: string } | null>(null);
 
-  const shortcutItems = getShortcutItems(theme.id);
+  const shortcutItems = getShortcutItems(theme.id, theme.patientGuidePdf);
   const visibleServices = guestMode ? GUEST_SERVICE_ITEMS : serviceItems;
   const gridGap = compact ? "gap-3" : "gap-6";
   const bottomHeight = compact ? "140px" : "192px";
@@ -929,7 +977,7 @@ export function ServicesGrid({
                   item={item}
                   onTap={(e) => handleTileTap(e, item.labelKey, t(item.labelKey), undefined, lockedIds.has(item.labelKey), () => {
                     if (item.labelKey === "shortcut.mirror" && onLaunchTool) onLaunchTool("mirror");
-                    else if (item.url === "roomcontrol" && onLaunchTool) onLaunchTool("roomcontrol");
+                    else if ((item.url === "roomcontrol" || item.url === "patientguide") && onLaunchTool) onLaunchTool(item.url);
                     else if (item.url) window.open(item.url, "_blank", "noopener,noreferrer");
                   })}
                   onLongPress={() => handleTileLongPress(item.labelKey, t(item.labelKey), lockedIds.has(item.labelKey))}
@@ -987,7 +1035,7 @@ export function ServicesGrid({
                 const sc = shortcutItems.find(s => s.labelKey === id);
                 if (sc) {
                   if (sc.labelKey === "shortcut.mirror" && onLaunchTool) onLaunchTool("mirror");
-                  else if (sc.url === "roomcontrol" && onLaunchTool) onLaunchTool("roomcontrol");
+                  else if ((sc.url === "roomcontrol" || sc.url === "patientguide") && onLaunchTool) onLaunchTool(sc.url);
                   else if (sc.url) window.open(sc.url, "_blank", "noopener,noreferrer");
                 }
               } 
@@ -1027,7 +1075,7 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
   const [tutorialTarget, setTutorialTarget] = useState<TargetTileInfo | null>(null);
   const [setupTarget, setSetupTarget] = useState<{ id: string; name: string } | null>(null);
 
-  const shortcutItems = getShortcutItems(theme.id);
+  const shortcutItems = getShortcutItems(theme.id, theme.patientGuidePdf);
   const visibleServices = guestMode ? GUEST_SERVICE_ITEMS : serviceItems;
 
   const handleTileTap = (
@@ -1149,7 +1197,7 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
               item={item}
               onTap={(e) => handleTileTap(e, item.labelKey, t(item.labelKey), undefined, lockedIds.has(item.labelKey), () => {
                 if (item.labelKey === "shortcut.mirror" && onLaunchTool) onLaunchTool("mirror");
-                else if (item.url === "roomcontrol" && onLaunchTool) onLaunchTool("roomcontrol");
+                else if ((item.url === "roomcontrol" || item.url === "patientguide") && onLaunchTool) onLaunchTool(item.url);
                 else if (item.url) window.open(item.url, "_blank", "noopener,noreferrer");
               })}
               onLongPress={() => handleTileLongPress(item.labelKey, t(item.labelKey), lockedIds.has(item.labelKey))}
@@ -1185,7 +1233,7 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
               const sc = shortcutItems.find(s => s.labelKey === id);
               if (sc) {
                 if (sc.labelKey === "shortcut.mirror" && onLaunchTool) onLaunchTool("mirror");
-                else if (sc.url === "roomcontrol" && onLaunchTool) onLaunchTool("roomcontrol");
+                else if ((sc.url === "roomcontrol" || sc.url === "patientguide") && onLaunchTool) onLaunchTool(sc.url);
                 else if (sc.url) window.open(sc.url, "_blank", "noopener,noreferrer");
               }
             }

@@ -34,6 +34,8 @@ import { HospitalConfigurator } from "./components/HospitalConfigurator";
 import { ThemeAppearanceDialog } from "./components/ThemeAppearanceDialog";
 import { TasbihScreenSaver } from "./components/TasbihScreenSaver";
 import { VideoScreenSaver } from "./components/VideoScreenSaver";
+import { PatientGuideModal } from "./components/PatientGuideModal";
+import { PatientPreferenceForm } from "./components/PatientPreferenceForm";
 import { FoodOrdering } from "./components/FoodOrdering";
 import { NeedSomething } from "./components/NeedSomething";
 import { OrderProvider, useOrders } from "./components/OrderStore";
@@ -450,6 +452,7 @@ function BedsideScreen() {
   const [acknowledgedBroadcasts, setAcknowledgedBroadcasts] = useState<BroadcastNotification[]>([]);
   const [activeGame, setActiveGame] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<string | null>(null);
+  const [showPreferenceForm, setShowPreferenceForm] = useState(false);
   const [showBlankPage, setShowBlankPage] = useState(false);
   const [showIptv, setShowIptv] = useState(false);
 
@@ -1770,7 +1773,7 @@ function BedsideScreen() {
                           {guestSession ? (
                             <GuestPatientServices />
                           ) : (!isGuest || careMeUnlocked) ? (
-                            <CareMe onExpand={() => setShowCareMeExpanded(true)} />
+                            <CareMe onExpand={() => setShowCareMeExpanded(true)} onOpenPreferences={() => setShowPreferenceForm(true)} />
                           ) : (
                             <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />
                           )}
@@ -1826,7 +1829,7 @@ function BedsideScreen() {
                           />
                           <div className="flex-1 min-h-0 flex flex-col">
                             {(!isGuest || careMeUnlocked) ? (
-                              <CareMe onExpand={() => setShowCareMeExpanded(true)} />
+                              <CareMe onExpand={() => setShowCareMeExpanded(true)} onOpenPreferences={() => setShowPreferenceForm(true)} />
                             ) : (
                               <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />
                             )}
@@ -1889,7 +1892,7 @@ function BedsideScreen() {
                           />
                           <div className="flex-1 min-h-0 flex flex-col">
                             {(!isGuest || careMeUnlocked) ? (
-                              <CareMe onExpand={() => setShowCareMeExpanded(true)} />
+                              <CareMe onExpand={() => setShowCareMeExpanded(true)} onOpenPreferences={() => setShowPreferenceForm(true)} />
                             ) : (
                               <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />
                             )}
@@ -2119,7 +2122,7 @@ function BedsideScreen() {
 
         {/* CareMe Expanded Overlay */}
         {showCareMeExpanded && (!isGuest || careMeUnlocked) && (
-          <CareMeExpanded onClose={() => setShowCareMeExpanded(false)} />
+          <CareMeExpanded onClose={() => setShowCareMeExpanded(false)} onOpenPreferences={() => setShowPreferenceForm(true)} />
         )}
 
         {/* Call Screen Overlay */}
@@ -2135,6 +2138,15 @@ function BedsideScreen() {
         {/* "I Need Something" flow (service requests + report an issue) */}
         {showNeedSomething && (
           <NeedSomething onClose={() => { setShowNeedSomething(false); setNeedSomethingInitialTab(undefined); }} initialTab={needSomethingInitialTab} />
+        )}
+
+        {showPreferenceForm && (
+          <PatientPreferenceForm variant="modal" onClose={() => setShowPreferenceForm(false)} />
+        )}
+
+        {/* Patient Guide — only for brands that ship a guide PDF */}
+        {activeTool === "patientguide" && theme.patientGuidePdf && (
+          <PatientGuideModal src={theme.patientGuidePdf} onClose={() => setActiveTool(null)} />
         )}
 
         {/* Tasbih Screen Saver */}
