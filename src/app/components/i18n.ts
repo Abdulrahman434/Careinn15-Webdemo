@@ -896,6 +896,8 @@ const translations: Record<string, TranslationEntry> = {
   "feedback.raiseConcernDesc": { en: "We'll route this to the right team", ar: "سيتم توجيهها للقسم المختص", ur: "ہم اسے صحیح ٹیم کو بھیجیں گے" },
   "feedback.sendAppreciation": { en: "Send Appreciation", ar: "شكر وتقدير", ur: "تعریف بھیجیں" },
   "feedback.sendAppreciationDesc": { en: "We'll share this with the team", ar: "سيتم مشاركة رسالتك مع الفريق", ur: "ہم اسے ٹیم کے ساتھ شیئر کریں گے" },
+  "feedback.suggestionsComplaints": { en: "Suggestions & Complaints", ar: "الاقتراحات والشكاوى", ur: "تجاویز اور شکایات" },
+  "feedback.suggestionsComplaintsDesc": { en: "Submit a suggestion or complaint", ar: "قدّم اقتراحاً أو شكوى", ur: "تجویز یا شکایت درج کریں" },
   "feedback.back": { en: "Back", ar: "رجوع", ur: "واپس" },
   /* ─── Concern Path ─── */
   "concern.title": { en: "Raise a concern", ar: "تقديم شكوى", ur: "شکایت درج کریں" },
