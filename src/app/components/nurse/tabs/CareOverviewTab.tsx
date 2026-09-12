@@ -17,11 +17,12 @@ const DIET_OPTIONS = [
   { value: "npo",            label: "NPO" },
 ];
 
-function painColor(n: number) {
-  if (n <= 0) return "#94A3B8";
-  if (n < 4) return "#10B981";
-  if (n < 7) return "#F59E0B";
-  return "#EF4444";
+function painColor(n: number, dark: boolean) {
+  // Lifted variants for dark surfaces; the base hues fail AA below ~4.5:1 there.
+  if (n <= 0) return dark ? "#B7C4CE" : "#64748B";
+  if (n < 4) return dark ? "#34D399" : "#047857";
+  if (n < 7) return dark ? "#FBBF24" : "#B45309";
+  return dark ? "#FF7B7B" : "#DC2626";
 }
 function painLabel(n: number) {
   if (n <= 0) return "None";
@@ -31,7 +32,7 @@ function painLabel(n: number) {
 }
 
 export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
-  const { theme: t } = useTheme();
+  const { theme: t, darkMode } = useTheme();
   const { t: tr } = useLocale();
   const store = useNurseStore();
   const isNurse = role === "nurse";
@@ -40,7 +41,7 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
 
   // Pain is owned by observations now; this mirrors the newest one.
   const pain = latestPainLevel(store);
-  const pc = painColor(pain ?? 0);
+  const pc = painColor(pain ?? 0, darkMode);
 
   return (
     <div className="space-y-5">
@@ -48,7 +49,7 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
         <div className="nurse-card flex items-center justify-between" style={{ marginBottom: 0 }}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: t.primarySubtle }}>
-              <Eye size={18} style={{ color: t.primary }} />
+              <Eye size={18} style={{ color: t.primaryOn }} />
             </div>
             <div>
               <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading, display: "block" }}>Show Section to Patient</span>
@@ -62,24 +63,24 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
               onChange={(e) => nurseActions.setSectionVisible("careOverview", e.target.checked)}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"
-              style={{ backgroundColor: store.sectionVisibility.careOverview ? t.primary : "#E5E7EB" }} />
+            <div className="ni-switch"
+              style={{ backgroundColor: store.sectionVisibility.careOverview ? t.primary : undefined }} />
           </label>
         </div>
       )}
 
       {/* Care Team */}
       <div className="nurse-card">
-        <h3 style={{ color: t.textHeading }}><Users size={18} style={{ color: t.primary }} /> Care Team</h3>
+        <h3 style={{ color: t.textHeading }}><Users size={18} style={{ color: t.primaryOn }} /> Care Team</h3>
         <div className="space-y-3">
           {store.careTeam.map((m) => (
-            <div key={m.id} className="flex items-center gap-3 px-4 py-3 rounded-2xl" style={{ backgroundColor: "#F9FAFB", border: `1px solid ${t.borderDefault}` }}>
+            <div key={m.id} className="flex items-center gap-3 px-4 py-3 rounded-2xl" style={{ backgroundColor: t.surfaceInset, border: `1px solid ${t.borderDefault}` }}>
               <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
                 <ApiImage src={m.img} alt="" className="w-full h-full object-cover" />
               </div>
               <div className="min-w-0">
                 <p style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading }}>{tr(m.nameKey)}</p>
-                <p style={{ fontSize: "12px", fontWeight: 600, color: t.primary }}>{tr(m.roleKey)}</p>
+                <p style={{ fontSize: "12px", fontWeight: 600, color: t.primaryOn }}>{tr(m.roleKey)}</p>
               </div>
               {isNurse && (
                 <div className="flex items-center gap-2">
@@ -91,8 +92,8 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
                       onChange={() => nurseActions.toggleCareTeamMemberVisibility(m.id)}
                       className="sr-only peer"
                     />
-                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-600"
-                      style={{ backgroundColor: m.visible ? t.primary : "#E5E7EB" }} />
+                    <div className="ni-switch ni-switch-sm"
+                      style={{ backgroundColor: m.visible ? t.primary : undefined }} />
                   </label>
                 </div>
               )}
@@ -103,14 +104,14 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
 
       {/* Allergies */}
       <div className="nurse-card">
-        <h3 style={{ color: t.textHeading }}><AlertTriangle size={18} style={{ color: t.error }} /> Allergies</h3>
+        <h3 style={{ color: t.textHeading }}><AlertTriangle size={18} style={{ color: t.errorOn }} /> Allergies</h3>
         <div className="flex flex-wrap gap-2 mb-3">
           {store.allergies.map((a) => (
             <span key={a} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-              style={{ fontSize: "13px", fontWeight: 700, color: t.error, backgroundColor: t.errorSubtle, border: `1px solid ${t.errorSubtle}` }}>
+              style={{ fontSize: "13px", fontWeight: 700, color: t.errorOn, backgroundColor: t.errorSubtle, border: `1px solid ${t.errorOn}` }}>
               <AlertTriangle size={12} /> {a}
               {isNurse && (
-                <button onClick={() => nurseActions.removeAllergy(a)} className="ml-1 cursor-pointer" style={{ background: "none", border: "none", color: t.error }}>
+                <button onClick={() => nurseActions.removeAllergy(a)} className="ml-1 cursor-pointer" style={{ background: "none", border: "none", color: t.errorOn }}>
                   <X size={12} />
                 </button>
               )}
@@ -118,7 +119,7 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
           ))}
         </div>
         {isNurse && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
+          <div className="mt-4 pt-4 border-t ni-line">
             <p style={{ fontSize: "12px", fontWeight: 700, color: t.textMuted, marginBottom: 8 }}>Available Allergies (Tap to add/remove):</p>
             <div className="flex flex-wrap gap-2">
               {["Penicillin", "Latex", "Shellfish", "Aspirin", "Peanuts", "Sulfonamides", "Morphine", "Eggs", "Dairy"].map(allergy => {
@@ -129,9 +130,9 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
                     onClick={() => isActive ? nurseActions.removeAllergy(allergy) : nurseActions.addAllergy(allergy)}
                     className="px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all"
                     style={{
-                      backgroundColor: isActive ? t.errorSubtle : "#F3F4F6",
-                      color: isActive ? t.error : t.textMuted,
-                      border: `1px solid ${isActive ? t.error : "transparent"}`,
+                      backgroundColor: isActive ? t.errorSubtle : t.surfaceInset,
+                      color: isActive ? t.errorOn : t.textMuted,
+                      border: `1px solid ${isActive ? t.errorOn : "transparent"}`,
                       cursor: "pointer"
                     }}
                   >
@@ -146,16 +147,16 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
 
       {/* Patient Diet (single-select) */}
       <div className="nurse-card">
-        <h3 style={{ color: t.textHeading }}><Apple size={18} style={{ color: t.primary }} /> Patient Diet</h3>
+        <h3 style={{ color: t.textHeading }}><Apple size={18} style={{ color: t.primaryOn }} /> Patient Diet</h3>
         {/* Current selection */}
         <div className="mb-3">
           <span className="px-4 py-2 rounded-xl inline-flex items-center gap-2"
-            style={{ fontSize: "14px", fontWeight: 700, color: store.patientDiet === "npo" ? t.error : t.primary, backgroundColor: store.patientDiet === "npo" ? t.errorSubtle : t.primarySubtle }}>
+            style={{ fontSize: "14px", fontWeight: 700, color: store.patientDiet === "npo" ? t.errorOn : t.primaryOn, backgroundColor: store.patientDiet === "npo" ? t.errorSubtle : t.primarySubtle }}>
             {(DIET_OPTIONS.find(d => d.value === store.patientDiet) || DIET_OPTIONS[0]).label}
           </span>
         </div>
         {isNurse && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
+          <div className="mt-4 pt-4 border-t ni-line">
             <p style={{ fontSize: "12px", fontWeight: 700, color: t.textMuted, marginBottom: 8 }}>Select Patient Diet:</p>
             <div className="flex flex-wrap gap-2">
               {DIET_OPTIONS.map(diet => {
@@ -167,9 +168,9 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
                     onClick={() => nurseActions.setPatientDiet(diet.value)}
                     className="px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all text-left cursor-pointer"
                     style={{
-                      backgroundColor: isActive ? (isNpo ? t.errorSubtle : t.primarySubtle) : "#F3F4F6",
-                      color: isActive ? (isNpo ? t.error : t.primary) : t.textMuted,
-                      border: `1px solid ${isActive ? (isNpo ? t.error : t.primary) : "transparent"}`,
+                      backgroundColor: isActive ? (isNpo ? t.errorSubtle : t.primarySubtle) : t.surfaceInset,
+                      color: isActive ? (isNpo ? t.errorOn : t.primaryOn) : t.textMuted,
+                      border: `1px solid ${isActive ? (isNpo ? t.errorOn : t.primaryOn) : "transparent"}`,
                     }}
                   >
                     {diet.label}
@@ -202,7 +203,7 @@ export function CareOverviewTab({ role }: { role: "nurse" | "doctor" }) {
       </div>
       {/* HIS Disclaimer Note */}
       <div className="flex items-start gap-3 p-4 rounded-2xl" style={{ backgroundColor: `${t.primary}08`, border: `1px dashed ${t.primary}40` }}>
-        <Info size={20} style={{ color: t.primary, marginTop: 2 }} />
+        <Info size={20} style={{ color: t.primaryOn, marginTop: 2 }} />
         <div className="flex flex-col gap-1">
           <p style={{ fontSize: "13px", fontWeight: 700, color: t.textHeading }}>Clinical Data Source Note</p>
           <p style={{ fontSize: "12px", color: t.textMuted, lineHeight: "1.5" }}>

@@ -810,7 +810,7 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
       transition={{ duration: 0.25 }}
       className="absolute inset-0 z-50 flex flex-col overflow-hidden"
       style={{
-        background: `linear-gradient(160deg, ${theme.primary} 0%, ${theme.primaryDark} 40%, #0a1628 100%)`,
+        background: theme.pageGradient,
         ...foVars,
       }}
     >

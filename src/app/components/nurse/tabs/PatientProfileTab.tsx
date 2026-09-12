@@ -42,13 +42,13 @@ export function PatientProfileTab({ role }: { role: "nurse" | "doctor" }) {
     <div className="nurse-card">
       <div className="flex items-center justify-between mb-6">
         <h3 style={{ color: t.textHeading, margin: 0 }}>
-          <User size={20} style={{ color: t.primary }} /> Patient Profile
+          <User size={20} style={{ color: t.primaryOn }} /> Patient Profile
         </h3>
         {!isReadOnly && !editing && (
           <button
             onClick={() => { setDraft(store.patient); setEditing(true); }}
             className="px-4 py-2 rounded-xl cursor-pointer transition-all active:scale-95"
-            style={{ fontSize: "13px", fontWeight: 700, color: t.primary, backgroundColor: t.primarySubtle, border: "none" }}
+            style={{ fontSize: "13px", fontWeight: 700, color: t.primaryOn, backgroundColor: t.primarySubtle, border: "none" }}
           >
             Edit
           </button>
@@ -81,7 +81,7 @@ export function PatientProfileTab({ role }: { role: "nurse" | "doctor" }) {
               <div
                 style={{
                   padding: "10px 14px", borderRadius: 12, fontSize: "15px", fontWeight: 600,
-                  color: t.textHeading, backgroundColor: "#F9FAFB", border: `1px solid ${t.borderDefault}`,
+                  color: t.textHeading, backgroundColor: t.surfaceInset, border: `1px solid ${t.borderDefault}`,
                 }}
               >
                 {store.patient[f.key] || "—"}
@@ -96,14 +96,14 @@ export function PatientProfileTab({ role }: { role: "nurse" | "doctor" }) {
           <button
             onClick={handleSave}
             className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all active:scale-95 cursor-pointer"
-            style={{ backgroundColor: t.primary, color: "#fff", fontSize: "14px", border: "none" }}
+            style={{ backgroundColor: t.primary, color: t.brandOnPrimary, fontSize: "14px", border: "none" }}
           >
             <Save size={16} /> Save
           </button>
           <button
             onClick={handleCancel}
             className="px-6 py-3 rounded-xl font-bold cursor-pointer"
-            style={{ fontSize: "14px", color: t.textMuted, border: `1.5px solid ${t.borderDefault}`, backgroundColor: "#fff" }}
+            style={{ fontSize: "14px", color: t.textMuted, border: `1.5px solid ${t.borderDefault}`, backgroundColor: t.surface }}
           >
             Cancel
           </button>
@@ -115,7 +115,7 @@ export function PatientProfileTab({ role }: { role: "nurse" | "doctor" }) {
           <h4 style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading, marginBottom: 12 }}>
             CareMe Integration
           </h4>
-          <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: "#F9FAFB", border: `1px solid ${t.borderDefault}` }}>
+          <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: t.surfaceInset, border: `1px solid ${t.borderDefault}` }}>
             <div className="flex flex-col gap-1">
               <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading }}>
                 "Nurse View" Shortcut Button
@@ -131,8 +131,8 @@ export function PatientProfileTab({ role }: { role: "nurse" | "doctor" }) {
                 onChange={(e) => nurseActions.setNurseViewShortcutVisible(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"
-                style={{ backgroundColor: store.nurseViewShortcutVisible ? t.primary : "#E5E7EB" }} />
+              <div className="ni-switch"
+                style={{ backgroundColor: store.nurseViewShortcutVisible ? t.primary : undefined }} />
             </label>
           </div>
           <div className="flex items-center justify-between p-4 rounded-xl border mt-4" style={{ backgroundColor: t.surfaceElevated, borderColor: t.borderDefault }}>
@@ -151,15 +151,15 @@ export function PatientProfileTab({ role }: { role: "nurse" | "doctor" }) {
                 onChange={(e) => nurseActions.setHisConnected(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"
-                style={{ backgroundColor: store.isHisConnected ? t.primary : "#E5E7EB" }} />
+              <div className="ni-switch"
+                style={{ backgroundColor: store.isHisConnected ? t.primary : undefined }} />
             </label>
           </div>
         </div>
       )}
 
       {saved && (
-        <div className="flex items-center gap-2 mt-4" style={{ color: t.success, fontSize: "14px", fontWeight: 700 }}>
+        <div className="flex items-center gap-2 mt-4" style={{ color: t.successOn, fontSize: "14px", fontWeight: 700 }}>
           <CheckCircle2 size={16} /> Saved successfully
         </div>
       )}

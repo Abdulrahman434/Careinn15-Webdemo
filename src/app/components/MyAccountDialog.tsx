@@ -61,8 +61,9 @@ function CenteredDialog({
           maxHeight: "90vh",
           overflowY: "auto",
           borderRadius: t.radiusXl,
-          backgroundColor: "#FFFFFF",
-          boxShadow: "0 16px 48px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06)",
+          backgroundColor: t.surface,
+          border: t.borderCard,
+          boxShadow: "0 16px 48px rgba(0,0,0,0.22)",
           animation: "castDialogIn 0.2s ease-out",
           overflowX: "hidden",
         }}
@@ -215,7 +216,7 @@ export function PinKeypad({
                       fontFamily: t.fontFamily,
                       fontSize: key === "del" ? "13px" : "20px",
                       fontWeight: 700,
-                      color: key === "del" ? t.accent : t.textHeading,
+                      color: key === "del" ? t.accentOn : t.textHeading,
                     }}
                   >
                     {key === "del" ? tr("careteam.del") : key}
@@ -424,7 +425,7 @@ export function MyPreferencesDialog({
                 style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none" }}
               >
                 <div style={{ padding: "8px", borderRadius: t.radiusMd, backgroundColor: t.primarySubtle }}>
-                  <Shield size={20} style={{ color: t.primary }} />
+                  <Shield size={20} style={{ color: t.primaryOn }} />
                 </div>
                 <div className="flex flex-col flex-1">
                   <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: t.textHeading }}>
@@ -444,14 +445,14 @@ export function MyPreferencesDialog({
                 style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none", opacity: isAdminUnlocked ? 1 : 0.5 }}
               >
                 <div style={{ padding: "8px", borderRadius: t.radiusMd, backgroundColor: t.primarySubtle }}>
-                  <Globe size={20} style={{ color: t.primary }} />
+                  <Globe size={20} style={{ color: t.primaryOn }} />
                 </div>
                 <div className="flex flex-col flex-1">
                   <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: t.textHeading }}>
                     Server
                   </span>
                   <div className="flex items-center gap-2">
-                    <span style={{ fontFamily: t.fontFamily, fontSize: "13px", color: isCustom ? t.primary : t.textMuted }}>
+                    <span style={{ fontFamily: t.fontFamily, fontSize: "13px", color: isCustom ? t.primaryOn : t.textMuted }}>
                       {isAdminUnlocked ? apiConfig.serverIp : "Requires Admin"}
                     </span>
                     {isCustom && isAdminUnlocked && <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: t.primary }} />}
@@ -467,7 +468,7 @@ export function MyPreferencesDialog({
                 style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none" }}
               >
                 <div style={{ padding: "8px", borderRadius: t.radiusMd, backgroundColor: t.primarySubtle }}>
-                  <Image size={20} style={{ color: t.primary }} />
+                  <Image size={20} style={{ color: t.primaryOn }} />
                 </div>
                 <div className="flex flex-col flex-1">
                   <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: t.textHeading }}>
@@ -487,7 +488,7 @@ export function MyPreferencesDialog({
                 style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none" }}
               >
                 <div style={{ padding: "8px", borderRadius: t.radiusMd, backgroundColor: t.primarySubtle }}>
-                  <Layout size={20} style={{ color: t.primary }} />
+                  <Layout size={20} style={{ color: t.primaryOn }} />
                 </div>
                 <div className="flex flex-col flex-1">
                   <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: t.textHeading }}>
@@ -518,7 +519,7 @@ export function MyPreferencesDialog({
                     }}
                   >
                     <div style={{ padding: "8px", borderRadius: t.radiusMd, backgroundColor: setupIncomplete ? "#FFFFFF" : t.primarySubtle }}>
-                      <SlidersHorizontal size={20} style={{ color: setupIncomplete ? t.warning : t.primary }} />
+                      <SlidersHorizontal size={20} style={{ color: setupIncomplete ? t.warning : t.primaryOn }} />
                     </div>
                     <div className="flex flex-col flex-1">
                       <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: t.textHeading }}>
@@ -551,7 +552,7 @@ export function MyPreferencesDialog({
                 style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none" }}
               >
                 <div style={{ padding: "8px", borderRadius: t.radiusMd, backgroundColor: t.primarySubtle }}>
-                  <Settings size={20} style={{ color: t.primary }} />
+                  <Settings size={20} style={{ color: t.primaryOn }} />
                 </div>
                 <div className="flex flex-col flex-1">
                   <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: t.textHeading }}>
@@ -602,7 +603,7 @@ export function MyPreferencesDialog({
                   setApiKey("2345fcba-1633-46c9-a27e-ed0ca9ee17e9");
                 }}
                 className="px-3 py-1.5 rounded-full font-bold cursor-pointer transition-all active:scale-95 shrink-0"
-                style={{ backgroundColor: t.primarySubtle, color: t.primary, fontSize: "12px", border: "none" }}
+                style={{ backgroundColor: t.primarySubtle, color: t.primaryOn, fontSize: "12px", border: "none" }}
               >
                 Default Cloud
               </button>
@@ -710,7 +711,7 @@ export function MyPreferencesDialog({
       case 'admin-controls':
         return (
           <div className="flex flex-col items-center" style={{ padding: "28px 24px" }}>
-            <Shield size={40} style={{ color: t.primary, marginBottom: 16 }} />
+            <Shield size={40} style={{ color: t.primaryOn, marginBottom: 16 }} />
             <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, marginBottom: 8, textAlign: "center" }}>
               Admin Controls
             </span>
@@ -725,7 +726,7 @@ export function MyPreferencesDialog({
                   setStep('menu');
                 }}
                 className="w-full py-3 rounded-lg font-bold transition-transform active:scale-[0.98]"
-                style={{ backgroundColor: t.primarySubtle, color: t.primary, fontFamily: t.fontFamily, border: "none" }}
+                style={{ backgroundColor: t.primarySubtle, color: t.primaryOn, fontFamily: t.fontFamily, border: "none" }}
               >
                 Exit Kiosk Mode
               </button>
@@ -751,7 +752,7 @@ export function MyPreferencesDialog({
               className="flex items-center justify-center mb-4"
               style={{ width: "56px", height: "56px", borderRadius: t.radiusFull, backgroundColor: t.primarySubtle }}
             >
-              <CheckCircle size={28} style={{ color: t.primary }} />
+              <CheckCircle size={28} style={{ color: t.primaryOn }} />
             </div>
             <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, marginBottom: "4px" }}>
               {tr("settings.preferences.subtitle.set")}
@@ -771,7 +772,7 @@ export function MyPreferencesDialog({
                 className="flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97]"
                 style={{ height: "44px", borderRadius: t.radiusMd, backgroundColor: t.primarySubtle, border: `1px solid ${t.primary}44` }}
               >
-                <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 600, color: t.primary }}>
+                <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 600, color: t.primaryOn }}>
                   Change PIN
                 </span>
               </button>
@@ -812,7 +813,7 @@ export function MyPreferencesDialog({
         return (
           <>
             <div className="flex flex-col items-center" style={{ padding: "28px 24px 0 24px" }}>
-              <Shield size={28} style={{ color: t.primary, marginBottom: "16px" }} />
+              <Shield size={28} style={{ color: t.primaryOn, marginBottom: "16px" }} />
               <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, textAlign: "center" }}>
                 {tr("pinSetup.title")}
               </span>
@@ -828,7 +829,7 @@ export function MyPreferencesDialog({
         return (
           <>
             <div className="flex flex-col items-center" style={{ padding: "28px 24px 0 24px" }}>
-              <Shield size={28} style={{ color: t.primary, marginBottom: "16px" }} />
+              <Shield size={28} style={{ color: t.primaryOn, marginBottom: "16px" }} />
               <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, textAlign: "center" }}>
                 {tr("pinSetup.confirm")}
               </span>
@@ -858,7 +859,7 @@ export function MyPreferencesDialog({
       case 'setup-pin-mismatch':
         return (
           <div className="flex flex-col items-center justify-center" style={{ padding: "40px 24px" }}>
-            <AlertCircle size={40} style={{ color: "#D10044", marginBottom: "16px" }} />
+            <AlertCircle size={40} style={{ color: t.accentOn, marginBottom: "16px" }} />
             <span style={{ fontFamily: t.fontFamily, fontSize: "16px", fontWeight: 600, color: t.textHeading, textAlign: "center" }}>
               {tr("pinSetup.mismatch")}
             </span>
@@ -869,7 +870,7 @@ export function MyPreferencesDialog({
         return (
           <div className="flex flex-col items-center" style={{ padding: "32px 24px" }}>
             <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-              <Shield size={32} style={{ color: t.primary }} />
+              <Shield size={32} style={{ color: t.primaryOn }} />
             </div>
             <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, textAlign: "center" }}>
               {tr("nfcSetup.title")}
@@ -934,7 +935,7 @@ export function MyPreferencesDialog({
       case 'nfc-mismatch':
         return (
           <div className="flex flex-col items-center justify-center" style={{ padding: "40px 24px" }}>
-            <AlertCircle size={40} style={{ color: "#D10044", marginBottom: "16px" }} />
+            <AlertCircle size={40} style={{ color: t.accentOn, marginBottom: "16px" }} />
             <span style={{ fontFamily: t.fontFamily, fontSize: "16px", fontWeight: 600, color: t.textHeading, textAlign: "center" }}>
               {tr("nfcSetup.mismatch")}
             </span>
@@ -948,7 +949,7 @@ export function MyPreferencesDialog({
               className="flex items-center justify-center mb-6"
               style={{ width: "56px", height: "56px", borderRadius: t.radiusLg, backgroundColor: t.primarySubtle }}
             >
-              <Shield size={28} style={{ color: t.primary }} />
+              <Shield size={28} style={{ color: t.primaryOn }} />
             </div>
             <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
               {pendingAction === 'admin-login' ? "Admin Login" : "Verify PIN"}
@@ -1087,7 +1088,7 @@ export function MyPreferencesDialog({
                     </span>
                   </div>
                   {layoutModeValue === option.id ? (
-                    <Check size={18} style={{ color: t.primary }} />
+                    <Check size={18} style={{ color: t.primaryOn }} />
                   ) : null}
                 </button>
               ))}

@@ -72,8 +72,21 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
 
   return (
     <div
-      className="absolute inset-0 z-[900] flex flex-col"
-      style={{ backgroundColor: "#F4F6F8" }}
+      className="ni-root absolute inset-0 z-[900] flex flex-col"
+      style={{
+        backgroundColor: t.background,
+        // Drives the .nurse-card class below, which every tab uses.
+        ["--ni-surface" as any]: t.surface,
+        ["--ni-card-line" as any]: t.borderCardColor,
+        ["--ni-tint" as any]: t.surfaceInset,
+        ["--ni-switch-off" as any]: t.surfaceInset,
+        // iOS convention: white knob on the neutral off-track; on the brand
+        // on-track it flips to whatever actually contrasts with the brand.
+        ["--ni-switch-knob" as any]: "#FFFFFF",
+        ["--ni-switch-knob-on" as any]: t.brandOnPrimary,
+        ["--ni-ink" as any]: t.textHeading,
+        ["--ni-ink-muted" as any]: t.textMuted,
+      }}
     >
       {/* ── Header ── */}
       <div
@@ -93,7 +106,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
             <h1 style={{ fontFamily: t.fontFamily, fontSize: "20px", fontWeight: 800, color: "#fff" }}>
               {role === "nurse" ? tr("careteam.nurseRole") : tr("careteam.doctorRole")}
             </h1>
-            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.72)", fontWeight: 500 }}>
+            <p style={{ fontSize: "13px", color: t.brandOnPrimary, opacity: 0.92, fontWeight: 500 }}>
               {new Date().toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
             </p>
           </div>
@@ -110,7 +123,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
       {/* ── Patient Summary Bar ── */}
       <div
         className="flex items-center px-8 py-4 shrink-0"
-        style={{ backgroundColor: "#fff", borderBottom: `1px solid ${t.borderDefault}` }}
+        style={{ backgroundColor: t.surface, borderBottom: `1px solid ${t.borderCardColor}` }}
       >
         <div className="flex-1 grid grid-cols-4 gap-0">
           {[
@@ -125,12 +138,12 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
           ].map((item, i) => (
             <div key={i} className="flex relative items-center justify-center">
               {i > 0 && (
-                <div className="absolute inset-inline-start-0 top-1/2 -translate-y-1/2 w-[1.5px] h-10"
-                  style={{ backgroundColor: t.borderDefault, opacity: 0.6 }} />
+                <div className="absolute top-1/2 -translate-y-1/2 w-px h-8"
+                  style={{ insetInlineStart: 0, backgroundColor: t.borderCardColor }} />
               )}
               <div className="flex flex-col items-center">
                 <span className="flex items-center gap-1.5 mb-1" style={{ fontSize: "12px", fontWeight: 600, color: t.textMuted }}>
-                  <span style={{ color: t.primary }}>{item.icon}</span> {item.label}
+                  <span style={{ color: t.primaryOn }}>{item.icon}</span> {item.label}
                 </span>
                 <span style={{ fontSize: "17px", fontWeight: 800, color: t.textHeading }}>{item.value}</span>
               </div>
@@ -141,7 +154,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
           <button
             onClick={() => { setActiveTab("observations"); setAddObsNonce((n) => n + 1); }}
             className="flex items-center gap-2 px-5 py-3 cursor-pointer transition-all active:scale-95"
-            style={{ backgroundColor: t.primary, color: "#fff", fontSize: "14px", fontWeight: 800, borderRadius: "14px", border: "none" }}
+            style={{ backgroundColor: t.primary, color: t.brandOnPrimary, fontSize: "14px", fontWeight: 800, borderRadius: "14px", border: "none" }}
           >
             <Plus size={18} /> Add Observation
           </button>
@@ -151,7 +164,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
       {/* ── Tab Bar ── */}
       <div
         className="flex items-center gap-1 px-6 shrink-0 overflow-x-auto"
-        style={{ backgroundColor: "#fff", borderBottom: `1px solid ${t.borderDefault}`, padding: "0 24px" }}
+        style={{ backgroundColor: t.surface, borderBottom: `1px solid ${t.borderCardColor}`, padding: "0 24px" }}
       >
         {TABS.map((tab) => {
           const isActive = activeTab === tab.key;
@@ -165,7 +178,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
                 style={{
                   fontSize: "13px",
                   fontWeight: isActive ? 700 : 500,
-                  color: isActive ? t.primary : t.textMuted,
+                  color: isActive ? t.primaryOn : t.textMuted,
                   borderBottom: isActive ? `3px solid ${t.primary}` : "3px solid transparent",
                   background: "none",
                   border: "none",
@@ -184,7 +197,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
       </div>
 
       {/* ── Tab Content ── */}
-      <div className="flex-1 overflow-y-auto p-8" style={{ backgroundColor: "#F4F6F8" }}>
+      <div className="flex-1 overflow-y-auto p-8" style={{ backgroundColor: t.background }}>
         <div className="mx-auto" style={{ maxWidth: 1100 }}>
           {renderTab()}
         </div>
@@ -198,7 +211,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs text-blue-600 hover:underline font-semibold flex items-center gap-1.5 cursor-pointer"
-            style={{ color: t.primary }}
+            style={{ color: t.primaryOn }}
           >
             <ExternalLink size={14} />
             {tr("careteam.gotoEmr")}
@@ -208,9 +221,9 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
 
       <style>{`
         .nurse-card {
-          background: #fff;
+          background: var(--ni-surface);
           border-radius: 20px;
-          border: 1px solid rgba(0,0,0,0.06);
+          border: 1px solid var(--ni-card-line);
           padding: 24px;
           margin-bottom: 20px;
         }
@@ -222,8 +235,58 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
           align-items: center;
           gap: 8px;
         }
+        /* Theme-driven stand-ins for the fixed Tailwind light utilities the
+           tabs used to carry, so the nurse UI follows light and dark. */
+        .ni-surface { background: var(--ni-surface); }
+        .ni-tint    { background: var(--ni-tint); }
+        .ni-line    { border-color: var(--ni-card-line); }
+        /* Toggle switch. The knob is a ::after on the track; the hidden
+           checkbox in front of it carries .peer, so :checked drives both. */
+        .ni-switch {
+          position: relative;
+          width: 44px;
+          height: 24px;
+          border-radius: 999px;
+          border: 1px solid var(--ni-card-line);
+          background: var(--ni-switch-off);
+          transition: background 0.2s ease;
+        }
+        .ni-switch::after {
+          content: "";
+          position: absolute;
+          top: 2px;
+          inset-inline-start: 2px;
+          width: 18px;
+          height: 18px;
+          border-radius: 999px;
+          background: var(--ni-switch-knob);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+          transition: transform 0.2s ease;
+        }
+        .peer:checked ~ .ni-switch::after {
+          transform: translateX(20px);
+          background: var(--ni-switch-knob-on);
+        }
+        [dir="rtl"] .peer:checked ~ .ni-switch::after { transform: translateX(-20px); }
+        .ni-switch-sm { width: 36px; height: 20px; }
+        .ni-switch-sm::after { width: 14px; height: 14px; }
+        .peer:checked ~ .ni-switch-sm::after { transform: translateX(16px); }
+        [dir="rtl"] .peer:checked ~ .ni-switch-sm::after { transform: translateX(-16px); }
+        /* Form controls across every tab carried no background or text colour,
+           so they fell back to the browser default (white field, black text)
+           and vanished in dark mode. None of them set these inline, so this
+           rule wins without touching each call site. */
+        .ni-root input:not([type="checkbox"]):not([type="radio"]),
+        .ni-root select,
+        .ni-root textarea {
+          background: var(--ni-tint);
+          color: var(--ni-ink);
+        }
+        .ni-root input::placeholder,
+        .ni-root textarea::placeholder { color: var(--ni-ink-muted); opacity: 1; }
+        .ni-root select option { background: var(--ni-surface); color: var(--ni-ink); }
         .ni-scroll::-webkit-scrollbar { width: 5px; }
-        .ni-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 99px; }
+        .ni-scroll::-webkit-scrollbar-thumb { background: var(--ni-card-line); border-radius: 99px; }
         .ni-scroll::-webkit-scrollbar-track { background: transparent; }
       `}</style>
     </div>

@@ -46,7 +46,7 @@ export function ConfirmDialog({
           width: "360px",
           padding: "32px 24px 24px 24px",
           borderRadius: t.radiusXl,
-          backgroundColor: "#FFFFFF",
+          backgroundColor: t.surface,
           boxShadow: SHADOW.xl,
           animation: "confirmDialogIn 0.2s ease-out",
           direction: isRTL ? "rtl" : "ltr",
@@ -78,7 +78,7 @@ export function ConfirmDialog({
             backgroundColor: isDanger ? "#FEE2E2" : t.primarySubtle,
           }}
         >
-          <AlertTriangle size={30} style={{ color: isDanger ? "#EF4444" : t.primary }} />
+          <AlertTriangle size={30} style={{ color: isDanger ? "#EF4444" : t.primaryOn }} />
         </div>
 
         {title && (

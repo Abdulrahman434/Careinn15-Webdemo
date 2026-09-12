@@ -589,11 +589,18 @@ function buildTheme(core: {
   });
   // Deepest real stack: a brand-tinted chip drawn on the card's gradient top.
   const chipOnTintD = overlayHex(PD.seed, PD.subtleAlpha, ENG_D.engagementTint);
+  // Panels nested inside a card (surfaceInset) are lighter than every brand
+  // tint, so they, not the tints, set the floor for foregrounds drawn on them.
+  const INSET_D = overlayHex("#FFFFFF", 0.045, DARK_SURFACE);
   const backdropsD = [DARK_SURFACE, ENGAGEMENT_DARK_SURFACE, DARK_ELEVATED,
-    PD.subtleSolid, AD.subtleSolid, ENG_D.engagementTint, chipOnTintD];
-  const neutralBackdropD = worstBackdrop(
-    [DARK_SURFACE, ENGAGEMENT_DARK_SURFACE, DARK_ELEVATED,
-     PD.subtleSolid, AD.subtleSolid, ENG_D.engagementTint, chipOnTintD], true);
+    PD.subtleSolid, AD.subtleSolid, ENG_D.engagementTint, chipOnTintD, INSET_D];
+  const neutralBackdropD = worstBackdrop(backdropsD, true);
+  /** A semantic hue also lands on its own 8% chip, which sits on the inset. */
+  const semanticBackdropsD = (hex: string) => [
+    ...backdropsD,
+    overlayHex(hex, 0.08, INSET_D),
+    overlayHex(hex, 0.08, DARK_SURFACE),
+  ];
   const DARK_MUTED = ensureContrastAll("#5C6B77", backdropsD, 4.5);
   const DARK_DISABLED = ensureContrastAll("#3D4A54", backdropsD, 3);
   // In dark mode brand text/icons sit on the card, the elevated panel, or a
@@ -612,10 +619,10 @@ function buildTheme(core: {
     accentOnLight: ensureContrast(c.accent, "#FFFFFF", 4.5),
     pageGradient: `linear-gradient(160deg, ${mixHex(c.primary, DARK_BG, 0.34)} 0%, ${mixHex(c.primary, DARK_BG, 0.16)} 45%, ${DARK_BG} 100%)`,
     pageGradientFlat: `linear-gradient(160deg, ${mixHex(c.primary, DARK_BG, 0.34)} 0%, ${mixHex(c.primary, DARK_BG, 0.12)} 100%)`,
-    successOn: ensureContrast("#22C55E", pBackdropD, 4.5),
-    warningOn: ensureContrast("#F59E0B", pBackdropD, 4.5),
-    errorOn: ensureContrast("#EF4444", pBackdropD, 4.5),
-    infoOn: ensureContrast("#3B82F6", pBackdropD, 4.5),
+    successOn: ensureContrastAll("#22C55E", semanticBackdropsD("#22C55E"), 4.5),
+    warningOn: ensureContrastAll("#F59E0B", semanticBackdropsD("#F59E0B"), 4.5),
+    errorOn: ensureContrastAll("#EF4444", semanticBackdropsD("#EF4444"), 4.5),
+    infoOn: ensureContrastAll("#3B82F6", semanticBackdropsD("#3B82F6"), 4.5),
     successOnLight: ensureContrast("#22C55E", "#FFFFFF", 4.5),
     warningOnLight: ensureContrast("#F59E0B", "#FFFFFF", 4.5),
     errorOnLight: ensureContrast("#EF4444", "#FFFFFF", 4.5),

@@ -32,7 +32,7 @@ function CenteredDialog({
           maxHeight: "90vh",
           overflowY: "auto",
           borderRadius: t.radiusXl,
-          backgroundColor: "#FFFFFF",
+          backgroundColor: t.surface,
           boxShadow: "0 16px 48px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06)",
           animation: "castDialogIn 0.2s ease-out",
           overflowX: "hidden",
@@ -125,7 +125,7 @@ export function CareMePinDialog({ onClose, onSuccess, onNfcSuccess }: Props) {
             marginBottom: "16px",
           }}
         >
-          <HeartPulse size={28} style={{ color: t.primary }} />
+          <HeartPulse size={28} style={{ color: t.primaryOn }} />
         </div>
         <span
           style={{
@@ -213,7 +213,7 @@ export function CareMePinDialog({ onClose, onSuccess, onNfcSuccess }: Props) {
                       fontFamily,
                       fontSize: key === "del" ? "13px" : "20px",
                       fontWeight: 700,
-                      color: key === "del" ? t.accent : t.textHeading,
+                      color: key === "del" ? t.accentOn : t.textHeading,
                     }}
                   >
                     {key === "del" ? tr("careteam.del") : key}

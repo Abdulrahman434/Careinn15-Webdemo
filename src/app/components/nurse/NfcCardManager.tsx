@@ -198,13 +198,13 @@ import {
               }}>
                 <Wifi
                   size={18}
-                  color={t.primary}
+                  color={t.primaryOn}
                   style={{ animation: "pulse 1s infinite" }}
                 />
                 <span style={{
                   fontFamily,
                   ...TEXT_STYLE.label,
-                  color: t.primary,
+                  color: t.primaryOn,
                 }}>
                   {tr("nfc.tapCard")}
                 </span>
@@ -232,11 +232,11 @@ import {
               borderRadius:    t.radiusMd,
               backgroundColor: t.successSubtle,
             }}>
-              <CheckCircle size={16} color={t.success} />
+              <CheckCircle size={16} color={t.successOn} />
               <span style={{
                 fontFamily,
                 ...TEXT_STYLE.label,
-                color: t.success,
+                color: t.successOn,
               }}>
                 {tr("nfc.saved")}
               </span>

@@ -13,15 +13,16 @@ function fmtFull(d: any) {
   if (isNaN(dateObj.getTime())) return String(d);
   return `${dateObj.toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" })} • ${dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
 }
-function painColor(n: number) {
-  if (n <= 0) return "#94A3B8";
-  if (n < 4) return "#10B981";
-  if (n < 7) return "#F59E0B";
-  return "#EF4444";
+function painColor(n: number, dark: boolean) {
+  // Lifted variants for dark surfaces; the base hues fail AA below ~4.5:1 there.
+  if (n <= 0) return dark ? "#B7C4CE" : "#64748B";
+  if (n < 4) return dark ? "#34D399" : "#047857";
+  if (n < 7) return dark ? "#FBBF24" : "#B45309";
+  return dark ? "#FF7B7B" : "#DC2626";
 }
 
 export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "doctor"; addNonce?: number }) {
-  const { theme: t } = useTheme();
+  const { theme: t, darkMode } = useTheme();
   const { t: tr } = useLocale();
   const store = useNurseStore();
   const isNurse = role === "nurse";
@@ -85,7 +86,7 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
         <div className="nurse-card flex items-center justify-between" style={{ marginBottom: 0 }}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: t.primarySubtle }}>
-              <Eye size={18} style={{ color: t.primary }} />
+              <Eye size={18} style={{ color: t.primaryOn }} />
             </div>
             <div>
               <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading, display: "block" }}>Show Section to Patient</span>
@@ -99,8 +100,8 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
               onChange={(e) => nurseActions.setSectionVisible("observations", e.target.checked)}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"
-              style={{ backgroundColor: store.sectionVisibility.observations ? t.primary : "#E5E7EB" }} />
+            <div className="ni-switch"
+              style={{ backgroundColor: store.sectionVisibility.observations ? t.primary : undefined }} />
           </label>
         </div>
       )}
@@ -110,7 +111,7 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
       <div className="flex-1">
         {isAdding ? (
           <div className="nurse-card">
-            <h3 style={{ color: t.textHeading }}><ClipboardList size={18} style={{ color: t.primary }} /> New Observation</h3>
+            <h3 style={{ color: t.textHeading }}><ClipboardList size={18} style={{ color: t.primaryOn }} /> New Observation</h3>
             <p style={{ fontSize: "13px", color: t.textMuted, marginBottom: 16 }}>{fmtFull(new Date())}</p>
 
             {/* Vitals */}
@@ -119,9 +120,9 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
                 { key: "bp", label: "Blood Pressure", unit: "mmHg", icon: <Droplet size={14} color={t.errorOn} />, placeholder: "120/80" },
                 { key: "hr", label: "Heart Rate", unit: "BPM", icon: <Activity size={14} color="#F43F5E" />, placeholder: "72" },
                 { key: "temp", label: "Temperature", unit: "°C", icon: <Thermometer size={14} color="#F59E0B" />, placeholder: "37.0" },
-                { key: "spo2", label: "O₂ Saturation", unit: "%", icon: <Wind size={14} style={{ color: t.primary }} />, placeholder: "98" },
+                { key: "spo2", label: "O₂ Saturation", unit: "%", icon: <Wind size={14} style={{ color: t.primaryOn }} />, placeholder: "98" },
               ].map((v) => (
-                <div key={v.key} className="p-3 rounded-xl" style={{ backgroundColor: "#F9FAFB", border: `1px solid ${t.borderDefault}` }}>
+                <div key={v.key} className="p-3 rounded-xl" style={{ backgroundColor: t.surfaceInset, border: `1px solid ${t.borderDefault}` }}>
                   <div className="flex items-center gap-1.5 mb-2">{v.icon}<span style={{ fontSize: "10px", fontWeight: 700, color: t.textMuted }}>{v.label}</span></div>
                   <div className="flex items-baseline gap-1">
                     <input
@@ -165,7 +166,7 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
               <span style={{ fontSize: "12px", fontWeight: 600, color: t.textMuted }}>Pain Level: {form.painLevel}/10</span>
               <input type="range" min={0} max={10} value={form.painLevel}
                 onChange={(e) => setForm({ ...form, painLevel: Number(e.target.value) })}
-                className="w-full mt-2" style={{ accentColor: painColor(form.painLevel) }} />
+                className="w-full mt-2" style={{ accentColor: painColor(form.painLevel, darkMode) }} />
             </div>
 
             {/* Risks */}
@@ -175,7 +176,7 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
                 {(["fall", "pressure", "allergies", "other"] as const).map((k) => (
                   <button key={k} onClick={() => setForm({ ...form, risks: { ...form.risks, [k]: !form.risks[k] } })}
                     className="px-3 py-1.5 rounded-full cursor-pointer transition-all"
-                    style={{ fontSize: "12px", fontWeight: 700, backgroundColor: form.risks[k] ? t.errorSubtle : "#F9FAFB", color: form.risks[k] ? t.error : t.textMuted, border: `1px solid ${form.risks[k] ? t.errorSubtle : t.borderDefault}` }}>
+                    style={{ fontSize: "12px", fontWeight: 700, backgroundColor: form.risks[k] ? t.errorSubtle : t.surfaceInset, color: form.risks[k] ? t.errorOn : t.textMuted, border: `1px solid ${form.risks[k] ? t.errorOn : t.borderDefault}` }}>
                     <AlertTriangle size={12} className="inline mr-1" /> {k.charAt(0).toUpperCase() + k.slice(1)}
                   </button>
                 ))}
@@ -189,11 +190,11 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
 
             <div className="flex items-center gap-3">
               <button onClick={handleSave} className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all active:scale-95 cursor-pointer"
-                style={{ backgroundColor: saved ? t.success : t.primary, color: "#fff", fontSize: "14px", border: "none" }}>
+                style={{ backgroundColor: saved ? t.success : t.primary, color: saved ? t.successOn : t.brandOnPrimary, fontSize: "14px", border: "none" }}>
                 {saved ? <CheckCircle2 size={16} /> : <Save size={16} />} {saved ? "Saved!" : "Save Observation"}
               </button>
               <button onClick={() => { setIsAdding(false); setForm(blankForm); }}
-                className="px-6 py-3 rounded-xl font-bold cursor-pointer" style={{ fontSize: "14px", color: t.textMuted, border: `1.5px solid ${t.borderDefault}`, backgroundColor: "#fff" }}>
+                className="px-6 py-3 rounded-xl font-bold cursor-pointer" style={{ fontSize: "14px", color: t.textMuted, border: `1.5px solid ${t.borderDefault}`, backgroundColor: t.surface }}>
                 Cancel
               </button>
             </div>
@@ -201,7 +202,7 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
         ) : activeObs ? (
           <div className="nurse-card">
             <div className="mb-4">
-              <span style={{ fontSize: "12px", fontWeight: 700, color: t.primary }}>Observation Review</span>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: t.primaryOn }}>Observation Review</span>
               <div className="flex items-center gap-2 mt-1">
                 <span style={{ fontSize: "16px", fontWeight: 800, color: t.textHeading }}>{tr(activeObs.nurseName)}</span>
                 <span style={{ color: t.textMuted, opacity: 0.3 }}>|</span>
@@ -215,9 +216,9 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
                 { val: activeObs.vitals.bp, label: "BP", unit: "mmHg", icon: <Droplet size={14} color={t.errorOn} /> },
                 { val: activeObs.vitals.hr, label: "HR", unit: "BPM", icon: <Activity size={14} color="#F43F5E" /> },
                 { val: activeObs.vitals.temp, label: "Temp", unit: "°C", icon: <Thermometer size={14} color="#F59E0B" /> },
-                { val: activeObs.vitals.spo2, label: "SpO₂", unit: "%", icon: <Wind size={14} style={{ color: t.primary }} /> },
+                { val: activeObs.vitals.spo2, label: "SpO₂", unit: "%", icon: <Wind size={14} style={{ color: t.primaryOn }} /> },
               ].map((v) => (
-                <div key={v.label} className="p-3 rounded-xl" style={{ backgroundColor: "#F9FAFB", border: `1px solid ${t.borderDefault}` }}>
+                <div key={v.label} className="p-3 rounded-xl" style={{ backgroundColor: t.surfaceInset, border: `1px solid ${t.borderDefault}` }}>
                   <div className="flex items-center gap-1.5 mb-2">{v.icon}<span style={{ fontSize: "10px", fontWeight: 700, color: t.textMuted }}>{v.label}</span></div>
                   <span style={{ fontSize: "20px", fontWeight: 900, color: t.textHeading }}>{v.val || "—"}</span>
                   <span style={{ fontSize: "11px", color: t.textMuted, marginLeft: 4 }}>{v.unit}</span>
@@ -227,13 +228,13 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
 
             {/* Pain + Notes */}
             <div className="grid grid-cols-2 gap-4 mb-5">
-              <div className="p-4 rounded-xl" style={{ backgroundColor: "#F9FAFB", border: `1px solid ${t.borderDefault}` }}>
+              <div className="p-4 rounded-xl" style={{ backgroundColor: t.surfaceInset, border: `1px solid ${t.borderDefault}` }}>
                 <span style={{ fontSize: "12px", fontWeight: 600, color: t.textMuted }}>Pain</span>
                 <div className="flex items-center gap-2 mt-2">
-                  <span style={{ fontSize: "28px", fontWeight: 900, color: painColor(activeObs.painLevel) }}>{activeObs.painLevel}<span style={{ fontSize: "14px", color: t.textMuted }}>/10</span></span>
+                  <span style={{ fontSize: "28px", fontWeight: 900, color: painColor(activeObs.painLevel, darkMode) }}>{activeObs.painLevel}<span style={{ fontSize: "14px", color: t.textMuted }}>/10</span></span>
                 </div>
               </div>
-              <div className="p-4 rounded-xl" style={{ backgroundColor: "#F9FAFB", border: `1px solid ${t.borderDefault}` }}>
+              <div className="p-4 rounded-xl" style={{ backgroundColor: t.surfaceInset, border: `1px solid ${t.borderDefault}` }}>
                 <span style={{ fontSize: "12px", fontWeight: 600, color: t.textMuted }}>Notes</span>
                 <p className="mt-2" style={{ fontSize: "14px", color: t.textBody, lineHeight: 1.6 }}>{activeObs.nurseNotes || "—"}</p>
               </div>
@@ -242,22 +243,22 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
             {/* Doctor Note */}
             {activeObs.doctorNote && (
               <div className="p-4 rounded-xl mb-4" style={{ backgroundColor: t.primarySubtle, border: `1px solid ${t.borderDefault}` }}>
-                <div className="flex items-center gap-2 mb-2"><Stethoscope size={14} style={{ color: t.primary }} /><span style={{ fontSize: "13px", fontWeight: 700, color: t.primary }}>Physician Note</span></div>
+                <div className="flex items-center gap-2 mb-2"><Stethoscope size={14} style={{ color: t.primaryOn }} /><span style={{ fontSize: "13px", fontWeight: 700, color: t.primaryOn }}>Physician Note</span></div>
                 <p style={{ fontSize: "14px", color: t.textBody, fontStyle: "italic" }}>{activeObs.doctorNote.text}</p>
-                <p style={{ fontSize: "12px", color: t.primary, fontWeight: 700, marginTop: 6 }}>{activeObs.doctorNote.doctorName} · {fmtFull(activeObs.doctorNote.addedAt)}</p>
+                <p style={{ fontSize: "12px", color: t.primaryOn, fontWeight: 700, marginTop: 6 }}>{activeObs.doctorNote.doctorName} · {fmtFull(activeObs.doctorNote.addedAt)}</p>
               </div>
             )}
 
             {/* Doctor add note */}
             {role === "doctor" && (
               <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${t.borderDefault}` }}>
-                <div className="flex items-center gap-2 mb-3"><Stethoscope size={14} style={{ color: t.primary }} /><span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading }}>Add Physician Note</span></div>
+                <div className="flex items-center gap-2 mb-3"><Stethoscope size={14} style={{ color: t.primaryOn }} /><span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading }}>Add Physician Note</span></div>
                 <textarea value={docNote} onChange={(e) => setDocNote(e.target.value)} placeholder="Enter physician note..."
                   rows={2} className="w-full resize-none outline-none mb-3"
                   style={{ padding: "10px 14px", borderRadius: 12, border: `1.5px solid ${t.borderDefault}`, fontSize: "14px", fontFamily: "inherit" }} />
                 <button onClick={handleDocSave} disabled={!docNote.trim()}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 cursor-pointer"
-                  style={{ backgroundColor: docSaved ? t.success : (docNote.trim() ? t.primary : t.borderDefault), color: "#fff", fontSize: "13px", border: "none" }}>
+                  style={{ backgroundColor: docSaved ? t.success : (docNote.trim() ? t.primary : t.borderDefault), color: docSaved ? t.successOn : t.brandOnPrimary, fontSize: "13px", border: "none" }}>
                   {docSaved ? <CheckCircle2 size={14} /> : <Save size={14} />} {docSaved ? "Saved" : "Save Note"}
                 </button>
               </div>
@@ -267,7 +268,7 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
               <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${t.borderDefault}` }}>
                 <button onClick={() => setIsAdding(true)}
                   className="flex items-center gap-2 px-5 py-3 rounded-xl cursor-pointer transition-all active:scale-95"
-                  style={{ backgroundColor: t.primary, color: "#fff", fontSize: "14px", fontWeight: 700, border: "none" }}>
+                  style={{ backgroundColor: t.primary, color: t.brandOnPrimary, fontSize: "14px", fontWeight: 700, border: "none" }}>
                   Add New Observation
                 </button>
               </div>
@@ -279,7 +280,7 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
             <p className="mt-4" style={{ fontSize: "14px", color: t.textMuted }}>No observations recorded yet.</p>
             {isNurse && (
               <button onClick={() => setIsAdding(true)} className="mt-4 px-5 py-3 rounded-xl cursor-pointer"
-                style={{ backgroundColor: t.primary, color: "#fff", fontWeight: 700, border: "none" }}>
+                style={{ backgroundColor: t.primary, color: t.brandOnPrimary, fontWeight: 700, border: "none" }}>
                 Add First Observation
               </button>
             )}
@@ -292,23 +293,23 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
         <div className="nurse-card" style={{ position: "sticky", top: 0 }}>
           <div className="flex items-center justify-between mb-4">
             <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading }}>History</span>
-            <span style={{ fontSize: "12px", fontWeight: 700, color: t.primary, backgroundColor: t.primarySubtle, padding: "2px 10px", borderRadius: 99 }}>{store.observations.length}</span>
+            <span style={{ fontSize: "12px", fontWeight: 700, color: t.primaryOn, backgroundColor: t.primarySubtle, padding: "2px 10px", borderRadius: 99 }}>{store.observations.length}</span>
           </div>
           <div className="space-y-2 max-h-[500px] overflow-y-auto ni-scroll">
             {[...store.observations].reverse().map((obs) => (
               <div key={obs.id} onClick={() => { setSelectedId(obs.id); setIsAdding(false); }}
                 className="group p-3 rounded-xl cursor-pointer transition-all hover:shadow-md"
-                style={{ backgroundColor: "#fff", border: selectedId === obs.id || (!selectedId && obs.id === activeObs?.id) ? `2px solid ${t.primary}` : `1px solid ${t.borderDefault}` }}>
+                style={{ backgroundColor: t.surface, border: selectedId === obs.id || (!selectedId && obs.id === activeObs?.id) ? `2px solid ${t.primary}` : `1px solid ${t.borderDefault}` }}>
                 <div className="flex items-start justify-between mb-1.5">
                   <div>
-                    <span style={{ fontSize: "10px", fontWeight: 800, color: t.primary, backgroundColor: t.primarySubtle, padding: "2px 8px", borderRadius: 99 }}>NURSE</span>
+                    <span style={{ fontSize: "10px", fontWeight: 800, color: t.primaryOn, backgroundColor: t.primarySubtle, padding: "2px 8px", borderRadius: 99 }}>NURSE</span>
                     <p style={{ fontSize: "12px", fontWeight: 700, color: t.textHeading, marginTop: 4 }}>{tr(obs.nurseName)}</p>
                     <p className="flex items-center gap-1 mt-0.5" style={{ fontSize: "11px", color: t.textMuted }}><Clock size={10} /> {fmtFull(obs.timestamp)}</p>
                   </div>
                   {isNurse && (
                     <button onClick={(e) => { e.stopPropagation(); nurseActions.deleteObservation(obs.id); }}
                       className="opacity-0 group-hover:opacity-100 p-1 rounded cursor-pointer" style={{ background: "none", border: "none" }}>
-                      <Trash2 size={12} style={{ color: t.error }} />
+                      <Trash2 size={12} style={{ color: t.errorOn }} />
                     </button>
                   )}
                 </div>

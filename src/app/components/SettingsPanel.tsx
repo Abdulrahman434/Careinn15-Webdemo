@@ -144,7 +144,7 @@ function SettingsSlider({
             fontFamily: t.fontFamily,
             fontSize: "14px",
             fontWeight: 700,
-            color: t.primary,
+            color: t.primaryOn,
           }}
         >
           {value}%
@@ -162,7 +162,7 @@ function SettingsSlider({
             border: "none",
           }}
         >
-          <Minus size={18} style={{ color: t.primary }} />
+          <Minus size={18} style={{ color: t.primaryOn }} />
         </button>
         <div
           ref={trackRef}
@@ -216,7 +216,7 @@ function SettingsSlider({
             border: "none",
           }}
         >
-          <Plus size={18} style={{ color: t.primary }} />
+          <Plus size={18} style={{ color: t.primaryOn }} />
         </button>
       </div>
     </div>
@@ -338,7 +338,7 @@ function LanguagePicker({
                 fontFamily: t.fontFamily,
                 fontSize: "15px",
                 fontWeight: isActive ? 700 : 600,
-                color: isActive ? t.primary : t.textHeading,
+                color: isActive ? t.primaryOn : t.textHeading,
               }}
             >
               {opt.label}
@@ -401,7 +401,7 @@ function CenteredDialog({
           maxHeight: "90vh",
           overflowY: "auto",
           borderRadius: t.radiusXl,
-          backgroundColor: "#FFFFFF",
+          backgroundColor: t.surface,
           boxShadow: "0 16px 48px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06)",
           animation: "castDialogIn 0.2s ease-out",
           overflowX: "hidden",
@@ -524,7 +524,7 @@ function DeviceListItem({
             fontFamily: t.fontFamily,
             fontSize: "14px",
             fontWeight: 700,
-            color: isConnected ? t.primary : t.textHeading,
+            color: isConnected ? t.primaryOn : t.textHeading,
             display: "block",
           }}
         >
@@ -535,7 +535,7 @@ function DeviceListItem({
             fontFamily: t.fontFamily,
             fontSize: "11px",
             fontWeight: 500,
-            color: isConnected ? t.primary : t.textMuted,
+            color: isConnected ? t.primaryOn : t.textMuted,
             display: "block",
             marginTop: "1px",
           }}
@@ -570,7 +570,7 @@ function DisconnectButton({ label, onClick }: { label: string; onClick: () => vo
       style={{
         height: t.touchTargetMin,
         borderRadius: t.radiusMd,
-        backgroundColor: "rgba(209,0,68,0.06)",
+        backgroundColor: t.accentSubtle,
         marginTop: "8px",
         border: "none",
       }}
@@ -580,7 +580,7 @@ function DisconnectButton({ label, onClick }: { label: string; onClick: () => vo
           fontFamily: t.fontFamily,
           fontSize: "14px",
           fontWeight: 700,
-          color: "#D10044",
+          color: t.accentOn,
         }}
       >
         {label}
@@ -599,7 +599,7 @@ function ScanningState({ message }: { message: string }) {
     >
       <Loader2
         size={28}
-        style={{ color: t.primary, animation: "spin 1s linear infinite" }}
+        style={{ color: t.primaryOn, animation: "spin 1s linear infinite" }}
       />
       <span
         style={{
@@ -685,7 +685,7 @@ function WifiDialog({
   return (
     <CenteredDialog onClose={onClose}>
       <DialogHeader
-        icon={<Wifi size={20} style={{ color: t.primary }} />}
+        icon={<Wifi size={20} style={{ color: t.primaryOn }} />}
         title={tr("settings.wifi")}
         onClose={onClose}
       />
@@ -700,7 +700,7 @@ function WifiDialog({
               return (
                 <DeviceListItem
                   key={net.id}
-                  icon={<Signal size={18} style={{ color: isConnected ? t.primary : t.iconDefault }} />}
+                  icon={<Signal size={18} style={{ color: isConnected ? t.primaryOn : t.iconDefault }} />}
                   name={net.name}
                   subtitle={isConnected ? tr("wifi.connected") : net.secured ? tr("wifi.secured") : tr("wifi.open")}
                   isConnected={isConnected}
@@ -838,7 +838,7 @@ export function BluetoothDialog({
   return (
     <CenteredDialog onClose={onClose}>
       <DialogHeader
-        icon={<Bluetooth size={20} style={{ color: t.primary }} />}
+        icon={<Bluetooth size={20} style={{ color: t.primaryOn }} />}
         title={tr("settings.bluetooth")}
         onClose={onClose}
       />
@@ -904,7 +904,7 @@ export function BluetoothDialog({
                     return (
                       <DeviceListItem
                         key={device.id}
-                        icon={<DevIcon size={18} style={{ color: isConnected ? t.primary : t.iconDefault }} />}
+                        icon={<DevIcon size={18} style={{ color: isConnected ? t.primaryOn : t.iconDefault }} />}
                         name={device.name}
                         subtitle={isConnected ? tr("wifi.connected") : tr("bt.pairedStatus")}
                         isConnected={isConnected}
@@ -1058,7 +1058,7 @@ function CastDialog({
   return (
     <CenteredDialog onClose={onClose}>
       <DialogHeader
-        icon={<Cast size={20} style={{ color: t.primary }} />}
+        icon={<Cast size={20} style={{ color: t.primaryOn }} />}
         title={tr("settings.castScreen")}
         onClose={onClose}
       />
@@ -1073,7 +1073,7 @@ function CastDialog({
               return (
                 <DeviceListItem
                   key={device.id}
-                  icon={<Tv size={18} style={{ color: isConnected ? t.primary : t.iconDefault }} />}
+                  icon={<Tv size={18} style={{ color: isConnected ? t.primaryOn : t.iconDefault }} />}
                   name={device.name}
                   subtitle={isConnected ? tr("wifi.connected") : device.available ? device.type : tr("cast.unavailable")}
                   isConnected={isConnected}
@@ -1272,7 +1272,7 @@ function LanguageDialog({
   return (
     <CenteredDialog onClose={onClose}>
       <DialogHeader
-        icon={<Globe size={20} style={{ color: t.primary }} />}
+        icon={<Globe size={20} style={{ color: t.primaryOn }} />}
         title={tr("settings.language")}
         onClose={onClose}
       />
@@ -1358,7 +1358,7 @@ function CareTeamAccessDialog({
             marginBottom: "16px",
           }}
         >
-          <Stethoscope size={28} style={{ color: t.primary }} />
+          <Stethoscope size={28} style={{ color: t.primaryOn }} />
         </div>
         <span
           style={{
@@ -1376,7 +1376,7 @@ function CareTeamAccessDialog({
             fontFamily: t.fontFamily,
             fontSize: "13px",
             fontWeight: 500,
-            color: error ? t.accent : t.textMuted,
+            color: error ? t.accentOn : t.textMuted,
             textAlign: "center",
             marginTop: "8px",
             lineHeight: "20px",
@@ -1446,7 +1446,7 @@ function CareTeamAccessDialog({
                       fontFamily: t.fontFamily,
                       fontSize: key === "del" ? "13px" : "20px",
                       fontWeight: 700,
-                      color: key === "del" ? t.accent : isPressed ? "#fff" : t.textHeading,
+                      color: key === "del" ? t.accentOn : isPressed ? "#fff" : t.textHeading,
                       transition: "color 0.15s",
                     }}
                   >
@@ -1611,7 +1611,7 @@ function PrayerCard({
               }}
             >
               {prayerAlarm && (
-                <Check size={13} style={{ color: t.primary }} strokeWidth={3} />
+                <Check size={13} style={{ color: t.primaryOn }} strokeWidth={3} />
               )}
             </div>
             <span
@@ -1648,9 +1648,11 @@ function ActionButton({
 }) {
   const { theme: t } = useTheme();
   const { isRTL } = useLocale();
-  const DESTRUCTIVE = "#D10044";
-  const DESTRUCTIVE_SUBTLE = "rgba(209,0,68,0.06)";
-  const DESTRUCTIVE_BORDER = "rgba(209,0,68,0.18)";
+  // The accent, but through the tokens: the raw hex measured 2.96:1 on a dark
+  // surface, so the label was unreadable in dark mode.
+  const DESTRUCTIVE = t.accentOn;
+  const DESTRUCTIVE_SUBTLE = t.accentSubtle;
+  const DESTRUCTIVE_BORDER = t.borderCardColor;
 
   const bg = variant === "primary" ? t.primarySubtle : variant === "destructive" ? DESTRUCTIVE_SUBTLE : t.accentSubtle;
   const border = variant === "primary"
@@ -1660,7 +1662,7 @@ function ActionButton({
     : `1.5px solid ${t.borderAccent}`;
   const iconBg = variant === "primary" ? t.primarySubtle : variant === "destructive" ? DESTRUCTIVE_SUBTLE : t.accentSubtle;
   const labelColor = variant === "destructive" ? DESTRUCTIVE : t.textHeading;
-  const subtitleColor = variant === "destructive" ? "rgba(209,0,68,0.6)" : t.textMuted;
+  const subtitleColor = variant === "destructive" ? t.accentOn : t.textMuted;
 
   return (
     <button
@@ -1922,7 +1924,7 @@ export function SettingsPanel({
                 backgroundColor: t.primarySubtle,
               }}
             >
-              <Settings size={22} style={{ color: t.primary }} />
+              <Settings size={22} style={{ color: t.primaryOn }} />
             </div>
             <span
               style={{
@@ -1950,9 +1952,9 @@ export function SettingsPanel({
               title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
             >
               {isFullscreen ? (
-                <Minimize size={22} style={{ color: t.primary }} />
+                <Minimize size={22} style={{ color: t.primaryOn }} />
               ) : (
-                <Maximize size={22} style={{ color: t.primary }} />
+                <Maximize size={22} style={{ color: t.primaryOn }} />
               )}
             </button>
             <button
@@ -2110,14 +2112,14 @@ export function SettingsPanel({
           {/* Action Buttons — Language & Admin (open dialogs, not toggles) */}
           <div className="flex items-center gap-2.5">
             <ActionButton
-              icon={<Globe size={20} style={{ color: t.primary }} />}
+              icon={<Globe size={20} style={{ color: t.primaryOn }} />}
               label={tr("settings.language")}
               subtitle={selectedLang === "en" ? "English" : "\u0627\u0644\u0639\u0631\u0628\u064A\u0629"}
               variant="primary"
               onClick={() => setShowLangDialog(true)}
             />
             <ActionButton
-              icon={<Stethoscope size={20} style={{ color: "#D10044" }} />}
+              icon={<Stethoscope size={20} style={{ color: t.accentOn }} />}
               label={tr("settings.careTeam")}
               subtitle={tr("settings.careTeam.subtitle")}
               variant="destructive"
@@ -2127,7 +2129,7 @@ export function SettingsPanel({
 
           <div className="flex items-center gap-2.5 mt-2.5">
             <ActionButton
-              icon={<UserCircle size={20} style={{ color: t.primary }} />}
+              icon={<UserCircle size={20} style={{ color: t.primaryOn }} />}
               label={tr("settings.preferences")}
               subtitle={
                 isAccountSet() 
