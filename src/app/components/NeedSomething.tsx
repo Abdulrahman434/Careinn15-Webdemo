@@ -528,7 +528,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                     padding: "13px 22px",
                     borderRadius: theme.radiusFull,
                     backgroundColor: active ? activeBg : theme.surface,
-                    border: active ? "1px solid transparent" : `1px solid ${theme.borderDefault}`,
+                    border: active ? `1px solid ${theme.borderCardSelected}` : theme.borderCard,
                     outline: "none",
                     boxShadow: active ? SHADOW.sm : "none",
                   }}
@@ -882,7 +882,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                           padding: "8px 16px",
                           borderRadius: theme.radiusFull,
                           backgroundColor: isActive ? theme.errorSubtle : theme.surface,
-                          border: `1.5px solid ${isActive ? theme.error : theme.borderDefault}`,
+                          border: `1.5px solid ${isActive ? theme.error : theme.borderCardColor}`,
                           outline: "none",
                           fontFamily,
                           fontSize: TYPE_SCALE.base,
@@ -914,7 +914,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                 style={{
                   resize: "none",
                   borderRadius: theme.radiusMd,
-                  border: `1.5px solid ${theme.borderDefault}`,
+                  border: theme.borderCard,
                   backgroundColor: theme.background,
                   padding: "16px 18px",
                   fontFamily,
@@ -941,7 +941,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                     padding: "0 28px",
                     borderRadius: theme.radiusMd,
                     backgroundColor: theme.surface,
-                    border: `1.5px solid ${theme.borderDefault}`,
+                    border: theme.borderCard,
                     outline: "none",
                   }}
                 >

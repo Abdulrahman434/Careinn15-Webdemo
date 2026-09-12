@@ -377,7 +377,7 @@ function DemoBannerHeader({
         style={{
           backgroundColor: theme.surface,
           color: theme.textMuted,
-          border: `1px solid ${theme.borderDefault}`,
+          border: theme.borderCard,
         }}
       >
         {t("care.his.hideDemo")}
@@ -873,7 +873,7 @@ function TimelineSlide({
                 style={{
                   borderRadius: step.active ? "24px" : theme.radiusLg,
                   backgroundColor: step.active ? `${theme.primary}12` : "transparent",
-                  border: step.active ? `1px solid ${theme.primary}25` : "1px solid transparent",
+                  border: step.active ? `1px solid ${theme.borderCardColor}` : "1px solid transparent",
                   paddingTop: isExpanded ? "20px" : (step.active ? "16px" : "14px"),
                   paddingBottom: isExpanded ? "20px" : (step.active ? "16px" : "14px"),
                   paddingLeft: "20px",
@@ -927,7 +927,7 @@ function DietSlide({ theme }: { theme: any }) {
     <div className="flex flex-col gap-2">
       <div
         className="flex items-center gap-3 px-4 py-3"
-        style={{ backgroundColor: isNpo ? "#EF444415" : theme.primarySubtle, border: `1px solid ${isNpo ? "#EF444420" : theme.primarySubtle}`, borderRadius: theme.radiusLg }}
+        style={{ backgroundColor: isNpo ? "#EF444415" : theme.primarySubtle, border: `1px solid ${isNpo ? "#EF444420" : theme.borderCardColor}`, borderRadius: theme.radiusLg }}
       >
         <div
           className="w-9 h-9 flex items-center justify-center shrink-0"
@@ -1253,7 +1253,7 @@ function ClinicalObservationsSlide({ theme, isExpanded = false }: { theme: any, 
             </div>
             
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-xl" style={{ backgroundColor: theme.primarySubtle, border: `1px solid ${theme.borderSubtle}` }}>
+              <div className="p-3 rounded-xl" style={{ backgroundColor: theme.primarySubtle, border: theme.borderInset }}>
                 <div className="flex items-center gap-1.5 mb-1 opacity-60">
                   <Droplet size={12} color={theme.errorOn} />
                   <span style={{ fontSize: "10px", fontWeight: 700, color: theme.textMuted }}>BP</span>
@@ -1261,7 +1261,7 @@ function ClinicalObservationsSlide({ theme, isExpanded = false }: { theme: any, 
                 <span style={{ fontSize: "18px", fontWeight: 900, color: theme.textHeading }}>{item.vitals.bp || "—"}</span>
                 <span style={{ fontSize: "10px", color: theme.textMuted, marginLeft: 2 }}>mmHg</span>
               </div>
-              <div className="p-3 rounded-xl" style={{ backgroundColor: theme.primarySubtle, border: `1px solid ${theme.borderSubtle}` }}>
+              <div className="p-3 rounded-xl" style={{ backgroundColor: theme.primarySubtle, border: theme.borderInset }}>
                 <div className="flex items-center gap-1.5 mb-1 opacity-60">
                   <Activity size={12} color="#F43F5E" />
                   <span style={{ fontSize: "10px", fontWeight: 700, color: theme.textMuted }}>HR</span>
@@ -1269,7 +1269,7 @@ function ClinicalObservationsSlide({ theme, isExpanded = false }: { theme: any, 
                 <span style={{ fontSize: "18px", fontWeight: 900, color: theme.textHeading }}>{item.vitals.hr || "—"}</span>
                 <span style={{ fontSize: "10px", color: theme.textMuted, marginLeft: 2 }}>BPM</span>
               </div>
-              <div className="p-3 rounded-xl" style={{ backgroundColor: theme.primarySubtle, border: `1px solid ${theme.borderSubtle}` }}>
+              <div className="p-3 rounded-xl" style={{ backgroundColor: theme.primarySubtle, border: theme.borderInset }}>
                 <div className="flex items-center gap-1.5 mb-1 opacity-60">
                   <Thermometer size={12} color="#F59E0B" />
                   <span style={{ fontSize: "10px", fontWeight: 700, color: theme.textMuted }}>TEMP</span>
@@ -1277,7 +1277,7 @@ function ClinicalObservationsSlide({ theme, isExpanded = false }: { theme: any, 
                 <span style={{ fontSize: "18px", fontWeight: 900, color: theme.textHeading }}>{item.vitals.temp || "—"}</span>
                 <span style={{ fontSize: "10px", color: theme.textMuted, marginLeft: 2 }}>°C</span>
               </div>
-              <div className="p-3 rounded-xl" style={{ backgroundColor: theme.primarySubtle, border: `1px solid ${theme.borderSubtle}` }}>
+              <div className="p-3 rounded-xl" style={{ backgroundColor: theme.primarySubtle, border: theme.borderInset }}>
                 <div className="flex items-center gap-1.5 mb-1 opacity-60">
                   <Wind size={12} style={{ color: theme.primaryOn }} />
                   <span style={{ fontSize: "10px", fontWeight: 700, color: theme.textMuted }}>SpO₂</span>
@@ -2035,7 +2035,7 @@ function DateStrip() {
       style={{
         borderRadius: theme.radiusMd,
         backgroundColor: theme.primarySubtle,
-        border: `1px solid ${theme.primarySubtle}`,
+        border: `1px solid ${theme.borderCardColor}`,
         padding: "8px 12px",
       }}
     >

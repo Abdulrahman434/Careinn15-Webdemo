@@ -370,7 +370,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
             padding: "48px 24px",
             borderRadius: theme.radiusCard,
             backgroundColor: theme.surface,
-            border: `1.5px solid ${theme.borderDefault}`,
+            border: `1.5px solid ${theme.borderCardColor}`,
             boxShadow: SHADOW.sm,
             outline: "none",
           }}
@@ -398,7 +398,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
             padding: "48px 24px",
             borderRadius: theme.radiusCard,
             backgroundColor: theme.surface,
-            border: `1.5px solid ${theme.borderDefault}`,
+            border: `1.5px solid ${theme.borderCardColor}`,
             boxShadow: SHADOW.sm,
             outline: "none",
           }}
@@ -426,7 +426,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
             padding: "48px 24px",
             borderRadius: theme.radiusCard,
             backgroundColor: theme.surface,
-            border: `1.5px solid ${theme.borderDefault}`,
+            border: `1.5px solid ${theme.borderCardColor}`,
             boxShadow: SHADOW.sm,
             outline: "none",
           }}
@@ -453,7 +453,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
             padding: "48px 24px",
             borderRadius: theme.radiusCard,
             backgroundColor: theme.surface,
-            border: `1.5px solid ${theme.borderDefault}`,
+            border: `1.5px solid ${theme.borderCardColor}`,
             boxShadow: SHADOW.sm,
             outline: "none",
           }}
@@ -710,7 +710,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
                 fontFamily, fontSize: "18px", fontWeight: WEIGHT.semibold,
                 color: BRAND, cursor: "pointer",
                 height: "52px", padding: "0 24px", borderRadius: "14px",
-                backgroundColor: "#fff", border: `1.5px solid ${theme.borderDefault}`,
+                backgroundColor: "#fff", border: `1.5px solid ${theme.borderCardColor}`,
               }}
             >
               <ChevronLeft size={22} />
@@ -742,7 +742,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
                 fontFamily, fontSize: "18px", fontWeight: WEIGHT.semibold,
                 color: BRAND, cursor: "pointer",
                 height: "52px", padding: "0 24px", borderRadius: "14px",
-                backgroundColor: "#fff", border: `1.5px solid ${theme.borderDefault}`,
+                backgroundColor: "#fff", border: `1.5px solid ${theme.borderCardColor}`,
               }}
             >
               {currentSlide === 0 ? t("feedback.back") : t("survey.previous")}
@@ -864,7 +864,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
                   style={{
                     width: "100%", height: "140px", padding: "20px",
                     borderRadius: theme.radiusLg,
-                    border: `1.5px solid ${theme.borderDefault}`,
+                    border: `1.5px solid ${theme.borderCardColor}`,
                     fontFamily, fontSize: TYPE_SCALE.base, color: theme.textHeading,
                     resize: "none", outline: "none",
                     direction: isRTL ? "rtl" : "ltr", textAlign: isRTL ? "right" : "left",
@@ -898,7 +898,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
                 {t("survey.submit")}
               </button>
               <button onClick={() => setPath("hub")} className="flex items-center gap-2 cursor-pointer transition-transform duration-200"
-                style={{ background: "none", border: `1.5px solid ${theme.borderDefault}`, height: "52px", padding: "0 24px", borderRadius: "14px", backgroundColor: "#fff", fontFamily, fontSize: "18px", fontWeight: WEIGHT.semibold, color: theme.textMuted }}>
+                style={{ background: "none", border: `1.5px solid ${theme.borderCardColor}`, height: "52px", padding: "0 24px", borderRadius: "14px", backgroundColor: "#fff", fontFamily, fontSize: "18px", fontWeight: WEIGHT.semibold, color: theme.textMuted }}>
                 {t("feedback.back")}
                 <ChevronRight size={22} />
               </button>
@@ -906,7 +906,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
           ) : (
             <>
               <button onClick={() => setPath("hub")} className="flex items-center gap-2 cursor-pointer transition-transform duration-200"
-                style={{ background: "none", border: `1.5px solid ${theme.borderDefault}`, height: "52px", padding: "0 24px", borderRadius: "14px", backgroundColor: "#fff", fontFamily, fontSize: "18px", fontWeight: WEIGHT.semibold, color: theme.textMuted }}>
+                style={{ background: "none", border: `1.5px solid ${theme.borderCardColor}`, height: "52px", padding: "0 24px", borderRadius: "14px", backgroundColor: "#fff", fontFamily, fontSize: "18px", fontWeight: WEIGHT.semibold, color: theme.textMuted }}>
                 <ChevronLeft size={22} />
                 {t("feedback.back")}
               </button>
@@ -1029,7 +1029,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
                   style={{
                     width: "100%", height: "140px", padding: "20px",
                     borderRadius: theme.radiusLg,
-                    border: `1.5px solid ${theme.borderDefault}`,
+                    border: `1.5px solid ${theme.borderCardColor}`,
                     fontFamily, fontSize: TYPE_SCALE.base, color: theme.textHeading,
                     resize: "none", outline: "none",
                     direction: isRTL ? "rtl" : "ltr", textAlign: isRTL ? "right" : "left",
@@ -1063,7 +1063,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
                 {t("appreciation.send")}
               </button>
               <button onClick={() => setPath("hub")} className="flex items-center gap-2 cursor-pointer transition-transform duration-200"
-                style={{ background: "none", border: `1.5px solid ${theme.borderDefault}`, height: "52px", padding: "0 24px", borderRadius: "14px", backgroundColor: "#fff", fontFamily, fontSize: "18px", fontWeight: WEIGHT.semibold, color: theme.textMuted }}>
+                style={{ background: "none", border: `1.5px solid ${theme.borderCardColor}`, height: "52px", padding: "0 24px", borderRadius: "14px", backgroundColor: "#fff", fontFamily, fontSize: "18px", fontWeight: WEIGHT.semibold, color: theme.textMuted }}>
                 {t("feedback.back")}
                 <ChevronRight size={22} />
               </button>
@@ -1071,7 +1071,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
           ) : (
             <>
               <button onClick={() => setPath("hub")} className="flex items-center gap-2 cursor-pointer transition-transform duration-200"
-                style={{ background: "none", border: `1.5px solid ${theme.borderDefault}`, height: "52px", padding: "0 24px", borderRadius: "14px", backgroundColor: "#fff", fontFamily, fontSize: "18px", fontWeight: WEIGHT.semibold, color: theme.textMuted }}>
+                style={{ background: "none", border: `1.5px solid ${theme.borderCardColor}`, height: "52px", padding: "0 24px", borderRadius: "14px", backgroundColor: "#fff", fontFamily, fontSize: "18px", fontWeight: WEIGHT.semibold, color: theme.textMuted }}>
                 <ChevronLeft size={22} />
                 {t("feedback.back")}
               </button>

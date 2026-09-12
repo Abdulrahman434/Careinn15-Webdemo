@@ -860,7 +860,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                         className="p-8 rounded-3xl flex flex-col gap-4 transition-transform hover:scale-[1.02]"
                         style={{
                           backgroundColor: "#fff",
-                          border: `1px solid ${theme.primarySubtle}`,
+                          border: `1px solid ${theme.borderCardColor}`,
                           boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
                           direction: isRTL ? "rtl" : "ltr",
                         }}
@@ -904,7 +904,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                       className="p-8 rounded-3xl flex flex-col gap-4 transition-transform hover:scale-[1.02]"
                       style={{
                         backgroundColor: "#fff",
-                        border: `1px solid ${theme.primarySubtle}`,
+                        border: `1px solid ${theme.borderCardColor}`,
                         boxShadow: "0 4px 20px rgba(0,0,0,0.04)"
                       }}
                     >

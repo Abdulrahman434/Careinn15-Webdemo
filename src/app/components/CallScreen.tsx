@@ -864,7 +864,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
            {/* Header Row */}
            <div 
              className="flex items-center gap-3 px-5 py-3.5 shrink-0 shadow-sm"
-             style={{ backgroundColor: theme.engagementSurface, backgroundImage: theme.engagementCardGradientShort, borderRadius: theme.radiusLg, border: theme.engagementCardBorder }}
+             style={{ backgroundColor: theme.surface, borderRadius: theme.radiusLg, border: theme.borderCard }}
            >
               <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ backgroundColor: theme.primarySubtle, color: theme.primaryOn, borderRadius: theme.radiusMd }}>
                 <PhoneCall size={16} />
@@ -881,7 +881,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
            <div className="shrink-0 px-5 pt-5 pb-3">
             <div className="flex gap-1" style={{
               borderRadius: theme.radiusFull, backgroundColor: theme.background,
-              border: `1px solid ${theme.borderSubtle}`, padding: "4px",
+              border: theme.borderInset, padding: "4px",
             }}>
               {(["all", "missed", "attended"] as const).map((key) => {
                 const active = historyTab === key;
@@ -976,7 +976,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
           {/* Header Row */}
           <div 
             className="flex items-center gap-3 px-5 py-3.5 shrink-0 shadow-sm"
-            style={{ backgroundColor: theme.engagementSurface, backgroundImage: theme.engagementCardGradientShort, borderRadius: theme.radiusLg, border: theme.engagementCardBorder }}
+            style={{ backgroundColor: theme.surface, borderRadius: theme.radiusLg, border: theme.borderCard }}
           >
              <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ backgroundColor: theme.primarySubtle, color: theme.primaryOn, borderRadius: theme.radiusMd }}>
                <Grid3X3 size={16} />
@@ -1058,7 +1058,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
           {/* Header Row */}
           <div 
             className="flex items-center gap-3 px-5 py-3.5 shrink-0 shadow-sm"
-            style={{ backgroundColor: theme.engagementSurface, backgroundImage: theme.engagementCardGradientShort, borderRadius: theme.radiusLg, border: theme.engagementCardBorder }}
+            style={{ backgroundColor: theme.surface, borderRadius: theme.radiusLg, border: theme.borderCard }}
           >
              <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ backgroundColor: theme.primarySubtle, color: theme.primaryOn, borderRadius: theme.radiusMd }}>
                <BookUser size={16} />
@@ -1122,7 +1122,7 @@ function ExtensionCard({ contact, onDial }: { contact: { extension: string, disp
         padding: "16px 12px",
         borderRadius: theme.radiusXl,
         backgroundColor: isFilled ? theme.primary : theme.background,
-        border: `2px solid ${isFilled ? "transparent" : theme.borderSubtle}`,
+        border: `2px solid ${isFilled ? theme.borderCardSelected : theme.borderCardColor}`,
         outline: "none",
         textAlign: "center",
         transform: pressed ? "scale(0.95)" : "scale(1)",
@@ -1187,7 +1187,9 @@ function CallLogRow({ entry, onCallback }: { entry: CallLogEntry; onCallback: (e
       style={{
         padding: "12px 16px", borderRadius: theme.radiusXl,
         backgroundColor: isMissed ? "rgba(209,0,68,0.03)" : "transparent",
-        border: isMissed ? "1px solid rgba(209,0,68,0.06)" : `1px solid ${theme.borderSubtle}`,
+        // One inset edge for every row; the missed state is carried by the
+        // tint and the icon, not by a second border colour.
+        border: theme.borderInset,
         outline: "none", textAlign: "start",
       }}
     >
@@ -1279,8 +1281,8 @@ function KeypadButton({ digit, onPress }: { digit: string; onPress: (digit: stri
       className="flex items-center justify-center cursor-pointer transition-transform duration-300"
       style={{
         width: "72px", height: "72px", borderRadius: theme.radiusFull,
-        backgroundColor: pressed ? theme.primary : "rgba(0,0,0,0.03)",
-        border: "none",
+        backgroundColor: pressed ? theme.primary : theme.surfaceInset,
+        border: pressed ? `2px solid ${theme.borderCardSelected}` : `2px solid ${theme.borderCardColor}`,
         outline: "none",
         boxShadow: "none",
         transform: pressed ? "scale(0.92)" : "scale(1)",

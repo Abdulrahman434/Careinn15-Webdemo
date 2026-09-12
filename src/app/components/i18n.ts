@@ -898,6 +898,59 @@ const translations: Record<string, TranslationEntry> = {
   "feedback.sendAppreciationDesc": { en: "We'll share this with the team", ar: "سيتم مشاركة رسالتك مع الفريق", ur: "ہم اسے ٹیم کے ساتھ شیئر کریں گے" },
   "feedback.suggestionsComplaints": { en: "Suggestions & Complaints", ar: "الاقتراحات والشكاوى", ur: "تجاویز اور شکایات" },
   "feedback.suggestionsComplaintsDesc": { en: "Submit a suggestion or complaint", ar: "قدّم اقتراحاً أو شكوى", ur: "تجویز یا شکایت درج کریں" },
+"food.card.submitBefore": { en: "Submit before {0}", ar: "أرسل طلبك قبل {0}", ur: "اپنا آرڈر {0} سے پہلے جمع کریں" },
+"food.card.submittedAt": { en: "Your order was submitted at {0}", ar: "طلبك أُرسل الساعة {0}", ur: "آپ کا آرڈر {0} پر جمع کرایا گیا" },
+"food.card.viewMenu": { en: "View menu", ar: "عرض القائمة", ur: "مینو دیکھیں" },
+  "food.notice.closed": {
+    en: "Ordering for {0} has closed — a standard meal is already set aside for you.",
+    ar: "أُغلق باب الطلب ليوم {0} — وقد جُهّزت لك وجبة قياسية.",
+    ur: "{0} کے لیے آرڈر بند ہو چکا ہے — آپ کے لیے ایک معیاری کھانا پہلے سے مختص ہے۔",
+  },
+  "food.notice.openUntil": {
+    en: "{0}'s menu is open — take your time, and send your order by {1}.",
+    ar: "قائمة يوم {0} مفتوحة الآن — خذ وقتك، وأرسل طلبك قبل الساعة {1}.",
+    ur: "{0} کا مینو کھلا ہے — اطمینان سے چنیے، اور {1} بجے تک اپنا آرڈر بھیج دیجیے۔",
+  },
+  "food.notice.opensToday": {
+    en: "Take a look at what's on for {0} — you'll be able to order from {1} today.",
+    ar: "تصفّح قائمة يوم {0} — يمكنك الطلب اليوم اعتبارًا من الساعة {1}.",
+    ur: "{0} کا مینو دیکھ لیجیے — آپ آج {1} بجے سے آرڈر کر سکیں گے۔",
+  },
+  "food.notice.ordered": {
+    en: "You're all set for {0} — the kitchen has your order and it's locked in.",
+    ar: "كل شيء جاهز ليوم {0} — طلبك وصل إلى المطبخ وأصبح نهائيًا.",
+    ur: "{0} کے لیے سب طے ہے — آپ کا آرڈر کچن تک پہنچ چکا ہے اور اب حتمی ہے۔",
+  },
+  "food.notice.partlyOrdered": {
+    en: "Part of your {0} order is already in — the rest stays open until {1}.",
+    ar: "جزء من طلبك ليوم {0} وصل إلى المطبخ — والباقي مفتوح حتى الساعة {1}.",
+    ur: "{0} کے آپ کے آرڈر کا کچھ حصہ پہنچ چکا ہے — باقی {1} بجے تک کھلا ہے۔",
+  },
+  "food.notice.previewDay": {
+    en: "Take a look at what's on for {0} — you'll be able to order from {2} on {1}.",
+    ar: "تصفّح قائمة يوم {0} — يمكنك الطلب اعتبارًا من الساعة {2} يوم {1}.",
+    ur: "{0} کا مینو دیکھ لیجیے — آپ {1} کو {2} بجے سے آرڈر کر سکیں گے۔",
+  },
+  "food.submitConfirm.cancel": {
+    en: "Review selection",
+    ar: "مراجعة الاختيار",
+    ur: "انتخاب پر نظرثانی کریں",
+  },
+  "food.submitConfirm.confirm": {
+    en: "Place final order",
+    ar: "إرسال الطلب نهائيًا",
+    ur: "حتمی آرڈر دیں",
+  },
+  "food.submitConfirm.message": {
+    en: "Please review your selection. Once placed, this order is final and cannot be changed.",
+    ar: "يرجى مراجعة اختيارك. بعد الإرسال يصبح هذا الطلب نهائيًا ولا يمكن تغييره.",
+    ur: "براہ کرم اپنے انتخاب پر نظرثانی کریں۔ ایک بار دینے کے بعد یہ آرڈر حتمی ہوگا اور اسے تبدیل نہیں کیا جا سکے گا۔",
+  },
+  "food.submitConfirm.title": {
+    en: "Place this order?",
+    ar: "تأكيد إرسال الطلب؟",
+    ur: "یہ آرڈر دینا ہے؟",
+  },
   "feedback.back": { en: "Back", ar: "رجوع", ur: "واپس" },
   /* ─── Concern Path ─── */
   "concern.title": { en: "Raise a concern", ar: "تقديم شكوى", ur: "شکایت درج کریں" },

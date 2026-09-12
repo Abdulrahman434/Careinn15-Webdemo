@@ -350,6 +350,14 @@ export interface ThemeConfig {
   engagementSurface: string;
   /** Top gradient: primary tint fading into the surface at 58% */
   engagementCardGradient: string;
+  /** Resting card edge — neutral, just enough to define the card. Compose
+   *  your own border string with it when a pre-made one doesn't fit. */
+  borderCardColor: string;
+  /** Selected/active card edge — the brand colour. A card only turns brand
+   *  when the patient has chosen it. */
+  borderCardSelected: string;
+  /** Pre-composed resting card border */
+  borderCard: string;
   /** Pre-composed 1px tile border */
   engagementCardBorder: string;
   /** Icon-container fill for the 8 hub tiles */
@@ -646,7 +654,10 @@ function buildTheme(core: {
     borderSubtle: "rgba(255,255,255,0.05)",
     borderActive: c.primary,
     borderAccent: AD.border,
-    cardBorder: "1px solid rgba(255,255,255,0.05)",
+    // One card edge in dark mode: previously this was a near-invisible
+    // rgba(255,255,255,0.05) while engagement cards used a brand-tinted edge,
+    // so the same visual object had two different strokes depending on screen.
+    cardBorder: `1px solid ${ENG_D.borderCardColor}`,
 
     ...ENG_D,
 
@@ -940,6 +951,10 @@ function engagementTokens(
   // would otherwise vanish, so the fill is held to a minimum separation and
   // its glyph is then chosen against the fill that actually ships.
   const fill = ensureContrast(primary, surface, 1.6);
+  // Neutral resting edge: white on a dark surface, ink on a light one.
+  const neutralEdge = luminance(surface) < 0.18
+    ? hexToRgba("#FFFFFF", 0.12)
+    : hexToRgba("#1B2A32", 0.10);
 
   return {
     brandOnPrimary: onColorFor(primary),
@@ -952,7 +967,13 @@ function engagementTokens(
     /** Opaque color at the very top of the card gradient — the lightest point
      *  text can sit on, so neutral text tokens must clear it. */
     engagementTint: tint,
-    engagementCardBorder: `1px solid ${hexToRgba(glyph, borderAlpha)}`,
+    /* Resting cards read as neutral; only a selected card carries the brand.
+     * Mixing the two was why the same card looked grey on one screen and
+     * brand-tinted on another. */
+    borderCardColor: neutralEdge,
+    borderCardSelected: hexToRgba(glyph, Math.max(borderAlpha, 0.55)),
+    borderCard: `1px solid ${neutralEdge}`,
+    engagementCardBorder: `1px solid ${neutralEdge}`,
     engagementIconBg: iconBg,
     engagementIconStroke: hexToRgba(glyph, strokeAlpha),
     engagementIconColor: glyph,

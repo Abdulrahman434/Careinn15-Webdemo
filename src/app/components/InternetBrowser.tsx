@@ -95,7 +95,7 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
             style={{
               backgroundColor: theme.background,
               borderRadius: theme.radiusLg,
-              border: `1px solid ${theme.primarySubtle}`
+              border: `1px solid ${theme.borderCardColor}`
             }}
           >
             <ApiImage src={edgeLogo} alt="Browser" style={{ width: 24, height: 24 }} />
