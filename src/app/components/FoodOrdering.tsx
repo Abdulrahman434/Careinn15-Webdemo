@@ -365,6 +365,8 @@ const CARD_LINE = "var(--fo-card-line)";
 /** A card only turns brand once the patient has chosen it. */
 const CARD_LINE_SEL = "var(--fo-card-line-selected)";
 const CARD_LINE_1 = `1.5px solid ${CARD_LINE}`;
+/* Avatar (48) + vertical padding (2×16) + the divider under it. */
+const PATIENT_BAR_H = 81.5;
 const LINE_1 = `1px solid ${LINE}`;
 /* Foreground-safe brand colours — lifted in dark mode. Use for text/icons. */
 const TEAL_ON = "var(--fo-primary-on)";
@@ -755,6 +757,24 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
     "--fo-on-info": theme.infoOn,
   } as React.CSSProperties;
 
+  /* The patient bar, built once: it is the top section of the flow card so the
+     two read as one surface, and a standalone bar on the landing page. */
+  const renderPatientBar = (seamless: boolean) => (
+    <PatientBar
+      seamless={seamless}
+      isKid={isKid}
+      orderFor={orderFor}
+      dietLabel={dietDisplayLabel}
+      allergiesLabel={allergiesLabel}
+      name={orderFor === "guest" ? (isRTL ? "مرافق" : "Companion") : (isRTL ? DEMO_PATIENT.name.ar : DEMO_PATIENT.name.en)}
+      mealName={currentMeal ? loc(currentMeal.label) : null}
+      fontFamily={fontFamily}
+      isRTL={isRTL}
+      onDietClick={orderFor === "patient" ? handleOpenDietModal : undefined}
+      onAllergiesClick={orderFor === "patient" ? handleOpenAllergiesModal : undefined}
+    />
+  );
+
   /* The step navigation, built once and placed by the branch below: inside
      the card on the stepper steps, on the page for landing and history. */
   const bottomBar = showBottomBar ? (
@@ -863,23 +883,12 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
         BackArrow={BackArrow}
       />
 
-      {/* ─── PATIENT BAR (white, fixed) ─── */}
-      {showPatientBar ? (
-        <PatientBar
-          isKid={isKid}
-          orderFor={orderFor}
-          dietLabel={dietDisplayLabel}
-          allergiesLabel={allergiesLabel}
-          name={orderFor === "guest" ? (isRTL ? "مرافق" : "Companion") : (isRTL ? DEMO_PATIENT.name.ar : DEMO_PATIENT.name.en)}
-          mealName={currentMeal ? loc(currentMeal.label) : null}
-          fontFamily={fontFamily}
-          isRTL={isRTL}
-          onDietClick={orderFor === "patient" ? handleOpenDietModal : undefined}
-          onAllergiesClick={orderFor === "patient" ? handleOpenAllergiesModal : undefined}
-        />
-      ) : isFlow ? (
-        /* Spacer matching patient bar height so content card aligns consistently */
-        <div className="shrink-0" style={{ height: "96px" }} />
+      {/* ─── PATIENT BAR (standalone on landing; inside the card in the flow) ─── */}
+      {showPatientBar && !isFlow ? renderPatientBar(false) : null}
+      {isFlow && !showPatientBar ? (
+        /* Confirmation step has no patient bar — this keeps the card, and so the
+           stepper, at the same height as the steps that do. */
+        <div className="shrink-0" style={{ height: `${PATIENT_BAR_H}px` }} />
       ) : null}
 
       {/* ─── MAIN CONTENT (white rounded card: stepper + body + footer nav) ───
@@ -889,9 +898,10 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
           the canvas. The page is a flex column instead: top bar and patient
           bar are flex: none, this region is flex: 1 with min-height: 0, and
           the card fills exactly what is left of the canvas. ─── */}
-      <div className="flex-1 min-h-0 px-12 pt-5 pb-3 relative flex flex-col">
+      <div className="flex-1 min-h-0 px-12 pt-3 pb-3 relative flex flex-col">
         {isFlow && (
           <div className="flex-1 min-h-0 flex flex-col rounded-[30px] overflow-hidden" style={{ backgroundColor: SHEET, boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
+            {showPatientBar ? renderPatientBar(true) : null}
             <Stepper current={stepIndex} fontFamily={fontFamily} isRTL={isRTL} />
             <div className="flex-1 min-h-0 overflow-hidden">
               <AnimatePresence mode="wait">
@@ -1205,6 +1215,7 @@ function TopBar({ onBack, onMyOrders, showMyOrders, onDemoClear, title, fontFami
 }
 
 function PatientBar({
+  seamless,
   isKid,
   orderFor,
   name,
@@ -1216,6 +1227,7 @@ function PatientBar({
   onDietClick,
   onAllergiesClick,
 }: {
+  seamless: boolean;
   isKid: boolean;
   orderFor: OrderFor;
   name: string;
@@ -1233,8 +1245,14 @@ function PatientBar({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="shrink-0 mx-12 mt-[12px] flex items-center justify-center gap-[16px]"
-      style={{ backgroundColor: SHEET, borderRadius: "24px", padding: "16px 22px", border: CARD_LINE_1 }}
+      className={`shrink-0 flex items-center justify-center gap-[16px] ${seamless ? "" : "mx-12 mt-[12px]"}`}
+      style={
+        seamless
+          /* Top section of the card: the card clips the corners and carries the
+             shadow, so all this contributes is the divider above the stepper. */
+          ? { backgroundColor: SHEET, padding: "16px 22px", borderBottom: CARD_LINE_1 }
+          : { backgroundColor: SHEET, borderRadius: "24px", padding: "16px 22px", border: CARD_LINE_1 }
+      }
     >
       {/* Avatar */}
       <div className="shrink-0" style={{ width: "48px", height: "48px", borderRadius: "50%", backgroundColor: isGuest ? SECONDARY : TEAL, display: "flex", alignItems: "center", justifyContent: "center" }}>

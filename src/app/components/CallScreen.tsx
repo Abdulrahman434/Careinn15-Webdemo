@@ -860,11 +860,14 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
       {/* ── 3-Column Content ── */}
       <div className={`min-h-0 flex pt-8 pb-20 relative z-10 ${isRTL ? "pr-[172px] pl-[172px]" : "pl-[172px] pr-[172px]"}`} style={{ flex: "1 1 0", maxHeight: "calc(100% - 130px)", gap: "20px" }}>
 
-        <div className="flex-1 flex flex-col gap-4 min-w-0" style={{ flex: "1 1 0" }}>
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden" style={{
+          flex: "1 1 0", backgroundColor: theme.surface,
+          borderRadius: theme.radiusXl, boxShadow: SHADOW.xl,
+        }}>
            {/* Header Row */}
-           <div 
-             className="flex items-center gap-3 px-5 py-3.5 shrink-0 shadow-sm"
-             style={{ backgroundColor: theme.surface, borderRadius: theme.radiusLg, border: theme.borderCard }}
+           <div
+             className="flex items-center gap-3 px-5 py-3.5 shrink-0"
+             style={{ borderBottom: theme.borderCard }}
            >
               <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ backgroundColor: theme.primarySubtle, color: theme.primaryOn, borderRadius: theme.radiusMd }}>
                 <PhoneCall size={16} />
@@ -873,9 +876,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
            </div>
 
            {/* Card Content */}
-           <div className="flex-1 flex flex-col min-h-0 overflow-hidden" style={{
-             backgroundColor: theme.surface, borderRadius: theme.radiusXl, boxShadow: SHADOW.xl,
-           }}>
+           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
              {/* Row 2 — Tab toggle */}
           {/* Row 2 — Tab toggle */}
            <div className="shrink-0 px-5 pt-5 pb-3">
@@ -972,11 +973,14 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
       </div>
 
         {/* Column 2 — Keypad (center, takes remaining space) */}
-        <div className="flex-1 flex flex-col gap-4 min-w-0" style={{ flex: "1 1 0" }}>
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden" style={{
+          flex: "1 1 0", backgroundColor: theme.surface,
+          borderRadius: theme.radiusXl, boxShadow: SHADOW.xl,
+        }}>
           {/* Header Row */}
-          <div 
-            className="flex items-center gap-3 px-5 py-3.5 shrink-0 shadow-sm"
-            style={{ backgroundColor: theme.surface, borderRadius: theme.radiusLg, border: theme.borderCard }}
+          <div
+            className="flex items-center gap-3 px-5 py-3.5 shrink-0"
+            style={{ borderBottom: theme.borderCard }}
           >
              <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ backgroundColor: theme.primarySubtle, color: theme.primaryOn, borderRadius: theme.radiusMd }}>
                <Grid3X3 size={16} />
@@ -984,10 +988,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
              <span style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.bold, color: theme.textHeading }}>{t("call.keypadHint")}</span>
           </div>
 
-          <div className="flex-1 flex flex-col justify-center min-h-0 overflow-hidden pb-4" style={{
-            backgroundColor: theme.surface, borderRadius: theme.radiusXl, boxShadow: SHADOW.xl,
-            minWidth: 0,
-          }}>
+          <div className="flex-1 flex flex-col justify-center min-h-0 overflow-hidden pb-4" style={{ minWidth: 0 }}>
 
           {/* Display */}
           <div className="shrink-0 flex items-center justify-center px-5 mb-4" style={{ minHeight: "60px" }}>
@@ -1054,11 +1055,14 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-        <div className="flex-1 flex flex-col gap-4 min-w-0" style={{ flex: "1 1 0" }}>
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden" style={{
+          flex: "1 1 0", backgroundColor: theme.surface,
+          borderRadius: theme.radiusXl, boxShadow: SHADOW.xl,
+        }}>
           {/* Header Row */}
-          <div 
-            className="flex items-center gap-3 px-5 py-3.5 shrink-0 shadow-sm"
-            style={{ backgroundColor: theme.surface, borderRadius: theme.radiusLg, border: theme.borderCard }}
+          <div
+            className="flex items-center gap-3 px-5 py-3.5 shrink-0"
+            style={{ borderBottom: theme.borderCard }}
           >
              <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ backgroundColor: theme.primarySubtle, color: theme.primaryOn, borderRadius: theme.radiusMd }}>
                <BookUser size={16} />
@@ -1066,9 +1070,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
              <span style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.bold, color: theme.textHeading }}>{t("call.hospitalDirectory")}</span>
           </div>
 
-          <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden" style={{
-             backgroundColor: theme.surface, borderRadius: theme.radiusXl, boxShadow: SHADOW.xl,
-          }}>
+          <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
           <div className="flex-1 min-h-0 overflow-y-auto callscreen-scroll" style={{ padding: "16px 20px 20px 20px" }}>
             <div style={{
               display: "grid",
