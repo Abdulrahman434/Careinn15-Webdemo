@@ -101,6 +101,75 @@ const dallahPatientRightsAr = `سيقوم مكتب الاستقبال أو طا�
 
 const dallahAccreditationsText = ``; // Replaced by images
 
+/* ── Dr. Soliman Fakeeh Hospital — Patient Rights & Responsibilities ── */
+const dsfhPatientRightsEn = `Being a patient at Fakeeh Care, you have the right to:
+
+1. Know your rights and responsibilities.
+2. Open a medical file at no expenses.
+3. Expect respectful care without discrimination as to race, color, religion, sex, nationality or source of payment of hospital bill and that your values, believes & spiritual needs will be respected.
+4. Choose your treating physician, & ask for second opinion if you want as per the hospital regulation.
+5. Know the identity & specialty of the attending physician & all members involved in the care plan team.
+6. Doctors and all the other health care providers are required to disinfect their hands and wear medical gloves.
+7. Receive a reasonable explanation & information relevant to your diagnosis, management plan, treatment & expected outcomes & to have the chance to ask questions & have clear answers before you sign any consent form.
+8. Prohibit limiting patients to a specific pharmacy, hospital, or laboratory without giving them the right to choose.
+9. A follow-up visit free of charge within fourteen days of the initial visit.
+10. Get a pain assessment & management during your stay.
+11. Refuse on your responsibility to undergo a test or intervention or stay in the hospital.
+12. Prohibit keeping newborns or corpse due to unpaid medical debt.
+13. Be treated with privacy where all your medical & non-medical information to be kept with confidentiality consistent with providing you adequate medical care & consistent with the hospital and kingdom rules & regulation.
+14. Get copies of your medical reports upon request.
+15. Be transferred to another hospital upon your request if your condition permits the transfer.
+16. Know the estimated cost for any required admission or procedure & receive adequate explanation of the charges in Arabic.
+17. Receive the right treatment in the right time without any discrimination as to socioeconomic status and according to the policies and procedures of treatment eligibility of the facility.
+18. Never take any picture of you or your condition without your permission and to be used only for scientific purposes.
+19. Express your concerns, suggestions, compliment, ethical inquiry or submit a complaint & receive feedback.
+20. Be treated in safe and secured environment.`;
+
+const dsfhPatientRightsAr = `يحق للمريض لدى مستشفى الدكتور سليمان فقيه أن:
+
+١. يتعرف على حقوقه وواجباته.
+٢. فتح الملف الطبي بدون مقابل مالي.
+٣. تلقى أفضل رعاية صحية ممكنة بغض النظر عن عرقه أو دينه أو ملته أو جنسه أو جنسيته أو عن مصدر سداد فاتورة العلاج، وأن تحترم معتقداته وعاداته وتقاليده واحتياجاته الروحية والدينية.
+٤. يختار طبيبه المعالج، كما يحق له الحصول على رأي طبيب آخر في نفس التخصص إذا رغب في ذلك وفقاً للإجراءات المتبعة.
+٥. يعرف اسم وتخصص الطبيب المعالج وأفراد الفريق الطبي المشارك في تقديم الرعاية الطبية.
+٦. التأكد أن الطبيب وجميع الكوادر الطبية الأخرى قد قاموا بتعقيم اليدين ولبس القفاز الطبي واتخذوا الإجراءات الكاملة لحمايتك عند الكشف عليك.
+٧. يتلقى تفسيراً وافياً عن تشخيص حالته، وعن الخطة العلاجية وعن النتيجة المتوقعة من العلاج، ويحق له الحصول على أي معلومات يطلبها من طبيبه المعالج قبل التوقيع بالموافقة على الخضوع لأي إجراء طبي أو علاجي، كما يحق له معرفة لوائح المستشفى وأنظمتها ذات الصلة بحالته أو بعلاجه إذا رغب في ذلك.
+٨. عدم إلزام المريض التوجه إلى صيدلية معينة أو مستشفى أو مختبر محدد وللمريض حق الاختيار.
+٩. أن تكون المراجعة بشكل مجاني خلال أربعة عشر يوماً من تاريخ الكشف الأولي.
+١٠. تقييم إحساسه بالألم بدقة ويعطى العلاج اللازم أثناء علاجه بالمستشفى.
+١١. يرفض على مسؤوليته الشخصية الخضوع لأي اختبار أو علاج وكذلك التنويم بالمستشفى.
+١٢. عدم احتجاز الأطفال حديثي الولادة أو جثمان المتوفى أو تأخير الخروج بسبب المطالبات المالية.
+١٣. تتوفر له الخصوصية التامة وأن يتم الحفاظ على سرية المعلومات الخاصة به بما يتناسب مع أنظمة المستشفى والبلاد.
+١٤. يحصل على تقرير طبي مفصل عن حالته أو نسخة من نتائج الفحوصات والتحاليل الموجودة في ملفه الطبي إذا رغب في ذلك.
+١٥. يتم نقله إلى أي مؤسسة طبية أخرى بناء على طلبه إذا كانت حالته الصحية تسمح بذلك.
+١٦. يعرف تكلفة الخدمات التي يحتاجها قبل إجرائها وقبل التنويم بالمستشفى ومراجعة تفاصيل فاتورة حسابه وكذلك الحصول على تعليل وافٍ لبنود الفاتورة باللغة العربية.
+١٧. الحصول على الرعاية الطبية العاجلة الإسعافية (حتى استقرار حالتك) دون تأخير وذلك حسب الأولوية التي يحددها الطبيب بغض النظر عن القدرة على تحمل الأعباء المالية المترتبة على ذلك.
+١٨. عدم تصوير حالتك إلا بموافقتك وأن تكون لأغراض علمية.
+١٩. يعبر عن رأيه في الخدمات المقدمة إليه وتقديم أي اقتراحات أو استفسارات تتعلق بآداب ممارسة مهنة الطب أو تسجيل شكوى وأن يحصل على رد على ما قدمه.
+٢٠. يعالج في بيئة صحية وآمنة.`;
+
+const dsfhPatientResponsibilitiesEn = `In order to provide you with an optimal care, we expect from you and your family to assume the following responsibilities:
+
+1. Provide the treating physician & care providers with adequate & accurate information about past illnesses, hospitalization, medication & other matters relating to your health history.
+2. Cooperate with all hospital personnel & ask questions if you don't understand direction & procedures.
+3. Not to take any drug that has not been prescribed by your physician.
+4. Comply with the hospital rules & regulations in case of refusing the planned diagnostic, therapeutic or surgical procedure.
+5. Be considerate of other patients & ask your visitors to be so as well.
+6. Be accountable of paying for all services rendered. A patient doesn't have the right to leave the hospital before having paid his/her entire medical bill or submitting the approval of contracted third party payers.
+7. Respect all hospital staff and treat them in an appropriate manner.
+8. Photography within the hospital facilities without permission is strictly prohibited.`;
+
+const dsfhPatientResponsibilitiesAr = `على المرضى وذويهم ضرورة الالتزام بما يلي حتى نستطيع تقديم الخدمة المرجوة التي تنال رضاكم:
+
+١. تزويد الطبيب والفريق الطبي المعالج وبدقة بكافة المعلومات المطلوبة عن الحالة الصحية للمريض.
+٢. التعاون مع موظفي المستشفى وعدم التردد عن الاستفسار منهم عن أي من الأمور المتعلقة بحالة المريض الصحية.
+٣. عدم تناول أي دواء لم يتم وصفه بواسطة الطبيب المعالج أثناء العلاج.
+٤. الالتزام بتنفيذ تعليمات المستشفى والإجراءات المتبعة في حال رفض أي من الإجراءات التشخيصية أو العلاجية أو الجراحية أو البقاء في المستشفى.
+٥. مراعاة حقوق ومشاعر المرضى الآخرين بالمستشفى وأن يحث زائريه على مراعاتها أيضاً بالالتزام بالهدوء وبأوقات الزيارة المحددة.
+٦. الالتزام بسداد قيمة تكاليف العلاج والخدمات المقدمة إليه والإقامة بالمستشفى، ولا يحق للمريض أن يغادر المستشفى قبل سداد تكاليف العلاج كاملة أو تقديم موافقة سداد من الجهة المعنية المتعاقدة مع المستشفى.
+٧. احترام موظفي المستشفى ومعاملتهم بطريقة لائقة.
+٨. يمنع التصوير منعاً باتاً بدون إذن داخل مرافق المستشفى.`;
+
 /* ── Prime Hospital — About Us content ── */
 const primeDna = `Personalised Care Personally!
 
@@ -486,6 +555,22 @@ Smart Hospital Features
 • Robotic surgery capabilities
 • Advanced patient monitoring systems` }),
   },
+  ...(themeId === "dsfh"
+    ? [
+        {
+          id: "patientRights",
+          title: "Patient Rights",
+          titleKey: "about.patientRights",
+          content: isRTL ? dsfhPatientRightsAr : dsfhPatientRightsEn,
+        },
+        {
+          id: "patientResponsibilities",
+          title: "Patient Responsibilities",
+          titleKey: "about.patientResponsibilities",
+          content: isRTL ? dsfhPatientResponsibilitiesAr : dsfhPatientResponsibilitiesEn,
+        },
+      ]
+    : []),
   ...(themeId === "dsfh" || themeId === "kauh"
     ? [
         {

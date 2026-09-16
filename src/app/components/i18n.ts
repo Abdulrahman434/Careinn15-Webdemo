@@ -1046,6 +1046,7 @@ const translations: Record<string, TranslationEntry> = {
   "about.certifications": { en: "Certifications", ar: "الشهادات", ur: "سرٹیفیکیشنز" },
   "about.clients": { en: "Clients", ar: "العملاء", ur: "کلائنٹس" },
   "about.patientRights": { en: "Patient Rights", ar: "حقوق المريض", ur: "مریض کے حقوق" },
+  "about.patientResponsibilities": { en: "Patient Responsibilities", ar: "واجبات المريض", ur: "مریض کی ذمہ داریاں" },
   "about.watchVideo": { en: "Watch Our Hospital Video", ar: "شاهد فيديو المستشفى", ur: "ہمارے ہسپتال کی ویڈیو دیکھیں" },
   "about.video": { en: "Video", ar: "فيديو", ur: "ویڈیو" },
   "about.achievements": { en: "Achievements", ar: "الإنجازات والجوائز", ur: "کامیابیاں" },
