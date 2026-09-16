@@ -119,11 +119,22 @@ export interface PreferenceAnswer {
   note?: NoteValue;
 }
 
+/** Who the patient nominated as their care partner. Both fields are required
+ *  once the programme is accepted — a partner with no name is not a partner.
+ *
+ *  `accepted`/`acceptedAt` are legacy: the form used to present an agreement
+ *  to tick. Records written then still carry them, so they are read but never
+ *  written, and nothing gates on them any more. */
 export interface CarePartnerAgreement {
   name: string;
   relationship: string;
-  accepted: boolean;
-  acceptedAt: string | null;
+  accepted?: boolean;
+  acceptedAt?: string | null;
+}
+
+/** Both details present and non-blank. */
+export function carePartnerComplete(p?: CarePartnerAgreement | null): boolean {
+  return !!p && !!p.name.trim() && !!p.relationship.trim();
 }
 
 export interface PreferenceFormRecord {
@@ -345,8 +356,9 @@ export function isPreferenceFormComplete(record: PreferenceFormRecord | null): b
   const answers = record.answers ?? {};
   const answered = (id: string) => !!answers[id]?.value;
   if (!REQUIRED_QUESTION_IDS.every(answered)) return false;
-  /* The agreement screen is part of the form whenever its trigger is "yes". */
-  if (answers[CARE_PARTNER_TRIGGER]?.value === "yes" && !record.carePartner?.accepted) return false;
+  /* The care-partner details screen is part of the form whenever its trigger
+     is "yes", and it is only done when both details are filled in. */
+  if (answers[CARE_PARTNER_TRIGGER]?.value === "yes" && !carePartnerComplete(record.carePartner)) return false;
   return true;
 }
 
@@ -409,6 +421,23 @@ export function preferenceSummaryRows(
         kind: q.kind,
         ...(note ? { note } : {}),
       });
+
+      /* The partner the patient nominated belongs with the question that
+         asked for them, not at the end of the list. */
+      if (q.id === CARE_PARTNER_TRIGGER && a.value === "yes" && carePartnerComplete(record.carePartner)) {
+        rows.push({
+          id: "partner.name",
+          label: t("ppf.short.partner.name"),
+          value: record.carePartner!.name.trim(),
+          kind: "text",
+        });
+        rows.push({
+          id: "partner.relationship",
+          label: t("ppf.short.partner.relationship"),
+          value: record.carePartner!.relationship.trim(),
+          kind: "text",
+        });
+      }
     }
   }
   return rows;
@@ -791,7 +820,7 @@ export function PatientPreferenceForm({
     () => saved?.answers ?? {});
   const [comments, setComments] = useState(() => saved?.comments?.text ?? "");
   const [partner, setPartner] = useState<CarePartnerAgreement>(() => saved?.carePartner ?? {
-    name: "", relationship: "", accepted: false, acceptedAt: null,
+    name: "", relationship: "",
   });
   const [index, setIndex] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -891,7 +920,7 @@ export function PatientPreferenceForm({
    * re-answering. */
   const canAdvance = (() => {
     if (screen.kind === "comments") return true;          // closing screen, optional by design
-    if (screen.kind === "carePartner") return partner.accepted;
+    if (screen.kind === "carePartner") return carePartnerComplete(partner);
     /* Free text is not gated — no question uses it now, but a restored one
        would have no answer to gate on. The optional note is never gated
        either: only the yes/no is. */
@@ -944,7 +973,7 @@ export function PatientPreferenceForm({
   useEffect(() => {
     if (submitted) return;   // handleSubmit already wrote the final record
     const hasAnswer =
-      Object.keys(answers).length > 0 || comments.trim() !== "" || partner.accepted;
+      Object.keys(answers).length > 0 || comments.trim() !== "" || carePartnerComplete(partner);
     if (!hasAnswer) return;  // opening and closing an empty form saves nothing
     persist(buildRecord(completedAtRef.current));
   }, [answers, comments, partner, submitted]);
@@ -1203,84 +1232,77 @@ export function PatientPreferenceForm({
     </>
   );
 
-  /** Care Partner agreement — its own screen, reached immediately after the
-   *  patient answers "yes", so it is completed in the same flow. */
+  /** Care Partner details — its own screen, reached immediately after the
+   *  patient answers "yes", so it is completed in the same flow. Both fields
+   *  are required: the ward needs a person to call, and a name with no stated
+   *  relationship tells them nothing about who is allowed to hear what. */
   const renderCarePartnerScreen = (section: SectionDef) => (
     <>
       {renderSectionBadge(section)}
       <h2 style={{ ...questionHeading, margin: "0 0 12px" }}>
-        {t("ppf.partner.agreement.title")}
+        {t("ppf.partner.details.title")}
       </h2>
       <p style={{
         fontFamily, fontSize: TYPE_SCALE.base, color: theme.textMuted,
         lineHeight: LEADING.normal, textAlign: "center",
-        maxWidth: "980px", margin: "0 0 14px",
+        maxWidth: "860px", margin: "0 0 24px",
       }}>
-        {t("ppf.partner.agreement.intro")}
+        {t("ppf.partner.details.intro")}
       </p>
 
-      <ul style={{ margin: "0 0 14px", padding: 0, listStyle: "none", maxWidth: "1000px", width: "100%" }}>
-        {["clause1", "clause2", "clause3", "clause4"].map((c) => (
-          <li key={c} className="flex items-start gap-3" style={{ marginBottom: "6px" }}>
-            <Check size={20} strokeWidth={3} style={{ color: iconColor, flexShrink: 0, marginTop: "3px" }} />
-            <span style={{ fontFamily, fontSize: TYPE_SCALE.base, color: theme.textBody, lineHeight: LEADING.normal }}>
-              {t(`ppf.partner.agreement.${c}`)}
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      <div className="flex gap-4 w-full shrink-0" style={{ maxWidth: "1000px", marginBottom: "12px" }}>
-        <input
-          value={partner.name}
-          onChange={(e) => setPartner((p) => ({ ...p, name: e.target.value }))}
-          placeholder={t("ppf.partner.agreement.namePlaceholder")}
-          aria-label={t("ppf.partner.agreement.name")}
-          className="ppf-field"
-          style={{ ...fieldStyle("58px"), flex: 1 }}
-        />
-        <input
-          value={partner.relationship}
-          onChange={(e) => setPartner((p) => ({ ...p, relationship: e.target.value }))}
-          placeholder={t("ppf.partner.agreement.relationshipPlaceholder")}
-          aria-label={t("ppf.partner.agreement.relationship")}
-          className="ppf-field"
-          style={{ ...fieldStyle("58px"), flex: 1 }}
-        />
-      </div>
-
-      <button
-        onClick={() => setPartner((p) => ({
-          ...p,
-          accepted: !p.accepted,
-          acceptedAt: !p.accepted ? new Date().toISOString() : null,
-        }))}
-        data-ppf="accept"
-        className="flex items-center gap-4 cursor-pointer transition-transform duration-200 active:scale-[0.99]"
-        style={{
-          width: "100%", maxWidth: "1000px",
-          padding: "14px 20px",
-          borderRadius: theme.radiusLg,
-          backgroundColor: partner.accepted ? theme.primarySubtle : theme.surface,
-          border: partner.accepted ? `2px solid ${iconColor}` : `2px solid ${theme.borderDefault}`,
-          textAlign: isRTL ? "right" : "left",
-          outline: "none",
-        }}
+      <div
+        className="flex flex-col w-full shrink-0"
+        style={{ maxWidth: "720px", gap: "16px" }}
       >
-        <span
-          className="flex items-center justify-center shrink-0"
-          style={{
-            width: "28px", height: "28px", borderRadius: "9px",
-            border: partner.accepted ? "none" : `2px solid ${theme.borderDefault}`,
-            backgroundColor: partner.accepted ? iconColor : "transparent",
-          }}
-        >
-          {partner.accepted && <Check size={18} color={theme.textInverse} strokeWidth={3} />}
-        </span>
-        <span style={{ fontFamily, fontSize: TYPE_SCALE.base, color: theme.textBody, flex: 1, lineHeight: LEADING.normal }}>
-          {t("ppf.partner.agreement.accept")}
-        </span>
-      </button>
+        <div className="flex flex-col" style={{ gap: "6px" }}>
+          <label
+            htmlFor="ppf-partner-name"
+            style={{
+              fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.semibold,
+              color: theme.textMuted, textAlign: isRTL ? "right" : "left",
+            }}
+          >
+            {t("ppf.partner.agreement.name")}
+          </label>
+          <input
+            id="ppf-partner-name"
+            value={partner.name}
+            onChange={(e) => setPartner((p) => ({ ...p, name: e.target.value }))}
+            placeholder={t("ppf.partner.agreement.namePlaceholder")}
+            aria-label={t("ppf.partner.agreement.name")}
+            className="ppf-field"
+            style={fieldStyle("58px")}
+          />
+        </div>
+
+        <div className="flex flex-col" style={{ gap: "6px" }}>
+          <label
+            htmlFor="ppf-partner-rel"
+            style={{
+              fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.semibold,
+              color: theme.textMuted, textAlign: isRTL ? "right" : "left",
+            }}
+          >
+            {t("ppf.partner.agreement.relationship")}
+          </label>
+          <input
+            id="ppf-partner-rel"
+            value={partner.relationship}
+            onChange={(e) => setPartner((p) => ({ ...p, relationship: e.target.value }))}
+            placeholder={t("ppf.partner.agreement.relationshipPlaceholder")}
+            aria-label={t("ppf.partner.agreement.relationship")}
+            className="ppf-field"
+            style={fieldStyle("58px")}
+          />
+        </div>
+
+        <p style={{
+          fontFamily, fontSize: TYPE_SCALE.sm, color: theme.textMuted,
+          textAlign: isRTL ? "right" : "left",
+        }}>
+          {t("ppf.partner.details.required")}
+        </p>
+      </div>
     </>
   );
 

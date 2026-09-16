@@ -35,7 +35,7 @@ export function ConfirmDialog({
     <div
       className="fixed inset-0 z-[10000] flex items-center justify-center"
       style={{
-        backgroundColor: "rgba(0,0,0,0.55)",
+        backgroundColor: t.overlay,
         backdropFilter: "blur(4px)",
         WebkitBackdropFilter: "blur(4px)",
       }}
@@ -75,10 +75,10 @@ export function ConfirmDialog({
             width: "60px",
             height: "60px",
             borderRadius: t.radiusFull,
-            backgroundColor: isDanger ? "#FEE2E2" : t.primarySubtle,
+            backgroundColor: isDanger ? t.errorSubtle : t.primarySubtle,
           }}
         >
-          <AlertTriangle size={30} style={{ color: isDanger ? "#EF4444" : t.primaryOn }} />
+          <AlertTriangle size={30} style={{ color: isDanger ? t.errorOn : t.primaryOn }} />
         </div>
 
         {title && (
@@ -87,7 +87,7 @@ export function ConfirmDialog({
           </span>
         )}
 
-        <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 500, color: t.textSecondary, textAlign: "center", marginBottom: "24px", lineHeight: "22px" }}>
+        <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 500, color: t.textBody, textAlign: "center", marginBottom: "24px", lineHeight: "22px" }}>
           {message}
         </span>
 
@@ -98,13 +98,15 @@ export function ConfirmDialog({
             style={{
               height: "50px",
               borderRadius: t.radiusLg,
-              backgroundColor: isDanger ? "#EF4444" : t.primary,
+              backgroundColor: isDanger ? t.error : t.primary,
               border: "none",
               outline: "none",
-              boxShadow: isDanger ? "0 4px 12px rgba(239, 68, 68, 0.25)" : `0 4px 12px ${t.primary}40`,
+              /* One neutral elevation: a brand-tinted glow assumed the brand
+                 was dark enough to cast one, which is not true of every config. */
+              boxShadow: SHADOW.md,
             }}
           >
-            <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: "#FFFFFF" }}>
+            <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: isDanger ? t.onError : t.brandOnPrimary }}>
               {confirmLabel || tr("general.confirm")}
             </span>
           </button>

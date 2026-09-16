@@ -2,6 +2,7 @@ import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, LEADING, primaryRgba, TEXT_STYLE,
 import { ApiImage } from "./ApiImage";
 import { useLocale } from "./i18n";
 import { useNurseStore, type SectionKey } from "./NurseDataStore";
+import { useAuth } from "./AuthContext";
 import {
   PREFS_SAVED_EVENT, clearPreferenceRecord, preferenceAppName, preferenceSummaryRows,
   readPreferenceRecord, type PreferenceSummaryRow,
@@ -59,6 +60,18 @@ import { SlidersHorizontal,
   Gauge,
   HeartPulse,
   Frown,
+  RotateCcw,
+  ClipboardCheck,
+  Footprints,
+  MessageCircleQuestion,
+  Pencil,
+  CirclePlus,
+  UserRound,
+  BedDouble,
+  ContactRound,
+  Pill,
+  PersonStanding,
+  ShieldAlert,
 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { InternalPageHeader } from "./InternalPageHeader";
@@ -137,88 +150,593 @@ const ALL_SLIDES: SlideConfig[] = [
   { key: "profile", title: "Patient Profile", titleKey: "care.profile.title", icon: IdCard },
   { key: "overview", title: "Care Overview", titleKey: "care.overview.title", icon: Activity },
   { key: "plan", title: "My Care Plan", titleKey: "care.plan.title", icon: ClipboardList },
-  { key: "labs", title: "Lab Results", titleKey: "care.labs.title", icon: FlaskConical },
-  { key: "imaging", title: "Scans & Imaging", titleKey: "care.imaging.title", icon: ImageIcon },
+  { key: "tests", title: "Tests and Procedures", titleKey: "care.tests.title", icon: ClipboardCheck },
   { key: "discharge", title: "Discharge Process", titleKey: "care.discharge.title", icon: LogOut },
   { key: "dischargePlan", title: "Discharge Plan", titleKey: "care.dischargePlan.title", icon: FileText },
-  { key: "observations", title: "Observations", titleKey: "care.observations.title", icon: Activity },
+  { key: "observations", title: "Vital Signs", titleKey: "care.observations.title", icon: Activity },
+  { key: "questions", title: "Questions for My Care Team", titleKey: "care.questions.title", icon: MessageCircleQuestion },
   { key: "preferences", title: "Your Preferences", titleKey: "care.preferences.title", icon: SlidersHorizontal },
 ];
 
-/** Map CareMe slide keys → NurseDataStore SectionKey */
+/** Map CareMe slide keys → NurseDataStore SectionKey. Tests & Procedures has
+ *  no key of its own: it is governed by `labs` and `imaging` together, and
+ *  drops out only when the nurse has hidden both. */
 const SLIDE_TO_SECTION: Record<string, SectionKey> = {
   profile: "profile",
   overview: "careOverview",
   plan: "carePlan",
-  labs: "labs",
-  imaging: "imaging",
   discharge: "discharge",
   dischargePlan: "dischargePlan",
   observations: "observations",
 };
 
+/** True when a slide should be offered to the patient. */
+function slideVisible(key: string, visibility: Record<SectionKey, boolean>): boolean {
+  if (key === "tests") return visibility.labs !== false || visibility.imaging !== false;
+  const section = SLIDE_TO_SECTION[key];
+  return section ? visibility[section] !== false : true;
+}
 
 
 
-/* ─── Helper for Inner Containers ─── */
-function SectionContainer({ children, theme, isExpanded, padding, bg, className = "" }: any) {
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Shared card system
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Every CareMe card is ONE rounded container: icon, title, header actions and
+ * content sit on a single continuous surface (`theme.surface` — white in light
+ * mode, the dark card surface in dark mode), separated by spacing plus one
+ * hairline rule. No detached title pills, no header boxes, no tinted strips.
+ *
+ * The brand reaches a card only through accents — the header icon chip,
+ * buttons, badges — never through the card surface itself, so the same
+ * geometry reads correctly on every hospital config.
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * CareMe type and space system
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Two densities, because there are two real contexts: an expanded column is a
+ * quarter of a 1920px screen, the carousel card on the home screen is about a
+ * third of that. The SAME role takes a different step in each — that is what
+ * keeps both readable. Equivalent elements match; they are not all flattened
+ * to one size.
+ */
+const CARD_PAD = {
+  headerSlide: "22px 22px 12px",
+  headerExpanded: "16px 20px 14px",
+  /* The panels inside carry the real inset; the body only frames them. The
+     bottom value is the largest so content never sits on the card's edge. */
+  bodySlide: "12px 22px 20px",
+  bodyExpanded: "20px 18px 24px",
+} as const;
+
+/** The card header's icon chip — the one boxed glyph on a card. Everything
+ *  inside the body is a line icon at the density's own size. */
+const ICON_BOX = {
+  cardHeader: { slide: 36, expanded: 42 },
+} as const;
+
+type Tone = "brand" | "danger" | "warning" | "success" | "info" | "neutral";
+
+/**
+ * Type roles per density — the sizes CareMe has always used, taken from the
+ * committed version rather than re-derived. They sit outside TYPE_SCALE on
+ * purpose: this card set was drawn to these steps, and rounding them onto the
+ * scale is what made it feel wrong.
+ */
+function roles(isExpanded: boolean) {
+  return {
+    /** Card title in the expanded column. */
+    title: { fontSize: isExpanded ? "18px" : "17.5px", fontWeight: WEIGHT.bold, lineHeight: 1.4, letterSpacing: "0.2px" },
+    /** Heading on a panel. */
+    heading: { fontSize: isExpanded ? "17px" : "15.5px", fontWeight: WEIGHT.bold, lineHeight: 1.3, letterSpacing: "0.2px" },
+    /** The answer half of a label/value pair. */
+    value: { fontSize: isExpanded ? "16px" : "15px", fontWeight: WEIGHT.bold, lineHeight: 1.2 },
+    /** A person's name, and anything that carries a row. */
+    name: { fontSize: isExpanded ? "18px" : "17px", fontWeight: WEIGHT.bold, lineHeight: 1.3 },
+    /** Sentences and instructions. */
+    body: { fontSize: isExpanded ? "16px" : "15.5px", fontWeight: WEIGHT.normal, lineHeight: 1.5 },
+    /** The label above a value, a date, a timestamp. */
+    label: { fontSize: isExpanded ? "16px" : "14.5px", fontWeight: WEIGHT.normal, lineHeight: 1.2 },
+    /** Small print inside a reading tile. */
+    tileLabel: { fontSize: isExpanded ? "13px" : "13px", fontWeight: WEIGHT.medium, lineHeight: 1.25 },
+    /** An observation reading. */
+    metric: isExpanded ? "30px" : "26px",
+    /** Patient identity. */
+    identity: { fontSize: isExpanded ? "18px" : "17px", fontWeight: WEIGHT.bold, lineHeight: 1.4 },
+  };
+}
+
+/** A colour at an alpha, whatever notation the theme handed us. */
+function withAlpha(color: string, a: number): string {
+  const c = (color || "").trim();
+  const hex = c.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (hex) {
+    const h = hex[1].length === 3 ? hex[1].split("").map(x => x + x).join("") : hex[1];
+    const n = parseInt(h, 16);
+    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+  }
+  const rgb = c.match(/^rgba?\(([^)]+)\)$/i);
+  if (rgb) {
+    const [r, g, b] = rgb[1].split(",").map(v => parseFloat(v));
+    return `rgba(${r}, ${g}, ${b}, ${a})`;
+  }
+  return c;
+}
+
+/** Tone → (tint background, contrast-safe foreground). Clinical status tones
+ *  stay independent of the brand palette; only "brand" follows the config. */
+function toneColors(theme: any, tone: Tone) {
+  switch (tone) {
+    case "danger": return { bg: theme.errorSubtle, fg: theme.errorOn };
+    case "warning": return { bg: theme.warningSubtle, fg: theme.warningOn };
+    case "success": return { bg: theme.successSubtle, fg: theme.successOn };
+    case "info": return { bg: theme.infoSubtle, fg: theme.infoOn };
+    case "neutral": return { bg: theme.surfaceInset, fg: theme.textMuted };
+    default: return { bg: theme.primarySubtle, fg: theme.primaryOn };
+  }
+}
+
+/** A line icon labelling a line of text. No container: the tinted square is
+ *  kept for the card header, where the icon IS the card's mark. */
+function LineIcon({
+  icon: Icon, theme, tone = "brand", isExpanded = false, size,
+}: {
+  icon: React.ComponentType<any>; theme: any; tone?: Tone;
+  isExpanded?: boolean; size?: number;
+}) {
+  return (
+    <Icon
+      size={size ?? (isExpanded ? 20 : 18)}
+      strokeWidth={2}
+      style={{ color: toneColors(theme, tone).fg, flexShrink: 0 }}
+    />
+  );
+}
+
+/** The card header's glyph, in its subtle square. */
+function CardIcon({
+  icon: Icon, theme, tone = "brand", circle = false, size = 36, glyph, stroke = 2,
+}: {
+  icon: React.ComponentType<any>; theme: any; tone?: Tone;
+  circle?: boolean; size?: number; glyph?: number; stroke?: number;
+}) {
+  const { bg, fg } = toneColors(theme, tone);
+  return (
+    <div
+      className="flex items-center justify-center shrink-0"
+      style={{
+        width: `${size}px`, height: `${size}px`,
+        borderRadius: circle ? theme.radiusFull : theme.radiusMd,
+        backgroundColor: bg,
+      }}
+    >
+      <Icon size={glyph ?? Math.round(size * 0.5)} strokeWidth={stroke} style={{ color: fg }} />
+    </div>
+  );
+}
+
+/** Short status or value. Content-sized and wrapping with its siblings —
+ *  never used for a sentence. */
+function CardBadge({
+  theme, tone = "brand", isExpanded = false, children,
+}: {
+  theme: any; tone?: Tone; isExpanded?: boolean; children: React.ReactNode;
+}) {
+  const { bg, fg } = toneColors(theme, tone);
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 shrink-0"
+      style={{
+        backgroundColor: bg,
+        border: `1px solid ${withAlpha(fg, 0.25)}`,
+        borderRadius: theme.radiusSm,
+        padding: isExpanded ? "6px 12px" : "4px 10px",
+        fontFamily: theme.fontFamily,
+        fontSize: isExpanded ? "15px" : "14.5px",
+        fontWeight: WEIGHT.bold,
+        lineHeight: 1.2,
+        color: fg,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+/** The one call-to-action shape in CareMe: same corner, same height, same
+ *  type, at each density. Returned as a style so the results gate — whose
+ *  whole panel is already a button — can wear it on a span without nesting
+ *  one button inside another. */
+function ctaStyle(theme: any, isExpanded: boolean): React.CSSProperties {
+  return {
+    minHeight: isExpanded ? "48px" : "44px",
+    padding: `0 ${isExpanded ? "24px" : "20px"}`,
+    borderRadius: theme.radiusMd,
+    backgroundColor: theme.primary,
+    border: "none",
+    outline: "none",
+  };
+}
+
+function CardButton({
+  theme, isExpanded = false, onClick, icon: Icon, label, block = false,
+}: {
+  theme: any; isExpanded?: boolean; onClick?: () => void;
+  icon?: React.ComponentType<any>; label: string; block?: boolean;
+}) {
+  return (
+    <button
+      data-nav="true"
+      onClick={onClick}
+      className={`inline-flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] transition-transform ${block ? "w-full" : ""}`}
+      style={ctaStyle(theme, isExpanded)}
+    >
+      {Icon && <Icon size={isExpanded ? 19 : 18} style={{ color: theme.brandOnPrimary }} />}
+      <span
+        style={{
+          fontFamily: theme.fontFamily, ...roles(isExpanded).value,
+          color: theme.brandOnPrimary, lineHeight: LEADING.none,
+        }}
+      >
+        {label}
+      </span>
+    </button>
+  );
+}
+
+/** The shape every empty or gated state takes: one disc, a title, a line of
+ *  explanation, and — where the state has a single way out — the action.
+ *  Same order and the same offset from the top of the body on every card, so
+ *  swiping between two empty cards does not move the content around. */
+function CardEmptyState({
+  theme, isExpanded = false, icon, title, description, action,
+}: {
+  theme: any; isExpanded?: boolean; icon: React.ComponentType<any>;
+  title: string; description?: string; action?: React.ReactNode;
+}) {
+  return (
+    <div
+      className="flex flex-col items-center text-center"
+      style={{
+        gap: isExpanded ? "14px" : "12px",
+        paddingTop: isExpanded ? "44px" : "32px",
+        paddingBottom: "8px",
+      }}
+    >
+      <CardIcon
+        icon={icon}
+        theme={theme}
+        circle
+        size={isExpanded ? 72 : 62}
+        glyph={isExpanded ? 32 : 28}
+      />
+      <span style={{ fontFamily: theme.fontFamily, ...roles(isExpanded).title, color: theme.textHeading }}>
+        {title}
+      </span>
+      {description && (
+        <p
+          style={{
+            fontFamily: theme.fontFamily, ...roles(isExpanded).body,
+            color: theme.textMuted, maxWidth: "320px",
+          }}
+        >
+          {description}
+        </p>
+      )}
+      {action && <div style={{ marginTop: "4px" }}>{action}</div>}
+    </div>
+  );
+}
+
+/** A row of badges. */
+function BadgeRow({ children }: { children: React.ReactNode }) {
+  return <div className="flex flex-wrap gap-2">{children}</div>;
+}
+
+/** A control with a comfortable hit area and a glyph that stays its own size. */
+function TapTarget({
+  onClick, label, children, theme, style, size = 40,
+}: {
+  onClick: () => void; label: string; children: React.ReactNode;
+  theme: any; style?: React.CSSProperties; size?: number;
+}) {
+  return (
+    <button
+      data-nav="true"
+      onClick={onClick}
+      aria-label={label}
+      className="flex items-center justify-center shrink-0 cursor-pointer active:scale-95 transition-transform"
+      style={{
+        width: `${size}px`, height: `${size}px`,
+        borderRadius: theme.radiusMd, background: "none", border: "none",
+        outline: "none", padding: 0, ...style,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/**
+ * The unified CareMe card. Header and body share one surface and one set of
+ * outer corners; the header stays put while the body scrolls.
+ */
+function CareMeCard({
+  theme, icon, title, actions, children, isExpanded = false, bodyClassName = "", style,
+}: {
+  theme: any;
+  icon?: React.ReactNode;
+  title: React.ReactNode;
+  actions?: React.ReactNode;
+  children: React.ReactNode;
+  isExpanded?: boolean;
+  bodyClassName?: string;
+  style?: React.CSSProperties;
+}) {
+  const { dir } = useLocale();
+  return (
+    <div
+      className="flex flex-col min-h-0 overflow-hidden"
+      style={{
+        backgroundColor: theme.surface,
+        borderRadius: theme.radiusXl,
+        border: theme.cardBorder,
+        boxShadow: isExpanded ? SHADOW.xl : SHADOW.md,
+        ...style,
+      }}
+    >
+      <div
+        dir={dir}
+        className="flex items-center gap-3 shrink-0"
+        style={{
+          padding: isExpanded ? CARD_PAD.headerExpanded : CARD_PAD.headerSlide,
+          borderBottom: `1px solid ${theme.borderSubtle}`,
+        }}
+      >
+        {icon}
+        <span
+          className="flex-1 min-w-0"
+          style={{
+            fontFamily: theme.fontFamily, ...roles(isExpanded).title,
+            color: theme.textHeading, overflowWrap: "anywhere",
+          }}
+        >
+          {title}
+        </span>
+        {actions}
+      </div>
+
+      <div
+        dir={dir}
+        className={`flex-1 min-h-0 overflow-y-auto careme-scroll ${bodyClassName}`}
+        style={{ padding: isExpanded ? CARD_PAD.bodyExpanded : CARD_PAD.bodySlide }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ─── A panel inside a card ────────────────────────────────────────────────
+ * The inset surface CareMe has always used to group a block of related facts.
+ * Panels are separated by space rather than a rule; `tone` tints one where the
+ * colour carries meaning — the emergency contact, a safety alert. */
+function Section({
+  children, theme, isExpanded = false, icon, title, actions, tone,
+  first = false, bare = false, bg, padding, style, className = "", ...rest
+}: any) {
   return (
     <div
       className={className}
+      {...rest}
       style={{
-        backgroundColor: bg || theme.surfaceInset,
-        borderRadius: theme.radiusLg,
-        border: theme.borderInset,
-        padding: padding || (isExpanded ? "20px" : "14px"),
-        width: "100%"
+        width: "100%",
+        ...(bare ? null : {
+          backgroundColor: bg || (tone ? toneColors(theme, tone).bg : theme.surfaceInset),
+          border: theme.borderInset,
+          borderRadius: theme.radiusLg,
+          padding: padding || (isExpanded ? "20px" : "14px"),
+        }),
+        marginTop: first ? 0 : "16px",
+        ...style,
       }}
     >
+      {!!title && (
+        <div
+          className="flex items-center gap-2.5"
+          style={{
+            paddingBottom: isExpanded ? "12px" : "10px",
+            marginBottom: isExpanded ? "14px" : "12px",
+            borderBottom: `1px solid ${theme.borderSubtle}`,
+          }}
+        >
+          {icon && (
+            <CardIcon
+              icon={icon}
+              theme={theme}
+              tone={tone || "brand"}
+              circle
+              size={isExpanded ? 34 : 30}
+              glyph={isExpanded ? 17 : 15}
+            />
+          )}
+          <span
+            className="flex-1 min-w-0"
+            style={{
+              fontFamily: theme.fontFamily, ...roles(isExpanded).heading,
+              color: tone === "danger" ? theme.errorOn : theme.primaryOn,
+              overflowWrap: "anywhere",
+            }}
+          >
+            {title}
+          </span>
+          {actions}
+        </div>
+      )}
       {children}
     </div>
   );
 }
 
-/* ─── Reported Pain ─── */
-function ReportedPain({ theme }: { theme: any }) {
-  const { t } = useLocale();
+/** Latin/numeric values — dates, record numbers, phone numbers, room/bed —
+ *  keep their own direction so Arabic and Urdu do not reorder them. */
+function Ltr({ children, nowrap = false }: { children: React.ReactNode; nowrap?: boolean }) {
   return (
-    <div
-      className="flex items-center gap-3 px-3 py-2.5"
-      style={{ backgroundColor: theme.warningSubtle, border: `1px solid ${theme.warningSubtle}`, borderRadius: theme.radiusLg }}
+    <span
+      dir="ltr"
+      style={{ unicodeBidi: "isolate", display: "inline-block", whiteSpace: nowrap ? "nowrap" : undefined }}
     >
-      <div
-        className="w-9 h-9 flex items-center justify-center shrink-0"
-        style={{ backgroundColor: theme.warningSubtle, borderRadius: theme.radiusMd }}
+      {children}
+    </span>
+  );
+}
+
+/** One line of advice: a bullet and a sentence at body weight. Wrapped lines
+ *  align with the first line of TEXT, not under the bullet. */
+function InstructionRow({
+  theme, text, tone = "brand", isExpanded = false,
+}: {
+  theme: any; text: string; tone?: Tone; isExpanded?: boolean;
+}) {
+  const { fg } = toneColors(theme, tone);
+  const size = isExpanded ? TYPE_SCALE.base : TYPE_SCALE.sm;
+  return (
+    <div className="flex items-start gap-2.5">
+      <span
+        aria-hidden
+        className="shrink-0 rounded-full"
+        style={{
+          width: "6px", height: "6px", backgroundColor: fg,
+          /* Centred on the first line, whatever the sentence wraps to. */
+          marginTop: `calc((${size} * ${LEADING.normal} - 6px) / 2)`,
+        }}
+      />
+      <span
+        dir="auto"
+        className="min-w-0"
+        style={{
+          fontFamily: theme.fontFamily, ...roles(isExpanded).body,
+          color: theme.textBody, overflowWrap: "anywhere",
+        }}
       >
-        <AlertTriangle size={18} style={{ color: theme.warningOn }} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.subtitle, color: theme.textHeading }}>{t("care.pain.score")}</p>
-        <p style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.caption, fontWeight: WEIGHT.normal, color: theme.textMuted }}>{t("care.pain.lastUpdated")}</p>
-      </div>
-      <div
-        className="flex items-center gap-1 px-2.5 py-1 shrink-0"
-        style={{ backgroundColor: theme.warningSubtle, borderRadius: theme.radiusSm }}
-      >
-        <span style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.label, color: theme.warningOn }}>5 / 10</span>
+        {text}
+      </span>
+    </div>
+  );
+}
+
+/** A bullet list. */
+function Bullets({ children }: { children: React.ReactNode }) {
+  return <div className="flex flex-col gap-2">{children}</div>;
+}
+
+/** Small label over its value, with an optional line icon beside the pair. */
+function DetailCell({
+  icon, theme, label, value, tone = "brand", labelTone, isExpanded = false,
+}: {
+  icon?: React.ComponentType<any>; theme: any; label: string;
+  value: React.ReactNode; tone?: Tone; labelTone?: Tone; isExpanded?: boolean;
+}) {
+  return (
+    <div className="flex items-start gap-4 min-w-0">
+      {icon && (
+        <CardIcon
+          icon={icon}
+          theme={theme}
+          tone={tone}
+          circle
+          size={isExpanded ? 40 : 36}
+          glyph={isExpanded ? 18 : 14}
+          stroke={2.5}
+        />
+      )}
+      <div className="flex flex-col min-w-0" style={{ gap: "2px" }}>
+        <span
+          style={{
+            fontFamily: theme.fontFamily, ...roles(isExpanded).label,
+            color: labelTone ? toneColors(theme, labelTone).fg : theme.textMuted,
+            ...(labelTone ? { fontWeight: WEIGHT.bold } : null),
+          }}
+        >
+          {label}
+        </span>
+        {value}
       </div>
     </div>
   );
 }
 
-/* ─── Slide-title-style section heading (matches "My Care Team" title bar) ─── */
-function SlideSectionHeading({ icon, label, theme, extra }: { icon: React.ComponentType<any>; label: string; theme: any; extra?: React.ReactNode }) {
-  const Icon = icon;
+/** The value half of a DetailCell when it is plain text. */
+function CellValue({ theme, isExpanded = false, children }: {
+  theme: any; isExpanded?: boolean; children: React.ReactNode;
+}) {
   return (
-    <div className="flex items-center justify-between py-2 mb-1 border-b" style={{ borderColor: theme.borderSubtle }}>
-      <div className="flex items-center gap-2">
-        <Icon size={16} strokeWidth={2.5} style={{ color: theme.primaryOn }} />
-        <span style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.label, fontWeight: WEIGHT.bold, color: theme.primaryOn, letterSpacing: "0.2px" }}>
-          {label}
+    <span
+      dir="auto"
+      style={{
+        fontFamily: theme.fontFamily, ...roles(isExpanded).value,
+        color: theme.textHeading, overflowWrap: "anywhere",
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+/** Label on the reading edge, value on the far one. For short pairs that line
+ *  up as a table — the emergency contact. */
+function LabelValueRow({
+  theme, label, value, icon, isExpanded = false,
+}: {
+  theme: any; label: string; value: React.ReactNode;
+  icon?: React.ComponentType<any>; isExpanded?: boolean;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 min-w-0">
+      <span
+        className="shrink-0"
+        style={{ fontFamily: theme.fontFamily, ...roles(isExpanded).label, color: theme.textMuted }}
+      >
+        {label}
+      </span>
+      <span className="flex items-center gap-2 min-w-0">
+        {icon && <LineIcon icon={icon} theme={theme} isExpanded={isExpanded} />}
+        <span
+          dir="auto"
+          className="min-w-0"
+          style={{
+            fontFamily: theme.fontFamily, ...roles(isExpanded).value,
+            color: theme.textHeading, overflowWrap: "anywhere",
+          }}
+        >
+          {value}
         </span>
-      </div>
-      {extra}
+      </span>
     </div>
+  );
+}
+
+/** Label over value with a line icon — the one row shape used for every field
+ *  that is not in a grid. */
+function FieldRow({
+  icon, theme, label, value, tone = "brand", isExpanded = false,
+}: {
+  icon: React.ComponentType<any>; theme: any; label: string;
+  value: React.ReactNode; tone?: Tone; isExpanded?: boolean;
+}) {
+  return (
+    <DetailCell
+      icon={icon}
+      theme={theme}
+      label={label}
+      tone={tone}
+      isExpanded={isExpanded}
+      value={<CellValue theme={theme} isExpanded={isExpanded}>{value}</CellValue>}
+    />
   );
 }
 
@@ -283,63 +801,22 @@ function HisEmptyStateSection({
 }) {
   const { t } = useLocale();
   return (
-    <div
-      className="flex flex-col items-center justify-center text-center p-8 border border-dashed rounded-3xl"
-      style={{
-        borderColor: `${theme.primary}35` || "rgba(0,0,0,0.12)",
-        backgroundColor: theme.surfaceElevated || "rgba(255,255,255,0.75)",
-        minHeight: isExpanded ? "260px" : "200px",
-        margin: "auto 0",
-      }}
-    >
-      <div
-        className="w-14 h-14 rounded-full flex items-center justify-center mb-3 shrink-0"
-        style={{ backgroundColor: theme.primarySubtle }}
-      >
-        <Sparkles size={24} style={{ color: theme.primaryOn }} strokeWidth={2.2} />
-      </div>
-      <h4
-        style={{
-          fontFamily: theme.fontFamily,
-          fontSize: isExpanded ? "18px" : "16px",
-          fontWeight: WEIGHT.bold,
-          color: theme.textHeading,
-          marginBottom: "6px",
-        }}
-      >
-        {title || t("care.his.noInfo")}
-      </h4>
-      <p
-        style={{
-          fontFamily: theme.fontFamily,
-          fontSize: isExpanded ? "14px" : "13px",
-          color: theme.textMuted,
-          maxWidth: "340px",
-          marginBottom: "18px",
-          lineHeight: "1.4",
-        }}
-      >
-        {description || t("care.his.noInfoSub")}
-      </p>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onCheckDemo();
-        }}
-        data-nav="true"
-        className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 cursor-pointer shadow-md"
-        style={{
-          backgroundColor: theme.primary,
-          color: "#fff",
-          border: "none",
-          fontSize: isExpanded ? "15px" : "13px",
-          fontFamily: theme.fontFamily,
-        }}
-      >
-        <Sparkles size={16} />
-        <span>{t("care.his.checkDemo")}</span>
-      </button>
-    </div>
+    <CardEmptyState
+      theme={theme}
+      isExpanded={isExpanded}
+      icon={Sparkles}
+      title={title || t("care.his.noInfo")}
+      description={description || t("care.his.noInfoSub")}
+      action={
+        <CardButton
+          theme={theme}
+          isExpanded={isExpanded}
+          onClick={onCheckDemo}
+          icon={Sparkles}
+          label={t("care.his.checkDemo")}
+        />
+      }
+    />
   );
 }
 
@@ -353,22 +830,16 @@ function DemoBannerHeader({
   const { t } = useLocale();
   return (
     <div
-      className="flex items-center justify-between px-3 py-1.5 rounded-xl mb-3 border shrink-0"
+      className="flex items-center justify-between px-3 py-1.5 mb-3 border shrink-0"
       style={{
-        backgroundColor: `${theme.primary}12`,
-        borderColor: `${theme.primary}35`,
+        borderRadius: theme.radiusMd,
+        backgroundColor: theme.primarySubtle,
+        borderColor: theme.borderCardColor,
       }}
     >
       <div className="flex items-center gap-2">
         <Sparkles size={14} style={{ color: theme.primaryOn }} />
-        <span
-          style={{
-            fontFamily: theme.fontFamily,
-            fontSize: "12px",
-            fontWeight: 800,
-            color: theme.primaryOn,
-          }}
-        >
+        <span style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.pill, color: theme.primaryOn }}>
           {t("care.his.demoBadge")}
         </span>
       </div>
@@ -378,11 +849,14 @@ function DemoBannerHeader({
           onCloseDemo();
         }}
         data-nav="true"
-        className="px-2.5 py-1 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer"
+        className="px-2.5 py-1 transition-all active:scale-95 cursor-pointer"
         style={{
+          borderRadius: theme.radiusSm,
           backgroundColor: theme.surface,
           color: theme.textMuted,
           border: theme.borderCard,
+          fontFamily: theme.fontFamily,
+          ...TEXT_STYLE.pill,
         }}
       >
         {t("care.his.hideDemo")}
@@ -391,7 +865,8 @@ function DemoBannerHeader({
   );
 }
 
-function PatientProfileSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: boolean }) {
+function PatientProfileSlide({ theme, isExpanded = false }: { theme: any; isExpanded?: boolean }) {
+  const R = roles(isExpanded);
   const { t, isRTL, localizeNumber } = useLocale();
   const nurseStore = useNurseStore();
   const p = nurseStore.patient;
@@ -402,78 +877,64 @@ function PatientProfileSlide({ theme, isExpanded = false }: { theme: any, isExpa
   }, [p.dob, p.age]);
 
   const hasHisEmergency = nurseStore.isHisConnected ? !!nurseStore.hisSections?.emergency : true;
+  
+  const infoRow = (
+    icon: React.ComponentType<any>, label: string, val: React.ReactNode, tone: Tone = "brand"
+  ) => (
+    <FieldRow icon={icon} theme={theme} label={label} value={val} tone={tone} isExpanded={isExpanded} />
+  );
 
-  const infoRow = (icon: React.ComponentType<any>, label: string, val: React.ReactNode, customColor?: string) => {
+  /* The one row that names the person, or the person to call: a SOLID disc
+     rather than a tint, so it leads the panel it sits on. */
+  const leadRow = (icon: React.ComponentType<any>, label: string, val: React.ReactNode, tone: Tone = "brand") => {
     const Icon = icon;
-    const baseColor = customColor || theme.primary;
-    const bgColor = customColor ? `${customColor}15` : theme.primarySubtle;
-    const labelSize = isExpanded ? "16px" : "13px";
-    const valueSize = isExpanded ? "16px" : "13.5px";
-
+    const fill = tone === "danger" ? theme.error : theme.primary;
+    const on = tone === "danger" ? theme.onError : theme.brandOnPrimary;
+    const d = isExpanded ? 40 : 36;
     return (
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-4 min-w-0">
         <div
-          className="flex items-center justify-center shrink-0"
-          style={{
-            width: isExpanded ? "40px" : "36px",
-            height: isExpanded ? "40px" : "36px",
-            borderRadius: theme.radiusFull,
-            backgroundColor: bgColor
-          }}
+          className="rounded-full flex items-center justify-center shrink-0"
+          style={{ width: `${d}px`, height: `${d}px`, backgroundColor: fill }}
         >
-          <Icon size={isExpanded ? 18 : 14} style={{ color: baseColor }} strokeWidth={2.5} />
+          <Icon size={isExpanded ? 18 : 16} style={{ color: on }} strokeWidth={2.5} />
         </div>
-        <div className="flex flex-col min-w-0" style={{ gap: "0px" }}>
-          <p style={{ fontFamily: theme.fontFamily, fontSize: labelSize, color: theme.textMuted, lineHeight: "1.2" }}>{label}</p>
-          <p style={{
-            fontFamily: theme.fontFamily,
-            fontSize: valueSize,
-            fontWeight: WEIGHT.bold,
-            color: theme.textHeading,
-            lineHeight: "1.2",
-            marginTop: "2px"
-          }}>{val}</p>
+        <div className="flex flex-col min-w-0 pt-0.5">
+          <span style={{ fontFamily: theme.fontFamily, ...R.label, color: theme.textMuted }}>{label}</span>
+          <span
+            dir="auto"
+            style={{
+              fontFamily: theme.fontFamily, ...R.identity,
+              color: theme.textHeading, overflowWrap: "anywhere", marginTop: "2px",
+            }}
+          >
+            {val}
+          </span>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Module 1: Stay Timeline */}
-      <SectionContainer theme={theme} isExpanded={isExpanded} padding={isExpanded ? "16px 20px" : "12px 14px"}>
-        <div className="flex flex-col gap-2">
-          <div className="grid grid-cols-2 gap-x-6">
-            {infoRow(LogIn, t("care.admitted"), p.admissionDate, "#EF4444")}
-          </div>
-        </div>
-      </SectionContainer>
-
-      {/* Module 2: Identity & Clinical Grid */}
-      <SectionContainer theme={theme} isExpanded={isExpanded}>
+    <div className="flex flex-col">
+      {/* Identity & clinical grid. The admission date now heads My Care Plan,
+          where it belongs next to the steps it started. */}
+      <Section theme={theme} isExpanded={isExpanded} first>
         <div className="flex flex-col gap-5">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: theme.primary }}>
-              <User size={18} style={{ color: "#fff" }} strokeWidth={2.5} />
-            </div>
-            <div className="flex flex-col pt-0.5">
-              <p style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "16px" : "13px", color: theme.textMuted, lineHeight: "1.2" }}>{t("care.fullName")}</p>
-              <p style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "18px" : "15.5px", fontWeight: WEIGHT.bold, color: theme.textHeading, lineHeight: "1.4", marginTop: "2px" }}>
-                {isRTL && p.nameAr ? p.nameAr : (p.nameKey ? t(p.nameKey) : p.name)}
-              </p>
-            </div>
-          </div>
+          {leadRow(User, t("care.fullName"), isRTL && p.nameAr ? p.nameAr : (p.nameKey ? t(p.nameKey) : p.name))}
 
           <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-            {infoRow(Hash, t("greeting.mrn"), <span dir="ltr">{p.mrn}</span>)}
+            {infoRow(Hash, t("greeting.mrn"), <Ltr nowrap>{p.mrn}</Ltr>)}
             {infoRow(Shield, t("care.insurance"), t("care.insurance.tawuniya"))}
             {infoRow(CalendarDays, t("care.age"), t("care.ageUnits", localizeNumber(calculatedAge)))}
             {infoRow(GendersIcon, t("care.gender"), p.sex ? t(`care.gender.${p.sex.toLowerCase() === 'm' ? 'male' : (p.sex.toLowerCase() === 'f' ? 'female' : p.sex.toLowerCase())}`) : t("care.gender.female"))}
+            {/* No forced LTR: the fallback is a translated date, and pinning an
+                Arabic one left-to-right moves its month. */}
             {infoRow(Clock, t("care.dob"), p.dob || t("care.birthDateVal"))}
-            {infoRow(DoorOpen, t("care.room") + " / " + t("care.bed"), `${p.room} / ${p.bed || 'A'}`)}
+            {infoRow(DoorOpen, t("care.room") + " / " + t("care.bed"), <Ltr nowrap>{`${p.room} / ${p.bed || 'A'}`}</Ltr>)}
           </div>
         </div>
-      </SectionContainer>
+      </Section>
 
       {/* Module 3: Emergency Contact */}
       {nurseStore.isHisConnected && !hasHisEmergency && !showDemoEmergency ? (
@@ -485,201 +946,253 @@ function PatientProfileSlide({ theme, isExpanded = false }: { theme: any, isExpa
           onCheckDemo={() => setShowDemoEmergency(true)}
         />
       ) : (
-        <SectionContainer theme={theme} isExpanded={isExpanded} bg="rgba(239, 68, 68, 0.03)" className="mt-auto">
+        <Section theme={theme} isExpanded={isExpanded} tone="danger" className="mt-auto">
           {nurseStore.isHisConnected && !hasHisEmergency && showDemoEmergency && (
             <DemoBannerHeader theme={theme} onCloseDemo={() => setShowDemoEmergency(false)} />
           )}
           <div className="flex flex-col gap-5">
-            <div className="flex items-start gap-3">
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                style={{ backgroundColor: "#EF4444" }}
-              >
-                <User size={16} style={{ color: "#fff" }} strokeWidth={2.5} />
-              </div>
-              <div className="flex flex-col pt-0.5">
-                <p style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "16px" : "13px", color: theme.textMuted, lineHeight: "1.2" }}>{t("care.emergencyContact")}</p>
-                <p style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "16px" : "14.5px", fontWeight: WEIGHT.bold, color: theme.textHeading, lineHeight: "1.4", marginTop: "2px" }}>{t("care.emergencyName").split(' (')[0]}</p>
-              </div>
-            </div>
-
+            {leadRow(User, t("care.emergencyContact"), t("care.emergencyName").split(' (')[0], "danger")}
             <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-              {infoRow(Phone, t("care.mobile"), <span dir="ltr">{p.contact}</span>, "#EF4444")}
-              {infoRow(Heart, t("care.relative"), p.emergencyName.split('(')[1]?.replace(')', '') || "Mother", "#EF4444")}
+              {infoRow(Phone, t("care.mobile"), <Ltr nowrap>{p.contact}</Ltr>, "danger")}
+              {infoRow(Heart, t("care.relative"), p.emergencyName.split('(')[1]?.replace(')', '') || "Mother", "danger")}
             </div>
           </div>
-        </SectionContainer>
+        </Section>
       )}
     </div>
   );
 }
 
 /* ─── Care Overview Slide (Clinical Status) ─── */
-function CareOverviewSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: boolean }) {
+function CareOverviewSlide({ theme, isExpanded = false }: { theme: any; isExpanded?: boolean }) {
+  const R = roles(isExpanded);
   const { t } = useLocale();
   const nurseStore = useNurseStore();
   const [showDemo, setShowDemo] = useState(false);
   const storeAllergies = nurseStore.allergies;
   const patientDietLabel = DIET_DISPLAY_LABELS[nurseStore.patientDiet] || nurseStore.patientDiet;
   const isNpo = nurseStore.patientDiet === "npo";
-  const labelSize = isExpanded ? "16px" : "13px";
-
+  
   const hasHisData = nurseStore.isHisConnected ? !!nurseStore.hisSections?.careOverview : true;
 
   if (nurseStore.isHisConnected && !hasHisData && !showDemo) {
     return (
-      <HisEmptyStateSection
+      <HisEmptyStateSection isExpanded={isExpanded}
         theme={theme}
-        isExpanded={isExpanded}
-        onCheckDemo={() => setShowDemo(true)}
+                onCheckDemo={() => setShowDemo(true)}
       />
     );
   }
 
+  const alerts = nurseStore.alerts;
+  const fallRiskLabel = alerts.fallRisk ? t(`care.fallRisk.${alerts.fallRisk}`) : "";
+  const mobility = alerts.mobilityInstructions ?? [];
+  const isolationSteps = alerts.isolationInstructions ?? [];
+  const hasAllergies = storeAllergies.length > 0;
+
+  /* Every block below the care team is conditional on the ward having entered
+     it. A heading with nothing under it is worse than no heading: it tells the
+     patient a rule applies and then does not say what it is. */
+  const showAlertBar = alerts.similarName || alerts.isolation;
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col">
       {nurseStore.isHisConnected && !hasHisData && showDemo && (
         <DemoBannerHeader theme={theme} onCloseDemo={() => setShowDemo(false)} />
       )}
-      {/* Module 1: Care Team */}
-      <SectionContainer theme={theme} isExpanded={isExpanded}>
+
+      {/* What is in force right now, at the top and in two words each. The
+          name alert says only THAT it applies — the other patient it guards
+          against is in a different bed and is none of this screen's business.
+          Both tones are clinical, not brand: amber for a check-before-you-act
+          caution, blue for a precaution in effect. */}
+      {/* Care team */}
+      <Section isExpanded={isExpanded}
+        theme={theme}
+                first
+        icon={Users}
+        title={t("care.team.title")}
+      >
         <div className="flex flex-col gap-6">
           {nurseStore.careTeam.filter(m => m.visible).map((m, i) => (
-            <div key={m.id || i} className="flex items-center gap-4">
+            <div key={m.id || i} className="flex items-center gap-4 min-w-0">
               <div
-                className="overflow-hidden shrink-0 border border-white shadow-sm"
+                className="overflow-hidden shrink-0 shadow-sm"
                 style={{
                   width: isExpanded ? "52px" : "40px",
                   height: isExpanded ? "52px" : "40px",
-                  borderRadius: theme.radiusFull
+                  borderRadius: theme.radiusFull,
+                  border: `1px solid ${theme.borderCardColor}`,
                 }}
               >
                 <ApiImage src={m.img} alt={t(m.nameKey)} className="w-full h-full object-cover" />
               </div>
-              <div className="flex flex-col">
-                <p style={{ fontFamily: theme.fontFamily, fontSize: labelSize, color: theme.primaryOn, fontWeight: 700, lineHeight: 1.2 }}>{t(m.roleKey)}</p>
-                <p style={{
-                  fontFamily: theme.fontFamily,
-                  ...(isExpanded ? { fontSize: "18px" } : { fontSize: "15.5px" }),
-                  fontWeight: WEIGHT.bold,
-                  color: theme.textHeading,
-                  marginTop: "2px"
-                }}>{t(m.nameKey)}</p>
+              <div className="flex flex-col min-w-0">
+                <span style={{ fontFamily: theme.fontFamily, ...R.label, color: theme.primaryOn, fontWeight: WEIGHT.bold }}>
+                  {t(m.roleKey)}
+                </span>
+                <span
+                  style={{
+                    fontFamily: theme.fontFamily, ...R.name,
+                    color: theme.textHeading, overflowWrap: "anywhere", marginTop: "2px",
+                  }}
+                >
+                  {t(m.nameKey)}
+                </span>
               </div>
             </div>
           ))}
         </div>
-      </SectionContainer>
+      </Section>
 
-      {/* Module 3: Clinical Nutrition, Allergies & Pain */}
-      <SectionContainer theme={theme} isExpanded={isExpanded}>
-        <div className="flex flex-col gap-7">
-          {/* Diet */}
-          <div className="flex items-start gap-4">
-            <div
-              className="flex items-center justify-center shrink-0"
-              style={{
-                width: isExpanded ? "40px" : "36px",
-                height: isExpanded ? "40px" : "36px",
-                borderRadius: theme.radiusFull,
-                backgroundColor: isNpo ? "#EF444415" : theme.primarySubtle
-              }}
-            >
-              <Utensils size={isExpanded ? 18 : 14} style={{ color: isNpo ? "#EF4444" : theme.primaryOn }} strokeWidth={2.5} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <p style={{ fontFamily: theme.fontFamily, fontSize: labelSize, color: theme.textMuted }}>{t("care.diet.title")}</p>
-              <span className="px-3 py-1.5 rounded-md border font-bold" style={{
-                fontSize: isExpanded ? "15px" : "13px",
-                backgroundColor: isNpo ? "#EF444415" : theme.primarySubtle,
-                borderColor: isNpo ? "#EF444435" : `${theme.primary}35`,
-                color: isNpo ? "#EF4444" : theme.primaryOn
-              }}>{patientDietLabel}</span>
-            </div>
+      {/* Care details — the three facts a visitor or a relief nurse checks
+          first, side by side. Every tone here is clinical rather than brand:
+          NPO is a restriction, a fall risk is a risk, and allergies are read
+          in red on every ward in the world. */}
+      {/* Stethoscope, not the fork and knife: this block covers diet, fall
+          risk and allergies, and the diet row below already owns that glyph. */}
+      <Section isExpanded={isExpanded} theme={theme} icon={Stethoscope} title={t("care.overview.details")}>
+        <div className="flex flex-col" style={{ gap: isExpanded ? "16px" : "12px" }}>
+          <div className="grid grid-cols-2" style={{ columnGap: isExpanded ? "24px" : "16px", rowGap: isExpanded ? "16px" : "12px" }}>
+            <DetailCell
+              isExpanded={isExpanded}
+              icon={Utensils}
+              theme={theme}
+                            tone={isNpo ? "danger" : "brand"}
+              label={t("care.diet.title")}
+              value={
+                <CardBadge isExpanded={isExpanded} theme={theme} tone={isNpo ? "danger" : "brand"}>
+                  {patientDietLabel}
+                </CardBadge>
+              }
+            />
+            {fallRiskLabel && (
+              <DetailCell isExpanded={isExpanded}
+                icon={PersonStanding}
+                theme={theme}
+                                tone="brand"
+                label={t("care.fallRisk")}
+                /* Brand-toned whatever the level: the ward reads the word,
+                   and a red chip here competed with the allergy chips. */
+                value={
+                  <CardBadge isExpanded={isExpanded} theme={theme} tone="brand">{fallRiskLabel}</CardBadge>
+                }
+              />
+            )}
           </div>
 
-          {/* Allergies - Full Width Row */}
-          <div className="flex items-start gap-4">
-            <div
-              className="flex items-center justify-center shrink-0"
-              style={{
-                width: isExpanded ? "40px" : "36px",
-                height: isExpanded ? "40px" : "36px",
-                borderRadius: theme.radiusFull,
-                backgroundColor: "#EF444415"
-              }}
-            >
-              <AlertTriangle size={isExpanded ? 18 : 14} style={{ color: theme.errorOn }} strokeWidth={2.5} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <p style={{ fontFamily: theme.fontFamily, fontSize: labelSize, color: theme.errorOn, fontWeight: WEIGHT.bold }}>{t("care.allergies")}</p>
-              <div className="flex flex-wrap gap-2">
-                {storeAllergies.map(a => (
-                  <span key={a} className="px-3 py-1 rounded-md font-bold" style={{
-                    fontSize: isExpanded ? "15px" : "13px",
-                    backgroundColor: "#EF444415",
-                    border: "1px solid #EF444440",
-                    color: theme.errorOn
-                  }}>{a}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </SectionContainer>
-
-      {/* Module 4: Safety Alerts */}
-      <SectionContainer theme={theme} isExpanded={isExpanded} bg="#EF444408" className="mt-auto">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-start gap-4">
-            <div
-              className="flex items-center justify-center shrink-0"
-              style={{
-                width: isExpanded ? "40px" : "36px",
-                height: isExpanded ? "40px" : "36px",
-                borderRadius: theme.radiusLg,
-                backgroundColor: "#EF444420"
-              }}
-            >
-              <AlertTriangle size={isExpanded ? 18 : 14} style={{ color: theme.errorOn }} />
-            </div>
-            <div className="flex flex-col">
-              <p style={{ fontFamily: theme.fontFamily, fontSize: labelSize, color: theme.errorOn, fontWeight: WEIGHT.bold }}>{t("care.fallRisk")}: {t("care.fallRisk.high")}</p>
-              <p style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "15px" : "12px", color: theme.errorOn, lineHeight: "1.4", fontStyle: 'italic', opacity: 0.85 }}>
-                "{t("care.assistance.bed")}"
-              </p>
-            </div>
-          </div>
-
-          {/* Isolation precautions apply to anyone entering the room, so they
-              are shown here as well as on the nurse's Care Overview. The
-              similar-name alert is NOT: it names a patient in another bed. */}
-          {nurseStore.alerts.isolation && (
-            <div className="flex items-start gap-4">
-              <div
-                className="flex items-center justify-center shrink-0"
-                style={{
-                  width: isExpanded ? "40px" : "36px",
-                  height: isExpanded ? "40px" : "36px",
-                  borderRadius: theme.radiusLg,
-                  backgroundColor: "#EF444420"
-                }}
-              >
-                <Shield size={isExpanded ? 18 : 14} style={{ color: theme.errorOn }} />
-              </div>
-              <div className="flex flex-col">
-                <p style={{ fontFamily: theme.fontFamily, fontSize: labelSize, color: theme.errorOn, fontWeight: WEIGHT.bold }}>
-                  {t("care.isolation")}{nurseStore.alerts.isolationType ? `: ${nurseStore.alerts.isolationType}` : ""}
-                </p>
-                <p style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "15px" : "12px", color: theme.errorOn, lineHeight: "1.4", fontStyle: 'italic', opacity: 0.85 }}>
-                  "{t("care.isolation.desc")}"
-                </p>
-              </div>
-            </div>
+          {/* What is in force right now. The name alert says only THAT it
+              applies — the other patient it guards against is in a different
+              bed and is none of this screen's business. Both tones are
+              clinical, not brand. */}
+          {showAlertBar && (
+            <DetailCell
+              icon={ShieldAlert}
+              theme={theme}
+              isExpanded={isExpanded}
+              label={t("care.safety.title")}
+              value={
+                <BadgeRow>
+                  {alerts.similarName && (
+                    <CardBadge theme={theme} isExpanded={isExpanded} tone="warning">
+                      <Users size={14} />
+                      {t("care.alert.nameAlert")}
+                    </CardBadge>
+                  )}
+                  {alerts.isolation && (
+                    <CardBadge theme={theme} isExpanded={isExpanded} tone="info">
+                      <Shield size={14} />
+                      {t("care.alert.isolation")}
+                    </CardBadge>
+                  )}
+                </BadgeRow>
+              }
+            />
           )}
+
+          {/* The warning glyph appears only when there is something to warn
+              about — "No known allergies" is reassurance, not an alert. */}
+          <DetailCell isExpanded={isExpanded}
+            icon={hasAllergies ? AlertTriangle : undefined}
+            theme={theme}
+                        tone="danger"
+            label={t("care.allergies")}
+            value={
+              hasAllergies ? (
+                <BadgeRow>
+                  {storeAllergies.map(a => (
+                    <CardBadge isExpanded={isExpanded} key={a} theme={theme} tone="danger">{a}</CardBadge>
+                  ))}
+                </BadgeRow>
+              ) : (
+                <CardBadge isExpanded={isExpanded} theme={theme} tone="neutral">
+                  {t("care.allergies.none")}
+                </CardBadge>
+              )
+            }
+          />
         </div>
-      </SectionContainer>
+      </Section>
+
+      {/* Mobility instructions — assessed and written separately from the fall
+          risk, so they appear on their own terms. */}
+      {mobility.length > 0 && (
+        <Section isExpanded={isExpanded}
+          theme={theme}
+                    icon={Footprints}
+          title={t("care.mobility.instructions")}
+        >
+          <Bullets>
+            {mobility.map((line, i) => (
+              <InstructionRow isExpanded={isExpanded} key={i} theme={theme} text={line} />
+            ))}
+          </Bullets>
+        </Section>
+      )}
+
+      {/* Isolation precautions. The badge above says a precaution is in force;
+          this says what to do about it, and the badge never stands in for it. */}
+      {alerts.isolation && isolationSteps.length > 0 && (
+        <Section isExpanded={isExpanded}
+          theme={theme}
+                    icon={Shield}
+          title={t("care.isolation")}
+        >
+          <Bullets>
+            {isolationSteps.map((line, i) => (
+              <InstructionRow isExpanded={isExpanded} key={i} theme={theme} text={line} tone="info" />
+            ))}
+          </Bullets>
+        </Section>
+      )}
+    </div>
+  );
+}
+
+/* ─── My Care Plan ───
+ * The step list, headed by the date the patient came in — the mirror of the
+ * discharge card, which is headed by the date they are expected to leave. */
+function CarePlanSlide({ theme, isExpanded = false }: { theme: any; isExpanded?: boolean }) {
+  const { t } = useLocale();
+  const nurseStore = useNurseStore();
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Admission date — the exact mirror of the discharge date on its own
+          card: a row with a rule under it, not a panel. */}
+      {nurseStore.patient.admissionDate && (
+        <div style={{ paddingBottom: "12px", borderBottom: `1px solid ${theme.borderSubtle}` }}>
+          <FieldRow
+            icon={CalendarDays}
+            theme={theme}
+            isExpanded={isExpanded}
+            label={t("care.admitted")}
+            value={<Ltr nowrap>{nurseStore.patient.admissionDate}</Ltr>}
+          />
+        </div>
+      )}
+
+      <TimelineSlide items={nurseStore.carePlan} theme={theme} isExpanded={isExpanded} type="care" />
     </div>
   );
 }
@@ -690,28 +1203,19 @@ function CareOverviewSlide({ theme, isExpanded = false }: { theme: any, isExpand
 function DischargeSlide({ theme, isExpanded = false }: { theme: any; isExpanded?: boolean }) {
   const { t } = useLocale();
   const nurseStore = useNurseStore();
-  const labelSize = isExpanded ? "16px" : "13px";
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Expected discharge date — moved off the patient profile */}
+      {/* Expected discharge date — moved off the patient profile. It heads the
+          step list rather than sitting in a panel of its own. */}
       {nurseStore.patient.dischargeDate && (
-        <div
-          className="flex items-center gap-3 px-4 py-3"
-          style={{ backgroundColor: theme.primarySubtle, border: theme.borderInset, borderRadius: theme.radiusLg }}
-        >
-          <div
-            className="flex items-center justify-center shrink-0"
-            style={{ width: "36px", height: "36px", borderRadius: theme.radiusMd, backgroundColor: theme.surface }}
-          >
-            <CalendarDays size={18} style={{ color: theme.primaryOn }} />
-          </div>
-          <div className="flex flex-col">
-            <span style={{ fontFamily: theme.fontFamily, fontSize: labelSize, color: theme.textMuted }}>{t("care.discharge")}</span>
-            <span style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "19px" : "16px", fontWeight: WEIGHT.bold, color: theme.textHeading }}>
-              {nurseStore.patient.dischargeDate}
-            </span>
-          </div>
+        <div style={{ paddingBottom: "12px", borderBottom: `1px solid ${theme.borderSubtle}` }}>
+          <FieldRow isExpanded={isExpanded}
+            icon={CalendarDays}
+            theme={theme}
+            label={t("care.discharge")}
+            value={<Ltr nowrap>{nurseStore.patient.dischargeDate}</Ltr>}
+                      />
         </div>
       )}
 
@@ -722,96 +1226,87 @@ function DischargeSlide({ theme, isExpanded = false }: { theme: any; isExpanded?
 
 /* ─── Discharge Plan Slide ───
  * What the patient goes home with: where to come back to, who to call, and
- * what to do. Each block is its own card rather than a run of label/value
- * rows — at the width of the inline carousel card a two-column row puts a
- * wrapped clinic name next to a phone number and both become unreadable.
- * Stacking label over value costs a line and buys legibility from a bed. */
+ * what to do. Label sits over value rather than beside it — at the width of
+ * the inline carousel card a two-column row puts a wrapped clinic name next
+ * to a phone number and both become unreadable. Stacking costs a line and
+ * buys legibility from a bed. */
 function DischargePlanSlide({ theme, isExpanded = false }: { theme: any; isExpanded?: boolean }) {
+  const R = roles(isExpanded);
   const { t } = useLocale();
   const nurseStore = useNurseStore();
   const info = nurseStore.dischargeInfo;
-
-  const titleSize = isExpanded ? "17px" : "14px";
-  const labelSize = isExpanded ? "15px" : "12.5px";
-  const valueSize = isExpanded ? "17px" : "15px";
-
-  const block = (icon: React.ComponentType<any>, label: string, children: React.ReactNode) => {
-    const Icon = icon;
-    return (
-      <SectionContainer theme={theme} isExpanded={isExpanded} padding={isExpanded ? "20px" : "14px"}>
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2.5 pb-2.5" style={{ borderBottom: `1px solid ${theme.borderSubtle}` }}>
-            <div
-              className="flex items-center justify-center shrink-0"
-              style={{
-                width: isExpanded ? "32px" : "28px",
-                height: isExpanded ? "32px" : "28px",
-                borderRadius: theme.radiusMd,
-                backgroundColor: theme.primarySubtle,
-              }}
-            >
-              <Icon size={isExpanded ? 16 : 14} style={{ color: theme.primaryOn }} strokeWidth={2.4} />
-            </div>
-            <span style={{ fontFamily: theme.fontFamily, fontSize: titleSize, fontWeight: WEIGHT.bold, color: theme.primaryOn, letterSpacing: "0.2px" }}>
-              {label}
-            </span>
-          </div>
-          {children}
-        </div>
-      </SectionContainer>
-    );
-  };
-
-  /* One fact per tile: the heading the patient scans for, the detail under it. */
-  const tile = (heading: string, detail: React.ReactNode) => (
+  
+  /* One fact per row: the label the patient scans for, the detail under it.
+     Spacing separates them, not a rule — the hairlines belong between the
+     sections, and a line under every pair turned three facts into a form. */
+  const row = (key: string, heading: string, detail: React.ReactNode, first: boolean) => (
     <div
-      className="flex flex-col gap-1 px-3 py-2.5"
-      style={{ backgroundColor: theme.surface, border: theme.borderInset, borderRadius: theme.radiusMd }}
+      key={key}
+      className="flex flex-col"
+      style={{ gap: "2px", marginTop: first ? 0 : (isExpanded ? "14px" : "12px") }}
     >
-      <span style={{ fontFamily: theme.fontFamily, fontSize: labelSize, color: theme.textMuted, fontWeight: WEIGHT.medium }}>
+      <span
+        dir="auto"
+        style={{ fontFamily: theme.fontFamily, ...R.label, color: theme.textMuted, overflowWrap: "anywhere" }}
+      >
         {heading}
       </span>
       {detail}
     </div>
   );
 
-  return (
-    <div className="flex flex-col gap-3">
-      {info.followUps.length > 0 && block(CalendarDays, t("care.discharge.followUps"), (
-        <div className="flex flex-col gap-2">
-          {info.followUps.map((f) => tile(f.label, (
-            <span style={{ fontFamily: theme.fontFamily, fontSize: valueSize, fontWeight: WEIGHT.bold, color: theme.textHeading }}>
-              {f.when}
-            </span>
-          )))}
-        </div>
-      ))}
+  const value = (text: React.ReactNode, ltr = false) => (
+    <span
+      style={{
+        fontFamily: theme.fontFamily, ...R.value, color: theme.textHeading,
+        overflowWrap: "anywhere",
+      }}
+    >
+      {ltr ? <Ltr>{text}</Ltr> : text}
+    </span>
+  );
 
-      {info.contacts.length > 0 && block(Phone, t("care.discharge.contacts"), (
-        <div className="flex flex-col gap-2">
-          {info.contacts.map((c) => tile(c.label, (
-            <span
-              className="inline-block"
-              style={{
-                fontFamily: theme.fontFamily, fontSize: valueSize, fontWeight: WEIGHT.bold,
-                color: theme.primaryOn, direction: "ltr", unicodeBidi: "isolate",
-              }}
-            >
-              {c.value}
-            </span>
-          )))}
-        </div>
-      ))}
-
-      {!!info.instructions.trim() && block(FileText, t("care.discharge.instructions"), (
-        <p style={{
-          fontFamily: theme.fontFamily,
-          fontSize: isExpanded ? "16px" : "14px",
-          color: theme.textBody,
-          lineHeight: LEADING.relaxed,
-        }}>
+  /* Built as a list so the hairline lands between whichever blocks the ward
+     actually filled in — any of the three can be absent. */
+  const blocks = [
+    info.followUps.length > 0 && {
+      key: "followUps", icon: CalendarDays, title: t("care.discharge.followUps"),
+      body: info.followUps.map((f, i) => row(`${f.label}-${i}`, f.label, value(f.when, true), i === 0)),
+    },
+    info.contacts.length > 0 && {
+      key: "contacts", icon: Phone, title: t("care.discharge.contacts"),
+      body: info.contacts.map((c, i) => row(`${c.label}-${i}`, c.label, value(c.value, true), i === 0)),
+    },
+    !!info.instructions.trim() && {
+      key: "instructions", icon: FileText, title: t("care.discharge.instructions"),
+      body: (
+        <p
+          style={{
+            fontFamily: theme.fontFamily,
+            ...R.body,
+            color: theme.textBody,
+            lineHeight: LEADING.relaxed,
+            overflowWrap: "anywhere",
+          }}
+        >
           {info.instructions}
         </p>
+      ),
+    },
+  ].filter(Boolean) as { key: string; icon: any; title: string; body: React.ReactNode }[];
+
+  return (
+    <div className="flex flex-col">
+      {blocks.map((b, i) => (
+        <Section isExpanded={isExpanded}
+          key={b.key}
+          theme={theme}
+                    first={i === 0}
+          icon={b.icon}
+          title={b.title}
+        >
+          {b.body}
+        </Section>
       ))}
     </div>
   );
@@ -845,12 +1340,11 @@ function TimelineSlide({
   isExpanded?: boolean;
   type?: "care" | "discharge";
 }) {
+  const R = roles(isExpanded);
   const { t, isRTL } = useLocale();
   const store = useNurseStore();
   const [showDemo, setShowDemo] = useState(false);
-  const labelSize = isExpanded ? "16px" : "13px";
-  const valueSize = isExpanded ? "16px" : "15.5px";
-
+  
   const sectionKey = type === "care" ? "carePlan" : "discharge";
   const hasHisData = store.isHisConnected ? !!store.hisSections?.[sectionKey] : true;
 
@@ -870,10 +1364,9 @@ function TimelineSlide({
 
   if (store.isHisConnected && !hasHisData && !showDemo) {
     return (
-      <HisEmptyStateSection
+      <HisEmptyStateSection isExpanded={isExpanded}
         theme={theme}
-        isExpanded={isExpanded}
-        onCheckDemo={() => setShowDemo(true)}
+                onCheckDemo={() => setShowDemo(true)}
       />
     );
   }
@@ -895,54 +1388,28 @@ function TimelineSlide({
 
   const dateLabel = prefix ? `${prefix} · ${dateFormatted}` : dateFormatted;
 
-  const items = rawItems.filter(item => {
-    if (type === "discharge") return true; // Show all discharge items regardless of date
-    if (mode === "overall") return item.day !== undefined;
-    return item.date === patientDate;
-  });
+  /* Every step, in order. The plan covers the whole stay, so slicing it by
+     day hid most of it behind a date picker the patient had to work. */
+  const items = rawItems;
 
+  /* No panel around the steps: the card already is the container, and a
+     second rounded surface inside it only repeated the same edge. The date
+     strip is separated from the list by a hairline instead. */
   return (
     <div className="flex flex-col gap-2">
       {store.isHisConnected && !hasHisData && showDemo && (
         <DemoBannerHeader theme={theme} onCloseDemo={() => setShowDemo(false)} />
       )}
-      <SectionContainer theme={theme} isExpanded={isExpanded} padding={isExpanded ? "24px" : "16px"}>
       <div className="flex flex-col gap-0">
-        {/* Date Selector OR Overall Title (Only for Care Plan) */}
-        {type === "care" && (
-          mode === "daily" ? (
-            <div className="flex items-center justify-center gap-4 mb-5 py-1" style={{ borderBottom: `1px solid ${theme.borderDefault}30` }}>
-              <button onClick={() => setPatientDate(toISO(shiftDay(selectedDate, -1)))} style={{ background: "none", border: "none", color: theme.textHeading, cursor: "pointer" }}>
-                <ChevronLeft size={18} style={{ transform: isRTL ? "scaleX(-1)" : "none" }} />
-              </button>
-              <span style={{ fontSize: "15px", fontWeight: 800, color: theme.textHeading, minWidth: "120px", textAlign: "center" }}>
-                {dateLabel}
-              </span>
-              <button onClick={() => setPatientDate(toISO(shiftDay(selectedDate, 1)))} style={{ background: "none", border: "none", color: theme.textHeading, cursor: "pointer" }}>
-                <ChevronRight size={18} style={{ transform: isRTL ? "scaleX(-1)" : "none" }} />
-              </button>
-            </div>
-          ) : (
-            <div className="mb-5 flex flex-col gap-1">
-              <span style={{ fontSize: "16px", fontWeight: 900, color: "#000" }}>{t("careplan.overallTitle")}</span>
-              <span style={{ fontSize: "13px", color: theme.textMuted, lineHeight: "1.4" }}>
-                {t("careplan.overallDesc")}
-              </span>
-            </div>
-          )
-        )}
-
         {/* Timeline Items */}
         {items.length === 0 ? (
           <div className="py-12 flex flex-col items-center text-center gap-3">
-             <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-300">
-                <ClipboardList size={32} />
-             </div>
+             <CardIcon icon={ClipboardList} theme={theme} circle size={64} glyph={28} />
              <div>
-                <h4 style={{ fontSize: "16px", fontWeight: 700, color: theme.textHeading }}>
+                <h4 style={{ fontFamily: theme.fontFamily, ...R.heading, color: theme.textHeading }}>
                   {type === "care" ? t("careplan.emptyHeader") : t("discharge.emptyHeader")}
                 </h4>
-                <p style={{ fontSize: "13px", color: theme.textMuted, maxWidth: "240px", margin: "8px auto 0", lineHeight: "1.5" }}>
+                <p style={{ fontFamily: theme.fontFamily, ...R.label, color: theme.textMuted, maxWidth: "240px", margin: "8px auto 0" }}>
                   {type === "care" ? t("careplan.emptyDesc") : t("discharge.emptyDesc")}
                 </p>
              </div>
@@ -951,7 +1418,11 @@ function TimelineSlide({
           const hasConnector = i < items.length - 1;
           const hasPrev = i > 0;
           return (
-            <div key={step.id || step.labelKey || i} className="flex items-center gap-3 relative">
+            <div
+              key={step.id || step.labelKey || i}
+              className="flex items-center gap-3 relative"
+              style={{ minHeight: isExpanded ? "58px" : "50px" }}
+            >
               {/* Top half connector */}
               {hasPrev && (
                 <div
@@ -981,13 +1452,15 @@ function TimelineSlide({
               {/* Timeline icon */}
               <div
                 className="shrink-0 flex items-center justify-center relative z-[1]"
+                /* Opaque so it masks the connector where the line crosses it —
+                   the card body and the engagement surface are both `surface`. */
                 style={{ width: "24px", height: "24px", backgroundColor: theme.surface, borderRadius: theme.radiusFull }}
               >
                 {step.done ? (
-                  <CheckCircle2 size={isExpanded ? 22 : 18} style={{ color: theme.successOn }} />
+                  <CheckCircle2 size={18} style={{ color: theme.successOn }} />
                 ) : step.active ? (
                   <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: theme.primary }}>
-                    <div className="w-2 h-2 rounded-full bg-white" />
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: theme.brandOnPrimary }} />
                   </div>
                 ) : (
                   <div className="w-5 h-5 rounded-full" style={{ border: `2px solid ${theme.borderDefault}`, backgroundColor: theme.surface }} />
@@ -995,26 +1468,30 @@ function TimelineSlide({
               </div>
               {/* Content row */}
               <div
-                className="flex-1 flex items-center justify-between px-3"
+                className="flex-1 flex items-center justify-between gap-2 min-w-0"
                 style={{
-                  borderRadius: step.active ? "24px" : theme.radiusLg,
-                  backgroundColor: step.active ? `${theme.primary}12` : "transparent",
-                  border: step.active ? `1px solid ${theme.borderCardColor}` : "1px solid transparent",
-                  paddingTop: isExpanded ? "20px" : (step.active ? "16px" : "14px"),
-                  paddingBottom: isExpanded ? "20px" : (step.active ? "16px" : "14px"),
-                  paddingLeft: "20px",
-                  paddingRight: "20px",
+                  /* The step in progress reads as a block, not a pill: squarer
+                     corners and more room than the steps around it. */
+                  borderRadius: theme.radiusMd,
+                  backgroundColor: step.active ? theme.primarySubtle : "transparent",
+                  border: `1px solid ${step.active ? theme.borderCardColor : "transparent"}`,
+                  paddingTop: step.active ? (isExpanded ? "18px" : "15px") : (isExpanded ? "12px" : "10px"),
+                  paddingBottom: step.active ? (isExpanded ? "18px" : "15px") : (isExpanded ? "12px" : "10px"),
+                  paddingLeft: isExpanded ? "16px" : "14px",
+                  paddingRight: isExpanded ? "16px" : "14px",
                   transition: "all 0.3s ease",
-                  boxShadow: step.active ? "0 4px 12px rgba(0,0,0,0.03)" : "none"
+                  boxShadow: step.active ? SHADOW.sm : "none"
                 }}
               >
-                <span style={{
-                  fontFamily: theme.fontFamily,
-                  fontSize: valueSize,
-                  fontWeight: step.active ? WEIGHT.semibold : WEIGHT.normal,
-                  color: step.active ? theme.primaryOn : theme.textHeading,
-                  textDecoration: "none",
-                }}>
+                <span
+                  className="min-w-0"
+                  style={{
+                    fontFamily: theme.fontFamily,
+                    ...(step.active ? R.value : R.body),
+                    color: step.active ? theme.primaryOn : theme.textHeading,
+                    overflowWrap: "anywhere",
+                  }}
+                >
                   {isRTL && step.labelAr ? step.labelAr : (step.label || (step.labelKey ? t(step.labelKey) : ""))}
                 </span>
                 {/* Status and duration were dropped from both plans: the
@@ -1022,31 +1499,31 @@ function TimelineSlide({
                     "45 min" on a ward step reads as a promise nobody made.
                     The day label survives — it groups, it does not estimate. */}
                 {type === "care" && mode === "overall" && (
-                  <span
-                    className="flex items-center gap-1 shrink-0 ml-2"
-                    style={{
-                      borderRadius: "12px",
-                      fontSize: labelSize,
-                      fontWeight: 700,
-                      color: step.active ? theme.primaryOn : theme.textMuted,
-                      backgroundColor: step.active ? `${theme.primary}18` : "transparent",
-                      padding: "6px 12px",
-                    }}
-                  >
-                    {`${t("careplan.dayLabel")} ${step.day || 1}`}
-                  </span>
+                  step.active ? (
+                    <CardBadge isExpanded={isExpanded} theme={theme}>{`${t("careplan.dayLabel")} ${step.day || 1}`}</CardBadge>
+                  ) : (
+                    <span
+                      className="shrink-0"
+                      style={{
+                        fontFamily: theme.fontFamily, ...R.label,
+                        color: theme.textMuted, padding: "3px 10px",
+                      }}
+                    >
+                      {`${t("careplan.dayLabel")} ${step.day || 1}`}
+                    </span>
+                  )
                 )}
               </div>
             </div>
           );
         })}
       </div>
-    </SectionContainer>
     </div>
   );
 }
 
 function DietSlide({ theme }: { theme: any }) {
+  const R = roles(true);
   const nurseStore = useNurseStore();
   const dietLabel = DIET_DISPLAY_LABELS[nurseStore.patientDiet] || nurseStore.patientDiet;
   const isNpo = nurseStore.patientDiet === "npo";
@@ -1062,13 +1539,14 @@ function DietSlide({ theme }: { theme: any }) {
         >
           <Utensils size={18} style={{ color: isNpo ? "#EF4444" : theme.primaryOn }} />
         </div>
-        <span style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.subtitle, color: isNpo ? "#EF4444" : theme.textHeading, fontSize: "16px", fontWeight: WEIGHT.bold }}>{dietLabel}</span>
+        <span style={{ fontFamily: theme.fontFamily, ...R.heading, color: isNpo ? "#EF4444" : theme.textHeading, fontSize: "16px", fontWeight: WEIGHT.bold }}>{dietLabel}</span>
       </div>
     </div>
   );
 }
 
 function AllergySlide() {
+  const R = roles(true);
   const { theme } = useTheme();
   const { t } = useLocale();
   return (
@@ -1082,7 +1560,7 @@ function AllergySlide() {
           <div className="w-9 h-9 flex items-center justify-center shrink-0" style={{ backgroundColor: theme.errorSubtle, borderRadius: theme.radiusMd }}>
             <AlertTriangle size={18} style={{ color: theme.errorOn }} />
           </div>
-          <span style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.body, color: theme.errorOn }}>{t(a.nameKey)}</span>
+          <span style={{ fontFamily: theme.fontFamily, ...R.body, color: theme.errorOn }}>{t(a.nameKey)}</span>
         </div>
       ))}
     </div>
@@ -1098,30 +1576,55 @@ function AllergySlide() {
  * The unlock lasts as long as the slide is mounted — leaving CareMe re-locks
  * it, which is the point: the next person to touch the screen is often not
  * the patient. */
-/* One event per section, so unlocking results does not also reveal scans:
-   they are separate sections holding separate findings. */
+/* Labs, scans and procedures now sit on one card and unlock together — the
+   gate protects the card, and splitting it would ask the patient for the same
+   PIN three times to read one page. */
 const RESULTS_UNLOCK_EVENT = "careinn-results-unlocked";
+const RESULTS_LOCK_EVENT = "careinn-results-locked";
 
-/** Both the inline card and the expanded view render these slides, so the
- *  unlock is broadcast rather than held in one of them. It lasts only as long
- *  as the slide is mounted: leaving CareMe re-locks it. */
-function useResultsUnlock(section: "labs" | "imaging") {
+/** How long the card stays open after the patient closes a report.
+ *
+ *  The bed is in a room that visitors, cleaners and porters walk through, and
+ *  a patient who has just put a result down is the most likely moment for the
+ *  screen to be left unattended. One minute is long enough to open a second
+ *  report without re-entering the PIN, and short enough that walking away
+ *  closes the door behind them. */
+const RESULTS_RELOCK_MS = 60_000;
+
+/** Both the inline card and the expanded view render these slides, so lock and
+ *  unlock are broadcast rather than held in one of them — otherwise the two
+ *  copies of the card would disagree about whether results are visible. */
+function useResultsUnlock(section: "tests") {
   const [unlocked, setUnlocked] = useState(false);
   useEffect(() => {
     const open = (e: Event) => {
       if ((e as CustomEvent).detail === section) setUnlocked(true);
     };
+    const close = (e: Event) => {
+      if ((e as CustomEvent).detail === section) setUnlocked(false);
+    };
     window.addEventListener(RESULTS_UNLOCK_EVENT, open);
-    return () => window.removeEventListener(RESULTS_UNLOCK_EVENT, open);
+    window.addEventListener(RESULTS_LOCK_EVENT, close);
+    return () => {
+      window.removeEventListener(RESULTS_UNLOCK_EVENT, open);
+      window.removeEventListener(RESULTS_LOCK_EVENT, close);
+    };
   }, [section]);
-  const unlock = () =>
-    window.dispatchEvent(new CustomEvent(RESULTS_UNLOCK_EVENT, { detail: section }));
-  return { unlocked, unlock };
+  const unlock = useCallback(
+    () => window.dispatchEvent(new CustomEvent(RESULTS_UNLOCK_EVENT, { detail: section })),
+    [section],
+  );
+  const lock = useCallback(
+    () => window.dispatchEvent(new CustomEvent(RESULTS_LOCK_EVENT, { detail: section })),
+    [section],
+  );
+  return { unlocked, unlock, lock };
 }
 
-function ResultsPinGate({ theme, isExpanded, titleKey, onUnlock }: {
-  theme: any; isExpanded: boolean; titleKey: string; onUnlock: () => void;
+function ResultsPinGate({ theme, isExpanded = false, titleKey, onUnlock }: {
+  theme: any; isExpanded?: boolean; titleKey: string; onUnlock: () => void;
 }) {
+  const R = roles(isExpanded);
   const { t, fontFamily } = useLocale();
   const [dialog, setDialog] = useState<"verify" | "create" | null>(null);
   const [newPin, setNewPin] = useState("");
@@ -1151,40 +1654,41 @@ function ResultsPinGate({ theme, isExpanded, titleKey, onUnlock }: {
 
   return (
     <>
+      {/* No panel: this state fills the card, so a second rounded surface
+          inside it only drew the same edge twice. */}
       <button
         onClick={open}
-        className="flex flex-col items-center justify-center gap-3 w-full cursor-pointer active:scale-[0.99] transition-transform"
+        className="flex flex-col items-center justify-center gap-3 w-full h-full cursor-pointer active:scale-[0.99] transition-transform"
         style={{
-          backgroundColor: theme.surfaceInset,
-          borderRadius: theme.radiusLg,
-          border: theme.borderInset,
-          padding: isExpanded ? "40px 24px" : "28px 20px",
+          background: "none", border: "none",
+          padding: isExpanded ? "48px 24px" : "32px 12px",
           outline: "none",
         }}
       >
         <div
           className="flex items-center justify-center"
           style={{
-            width: isExpanded ? "56px" : "48px",
-            height: isExpanded ? "56px" : "48px",
+            width: isExpanded ? "72px" : "56px",
+            height: isExpanded ? "72px" : "56px",
             borderRadius: theme.radiusLg,
             backgroundColor: theme.primarySubtle,
           }}
         >
-          <Lock size={isExpanded ? 26 : 22} style={{ color: theme.primaryOn }} />
+          <Lock size={isExpanded ? 32 : 26} style={{ color: theme.primaryOn }} />
         </div>
-        <span style={{ fontFamily, ...(isExpanded ? TEXT_STYLE.cardTitle : TEXT_STYLE.subtitle), color: theme.textHeading, textAlign: "center" }}>
+        <span style={{ fontFamily, ...R.title, color: theme.textHeading, textAlign: "center" }}>
           {t(titleKey)}
         </span>
-        <p style={{ fontFamily, ...(isExpanded ? TEXT_STYLE.body : TEXT_STYLE.caption), color: theme.textMuted, textAlign: "center", maxWidth: "340px" }}>
+        <p style={{ fontFamily, ...R.body, color: theme.textMuted, textAlign: "center", maxWidth: "340px" }}>
           {isAccountSet() ? t("care.labs.locked.desc") : t("care.labs.locked.noPin")}
         </p>
         <span
-          className="px-5 py-2"
+          className="inline-flex items-center justify-center"
           style={{
-            fontFamily, ...TEXT_STYLE.label,
-            borderRadius: theme.radiusFull,
-            backgroundColor: theme.primary,
+            ...ctaStyle(theme, isExpanded),
+            marginTop: "4px",
+            fontFamily, ...roles(isExpanded).value,
+            lineHeight: LEADING.none,
             color: theme.brandOnPrimary,
           }}
         >
@@ -1210,7 +1714,7 @@ function ResultsPinGate({ theme, isExpanded, titleKey, onUnlock }: {
             <div className="flex items-center justify-center" style={{ width: "48px", height: "48px", borderRadius: theme.radiusLg, backgroundColor: theme.primarySubtle }}>
               <Lock size={22} style={{ color: theme.primaryOn }} />
             </div>
-            <span style={{ fontFamily, ...TEXT_STYLE.cardTitle, color: theme.textHeading, textAlign: "center" }}>
+            <span style={{ fontFamily, ...R.title, color: theme.textHeading, textAlign: "center" }}>
               {stage === "first" ? t("care.labs.pin.create") : t("care.labs.pin.confirm")}
             </span>
             <PinKeypad
@@ -1222,7 +1726,7 @@ function ResultsPinGate({ theme, isExpanded, titleKey, onUnlock }: {
             <button
               onClick={() => { setDialog(null); setStage("first"); setNewPin(""); setConfirmPin(""); }}
               className="cursor-pointer"
-              style={{ fontFamily, ...TEXT_STYLE.label, color: theme.textMuted, background: "none", border: "none" }}
+              style={{ fontFamily, ...R.heading, color: theme.textMuted, background: "none", border: "none" }}
             >
               {t("general.cancel")}
             </button>
@@ -1234,24 +1738,83 @@ function ResultsPinGate({ theme, isExpanded, titleKey, onUnlock }: {
   );
 }
 
-function LabResultsSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: boolean }) {
+/** Nothing to show in a results list — the same shape the care plan uses when
+ *  it is empty, so every card fails the same way. */
+function EmptyResults({ icon, theme, label, isExpanded = false }: {
+  icon: React.ComponentType<any>; theme: any; label: string; isExpanded?: boolean;
+}) {
+  const { t } = useLocale();
+  return (
+    <CardEmptyState
+      theme={theme}
+      isExpanded={isExpanded}
+      icon={icon}
+      title={label}
+      description={t("care.his.noInfoSub")}
+    />
+  );
+}
+
+
+/** One line on the Tests & Procedures card, whatever produced it. */
+interface TestEntry {
+  id: string;
+  /** Already translated, or ward-entered free text — rendered with dir="auto". */
+  label: string;
+  date: string;
+  /** Empty until the report is back. */
+  pdfUrl?: string;
+}
+
+/* ─── Tests & Procedures ───────────────────────────────────────────────────
+ * Laboratory tests, imaging studies and procedures on one card, because from
+ * the bed they are one question: has my result come back yet? Every entry
+ * answers that — a report to open, or "Processing…" with the date it was
+ * taken — and a group only appears when it holds something the ward has made
+ * visible. Labs and imaging keep their own nurse-side visibility switches;
+ * the card shows whichever of them is on.
+ */
+function TestsAndProceduresSlide({ theme, isExpanded = false }: { theme: any; isExpanded?: boolean }) {
+  const R = roles(isExpanded);
   const { t } = useLocale();
   const nurseStore = useNurseStore();
   const [pdfModal, setPdfModal] = useState<{ url: string; title: string } | null>(null);
   const [showDemo, setShowDemo] = useState(false);
-  const { unlocked, unlock } = useResultsUnlock("labs");
+  const { unlocked, unlock, lock } = useResultsUnlock("tests");
 
-  const valueSize = isExpanded ? "16px" : "15.5px";
-  const labelSize = isExpanded ? "16px" : "13.5px";
+  /* Closing a report starts the clock; opening another one stops it, so a
+     patient reading three results in a row is not asked for the PIN between
+     them. Unmounting clears it — leaving CareMe re-locks the card anyway. */
+  const relockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelRelock = useCallback(() => {
+    if (relockTimer.current) {
+      clearTimeout(relockTimer.current);
+      relockTimer.current = null;
+    }
+  }, []);
+  useEffect(() => cancelRelock, [cancelRelock]);
 
-  const hasHisData = nurseStore.isHisConnected ? !!nurseStore.hisSections?.labs : true;
+  const openReport = useCallback((url: string, title: string) => {
+    cancelRelock();
+    setPdfModal({ url, title });
+  }, [cancelRelock]);
+
+  const closeReport = useCallback(() => {
+    setPdfModal(null);
+    cancelRelock();
+    relockTimer.current = setTimeout(lock, RESULTS_RELOCK_MS);
+  }, [cancelRelock, lock]);
+
+  
+  const hisLabs = nurseStore.isHisConnected ? !!nurseStore.hisSections?.labs : true;
+  const hisImaging = nurseStore.isHisConnected ? !!nurseStore.hisSections?.imaging : true;
+  const hasHisData = hisLabs || hisImaging;
 
   if (!unlocked) {
     return (
-      <ResultsPinGate
+      <ResultsPinGate isExpanded={isExpanded}
         theme={theme}
-        isExpanded={isExpanded}
-        titleKey="care.labs.locked.title"
+                titleKey="care.tests.locked.title"
         onUnlock={unlock}
       />
     );
@@ -1259,101 +1822,127 @@ function LabResultsSlide({ theme, isExpanded = false }: { theme: any, isExpanded
 
   if (nurseStore.isHisConnected && !hasHisData && !showDemo) {
     return (
-      <HisEmptyStateSection
+      <HisEmptyStateSection isExpanded={isExpanded}
         theme={theme}
-        isExpanded={isExpanded}
-        onCheckDemo={() => setShowDemo(true)}
+                onCheckDemo={() => setShowDemo(true)}
       />
     );
   }
 
-  const getStatusColor = (status?: string) => {
-    if (status === "low" || status === "high") return theme.error;
-    if (status === "normal") return theme.success;
-    return theme.primary;
-  };
+  const labs: TestEntry[] = nurseStore.sectionVisibility.labs === false ? [] :
+    nurseStore.labResults.filter(l => l.visible).map(l => ({
+      id: l.id, label: t(l.labelKey), date: l.date, pdfUrl: l.pdfUrl,
+    }));
 
-  const getStatusBg = (status?: string) => {
-    if (status === "low" || status === "high") return theme.errorSubtle;
-    if (status === "normal") return theme.successSubtle;
-    return theme.primarySubtle;
-  };
+  const imaging: TestEntry[] = nurseStore.sectionVisibility.imaging === false ? [] :
+    nurseStore.imagingResults.filter(i => i.visible).map(i => ({
+      id: i.id, label: t(i.labelKey), date: i.date, pdfUrl: i.pdfUrl,
+    }));
 
-  const visibleResults = nurseStore.labResults.filter(l => l.visible);
+  const procedures: TestEntry[] = (nurseStore.procedures || [])
+    .filter(pr => pr.visible)
+    .map(pr => ({ id: pr.id, label: pr.label, date: pr.date, pdfUrl: pr.pdfUrl }));
+
+  const groups = [
+    { key: "labs", icon: FlaskConical, title: t("care.labs.title"), items: labs },
+    { key: "imaging", icon: ImageIcon, title: t("care.imaging.title"), items: imaging },
+    { key: "procedures", icon: ClipboardCheck, title: t("care.tests.procedures"), items: procedures },
+  ].filter(g => g.items.length > 0);
+
+  /* A row, not a card. The group panel already holds these together, and a
+     second surface per result was a box inside a box. The reading itself is
+     gone too: a number without its reference range is not something to hand a
+     patient unexplained — the report behind the button carries both. */
+  const entry = (e: TestEntry, first: boolean) => {
+    const ready = !!e.pdfUrl?.trim();
+    return (
+      <div
+        key={e.id}
+        {...(ready ? {
+          onClick: () => openReport(`${e.pdfUrl}?h=${theme.id}`, e.label),
+          "data-nav": "true",
+        } : {})}
+        className={`flex items-center justify-between gap-3 ${ready ? "cursor-pointer" : ""}`}
+        style={{
+          paddingTop: first ? 0 : (isExpanded ? "14px" : "12px"),
+          marginTop: first ? 0 : (isExpanded ? "14px" : "12px"),
+          borderTop: first ? undefined : `1px solid ${theme.borderSubtle}`,
+        }}
+      >
+        <div className="flex flex-col min-w-0">
+          <span
+            dir="auto"
+            style={{
+              fontFamily: theme.fontFamily, ...R.value,
+              color: theme.textHeading, overflowWrap: "anywhere",
+            }}
+          >
+            {e.label}
+          </span>
+          <span style={{ fontFamily: theme.fontFamily, ...R.label, color: theme.textMuted, marginTop: "2px" }}>
+            <Ltr>{e.date}</Ltr>
+          </span>
+        </div>
+
+        {/* Waiting on a report is the state the patient checks for, so it is
+            named rather than left as an absent button. */}
+        {ready ? (
+          <span
+            className="shrink-0 inline-flex items-center justify-center pointer-events-none"
+            style={{
+              padding: isExpanded ? "8px 18px" : "7px 16px",
+              borderRadius: theme.radiusSm,
+              backgroundColor: theme.primarySubtle,
+              border: `1px solid ${withAlpha(theme.primaryOn, 0.2)}`,
+              fontFamily: theme.fontFamily, ...R.value, color: theme.primaryOn,
+            }}
+          >
+            {t("care.tests.view")}
+          </span>
+        ) : (
+          <CardBadge theme={theme} isExpanded={isExpanded} tone="warning">
+            <Clock size={isExpanded ? 14 : 13} />
+            {t("care.imaging.pending")}
+          </CardBadge>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
-      <div className="flex flex-col gap-4">
-        {nurseStore.isHisConnected && !hasHisData && showDemo && (
-          <DemoBannerHeader theme={theme} onCloseDemo={() => setShowDemo(false)} />
-        )}
-        {visibleResults.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 opacity-40">
-            <FlaskConical size={40} />
-            <p className="mt-2 text-sm">No visible lab results</p>
-          </div>
-        ) : visibleResults.map((lab, i) => (
-          <SectionContainer key={lab.id || i} theme={theme} isExpanded={isExpanded}>
-            <div
-              className="flex flex-col gap-2 cursor-pointer"
-              onClick={() => setPdfModal({ url: `${lab.pdfUrl}?h=${theme.id}`, title: t(lab.labelKey) })}
-              data-nav="true"
+      {nurseStore.isHisConnected && !hasHisData && showDemo && (
+        <DemoBannerHeader theme={theme} onCloseDemo={() => setShowDemo(false)} />
+      )}
+      {groups.length === 0 ? (
+        <EmptyResults isExpanded={isExpanded} icon={ClipboardCheck} theme={theme} label={t("care.tests.title")} />
+      ) : (
+        <div className="flex flex-col">
+          {groups.map((g, i) => (
+            <Section isExpanded={isExpanded}
+              key={g.key}
+              theme={theme}
+                            first={i === 0}
+              icon={g.icon}
+              title={g.title}
             >
-              <div className="flex items-center justify-between pointer-events-none">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex items-center justify-center shrink-0"
-                    style={{
-                      backgroundColor: theme.primarySubtle,
-                      width: isExpanded ? "40px" : "36px",
-                      height: isExpanded ? "40px" : "36px",
-                      borderRadius: theme.radiusFull
-                    }}
-                  >
-                    <FlaskConical size={isExpanded ? 18 : 16} style={{ color: theme.primaryOn }} />
-                  </div>
-                  <div>
-                    <span style={{
-                      fontFamily: theme.fontFamily,
-                      fontSize: valueSize,
-                      fontWeight: WEIGHT.bold,
-                      color: theme.textHeading
-                    }}>{t(lab.labelKey)}</span>
-                    <div className="flex items-center gap-1.5 mt-[2px]">
-                      <span style={{ fontFamily: theme.fontFamily, fontSize: labelSize, fontWeight: 700, color: getStatusColor(lab.status) }}>
-                        {lab.value}
-                      </span>
-                      <span style={{ fontSize: "10px", color: theme.textDisabled }}>•</span>
-                      <span style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "14px" : "12px", fontWeight: 500, color: theme.textMuted }}>{lab.date}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="px-2 py-0.5 rounded-md shrink-0" style={{ backgroundColor: getStatusBg(lab.status) }}>
-                  <span style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "14px" : "12px", fontWeight: 800, color: getStatusColor(lab.status), letterSpacing: "0.5px" }}>
-                    {lab.status?.toUpperCase()}
-                  </span>
-                </div>
+              <div className="flex flex-col">
+                {g.items.map((e, n) => entry(e, n === 0))}
               </div>
-
-              <div
-                className="mt-2.5 flex items-center justify-center gap-2 self-start px-4 py-2 pointer-events-none border transition-transform"
-                style={{ borderRadius: theme.radiusLg, backgroundColor: theme.surface, borderColor: `${theme.primary}40` }}
-              >
-                <FileText size={isExpanded ? 16 : 14} style={{ color: theme.primaryOn }} />
-                <span style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "15.5px" : "13px", fontWeight: WEIGHT.bold, color: theme.primaryOn }}>{t("care.imaging.viewReport")}</span>
-              </div>
-            </div>
-          </SectionContainer>
-        ))}
-      </div>
-      {pdfModal && <PdfViewerModal url={pdfModal.url} title={pdfModal.title} onClose={() => setPdfModal(null)} />}
+            </Section>
+          ))}
+        </div>
+      )}
+      {pdfModal && <PdfViewerModal url={pdfModal.url} title={pdfModal.title} onClose={closeReport} />}
     </>
   );
 }
 
 /* ─── In-App PDF Viewer Modal ─── */
 function PdfViewerModal({ url, title, onClose }: { url: string; title: string; onClose: () => void }) {
+  const R = roles(true);
   const { theme } = useTheme();
+  const { t } = useLocale();
   return createPortal(
     <div
       className="fixed inset-0 z-[200] flex flex-col"
@@ -1366,8 +1955,8 @@ function PdfViewerModal({ url, title, onClose }: { url: string; title: string; o
             <FileText size={18} style={{ color: theme.primaryOn }} />
           </div>
           <div>
-            <p style={{ fontFamily: theme.fontFamily, fontSize: "15px", fontWeight: WEIGHT.bold, color: theme.textHeading }}>{title}</p>
-            <p style={{ fontFamily: theme.fontFamily, fontSize: "12px", color: theme.textMuted }}>Detailed Medical Report</p>
+            <p dir="auto" style={{ fontFamily: theme.fontFamily, ...R.value, color: theme.textHeading }}>{title}</p>
+            <p style={{ fontFamily: theme.fontFamily, ...R.label, color: theme.textMuted }}>{t("care.imaging.viewReport")}</p>
           </div>
         </div>
         <button
@@ -1393,104 +1982,6 @@ function PdfViewerModal({ url, title, onClose }: { url: string; title: string; o
   );
 }
 
-function ImagingSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: boolean }) {
-  const { t } = useLocale();
-  const nurseStore = useNurseStore();
-  const [pdfModal, setPdfModal] = useState<{ url: string; title: string } | null>(null);
-  const [showDemo, setShowDemo] = useState(false);
-  const { unlocked, unlock } = useResultsUnlock("imaging");
-
-  const valueSize = isExpanded ? "16px" : "15.5px";
-  const labelSize = isExpanded ? "16px" : "13.5px";
-
-  const hasHisData = nurseStore.isHisConnected ? !!nurseStore.hisSections?.imaging : true;
-
-  if (!unlocked) {
-    return (
-      <ResultsPinGate
-        theme={theme}
-        isExpanded={isExpanded}
-        titleKey="care.imaging.locked.title"
-        onUnlock={unlock}
-      />
-    );
-  }
-
-  if (nurseStore.isHisConnected && !hasHisData && !showDemo) {
-    return (
-      <HisEmptyStateSection
-        theme={theme}
-        isExpanded={isExpanded}
-        onCheckDemo={() => setShowDemo(true)}
-      />
-    );
-  }
-
-  const visibleResults = nurseStore.imagingResults.filter(i => i.visible);
-
-  return (
-    <>
-      <div className="flex flex-col gap-4">
-        {nurseStore.isHisConnected && !hasHisData && showDemo && (
-          <DemoBannerHeader theme={theme} onCloseDemo={() => setShowDemo(false)} />
-        )}
-        {visibleResults.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 opacity-40">
-            <ImageIcon size={40} />
-            <p className="mt-2 text-sm">No visible imaging results</p>
-          </div>
-        ) : visibleResults.map((img, i) => (
-          <SectionContainer key={img.id || i} theme={theme} isExpanded={isExpanded}>
-            <div
-              className="flex flex-col gap-2 cursor-pointer"
-              onClick={() => setPdfModal({ url: `${img.pdfUrl}?h=${theme.id}`, title: t(img.labelKey) })}
-              data-nav="true"
-            >
-              <div className="flex items-center justify-between pointer-events-none">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex items-center justify-center shrink-0"
-                    style={{
-                      backgroundColor: theme.primarySubtle,
-                      width: isExpanded ? "40px" : "36px",
-                      height: isExpanded ? "40px" : "36px",
-                      borderRadius: theme.radiusFull
-                    }}
-                  >
-                    <ImageIcon size={isExpanded ? 18 : 16} style={{ color: theme.primaryOn }} />
-                  </div>
-                  <span style={{
-                    fontFamily: theme.fontFamily,
-                    fontSize: valueSize,
-                    fontWeight: WEIGHT.bold,
-                    color: theme.textHeading
-                  }}>{t(img.labelKey)}</span>
-                </div>
-                <span style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "14px" : "12px", color: theme.textMuted }}>{img.date}</span>
-              </div>
-              <p style={{
-                fontFamily: theme.fontFamily,
-                fontSize: labelSize,
-                color: theme.textHeading,
-                paddingLeft: isExpanded ? 52 : 44,
-                lineHeight: "1.4"
-              }}>{t(img.summaryKey)}</p>
-              <div
-                className="mt-2.5 flex items-center justify-center gap-2 self-start px-4 py-2 pointer-events-none border transition-transform"
-                style={{ borderRadius: theme.radiusLg, backgroundColor: theme.surface, borderColor: `${theme.primary}40` }}
-              >
-                <FileText size={isExpanded ? 16 : 14} style={{ color: theme.primaryOn }} />
-                <span style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "15.5px" : "13px", fontWeight: WEIGHT.bold, color: theme.primaryOn }}>{t("care.imaging.viewReport")}</span>
-              </div>
-            </div>
-          </SectionContainer>
-        ))}
-      </div>
-      {pdfModal && <PdfViewerModal url={pdfModal.url} title={pdfModal.title} onClose={() => setPdfModal(null)} />}
-    </>
-  );
-}
-
 /** A recorded observation, read back for display. `resp` and the timestamp
  *  shape both vary with how old the cached record is, so read them defensively. */
 function observationTime(raw: any): Date | null {
@@ -1498,7 +1989,8 @@ function observationTime(raw: any): Date | null {
   return d && !isNaN(d.getTime()) ? d : null;
 }
 
-function ClinicalObservationsSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: boolean }) {
+function ClinicalObservationsSlide({ theme, isExpanded = false }: { theme: any; isExpanded?: boolean }) {
+  const R = roles(isExpanded);
   const { t, isRTL } = useLocale();
   const nurseStore = useNurseStore();
   const [showDemo, setShowDemo] = useState(false);
@@ -1508,142 +2000,164 @@ function ClinicalObservationsSlide({ theme, isExpanded = false }: { theme: any, 
 
   if (nurseStore.isHisConnected && !hasHisData && !showDemo) {
     return (
-      <HisEmptyStateSection
+      <HisEmptyStateSection isExpanded={isExpanded}
         theme={theme}
-        isExpanded={isExpanded}
-        onCheckDemo={() => setShowDemo(true)}
+                onCheckDemo={() => setShowDemo(true)}
       />
     );
   }
 
   if (obs.length === 0) {
     return (
-      <SectionContainer theme={theme} isExpanded={isExpanded}>
-        <div className="flex flex-col items-center justify-center py-10 opacity-40">
-          <Activity size={40} />
-          <p className="mt-2 text-sm">{t("care.observations.empty")}</p>
-        </div>
-      </SectionContainer>
+      <CardEmptyState
+        theme={theme}
+        isExpanded={isExpanded}
+        icon={Activity}
+        title={t("care.observations.title")}
+        description={t("care.observations.empty")}
+      />
     );
   }
 
-  const latest = obs[0];
-  const earlier = obs.slice(1);
-  const stamp = observationTime(latest.timestamp);
 
   /* One reading per tile. The icon carries the meaning at a glance — a patient
      in a bed reads the picture before the word — so each gets its own glyph
      rather than six variations on a wave. */
-  const readings = [
-    { icon: Gauge,      label: t("care.vitals.bp"),   value: latest.vitals.bp,   unit: t("care.vitals.bpUnit") },
-    { icon: HeartPulse, label: t("care.vitals.hr"),   value: latest.vitals.hr,   unit: t("care.vitals.hrUnit") },
-    { icon: Thermometer,label: t("care.vitals.temp"), value: latest.vitals.temp, unit: "°C" },
-    { icon: Droplet,    label: t("care.vitals.spo2"), value: latest.vitals.spo2, unit: "%" },
-    { icon: Wind,       label: t("care.vitals.resp"), value: latest.vitals.resp, unit: t("care.vitals.respUnit") },
-    { icon: Frown,      label: t("care.vitals.pain"), value: latest.painLevel ?? "", unit: "/ 10" },
+  const readingsFor = (o: any) => [
+    { icon: Gauge,      label: t("care.vitals.bp"),   value: o.vitals.bp,   unit: t("care.vitals.bpUnit") },
+    { icon: HeartPulse, label: t("care.vitals.hr"),   value: o.vitals.hr,   unit: t("care.vitals.hrUnit") },
+    { icon: Thermometer,label: t("care.vitals.temp"), value: o.vitals.temp, unit: "°C" },
+    { icon: Droplet,    label: t("care.vitals.spo2"), value: o.vitals.spo2, unit: "%" },
+    { icon: Wind,       label: t("care.vitals.resp"), value: o.vitals.resp, unit: t("care.vitals.respUnit") },
+    { icon: Frown,      label: t("care.vitals.pain"), value: o.painLevel ?? "", unit: "/ 10" },
   ];
 
-  const titleSize = isExpanded ? "19px" : "15px";
-  const stampSize = isExpanded ? "15px" : "13px";
-  const labelSize = isExpanded ? "13px" : "11.5px";
-  const valueSize = isExpanded ? "30px" : "24px";
-  const unitSize  = isExpanded ? "13px" : "11px";
+  /* Every set of readings is drawn the same way, latest or not — a round of
+     observations is a round of observations, and reading the earlier ones as
+     a run of squashed one-liners made them look like a different kind of
+     record. Dividers separate one round from the next. */
+  /* Every round is drawn the same way: its name on the reading edge, its date
+     and time stacked opposite. Blocks are separated by a rule, not a panel —
+     the six tiles are already containers, and boxing them again was a box in
+     a box. */
+  const readingsBlock = (o: any, label: string) => {
+    const d = observationTime(o.timestamp);
+    return (
+      <>
+        <div
+          className="flex items-start justify-between gap-3 shrink-0"
+          style={{
+            paddingBottom: "10px",
+            marginBottom: isExpanded ? "14px" : "12px",
+            borderBottom: `1px solid ${theme.borderSubtle}`,
+          }}
+        >
+          <span style={{ fontFamily: theme.fontFamily, ...R.heading, color: theme.textHeading }}>
+            {label}
+          </span>
+          {d && (
+            <div className="flex flex-col shrink-0" style={{ textAlign: isRTL ? "left" : "right" }}>
+              <span style={{ fontFamily: theme.fontFamily, ...R.value, color: theme.textHeading }}>
+                {d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </span>
+              <span style={{ fontFamily: theme.fontFamily, ...R.label, color: theme.textMuted }}>
+                {d.toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" })}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* `1fr` rows on an auto-height grid equalise every row to the tallest,
+            so a two-line label like "Oxygen saturation" does not leave its
+            neighbours short. All six tiles end up the same size. */}
+        <div
+          className={`grid grid-cols-2 ${isExpanded ? "gap-3" : "gap-2"}`}
+          style={{ gridAutoRows: "1fr" }}
+        >
+          {readingsFor(o).map((r) => {
+            const Icon = r.icon;
+            const shown = r.value === "" || r.value === null || r.value === undefined ? null : String(r.value);
+            return (
+              /* The glyph goes in a small chip rather than floating loose
+                 beside the words — it matches the discs used everywhere else
+                 in CareMe, and it buys back enough width that every label,
+                 "Oxygen saturation" included, holds one line. The reading then
+                 gets the tile's full width underneath it. No border: a hairline
+                 around a tint on an already tinted panel just greyed the tiles
+                 out. */
+              <div
+                key={r.label}
+                className="flex flex-col"
+                style={{
+                  gap: isExpanded ? "10px" : "8px",
+                  backgroundColor: theme.surfaceInset,
+                  borderRadius: theme.radiusLg,
+                  padding: isExpanded ? "16px" : "13px",
+                  minHeight: 0,
+                }}
+              >
+                <div className="flex items-center min-w-0" style={{ gap: isExpanded ? "9px" : "8px" }}>
+                  <div
+                    className="flex items-center justify-center shrink-0"
+                    style={{
+                      width: isExpanded ? "28px" : "24px",
+                      height: isExpanded ? "28px" : "24px",
+                      borderRadius: theme.radiusSm,
+                      backgroundColor: theme.surface,
+                    }}
+                  >
+                    <Icon size={isExpanded ? 16 : 14} strokeWidth={2.1} style={{ color: theme.primaryOn }} />
+                  </div>
+                  <span
+                    className="min-w-0"
+                    style={{ fontFamily: theme.fontFamily, ...R.tileLabel, color: theme.textMuted, overflowWrap: "anywhere" }}
+                  >
+                    {r.label}
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-1.5 flex-wrap">
+                  <span style={{
+                    fontFamily: theme.fontFamily, fontSize: R.metric,
+                    fontWeight: WEIGHT.bold, lineHeight: LEADING.none,
+                    letterSpacing: "-0.5px",
+                    color: shown ? theme.textHeading : theme.textMuted,
+                  }}>
+                    {shown ?? "—"}
+                  </span>
+                  <span style={{
+                    fontFamily: theme.fontFamily, ...R.tileLabel,
+                    fontWeight: WEIGHT.semibold, color: theme.textMuted,
+                  }}>
+                    {r.unit}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </>
+    );
+  };
 
   return (
-    /* The card keeps the same inset padding every other slide gets from
-       SectionContainer, and fills the slide: the readings grid takes whatever
-       height is left over so no band of empty surface is stranded under the
-       last row. */
-    <div className="flex flex-col gap-3 h-full">
-      <SectionContainer theme={theme} isExpanded={isExpanded} bg={theme.surface} className="flex-1 flex flex-col min-h-0">
-        <div className="flex flex-col gap-3 h-full min-h-0">
-          {/* Heading + when it was taken */}
-          <div className="flex items-start justify-between gap-3 shrink-0">
-            <span style={{ fontFamily: theme.fontFamily, fontSize: titleSize, fontWeight: WEIGHT.bold, color: theme.primaryOn }}>
-              {t("care.observations.latest")}
-            </span>
-            {stamp && (
-              <div className="flex flex-col shrink-0" style={{ textAlign: isRTL ? "left" : "right" }}>
-                <span style={{ fontFamily: theme.fontFamily, fontSize: stampSize, fontWeight: WEIGHT.bold, color: theme.textHeading, lineHeight: 1.3 }}>
-                  {stamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </span>
-                <span style={{ fontFamily: theme.fontFamily, fontSize: labelSize, color: theme.textMuted, lineHeight: 1.3 }}>
-                  {stamp.toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" })}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Six readings, two up, rows sharing the leftover height equally. */}
-          <div
-            className="grid grid-cols-2 gap-2.5 flex-1 min-h-0"
-            style={{ gridAutoRows: "minmax(0, 1fr)" }}
-          >
-            {readings.map((r) => {
-              const Icon = r.icon;
-              const shown = r.value === "" || r.value === null || r.value === undefined ? null : String(r.value);
-              return (
-                <div
-                  key={r.label}
-                  className="flex flex-col justify-center gap-2"
-                  style={{
-                    backgroundColor: theme.surfaceInset,
-                    border: theme.borderInset,
-                    borderRadius: theme.radiusMd,
-                    padding: isExpanded ? "16px" : "12px",
-                    minHeight: 0,
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon size={isExpanded ? 18 : 15} strokeWidth={2.1} style={{ color: theme.primaryOn, flexShrink: 0 }} />
-                    <span style={{ fontFamily: theme.fontFamily, fontSize: labelSize, fontWeight: WEIGHT.medium, color: theme.textMuted, lineHeight: 1.25 }}>
-                      {r.label}
-                    </span>
-                  </div>
-                  {/* Wraps rather than overflows: "118/78" plus its unit is wider
-                      than half a carousel card, so the unit drops to its own line. */}
-                  <div className="flex items-baseline gap-1.5 flex-wrap">
-                    <span style={{ fontFamily: theme.fontFamily, fontSize: valueSize, fontWeight: WEIGHT.bold, color: shown ? theme.textHeading : theme.textMuted, lineHeight: 1 }}>
-                      {shown ?? "—"}
-                    </span>
-                    <span style={{ fontFamily: theme.fontFamily, fontSize: unitSize, color: theme.textMuted }}>{r.unit}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+    <div className="flex flex-col">
+      {obs.map((o, i) => (
+        <div
+          key={o.id || i}
+          style={i === 0 ? undefined : {
+            marginTop: isExpanded ? "18px" : "14px",
+            paddingTop: isExpanded ? "18px" : "14px",
+            borderTop: `1px solid ${theme.borderSubtle}`,
+          }}
+        >
+          {readingsBlock(o, i === 0 ? t("care.observations.latest") : t("care.observations.earlier"))}
         </div>
-      </SectionContainer>
-
-      {/* Everything before the latest reading, kept but demoted to one row each */}
-      {earlier.length > 0 && (
-        <SectionContainer theme={theme} isExpanded={isExpanded} className="shrink-0">
-          <div className="flex flex-col gap-2">
-            <span style={{ fontFamily: theme.fontFamily, fontSize: labelSize, fontWeight: WEIGHT.bold, color: theme.textMuted, letterSpacing: "0.3px" }}>
-              {t("care.observations.earlier")}
-            </span>
-            {earlier.map((o, i) => {
-              const d = observationTime(o.timestamp);
-              return (
-                <div key={o.id || i} className="flex items-baseline justify-between gap-3">
-                  <span style={{ fontFamily: theme.fontFamily, fontSize: labelSize, color: theme.textMuted, whiteSpace: "nowrap" }}>
-                    {d ? `${d.toLocaleDateString([], { day: "2-digit", month: "short" })} · ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "—"}
-                  </span>
-                  <span style={{ fontFamily: theme.fontFamily, fontSize: labelSize, fontWeight: WEIGHT.semibold, color: theme.textHeading, direction: "ltr", unicodeBidi: "isolate" }}>
-                    {[o.vitals.bp, o.vitals.hr && `${o.vitals.hr} bpm`, o.vitals.temp && `${o.vitals.temp}°C`, o.vitals.spo2 && `${o.vitals.spo2}%`]
-                      .filter(Boolean).join("  ·  ") || "—"}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </SectionContainer>
-      )}
+      ))}
     </div>
   );
 }
 
-function BabyCameraSlide({ isExpanded = false }: { isExpanded?: boolean }) {
+function BabyCameraSlide({}: {}) {
   const { theme } = useTheme();
   const { t } = useLocale();
   const nurseStore = useNurseStore();
@@ -1654,10 +2168,9 @@ function BabyCameraSlide({ isExpanded = false }: { isExpanded?: boolean }) {
 
   if (nurseStore.isHisConnected && !hasHisData && !showDemo) {
     return (
-      <HisEmptyStateSection
+      <HisEmptyStateSection isExpanded
         theme={theme}
-        isExpanded={isExpanded}
-        onCheckDemo={() => setShowDemo(true)}
+                onCheckDemo={() => setShowDemo(true)}
       />
     );
   }
@@ -1668,11 +2181,11 @@ function BabyCameraSlide({ isExpanded = false }: { isExpanded?: boolean }) {
   const isFakeeh = theme.id === "dsfh";
   const cameraImage = isCareInn ? imgCareInnBabyCam : isDallah ? imgDallahBabyCam : isCareMed ? imgCareMedBabyCam : isFakeeh ? imgFakeehBabyCam : imgBabyCam;
 
-  const titleSize = isExpanded ? "21px" : "16px";
-  const subSize = isExpanded ? "16px" : "13px";
+  const titleSize = "16px";
+  const subSize = "13px";
 
   return (
-    <div className="flex flex-col gap-3 h-full">
+    <div className="flex flex-col">
       {nurseStore.isHisConnected && !hasHisData && showDemo && (
         <DemoBannerHeader theme={theme} onCloseDemo={() => setShowDemo(false)} />
       )}
@@ -1710,7 +2223,7 @@ function BabyCameraSlide({ isExpanded = false }: { isExpanded?: boolean }) {
       </div>
 
       {/* Info below the feed */}
-      <SectionContainer theme={theme} isExpanded={isExpanded}>
+      <Section isExpanded theme={theme}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Baby icon avatar */}
@@ -1718,11 +2231,11 @@ function BabyCameraSlide({ isExpanded = false }: { isExpanded?: boolean }) {
               className="rounded-full flex items-center justify-center shrink-0"
               style={{
                 backgroundColor: theme.primarySubtle,
-                width: isExpanded ? "40px" : "36px",
-                height: isExpanded ? "40px" : "36px"
+                width: "36px",
+                height: "36px"
               }}
             >
-              <Baby size={isExpanded ? 20 : 18} style={{ color: theme.primaryOn }} />
+              <Baby size={18} style={{ color: theme.primaryOn }} />
             </div>
             <div>
               <p style={{
@@ -1744,10 +2257,10 @@ function BabyCameraSlide({ isExpanded = false }: { isExpanded?: boolean }) {
           {/* Connected badge */}
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ backgroundColor: theme.primarySubtle }}>
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: theme.success, boxShadow: `0 0 6px ${theme.success}` }} />
-            <span style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "14px" : "12px", fontWeight: 700, color: theme.primaryOn }}>{t("care.baby.connected")}</span>
+            <span style={{ fontFamily: theme.fontFamily, fontSize: "12px", fontWeight: 700, color: theme.primaryOn }}>{t("care.baby.connected")}</span>
           </div>
         </div>
-      </SectionContainer>
+      </Section>
 
       {/* Fullscreen Baby Camera Overlay */}
       {fullscreen && createPortal(
@@ -1823,24 +2336,22 @@ function BabyCameraFullscreen({ onClose, cameraImage }: { onClose: () => void, c
   );
 }
 
-function FinanceSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: boolean }) {
+function FinanceSlide({ theme }: { theme: any }) {
   const { t } = useLocale();
   const nurseStore = useNurseStore();
   const [showPdf, setShowPdf] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [showDemo, setShowDemo] = useState(false);
 
-  const valueSize = isExpanded ? "16px" : "14px";
-  const labelSize = isExpanded ? "16px" : "13px";
+  const labelSize = "13px";
 
   const hasHisData = nurseStore.isHisConnected ? !!nurseStore.hisSections?.financial : true;
 
   if (nurseStore.isHisConnected && !hasHisData && !showDemo) {
     return (
-      <HisEmptyStateSection
+      <HisEmptyStateSection isExpanded
         theme={theme}
-        isExpanded={isExpanded}
-        onCheckDemo={() => setShowDemo(true)}
+                onCheckDemo={() => setShowDemo(true)}
       />
     );
   }
@@ -1863,7 +2374,7 @@ function FinanceSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: 
       </div>
       <span style={{
         fontFamily: theme.fontFamily,
-        fontSize: isTotal ? (isExpanded ? "24px" : "18px") : valueSize,
+        fontSize: isTotal ? "18px" : "14px",
         color: color || theme.textHeading,
         fontWeight: isTotal || isHighlight ? WEIGHT.bold : WEIGHT.bold
       }}>{value}</span>
@@ -1877,12 +2388,12 @@ function FinanceSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: 
   const payable = total - covered;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col">
       {nurseStore.isHisConnected && !hasHisData && showDemo && (
         <DemoBannerHeader theme={theme} onCloseDemo={() => setShowDemo(false)} />
       )}
       {/* Module 1: Itemized breakdown */}
-      <SectionContainer theme={theme} isExpanded={isExpanded}>
+      <Section isExpanded theme={theme}>
         <div className="flex flex-col gap-0">
           {nurseStore.financial.map((item, i) => (
             <Row key={item.id} label={item.category} value={`${item.amount.toLocaleString()} ${t("care.currency")}`} description={item.description} />
@@ -1906,20 +2417,20 @@ function FinanceSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: 
               style={{ borderRadius: theme.radiusLg, borderColor: `${theme.primary}40`, backgroundColor: theme.surface, cursor: 'pointer' }}
             >
               <FileText size={18} style={{ color: theme.primaryOn }} />
-              <span style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "15.5px" : "13.5px", fontWeight: WEIGHT.bold, color: theme.primaryOn }}>
+              <span style={{ fontFamily: theme.fontFamily, fontSize: "13.5px", fontWeight: WEIGHT.bold, color: theme.primaryOn }}>
                 {t("care.billing.viewDetailedInvoice")}
               </span>
             </button>
           </div>
         </div>
-      </SectionContainer>
+      </Section>
 
       {/* Module 2: Unified Payment Summary */}
-      <SectionContainer theme={theme} isExpanded={isExpanded}>
+      <Section isExpanded theme={theme}>
         <div className="flex flex-col gap-5">
           <div className="flex items-center justify-between px-1">
-            <span style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "16px" : "13.5px", color: theme.textMuted, fontWeight: WEIGHT.bold }}>{t("care.billing.patientPayable")}</span>
-            <span style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "26px" : "20px", color: theme.primaryOn, fontWeight: 900 }}>{payable.toLocaleString()} <span style={{ fontSize: "0.6em" }}>{t("care.currency")}</span></span>
+            <span style={{ fontFamily: theme.fontFamily, fontSize: "13.5px", color: theme.textMuted, fontWeight: WEIGHT.bold }}>{t("care.billing.patientPayable")}</span>
+            <span style={{ fontFamily: theme.fontFamily, fontSize: "20px", color: theme.primaryOn, fontWeight: 900 }}>{payable.toLocaleString()} <span style={{ fontSize: "0.6em" }}>{t("care.currency")}</span></span>
           </div>
 
           <button
@@ -1929,12 +2440,12 @@ function FinanceSlide({ theme, isExpanded = false }: { theme: any, isExpanded?: 
             style={{ backgroundColor: theme.primary, cursor: 'pointer', borderRadius: theme.radiusLg }}
           >
             <CreditCard size={18} style={{ color: "#fff" }} />
-            <span style={{ fontFamily: theme.fontFamily, fontSize: isExpanded ? "17px" : "15px", fontWeight: WEIGHT.bold, color: "#fff" }}>
+            <span style={{ fontFamily: theme.fontFamily, fontSize: "15px", fontWeight: WEIGHT.bold, color: "#fff" }}>
               {t("care.billing.payNow")}
             </span>
           </button>
         </div>
-      </SectionContainer>
+      </Section>
 
       {showPdf && <HospitalInvoiceOverlay theme={theme} onClose={() => setShowPdf(false)} />}
       {showPayment && <PaymentPortal theme={theme} onClose={() => setShowPayment(false)} amount="3,898" />}
@@ -2167,32 +2678,304 @@ function PaymentPortal({ theme, onClose, amount }: { theme: any, onClose: () => 
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Questions for My Care Team
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * The one card the patient writes rather than reads. Questions occur to people
+ * between rounds and are gone by the time the doctor is at the bed, so this is
+ * somewhere to put them down as they come.
+ *
+ * It stays on the device: the ward has no inbox for this, and a question that
+ * looked like it had been SENT while nobody was reading it would be worse than
+ * no feature at all. The list is the patient's own note to themselves, and the
+ * card says so — "to discuss with your care team", not "your team will reply".
+ */
+
+/** Written by the patient on this screen; never leaves it. */
+const QUESTIONS_KEY = "careinn-care-questions";
+/** Same-tab writes fire no storage event, and both the carousel card and the
+ *  expanded column can be mounted at once. */
+const QUESTIONS_EVENT = "careinn-care-questions-changed";
+
+interface CareQuestion {
+  id: string;
+  text: string;
+}
+
+/** Never throws: a blocked or full store must not trap the patient. */
+function readQuestions(): CareQuestion[] {
+  try {
+    const raw = localStorage.getItem(QUESTIONS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((q) => q && typeof q.id === "string" && typeof q.text === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeQuestions(list: CareQuestion[]) {
+  try {
+    localStorage.setItem(QUESTIONS_KEY, JSON.stringify(list));
+  } catch {
+    /* A failed write is a lost save, not a dead screen. */
+  }
+  window.dispatchEvent(new CustomEvent(QUESTIONS_EVENT));
+}
+
+/** Compose or edit one question. A plain textarea so the Android kiosk raises
+ *  its own IME — the same thing the preference form does. */
+function QuestionEditor({
+  theme, initial, onSave, onDelete, onClose,
+}: {
+  theme: any;
+  initial: CareQuestion | null;
+  onSave: (text: string) => void;
+  onDelete?: () => void;
+  onClose: () => void;
+}) {
+  const R = roles(false);
+  const { t, fontFamily, dir } = useLocale();
+  const [text, setText] = useState(initial?.text ?? "");
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => { ref.current?.focus(); }, []);
+
+  const trimmed = text.trim();
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[10050] flex items-center justify-center p-6"
+      style={{ backgroundColor: theme.overlay }}
+      onClick={onClose}
+    >
+      <div
+        dir={dir}
+        className="flex flex-col gap-4"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "560px", maxWidth: "100%", padding: "28px",
+          borderRadius: theme.radiusXl, backgroundColor: theme.surface,
+          border: theme.cardBorder, boxShadow: SHADOW.xl,
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <CardIcon icon={MessageCircleQuestion} theme={theme} size={ICON_BOX.cardHeader.slide} />
+          <span
+            className="flex-1 min-w-0"
+            style={{ fontFamily, ...R.title, color: theme.textHeading }}
+          >
+            {initial ? t("care.questions.edit") : t("care.questions.add")}
+          </span>
+        </div>
+
+        <textarea
+          ref={ref}
+          rows={4}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={t("care.questions.placeholder")}
+          aria-label={t("care.questions.placeholder")}
+          style={{
+            width: "100%", resize: "none", outline: "none",
+            fontFamily, ...R.body, color: theme.textHeading,
+            backgroundColor: theme.surfaceInset,
+            border: theme.borderInset, borderRadius: theme.radiusLg,
+            padding: "14px 16px",
+          }}
+        />
+
+        <div className="flex items-center gap-3">
+          {onDelete && (
+            <button
+              onClick={onDelete}
+              className="cursor-pointer active:scale-95 transition-transform"
+              style={{
+                padding: "12px 18px", borderRadius: theme.radiusMd,
+                backgroundColor: theme.errorSubtle, border: "none", outline: "none",
+                fontFamily, ...R.value, lineHeight: LEADING.none, color: theme.errorOn,
+              }}
+            >
+              {t("care.questions.delete")}
+            </button>
+          )}
+          <div className="flex-1" />
+          <button
+            onClick={onClose}
+            className="cursor-pointer active:scale-95 transition-transform"
+            style={{
+              padding: "12px 18px", borderRadius: theme.radiusMd,
+              background: "none", border: "none", outline: "none",
+              fontFamily, ...R.value, lineHeight: LEADING.none, color: theme.textMuted,
+            }}
+          >
+            {t("general.cancel")}
+          </button>
+          <button
+            onClick={() => trimmed && onSave(trimmed)}
+            disabled={!trimmed}
+            className="cursor-pointer active:scale-95 transition-transform"
+            style={{
+              padding: "12px 24px", borderRadius: theme.radiusMd, border: "none", outline: "none",
+              backgroundColor: trimmed ? theme.primary : theme.disabledBg,
+              color: trimmed ? theme.brandOnPrimary : theme.disabledOn,
+              fontFamily, ...R.value, lineHeight: LEADING.none,
+              cursor: trimmed ? "pointer" : "default",
+            }}
+          >
+            {t("care.questions.save")}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function CareQuestionsSlide({ theme, isExpanded = false }: { theme: any; isExpanded?: boolean }) {
+  const R = roles(isExpanded);
+  const { t } = useLocale();
+  const [questions, setQuestions] = useState<CareQuestion[]>(() => readQuestions());
+  const [editing, setEditing] = useState<CareQuestion | "new" | null>(null);
+  
+  useEffect(() => {
+    const refresh = () => setQuestions(readQuestions());
+    window.addEventListener(QUESTIONS_EVENT, refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener(QUESTIONS_EVENT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, []);
+
+  const save = (text: string) => {
+    const next = editing === "new" || !editing
+      ? [...questions, { id: `q-${Date.now()}`, text }]
+      : questions.map((q) => (q.id === editing.id ? { ...q, text } : q));
+    writeQuestions(next);
+    setEditing(null);
+  };
+
+  const remove = () => {
+    if (editing && editing !== "new") writeQuestions(questions.filter((q) => q.id !== editing.id));
+    setEditing(null);
+  };
+
+  return (
+    <div className="flex flex-col min-h-full">
+
+
+      {questions.length === 0 ? (
+        <CardEmptyState
+          theme={theme}
+          isExpanded={isExpanded}
+          icon={MessageCircleQuestion}
+          title={t("care.questions.empty")}
+          description={t("care.questions.emptyDesc")}
+        />
+      ) : (
+        <div className="flex flex-col" style={{ marginTop: "14px" }}>
+          {questions.map((q, i) => (
+            <div
+              key={q.id}
+              className="flex items-start gap-3"
+              style={{
+                paddingTop: i === 0 ? 0 : ("12px"),
+                marginTop: i === 0 ? 0 : ("12px"),
+                borderTop: i === 0 ? undefined : `1px solid ${theme.borderSubtle}`,
+              }}
+            >
+              <span
+                className="shrink-0"
+                style={{
+                  fontFamily: theme.fontFamily, ...R.value, color: theme.textMuted,
+                  minWidth: "18px", textAlign: "center",
+                }}
+              >
+                {i + 1}
+              </span>
+              <span
+                dir="auto"
+                className="flex-1 min-w-0"
+                style={{
+                  fontFamily: theme.fontFamily, ...R.value, color: theme.textHeading,
+                  overflowWrap: "anywhere",
+                }}
+              >
+                {q.text}
+              </span>
+              <TapTarget
+                theme={theme}
+                onClick={() => setEditing(q)}
+                label={t("care.questions.edit")}
+                style={{ backgroundColor: theme.primarySubtle }}
+              >
+                <Pencil size={18} style={{ color: theme.primaryOn }} />
+              </TapTarget>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Sits at the foot of the card when the list is short and after the last
+          question when it is long — either way it is where the thumb expects.
+          The gap above it is a MARGIN: as padding it pushed the label off the
+          button's own centre line. */}
+      <div className="mt-auto" style={{ paddingTop: isExpanded ? "20px" : "16px" }}>
+      <CardButton
+        theme={theme}
+        isExpanded={isExpanded}
+        onClick={() => setEditing("new")}
+        icon={CirclePlus}
+        label={t("care.questions.add")}
+        block
+      />
+      </div>
+
+      {editing && (
+        <QuestionEditor
+          theme={theme}
+          initial={editing === "new" ? null : editing}
+          onSave={save}
+          onDelete={editing === "new" ? undefined : remove}
+          onClose={() => setEditing(null)}
+        />
+      )}
+    </div>
+  );
+}
+
 function SlideIcon({ slideKey }: { slideKey: string }) {
   const { theme } = useTheme();
-  const iconProps = { size: 16, strokeWidth: 2 };
+  const iconProps = { size: 18, strokeWidth: 2 };
   const color = theme.primaryOn;
   switch (slideKey) {
     case "profile": return <IdCard {...iconProps} style={{ color }} />;
     case "overview": return <Activity {...iconProps} style={{ color }} />;
     case "plan": return <ClipboardList {...iconProps} style={{ color }} />;
-    case "labs": return <FlaskConical {...iconProps} style={{ color }} />;
+    case "tests": return <ClipboardCheck {...iconProps} style={{ color }} />;
     case "preferences": return <SlidersHorizontal {...iconProps} style={{ color }} />;
     case "billing": return <Wallet {...iconProps} style={{ color }} />;
-    case "imaging": return <ImageIcon {...iconProps} style={{ color }} />;
     case "baby": return <Baby {...iconProps} style={{ color }} />;
     case "discharge": return <LogOut {...iconProps} style={{ color }} />;
     case "dischargePlan": return <FileText {...iconProps} style={{ color }} />;
     case "observations": return <Activity {...iconProps} style={{ color }} />;
+    case "questions": return <MessageCircleQuestion {...iconProps} style={{ color }} />;
     default: return <Heart {...iconProps} style={{ color }} />;
   }
 }
 
-/* ─── CareMe Heart SVG from Figma ─── */
+/* ─── CareMe Heart SVG from Figma ───
+ * The mark takes the active brand's accessible foreground so it stays legible
+ * on the card surface in both modes. */
 function HeartIcon() {
+  const { theme } = useTheme();
   return (
     <div className="relative shrink-0 size-[20px]">
       <svg className="block size-full" fill="none" viewBox="0 0 20 20">
-        <g><path d={svgPaths.p2f84f400} fill="#B23453" stroke="#B23453" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" /></g>
+        <g><path d={svgPaths.p2f84f400} fill={theme.accentOn} stroke={theme.accentOn} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" /></g>
       </svg>
     </div>
   );
@@ -2203,6 +2986,7 @@ function PreferencesSlide({ theme, isExpanded = false, onOpenForm }: {
   isExpanded?: boolean;
   onOpenForm?: () => void;
 }) {
+  const R = roles(isExpanded);
   const { t, fontFamily } = useLocale();
   const { activeConfigId } = useTheme();
   const [record, setRecord] = useState(() => readPreferenceRecord());
@@ -2221,74 +3005,48 @@ function PreferencesSlide({ theme, isExpanded = false, onOpenForm }: {
 
   if (!submitted) {
     return (
-      <div className="flex flex-col items-center justify-center text-center h-full gap-3" style={{ padding: isExpanded ? "24px 12px" : "16px 8px" }}>
-        <div
-          className="flex items-center justify-center rounded-full shrink-0"
-          style={{
-            width: isExpanded ? SPACE[8] : SPACE[6],
-            height: isExpanded ? SPACE[8] : SPACE[6],
-            backgroundColor: theme.primarySubtle,
-          }}
-        >
-          <SlidersHorizontal size={isExpanded ? 28 : 22} strokeWidth={1.8} style={{ color: theme.primaryOn }} />
-        </div>
-        <span style={{ fontFamily, ...(isExpanded ? TEXT_STYLE.cardTitle : TEXT_STYLE.subtitle), color: theme.textHeading }}>
-          {t("care.preferences.title")}
-        </span>
-        <p style={{ fontFamily, ...(isExpanded ? TEXT_STYLE.body : TEXT_STYLE.caption), color: theme.textMuted, maxWidth: "340px" }}>
-          {t("care.preferences.description")}
-        </p>
-        <button
-          data-nav="true"
-          onClick={onOpenForm}
-          className="cursor-pointer active:scale-95 transition-transform mt-1"
-          style={{
-            backgroundColor: theme.primary,
-            borderRadius: theme.radiusMd,
-            border: "none",
-            outline: "none",
-            padding: "14px 22px",
-          }}
-        >
-          <span style={{ fontFamily, ...TEXT_STYLE.buttonSm, color: theme.textInverse }}>
-            {t("care.preferences.fill")}
-          </span>
-        </button>
-      </div>
+      <CardEmptyState
+        theme={theme}
+        isExpanded={isExpanded}
+        icon={SlidersHorizontal}
+        title={t("care.preferences.title")}
+        description={t("care.preferences.description")}
+        action={
+          <CardButton
+            theme={theme}
+            isExpanded={isExpanded}
+            onClick={onOpenForm}
+            label={t("care.preferences.fill")}
+          />
+        }
+      />
     );
   }
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* No status row. The panel already titles the card — the slide's own
-          title bar when it is a slide, the header box above it when the row is
-          expanded — and that title now carries the demo reset too, so the
-          answers start at the top of the box instead of under a strip that
-          only restated what a filled-in list already says. */}
-      <div
-        className="flex-1 min-h-0 overflow-y-auto careme-scroll flex flex-col gap-2"
-        style={{ paddingInlineEnd: "8px" }}
-      >
-        {rows.map((row) => (
-          <SectionContainer key={row.id} theme={theme} padding={isExpanded ? "16px 18px" : "13px 15px"}>
+      {/* No status row. The card's own header titles this panel and carries the
+          demo reset, so the answers start at the top of the body instead of
+          under a strip that only restated what a filled-in list already says. */}
+      {/* One panel for the whole list: each answer is a row, not a card. */}
+      <Section theme={theme} isExpanded={isExpanded} first>
+        {rows.map((row, i) => (
+          <div
+            key={row.id}
+            style={i === 0 ? undefined : {
+              marginTop: isExpanded ? "14px" : "12px",
+              paddingTop: isExpanded ? "14px" : "12px",
+              borderTop: `1px solid ${theme.borderSubtle}`,
+            }}
+          >
             <div className="flex items-center gap-3">
-              <span className="flex-1 min-w-0" style={{ fontFamily, ...TEXT_STYLE.bodyEmphasis, color: theme.textHeading }}>
+              <span className="flex-1 min-w-0" style={{ fontFamily, ...R.value, color: theme.textHeading }}>
                 {row.label}
               </span>
-              <span
-                className="flex items-center gap-1 shrink-0"
-                style={{
-                  backgroundColor: `${theme.primary}18`,
-                  borderRadius: "12px",
-                  padding: "6px 12px",
-                  ...TEXT_STYLE.pill,
-                  fontWeight: WEIGHT.bold,
-                  color: theme.primaryOn,
-                }}
-              >
-                {row.kind === "time" && <Clock size={isExpanded ? 12 : 10} />}
+              <CardBadge isExpanded={isExpanded} theme={theme}>
+                {row.kind === "time" && <Clock size={12} />}
                 {row.value}
-              </span>
+              </CardBadge>
             </div>
             {/* The patient's own words, set as a quote rather than as fine
                 print — at helper size in textMuted this read as disabled text
@@ -2313,24 +3071,29 @@ function PreferencesSlide({ theme, isExpanded = false, onOpenForm }: {
             {row.note && (
               <p
                 className="careme-scroll"
+                /* The patient may answer in a language other than the one the
+                   screen is set to, so the note takes its direction from its
+                   own text — otherwise an English note in an Arabic card puts
+                   its full stop at the wrong end. */
+                dir="auto"
                 style={{
                   fontFamily,
-                  ...TEXT_STYLE.body,
+                  ...R.body,
                   color: theme.textBody,
-                  marginTop: SPACE[2],
+                  marginTop: SPACE[1],
                   borderInlineStart: `3px solid ${theme.primary}`,
-                  paddingInlineStart: SPACE[2],
+                  paddingInlineStart: SPACE[1],
                   overflowWrap: "anywhere",
-                  maxHeight: `calc(${TYPE_SCALE.base} * ${LEADING.normal} * ${isExpanded ? 6 : 4})`,
+                  maxHeight: `calc(${TYPE_SCALE.base} * ${LEADING.normal} * 4)`,
                   overflowY: "auto",
                 }}
               >
                 {row.note}
               </p>
             )}
-          </SectionContainer>
+          </div>
         ))}
-      </div>
+      </Section>
     </div>
   );
 }
@@ -2362,13 +3125,14 @@ function PreferencesResetButton({ size = 26 }: { size?: number }) {
         backgroundColor: theme.warningSubtle, border: "none", outline: "none",
       }}
     >
-      <RotateCcw size={Math.round(size * 0.52)} style={{ color: theme.warning }} />
+      <RotateCcw size={Math.round(size * 0.52)} style={{ color: theme.warningOn }} />
     </button>
   );
 }
 
 /* ─── Admission / Discharge Date Strip ─── */
 function DateStrip() {
+  const R = roles(true);
   const { theme } = useTheme();
   const { t } = useLocale();
   return (
@@ -2395,10 +3159,10 @@ function DateStrip() {
           <CalendarDays size={14} style={{ color: theme.primaryOn }} />
         </div>
         <div className="min-w-0" style={{ gap: "0px" }}>
-          <p style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.micro, color: theme.textMuted, lineHeight: "1" }}>
+          <p style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.pill, color: theme.textMuted, lineHeight: "1" }}>
             {t("care.admitted")}
           </p>
-          <p style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.label, color: theme.textHeading, lineHeight: "1.2", marginTop: "1px" }}>
+          <p style={{ fontFamily: theme.fontFamily, ...R.heading, color: theme.textHeading, lineHeight: "1.2", marginTop: "1px" }}>
             {t("date.5mar2026")}
           </p>
         </div>
@@ -2421,10 +3185,10 @@ function DateStrip() {
           <CalendarDays size={14} style={{ color: theme.primaryOn }} />
         </div>
         <div className="min-w-0" style={{ gap: "0px" }}>
-          <p style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.micro, color: theme.textMuted, lineHeight: "1" }}>
+          <p style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.pill, color: theme.textMuted, lineHeight: "1" }}>
             {t("care.discharge")}
           </p>
-          <p style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.label, color: theme.textHeading, lineHeight: "1.2", marginTop: "1px" }}>
+          <p style={{ fontFamily: theme.fontFamily, ...R.heading, color: theme.textHeading, lineHeight: "1.2", marginTop: "1px" }}>
             {t("date.12mar2026")}
           </p>
         </div>
@@ -2436,6 +3200,7 @@ function DateStrip() {
 /* ─── Main Component ─── */
 
 export function CareMe({ onExpand, onOpenPreferences }: { onExpand?: () => void; onOpenPreferences?: () => void }) {
+  const R = roles(true);
   const { theme } = useTheme();
   const { t, isRTL, dir } = useLocale();
   const nurseStore = useNurseStore();
@@ -2456,10 +3221,7 @@ export function CareMe({ onExpand, onOpenPreferences }: { onExpand?: () => void;
 
   // Filter slides based on nurse store section visibility
   const slides = useMemo(() =>
-    ALL_SLIDES.filter((s) => {
-      const sectionKey = SLIDE_TO_SECTION[s.key];
-      return sectionKey ? nurseStore.sectionVisibility[sectionKey] !== false : true;
-    }),
+    ALL_SLIDES.filter((s) => slideVisible(s.key, nurseStore.sectionVisibility)),
     [nurseStore.sectionVisibility]
   );
 
@@ -2626,13 +3388,13 @@ export function CareMe({ onExpand, onOpenPreferences }: { onExpand?: () => void;
     switch (key) {
       case "profile": return <PatientProfileSlide theme={theme} />;
       case "overview": return <CareOverviewSlide theme={theme} />;
-      case "plan": return <TimelineSlide items={nurseStore.carePlan} theme={theme} type="care" />;
-      case "labs": return <LabResultsSlide theme={theme} />;
-      case "imaging": return <ImagingSlide theme={theme} />;
+      case "plan": return <CarePlanSlide theme={theme} />;
+      case "tests": return <TestsAndProceduresSlide theme={theme} />;
       case "preferences": return <PreferencesSlide theme={theme} onOpenForm={onOpenPreferences} />;
       case "discharge": return <DischargeSlide theme={theme} />;
       case "dischargePlan": return <DischargePlanSlide theme={theme} />;
       case "observations": return <ClinicalObservationsSlide theme={theme} />;
+      case "questions": return <CareQuestionsSlide theme={theme} />;
       default: return null;
     }
   };
@@ -2654,109 +3416,97 @@ export function CareMe({ onExpand, onOpenPreferences }: { onExpand?: () => void;
         touchAction: "pan-y",
       }}
     >
-      {/* Header */}
-      <div dir={dir} className="flex items-center justify-between shrink-0" style={{ padding: "22px 22px 12px 22px" }}>
-        <div className="flex items-center gap-2">
-          <HeartIcon />
-          <span style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.sectionTitle, color: theme.textHeading }}>CareMe</span>
-        </div>
-        <div className="flex items-center gap-1">
-          {nurseStore.nurseViewShortcutVisible && (
-            <button
-              data-nav="true"
-              onClick={() => window.dispatchEvent(new CustomEvent("open-nurse-view"))}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 cursor-pointer active:scale-95 transition-all"
-              style={{
-                borderRadius: theme.radiusMd,
-                outline: "none",
-                backgroundColor: theme.primarySubtle,
-                border: `1px solid ${theme.primary}25`,
-              }}
-              aria-label="Update in Nurse View"
+      {/* Integrated header — the card title, its actions and the active
+          slide's heading, all on the card's own surface and fixed while the
+          body scrolls. Content aligns to the same 16px inset as the body. */}
+      <div
+        dir={dir}
+        className="shrink-0"
+        style={{
+          padding: CARD_PAD.headerSlide,
+          borderBottom: `1px solid ${theme.borderSubtle}`,
+        }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center min-w-0" style={{ gap: "10px" }}>
+            <HeartIcon />
+            <span style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.sectionTitle, color: theme.textHeading }}>CareMe</span>
+          </div>
+          {/* Every control here is a 44×44 target; the glyphs stay their own size. */}
+          <div className="flex items-center shrink-0" style={{ marginInlineEnd: "-10px" }}>
+            {nurseStore.nurseViewShortcutVisible && (
+              <button
+                data-nav="true"
+                onClick={() => window.dispatchEvent(new CustomEvent("open-nurse-view"))}
+                className="flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform"
+                style={{
+                  minHeight: "44px", padding: "0 10px",
+                  borderRadius: theme.radiusMd, outline: "none",
+                  backgroundColor: theme.primarySubtle,
+                  border: `1px solid ${theme.borderCardColor}`,
+                }}
+                aria-label="Update in Nurse View"
+              >
+                <Stethoscope size={18} style={{ color: theme.primaryOn }} />
+                <span style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.pill, color: theme.primaryOn }}>
+                  Nurse View
+                </span>
+              </button>
+            )}
+
+            <TapTarget theme={theme} label="Toggle privacy blur" onClick={() => setIsBlurred(prev => !prev)}>
+              {isBlurred
+                ? <EyeOff size={18} style={{ color: theme.primaryOn }} />
+                : <Eye size={18} style={{ color: theme.primaryOn }} />}
+            </TapTarget>
+            <TapTarget
+              theme={theme}
+              label={isPinned ? "Unpin slider" : "Pin slider"}
+              onClick={() => setIsPinned(prev => !prev)}
+              style={{ backgroundColor: isPinned ? theme.accentSubtle : "transparent" }}
             >
-              <Stethoscope size={13} style={{ color: theme.primaryOn }} />
-              <span style={{ fontFamily: theme.fontFamily, fontSize: "11px", fontWeight: 700, color: theme.primaryOn }}>
-                Nurse View
-              </span>
-            </button>
-          )}
-
-          <button
-            data-nav="true"
-            onClick={() => setIsBlurred(prev => !prev)}
-            className="p-1.5 cursor-pointer active:bg-black/10 transition-colors"
-            style={{ borderRadius: theme.radiusMd, outline: 'none' }}
-            aria-label="Toggle privacy blur"
-          >
-            {isBlurred ? <EyeOff size={15} style={{ color: theme.primaryOn }} /> : <Eye size={15} style={{ color: theme.primaryOn }} />}
-          </button>
-          <button
-            data-nav="true"
-            onClick={() => setIsPinned(prev => !prev)}
-            className="p-1.5 cursor-pointer active:bg-black/10 transition-colors"
-            style={{
-              borderRadius: theme.radiusMd,
-              outline: 'none',
-              backgroundColor: isPinned ? "rgba(0,0,0,0.05)" : "transparent"
-            }}
-            aria-label={isPinned ? "Unpin slider" : "Pin slider"}
-          >
-            <Pin
-              size={15}
-              style={{
-                color: isPinned ? theme.accentOn : theme.primaryOn,
-                fill: isPinned ? theme.accent : 'none',
-                transform: isPinned ? 'rotate(45deg)' : 'none',
-                transition: 'all 0.2s ease'
-              }}
-            />
-          </button>
-          {onExpand && (
-            <button
-              data-nav="true"
-              onClick={onExpand}
-              className="p-1.5 cursor-pointer active:bg-black/10 transition-colors"
-              style={{ borderRadius: theme.radiusMd, outline: 'none' }}
-              aria-label="Expand CareMe"
-            >
-              <Maximize2 size={15} style={{ color: theme.primaryOn }} />
-            </button>
-          )}
-          <button
-            data-nav="true"
-            onClick={() => handleManualNav(activeIndex - 1)}
-            className="p-1.5 cursor-pointer active:bg-black/10 transition-colors"
-            style={{ borderRadius: theme.radiusMd, outline: 'none' }}
-            aria-label="Previous slide"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={isRTL ? { transform: "scaleX(-1)" } : undefined}>
-              <path d="M10 12L6 8L10 4" stroke="#73848C" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-            </svg>
-          </button>
-          <button
-            data-nav="true"
-            onClick={() => handleManualNav(activeIndex + 1)}
-            className="p-1.5 cursor-pointer active:bg-black/10 transition-colors"
-            style={{ borderRadius: theme.radiusMd, outline: 'none' }}
-            aria-label="Next slide"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={isRTL ? { transform: "scaleX(-1)" } : undefined}>
-              <path d="M6 12L10 8L6 4" stroke={theme.primaryOn} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-            </svg>
-          </button>
+              <Pin
+                size={18}
+                style={{
+                  color: isPinned ? theme.accentOn : theme.primaryOn,
+                  fill: isPinned ? theme.accentOn : "none",
+                  transform: isPinned ? "rotate(45deg)" : "none",
+                  transition: "all 0.2s ease",
+                }}
+              />
+            </TapTarget>
+            {onExpand && (
+              <TapTarget theme={theme} label="Expand CareMe" onClick={onExpand}>
+                <Maximize2 size={18} style={{ color: theme.primaryOn }} />
+              </TapTarget>
+            )}
+            <TapTarget theme={theme} label="Previous slide" onClick={() => handleManualNav(activeIndex - 1)}>
+              <ChevronLeft size={18} strokeWidth={2} style={{ color: theme.primaryOn, transform: isRTL ? "scaleX(-1)" : undefined }} />
+            </TapTarget>
+            <TapTarget theme={theme} label="Next slide" onClick={() => handleManualNav(activeIndex + 1)}>
+              <ChevronRight size={18} strokeWidth={2} style={{ color: theme.primaryOn, transform: isRTL ? "scaleX(-1)" : undefined }} />
+            </TapTarget>
+          </div>
         </div>
-      </div>
 
-      {/* Admission / Discharge — now moved into Patient Profile content for better flow */}
-      <div style={{ height: "4px" }} />
-
-      {/* Slide Title */}
-      <div dir={dir} className="flex items-center gap-2 shrink-0" style={{ padding: "0 22px" }}>
-        <SlideIcon slideKey={activeSlide.key} />
-        <span style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.subtitle, color: theme.primaryOn }}>{t(activeSlide.titleKey)}</span>
-        <span style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.caption, color: theme.textMuted, marginLeft: "auto" }}>
-          {realIndex + 1} / {slides.length}
-        </span>
+        {/* The active slide, as a section heading under the card's title. */}
+        <div className="flex items-center" style={{ gap: "10px", marginTop: "12px" }}>
+          <SlideIcon slideKey={activeSlide.key} />
+          <span
+            className="flex-1 min-w-0"
+            style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.subtitle, color: theme.primaryOn, overflowWrap: "anywhere" }}
+          >
+            {t(activeSlide.titleKey)}
+          </span>
+          {activeSlide.key === "preferences" && <PreferencesResetButton />}
+          <span
+            dir="ltr"
+            className="shrink-0"
+            style={{ fontFamily: theme.fontFamily, ...R.label, color: theme.textMuted }}
+          >
+            {realIndex + 1} / {slides.length}
+          </span>
+        </div>
       </div>
 
       {/* Slide Content */}
@@ -2785,7 +3535,7 @@ export function CareMe({ onExpand, onOpenPreferences }: { onExpand?: () => void;
               dir={dir}
               style={{
                 width: `${100 / extendedSlides.length}%`,
-                padding: "12px 22px",
+                padding: CARD_PAD.bodySlide,
                 pointerEvents: isBlurred ? "none" : "auto",
               }}
             >
@@ -2806,7 +3556,7 @@ export function CareMe({ onExpand, onOpenPreferences }: { onExpand?: () => void;
             style={{
               width: i === realIndex ? "20px" : "6px",
               height: "6px",
-              backgroundColor: i === realIndex ? theme.primary : "rgba(0,0,0,0.08)",
+              backgroundColor: i === realIndex ? theme.primaryOn : theme.borderDefault,
             }}
             aria-label={`Go to ${t(s.titleKey)}`}
           />
@@ -2843,20 +3593,20 @@ export function CareMe({ onExpand, onOpenPreferences }: { onExpand?: () => void;
  * CareMeExpanded — Full-screen overlay showing all 6 slides as columns
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-function ExpandedSlideIcon({ slideKey, size = 20 }: { slideKey: string; size?: number }) {
+function ExpandedSlideIcon({ slideKey, size = 22 }: { slideKey: string; size?: number }) {
   const iconProps = { size, strokeWidth: 2 };
   switch (slideKey) {
     case "profile": return <IdCard {...iconProps} />;
     case "overview": return <Activity {...iconProps} />;
     case "plan": return <ClipboardList {...iconProps} />;
-    case "labs": return <FlaskConical {...iconProps} />;
-    case "imaging": return <ImageIcon {...iconProps} />;
+    case "tests": return <ClipboardCheck {...iconProps} />;
     case "baby": return <Baby {...iconProps} />;
     case "preferences": return <SlidersHorizontal {...iconProps} />;
     case "billing": return <Wallet {...iconProps} />;
     case "discharge": return <LogOut {...iconProps} />;
     case "dischargePlan": return <FileText {...iconProps} />;
     case "observations": return <Activity {...iconProps} />;
+    case "questions": return <MessageCircleQuestion {...iconProps} />;
     default: return <Heart {...iconProps} />;
   }
 }
@@ -2865,13 +3615,13 @@ function renderExpandedSlideContent(key: string, theme: any, t: (k: string) => s
   switch (key) {
     case "profile": return <PatientProfileSlide theme={theme} isExpanded />;
     case "overview": return <CareOverviewSlide theme={theme} isExpanded />;
-    case "plan": return <TimelineSlide items={nurseStore?.carePlan || []} theme={theme} isExpanded type="care" />;
-    case "labs": return <LabResultsSlide theme={theme} isExpanded />;
-    case "imaging": return <ImagingSlide theme={theme} isExpanded />;
+    case "plan": return <CarePlanSlide theme={theme} isExpanded />;
+    case "tests": return <TestsAndProceduresSlide theme={theme} isExpanded />;
     case "preferences": return <PreferencesSlide theme={theme} isExpanded onOpenForm={onOpenPreferences} />;
     case "discharge": return <DischargeSlide theme={theme} isExpanded />;
     case "dischargePlan": return <DischargePlanSlide theme={theme} isExpanded />;
     case "observations": return <ClinicalObservationsSlide theme={theme} isExpanded />;
+    case "questions": return <CareQuestionsSlide theme={theme} isExpanded />;
     default: return null;
   }
 }
@@ -2884,10 +3634,7 @@ export function CareMeExpanded({ onClose, onOpenPreferences }: { onClose: () => 
 
   // Filter slides by nurse visibility
   const slides = useMemo(() =>
-    ALL_SLIDES.filter((s) => {
-      const sectionKey = SLIDE_TO_SECTION[s.key];
-      return sectionKey ? nurseStore.sectionVisibility[sectionKey] !== false : true;
-    }),
+    ALL_SLIDES.filter((s) => slideVisible(s.key, nurseStore.sectionVisibility)),
     [nurseStore.sectionVisibility]
   );
 
@@ -2921,32 +3668,16 @@ export function CareMeExpanded({ onClose, onOpenPreferences }: { onClose: () => 
         {/* Horizontal Scrolling Columns — 4 visible at once */}
         <div className={`flex-1 flex gap-4 pb-12 overflow-x-auto no-scrollbar ${isRTL ? "pr-[172px] pl-10" : "pl-[172px] pr-10"}`}>
           {slides.map((slide) => (
-            <div
+            <CareMeCard
               key={slide.key}
-              className="flex flex-col shrink-0"
-              style={{
-                width: "calc(25% - 12px)",
-                height: "710px",
-                gap: "14px",
-                animation: "caremeExpandIn 0.3s ease-out both",
-                alignSelf: "center"
-              }}
-            >
-              {/* Header Box Overlay - Separate rounded box */}
-              <div
-                className="shrink-0 flex items-center gap-4"
-                style={{
-                  backgroundColor: theme.surface,
-                  borderRadius: theme.radiusLg,
-                  padding: "16px 20px",
-                  boxShadow: SHADOW.md,
-                }}
-              >
+              theme={theme}
+              isExpanded
+              icon={
                 <div
                   className="flex items-center justify-center shrink-0"
                   style={{
-                    width: "42px",
-                    height: "42px",
+                    width: `${ICON_BOX.cardHeader.slide}px`,
+                    height: `${ICON_BOX.cardHeader.slide}px`,
                     borderRadius: theme.radiusMd,
                     backgroundColor: theme.primarySubtle,
                     color: theme.primaryOn,
@@ -2954,33 +3685,23 @@ export function CareMeExpanded({ onClose, onOpenPreferences }: { onClose: () => 
                 >
                   <ExpandedSlideIcon slideKey={slide.key} size={22} />
                 </div>
-                <span className="truncate" style={{
-                  fontFamily: theme.fontFamily,
-                  fontSize: "18px",
-                  fontWeight: WEIGHT.bold,
-                  color: theme.textHeading,
-                  letterSpacing: "0.2px"
-                }}>
-                  {t(slide.titleKey)}
-                </span>
-              </div>
-
-              {/* Content Card below */}
-              <div
-                className="flex flex-col min-h-0 overflow-hidden"
-                style={{
-                  flex: "1 1 0", minWidth: 0,
-                  backgroundColor: theme.surface,
-                  borderRadius: theme.radiusXl,
-                  boxShadow: SHADOW.xl,
-                }}
-              >
-                {/* Column content */}
-                <div className="flex-1 min-h-0 overflow-y-auto careme-scroll" style={{ padding: "20px 12px 22px 12px" }}>
-                  {renderExpandedSlideContent(slide.key, theme, t, nurseStore, onOpenPreferences)}
-                </div>
-              </div>
-            </div>
+              }
+              title={t(slide.titleKey)}
+              actions={slide.key === "preferences" ? <PreferencesResetButton /> : undefined}
+              style={{
+                width: "calc(25% - 12px)",
+                /* The row is a grid of equal cards — a fixed height here, and
+                   content that stays at the top INSIDE each one. Letting the
+                   frames size to their content left them ragged and floating
+                   in an empty expanse. */
+                height: "710px",
+                flexShrink: 0,
+                alignSelf: "center",
+                animation: "caremeExpandIn 0.3s ease-out both",
+              }}
+            >
+              {renderExpandedSlideContent(slide.key, theme, t, nurseStore, onOpenPreferences)}
+            </CareMeCard>
           ))}
         </div>
       </div>

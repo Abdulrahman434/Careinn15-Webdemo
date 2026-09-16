@@ -70,7 +70,7 @@ export function AccountLockScreen({ visible, onUnlock, onClose, onSkipAsGuest }:
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center"
       style={{
-        backgroundColor: "rgba(0,0,0,0.55)",
+        backgroundColor: t.overlay,
         backdropFilter: "blur(4px)",
         WebkitBackdropFilter: "blur(4px)",
       }}
@@ -81,7 +81,11 @@ export function AccountLockScreen({ visible, onUnlock, onClose, onSkipAsGuest }:
           width: "340px",
           padding: "32px 24px 24px 24px",
           borderRadius: t.radiusXl,
-          backgroundColor: "#FFFFFF",
+          /* Token, not #FFFFFF: the keypad's digits and tiles are already
+             theme-driven, so a hardcoded white card put near-white text on a
+             white surface the moment dark mode was on. */
+          backgroundColor: t.surface,
+          border: t.cardBorder,
           boxShadow: SHADOW.xl,
           animation: "lockDialogIn 0.2s ease-out",
         }}
@@ -108,7 +112,7 @@ export function AccountLockScreen({ visible, onUnlock, onClose, onSkipAsGuest }:
           className="flex items-center justify-center mb-6"
           style={{ width: "64px", height: "64px", borderRadius: t.radiusFull, backgroundColor: t.primarySubtle }}
         >
-          <Lock size={32} style={{ color: t.primary }} />
+          <Lock size={32} style={{ color: t.primaryOn }} />
         </div>
         
         <span style={{ fontFamily: t.fontFamily, fontSize: "20px", fontWeight: 700, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
@@ -125,7 +129,7 @@ export function AccountLockScreen({ visible, onUnlock, onClose, onSkipAsGuest }:
         )}
 
         {error && (
-          <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 600, color: "#D10044", marginBottom: "16px", animation: "settingsFadeIn 0.2s ease-out" }}>
+          <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 600, color: t.errorOn, marginBottom: "16px", animation: "settingsFadeIn 0.2s ease-out" }}>
             {tr("lock.wrongPin")}
           </span>
         )}

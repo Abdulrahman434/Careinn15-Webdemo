@@ -3,6 +3,7 @@ import {
   X, ClipboardList, Stethoscope, User, Heart,
   FlaskConical, Image as ImageIcon, LogOut, Activity,
   Hash, DoorOpen, Clock, Plus, Bed, CreditCard, ExternalLink,
+  FileSignature,
 } from "lucide-react";
 import { useTheme } from "../ThemeContext";
 import { useLocale } from "../i18n";
@@ -15,6 +16,7 @@ import { ImagingTab } from "./tabs/ImagingTab";
 import { DischargePlanTab } from "./tabs/DischargePlanTab";
 import { ObservationsTab } from "./tabs/ObservationsTab";
 import { NfcTab } from "./tabs/NfcTab";
+import { FormsTab } from "./tabs/FormsTab";
 
 interface TabDef {
   key: SectionKey;
@@ -31,6 +33,7 @@ const TABS: TabDef[] = [
   { key: "imaging", label: "Imaging", icon: ImageIcon, hasVisibility: true },
   { key: "discharge", label: "Discharge Process", icon: LogOut, hasVisibility: true },
   { key: "observations", label: "Observations", icon: Activity, hasVisibility: true },
+  { key: "forms", label: "Forms", icon: FileSignature, hasVisibility: false },
   { key: "nfc", label: "Update Nurse Info", icon: CreditCard, hasVisibility: false },
 ];
 
@@ -59,6 +62,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
       case "imaging": return <ImagingTab role={role} />;
       case "discharge": return <DischargePlanTab role={role} />;
       case "observations": return <ObservationsTab role={role} addNonce={addObsNonce} />;
+      case "forms": return <FormsTab />;
       case "nfc": return <NfcTab />;
       default: return null;
     }

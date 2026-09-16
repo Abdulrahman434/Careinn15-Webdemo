@@ -3,7 +3,7 @@ import { motion, AnimatePresence, PanInfo } from "motion/react";
 import {
   HandHelping, Wrench, ClipboardList,
   CheckCircle2, Clock, X, Send, Inbox, Globe,
-  ChevronLeft, ChevronRight, Check,
+  ChevronLeft, ChevronRight, Check, ListChecks,
   CircleDot, UserRound, Truck,
   // Unified Patient Services icon set — clean, outlined, single-stroke lucide
   // glyphs replacing the old emoji illustrations (matches Entertainment / Home).
@@ -206,7 +206,19 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
   /* ── View state ── */
   const [tab, setTab] = useState<Tab>(initialTab || "request");
   const [showRequestsOverlay, setShowRequestsOverlay] = useState(false);
-  const [selected, setSelected] = useState<{ card: CardDef; kind: "request" | "report" | "roomcare" | "support" } | null>(null);
+  const [selected, setSelected] = useState<{ cards: CardDef[]; kind: "request" | "report" | "roomcare" | "support" } | null>(null);
+
+  /* Items ticked in the grid but not yet sent.
+   *
+   * Only on the tabs where an item IS the whole request — supplies, room care,
+   * support. A fault report carries its own issue chip, so two faults are two
+   * different reports and batching them would attach one chip to both. */
+  const [picked, setPicked] = useState<CardDef[]>([]);
+  const isMultiTab = tab !== "report";
+  const togglePick = (card: CardDef) =>
+    setPicked((prev) => prev.some((c) => c.key === card.key)
+      ? prev.filter((c) => c.key !== card.key)
+      : [...prev, card]);
   const [note, setNote] = useState("");
   const [selectedChip, setSelectedChip] = useState<string | null>(null);
   const [success, setSuccess] = useState<null | "request" | "report">(null);
@@ -251,8 +263,8 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
     };
   }, [success]);
 
-  const openSheet = (card: CardDef, kind: "request" | "report" | "roomcare" | "support") => {
-    setSelected({ card, kind });
+  const openSheet = (cards: CardDef[], kind: "request" | "report" | "roomcare" | "support") => {
+    setSelected({ cards, kind });
     setNote("");
     setSelectedChip(null);
   };
@@ -264,18 +276,23 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
   };
 
   const sendRequest = () => {
-    if (!selected) return;
-    const entry: NeedRequest = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    if (!selected || selected.cards.length === 0) return;
+    const at = Date.now();
+    /* One entry per item, so each is tracked and delivered on its own — the
+       shared note rides along with every one of them. Newest first, and the
+       list the patient ticked keeps its order within that batch. */
+    const entries: NeedRequest[] = selected.cards.map((card, i) => ({
+      id: `${at}-${i}-${Math.random().toString(36).slice(2, 7)}`,
       kind: selected.kind,
-      itemKey: selected.card.key,
-      emoji: selected.card.emoji,
+      itemKey: card.key,
+      emoji: card.emoji,
       note: note.trim(),
-      createdAt: Date.now(),
-    };
-    setRequests((prev) => [entry, ...prev]);
+      createdAt: at,
+    }));
+    setRequests((prev) => [...entries, ...prev]);
     const kind = selected.kind;
     setSelected(null);
+    setPicked([]);
     setNote("");
     setSelectedChip(null);
     setSuccess(kind);
@@ -330,6 +347,9 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
   const gridItems = allGridItems.slice(gridPage * ITEMS_PER_PAGE, (gridPage + 1) * ITEMS_PER_PAGE);
 
   /* Reset to page 0 when switching tabs */
+  /* Ticks belong to the category they were made in. */
+  useEffect(() => { setPicked([]); }, [tab]);
+
   const prevTab = useRef(tab);
   useEffect(() => {
     if (prevTab.current !== tab) { setGridPage(0); prevTab.current = tab; }
@@ -655,7 +675,10 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       const CardIcon = card.Icon;
                       const isCompactCard = tab === "report" || tab === "roomcare" || tab === "support";
                       const isReport = tab === "report";
-                      const isCardSelected = isCompactCard && selected?.card.key === card.key;
+                      const isPicked = picked.some((c) => c.key === card.key);
+                      const isCardSelected = isMultiTab
+                        ? isPicked
+                        : (isCompactCard && selected?.cards[0]?.key === card.key);
                       /* Dynamic colour: red for report, brand primary for room care */
                       const accentColor = isReport ? theme.error : theme.primary;
                       const accentSubtle = isReport ? theme.errorSubtle : theme.primaryLight;
@@ -663,14 +686,17 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       return (
                         <button
                           key={card.key}
-                          onClick={() => openSheet(card, gridKind)}
+                          onClick={() => (isMultiTab ? togglePick(card) : openSheet([card], gridKind))}
                           className="ns-card flex flex-col items-stretch cursor-pointer relative"
                           style={{
                             backgroundColor: theme.surface,
                             borderRadius: theme.radiusCard,
+                            /* Token, not black-alpha: rgba(0,0,0,…) is
+                               invisible against a dark card, which left these
+                               with no edge at all in dark mode. */
                             border: isCardSelected
                               ? `2px solid ${accentColor}`
-                              : `1px solid rgba(0,0,0,0.10)`,
+                              : theme.borderCard,
                             boxShadow: isCardSelected ? `0 0 0 1px ${accentColor}` : "none",
                             padding: 0,
                             outline: "none",
@@ -678,6 +704,22 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                             minHeight: 0,
                           }}
                         >
+                          {isPicked && (
+                            <div
+                              className="absolute z-10 flex items-center justify-center"
+                              style={{
+                                top: 10,
+                                [isRTL ? "left" : "right"]: 10,
+                                width: 30,
+                                height: 30,
+                                borderRadius: theme.radiusFull,
+                                backgroundColor: accentColor,
+                                boxShadow: SHADOW.md,
+                              }}
+                            >
+                              <Check size={18} color={theme.textInverse} strokeWidth={3} />
+                            </div>
+                          )}
                           {card.image ? (
                             /* Product photo — fills the top of the card, flexes to available height */
                             <>
@@ -802,6 +844,62 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                   </AnimatePresence>
                 </div>
 
+                {/* What is ticked so far. It sits above the pager rather than
+                    floating over the grid, so it never covers a card the
+                    patient is still choosing. */}
+                {isMultiTab && picked.length > 0 && (
+                  <div
+                    className="shrink-0 flex items-center gap-3 mx-auto"
+                    style={{
+                      width: "100%",
+                      marginTop: 10,
+                      padding: "10px 14px",
+                      borderRadius: theme.radiusLg,
+                      backgroundColor: theme.surface,
+                      border: theme.borderCard,
+                      boxShadow: SHADOW.md,
+                    }}
+                  >
+                    <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textHeading }}>
+                      {t("need.multi.selected", String(picked.length))}
+                    </span>
+                    <button
+                      onClick={() => setPicked([])}
+                      className="cursor-pointer active:scale-95 transition-transform"
+                      style={{
+                        padding: "6px 12px", borderRadius: theme.radiusMd,
+                        backgroundColor: "transparent", border: "none", outline: "none",
+                      }}
+                    >
+                      <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textMuted }}>
+                        {t("need.multi.clear")}
+                      </span>
+                    </button>
+                    <div className="flex-1" />
+                    <button
+                      onClick={() => openSheet(picked, gridKind)}
+                      className="flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] transition-transform"
+                      style={{
+                        height: 48, padding: "0 24px",
+                        borderRadius: theme.radiusMd,
+                        backgroundColor: theme.primary,
+                        border: "none", outline: "none",
+                        boxShadow: SHADOW.md,
+                      }}
+                    >
+                      <Send
+                        size={18}
+                        color={theme.textInverse}
+                        strokeWidth={2.4}
+                        style={isRTL ? { transform: "scaleX(-1)" } : undefined}
+                      />
+                      <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textInverse }}>
+                        {t("need.multi.continue")}
+                      </span>
+                    </button>
+                  </div>
+                )}
+
                 {/* Pagination: dots only (no arrows) — swipe to navigate */}
                 {totalPages > 1 && (
                   <div className="shrink-0 flex items-center justify-center gap-3 py-3">
@@ -813,7 +911,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                         style={{
                           width: i === gridPage ? "24px" : "8px",
                           height: "8px",
-                          backgroundColor: i === gridPage ? theme.primary : "rgba(0,0,0,0.10)",
+                          backgroundColor: i === gridPage ? theme.primary : theme.borderDefault,
                           border: "none",
                           outline: "none",
                           padding: 0,
@@ -858,7 +956,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                 padding: SPACE[4],
               }}
             >
-              {/* Header: item + prompt */}
+              {/* Header: the item, or a count when several were ticked */}
               <div className="flex items-center gap-4 mb-5">
                 <div
                   className="shrink-0 flex items-center justify-center"
@@ -871,11 +969,24 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                     lineHeight: 1,
                   }}
                 >
-                  <selected.card.Icon size={34} color={selected.kind === "report" ? theme.errorOn : theme.primaryOn} strokeWidth={1.8} />
+                  {(() => {
+                    /* JSX cannot name a component through an index, so the
+                       glyph is resolved before it is rendered. */
+                    const SheetIcon = selected.cards.length === 1 ? selected.cards[0].Icon : ListChecks;
+                    return (
+                      <SheetIcon
+                        size={34}
+                        color={selected.kind === "report" ? theme.errorOn : theme.primaryOn}
+                        strokeWidth={1.8}
+                      />
+                    );
+                  })()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p style={{ ...TEXT_STYLE.sectionTitle, fontFamily, color: theme.textHeading }}>
-                    {t(selected.card.key)}
+                    {selected.cards.length === 1
+                      ? t(selected.cards[0].key)
+                      : t("need.multi.selected", String(selected.cards.length))}
                   </p>
                   <p style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textMuted, marginTop: 2 }}>
                     {selected.kind === "report" ? t("need.report.whatIssue") : t("need.notes.title")}
@@ -883,10 +994,42 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                 </div>
               </div>
 
-              {/* Issue-type chip selector (report only) */}
-              {selected.kind === "report" && ISSUE_CHIPS[selected.card.key] && (
+              {/* What is about to be sent — a last look before it goes, and a
+                  way to drop one without going back to the grid. */}
+              {selected.cards.length > 1 && (
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {ISSUE_CHIPS[selected.card.key].map((chipKey) => {
+                  {selected.cards.map((card) => (
+                    <button
+                      key={card.key}
+                      onClick={() => {
+                        const next = selected.cards.filter((c) => c.key !== card.key);
+                        setPicked(next);
+                        if (next.length === 0) closeSheet();
+                        else setSelected({ cards: next, kind: selected.kind });
+                      }}
+                      className="flex items-center gap-2 cursor-pointer active:scale-95 transition-transform"
+                      style={{
+                        padding: "8px 14px",
+                        borderRadius: theme.radiusFull,
+                        backgroundColor: theme.primaryLight,
+                        border: theme.borderCard,
+                        outline: "none",
+                      }}
+                    >
+                      <card.Icon size={17} color={theme.primaryOn} strokeWidth={2} />
+                      <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.primaryOn }}>
+                        {t(card.key)}
+                      </span>
+                      <X size={15} color={theme.primaryOn} strokeWidth={2.6} />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Issue-type chip selector (report only) */}
+              {selected.kind === "report" && ISSUE_CHIPS[selected.cards[0].key] && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {ISSUE_CHIPS[selected.cards[0].key].map((chipKey) => {
                     const isActive = selectedChip === chipKey;
                     return (
                       <button
@@ -923,7 +1066,9 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                 className="ns-textarea w-full"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder={t("need.notes.placeholder")}
+                /* "Describe the issue" is the wording for a fault report; a
+                   supplies request is not an issue. */
+                placeholder={t(selected.kind === "report" ? "need.notes.placeholder" : "need.notes.placeholderRequest")}
                 rows={3}
                 dir={isRTL ? "rtl" : "ltr"}
                 style={{
@@ -1003,11 +1148,11 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="absolute inset-0 z-50 flex flex-col"
-            style={{ backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+            style={{ backgroundColor: theme.overlay, backdropFilter: "blur(4px)" }}
           >
             <div
               className="flex-1 flex flex-col m-8 mt-4 rounded-[28px] overflow-hidden"
-              style={{ backgroundColor: "#fff", boxShadow: "0 12px 48px rgba(0,0,0,0.25)" }}
+              style={{ backgroundColor: theme.surface, border: theme.cardBorder, boxShadow: SHADOW["2xl"] }}
             >
               {/* Overlay header */}
               <div className="shrink-0 flex items-center justify-between px-8 py-5" style={{ borderBottom: `1px solid ${theme.borderDefault}` }}>
@@ -1028,7 +1173,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                   className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
                   style={{
                     width: 40, height: 40, borderRadius: 10,
-                    backgroundColor: "rgba(0,0,0,0.05)", border: "none", outline: "none",
+                    backgroundColor: theme.tileInactiveBg, border: "none", outline: "none",
                     color: theme.textMuted, fontSize: "20px",
                   }}
                 >
@@ -1072,7 +1217,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                           style={{
                             backgroundColor: theme.surface,
                             borderRadius: theme.radiusLg,
-                            border: `1px solid rgba(0,0,0,0.08)`,
+                            border: theme.borderCard,
                             padding: "18px 22px",
                           }}
                         >

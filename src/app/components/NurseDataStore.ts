@@ -125,6 +125,19 @@ export interface ImagingResult {
   visible: boolean;
 }
 
+/** A procedure the patient had or is booked for. Unlike labs and imaging the
+ *  name is ward-entered free text rather than a translation key — the same way
+ *  discharge contacts already work — so it renders with dir="auto".
+ *  `pdfUrl` empty means the report is not back yet. */
+export interface ProcedureResult {
+  id: string;
+  label: string;
+  date: string;
+  summary?: string;
+  pdfUrl?: string;
+  visible: boolean;
+}
+
 export interface BabyCamera {
   id: string;
   name: string;
@@ -146,17 +159,29 @@ export interface FinancialItem {
 /** Alerts the ward raises against a bed rather than against a diagnosis.
  *
  *  `similarName` guards against patient misidentification: two patients on the
- *  ward whose names read alike. It is staff-facing — the bedside screen does
- *  not show it, because it is about a patient who is not in this room.
+ *  ward whose names read alike. The bedside screen shows THAT it is in force
+ *  and nothing more — `similarNameWith` names a patient in another bed and
+ *  stays staff-facing.
  *  `isolation` is shown to patient and visitors too, since the precautions
  *  apply to anyone entering. */
 export interface SafetyAlerts {
   similarName: boolean;
-  /** The other patient's name, so the nurse knows who to check against. */
+  /** The other patient's name, so the nurse knows who to check against.
+   *  NEVER rendered on the bedside screen. */
   similarNameWith: string;
   isolation: boolean;
   /** Free text: "Contact", "Droplet", "Airborne", "Protective" … */
   isolationType: string;
+  /** Assessed fall risk. "" when the ward has not assessed one. */
+  fallRisk: "" | "low" | "medium" | "high";
+  /** Patient-friendly lines the ward wrote, one per row. Empty means the
+   *  section does not appear — an isolation badge with no instructions under
+   *  it tells the patient a rule applies without saying what it is. */
+  isolationInstructions: string[];
+  /** What the patient should do to keep moving safely. Assessed and written
+   *  separately from `fallRisk`: a patient with no fall risk can still be on
+   *  a mobility plan, and a high risk does not itself dictate the advice. */
+  mobilityInstructions: string[];
 }
 
 export interface ClinicalObservation {
@@ -203,6 +228,7 @@ export type SectionKey =
   | "discharge"
   | "dischargePlan"
   | "observations"
+  | "forms"
   | "nfc";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -242,6 +268,9 @@ export interface NurseStoreState {
 
   /** Imaging results with per-item visibility */
   imagingResults: ImagingResult[];
+
+  /** Procedures with per-item visibility */
+  procedures: ProcedureResult[];
 
   /** Baby cameras with per-camera visibility */
   babyCameras: BabyCamera[];
@@ -328,6 +357,7 @@ function createDefaultState(): NurseStoreState {
       discharge: true,
       dischargePlan: true,
       observations: true,
+      forms: false, // Nurse-side signing tool, not a patient-facing CareMe slide
       nfc: false, // Not a patient-facing CareMe slide
     },
 
@@ -358,21 +388,36 @@ function createDefaultState(): NurseStoreState {
 
     patientDiet: "regular",
     alerts: {
-      similarName: false,
-      similarNameWith: "",
-      isolation: false,
-      isolationType: "",
+      similarName: true,
+      similarNameWith: "Sarah Saleh",
+      isolation: true,
+      isolationType: "Contact",
+      fallRisk: "high",
+      isolationInstructions: [
+        "Check with your nurse before leaving the room.",
+        "Visitors: check with the nurse before entering.",
+      ],
+      mobilityInstructions: [
+        "Change your position regularly",
+        "Take short walks around the ward",
+      ],
     },
 
     painScore: 5,
 
+    /* The plan for the stay, not for a day — the bedside card shows every
+       step in order rather than slicing it by date. */
     carePlan: [
       { id: "cp-1", labelKey: "care.plan.initialAssessment", done: true, timeKey: "care.plan.done", day: 1, date: todayStr },
       { id: "cp-2", labelKey: "care.plan.bloodWork", done: true, timeKey: "care.plan.done", day: 1, date: todayStr },
-      { id: "cp-3", labelKey: "care.plan.medicationRound", done: false, active: true, minutes: 45, day: 1, date: todayStr },
-      { id: "cp-4", labelKey: "care.plan.checkup", done: false, minutes: 15, day: 2, date: tomorrowStr },
-      { id: "cp-5", labelKey: "care.plan.physicalTherapy", done: false, minutes: 30, day: 3, date: day2Str },
-      { id: "cp-6", labelKey: "care.plan.doctorReview", done: false, minutes: 10, day: 4, date: day3Str },
+      { id: "cp-3", labelKey: "care.plan.scansImaging", done: true, timeKey: "care.plan.done", day: 1, date: todayStr },
+      { id: "cp-4", labelKey: "care.plan.medicationRound", done: false, active: true, minutes: 45, day: 1, date: todayStr },
+      { id: "cp-5", labelKey: "care.plan.checkup", done: false, minutes: 15, day: 2, date: tomorrowStr },
+      { id: "cp-6", labelKey: "care.plan.physicalTherapy", done: false, minutes: 30, day: 3, date: day2Str },
+      { id: "cp-7", labelKey: "care.plan.nutritionReview", done: false, minutes: 20, day: 3, date: day2Str },
+      { id: "cp-8", labelKey: "care.plan.woundCare", done: false, minutes: 25, day: 4, date: day3Str },
+      { id: "cp-9", labelKey: "care.plan.doctorReview", done: false, minutes: 10, day: 4, date: day3Str },
+      { id: "cp-10", labelKey: "care.plan.dischargeTeaching", done: false, minutes: 30, day: 5, date: day3Str },
     ],
     carePlanMode: "daily",
     carePlanSelectedDate: todayStr,
@@ -399,18 +444,20 @@ function createDefaultState(): NurseStoreState {
       { id: "img-3", labelKey: "care.imaging.doppler", date: "12 Mar", summaryKey: "care.imaging.dopplerSummary", type: "Ultrasound", pdfUrl: "/reports/venous-doppler.html", visible: true },
     ],
 
+    procedures: [
+      { id: "proc-1", label: "Fetal Monitoring (CTG)", date: "11 Mar", summary: "Reactive trace. No decelerations.", pdfUrl: "/reports/lab-report-cbc.html", visible: true },
+      { id: "proc-2", label: "Epidural Anaesthesia Review", date: "12 Mar", visible: true },
+    ],
+
     babyCameras: [
       { id: "cam-1", name: "Baby Saleh", location: "Nursery · Crib 3A", src: imgBabyCam, connected: true, visible: true },
     ],
 
     dischargePlan: [
-      { id: "dp-1", labelKey: "care.discharge.instructionsEntered", done: true, timeKey: "care.plan.done" },
-      { id: "dp-2", labelKey: "care.discharge.confirmed", done: true, timeKey: "care.plan.done" },
-      { id: "dp-3", labelKey: "care.discharge.takeHomeMeds", done: false, active: true, minutes: 45 },
-      { id: "dp-4", labelKey: "care.discharge.financialClearance", done: false, minutes: 30 },
-      { id: "dp-5", labelKey: "care.discharge.physicalDischarge", done: false, minutes: 20 },
-      { id: "dp-6", labelKey: "care.discharge.cleaning", done: false, minutes: 45 },
-      { id: "dp-7", labelKey: "care.discharge.roomReady", done: false, minutes: 15 },
+      { id: "dp-1", labelKey: "care.discharge.orderIssued", done: true, timeKey: "care.plan.done" },
+      { id: "dp-2", labelKey: "care.discharge.medsOrdered", done: true, timeKey: "care.plan.done" },
+      { id: "dp-3", labelKey: "care.discharge.medsDispensed", done: false, active: true },
+      { id: "dp-4", labelKey: "care.discharge.financialClearance", done: false },
     ],
 
     dischargeInfo: {
@@ -426,12 +473,31 @@ function createDefaultState(): NurseStoreState {
       instructions: "Take the discharge medication exactly as written on the label. Keep the dressing dry for 48 hours. Walk short distances daily and avoid lifting anything over 5 kg for two weeks. Come back to the emergency department if you develop a fever above 38°C, increasing pain, or bleeding from the wound.",
     },
 
+    /* Oldest first — the card reverses them, so the newest round leads. Two
+       earlier rounds are seeded so the repeating block is visible in the demo
+       rather than only appearing once a nurse has recorded a second set. */
     observations: [
+      {
+        id: "seed-3",
+        timestamp: new Date(Date.now() - 3600000 * 12),
+        nurseName: "clinical.nurse.nura",
+        vitals: { bp: "124/80", hr: "74", temp: "37.2", spo2: "97", resp: "16" },
+        painLevel: 3,
+        risks: { fall: true, pressure: false, allergies: true, other: false },
+      },
+      {
+        id: "seed-2",
+        timestamp: new Date(Date.now() - 3600000 * 8),
+        nurseName: "clinical.nurse.nura",
+        vitals: { bp: "120/79", hr: "71", temp: "37.1", spo2: "98", resp: "15" },
+        painLevel: 2,
+        risks: { fall: true, pressure: false, allergies: true, other: false },
+      },
       {
         id: "seed-1",
         timestamp: new Date(Date.now() - 3600000 * 4),
         nurseName: "clinical.nurse.nura",
-        vitals: { bp: "118/78", hr: "68", temp: "37.0", spo2: "99" },
+        vitals: { bp: "118/78", hr: "68", temp: "37.0", spo2: "99", resp: "14" },
         painLevel: 1,
         risks: { fall: true, pressure: false, allergies: true, other: false },
       },

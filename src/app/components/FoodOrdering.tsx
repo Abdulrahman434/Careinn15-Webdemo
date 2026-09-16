@@ -1070,7 +1070,7 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
                   className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
                   style={{
                     width: 40, height: 40, borderRadius: 10,
-                    backgroundColor: "rgba(0,0,0,0.05)", border: "none", outline: "none",
+                    backgroundColor: theme.tileInactiveBg, border: "none", outline: "none",
                     color: theme.textMuted, fontSize: "20px",
                   }}
                 >
@@ -2338,7 +2338,7 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
 
                 {/* Divider + the card's action */}
                 <div className="w-full flex flex-col items-center" style={{ marginTop: "auto" }}>
-                  <div style={{ width: "100%", height: "1px", backgroundColor: "rgba(0,0,0,0.06)", marginBottom: "16px" }} />
+                  <div style={{ width: "100%", height: "1px", backgroundColor: theme.borderDefault, marginBottom: "16px" }} />
                   <div className="flex items-center justify-center gap-2" data-fo-action={meal.id}>
                     {/* The clock belongs to the deadline, not to "View menu". */}
                     {canOrder && !placed && <Clock size={15} color={INK_2} className="shrink-0" />}
@@ -2428,7 +2428,7 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
                   className="shrink-0 flex items-center justify-center active:scale-90 transition-transform cursor-pointer"
                   style={{
                     width: "48px", height: "48px", borderRadius: "14px",
-                    backgroundColor: "rgba(0,0,0,0.05)", border: "none", outline: "none",
+                    backgroundColor: theme.tileInactiveBg, border: "none", outline: "none",
                   }}
                 >
                   <X size={24} color={INK_2} strokeWidth={2.5} />
@@ -3081,7 +3081,8 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
 }
 
 function RowDivider() {
-  return <div style={{ height: "1px", backgroundColor: "rgba(0,0,0,0.06)" }} />;
+  const { theme } = useTheme();
+  return <div style={{ height: "1px", backgroundColor: theme.borderDefault }} />;
 }
 
 function ConfirmRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
