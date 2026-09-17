@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useTheme, SHADOW } from "./ThemeContext";
+import { useTheme, SHADOW, TYPE_SCALE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { Lock, Unlock, X, CheckCircle, ShieldAlert } from "lucide-react";
 import { lockedAppsStore } from "../lib/lockedApps";
@@ -149,7 +149,7 @@ export function AppLockMenu({
                   border: "none",
                   color: "#FFFFFF",
                   fontWeight: 700,
-                  fontSize: "16px"
+                  fontSize: TYPE_SCALE.base
                 }}
               >
                 {isCurrentlyLocked ? tr("appLock.unlock.button") : tr("appLock.lock.button")}
@@ -163,7 +163,7 @@ export function AppLockMenu({
                   border: `1.5px solid ${t.borderDefault}`,
                   color: t.textMuted,
                   fontWeight: 600,
-                  fontSize: "16px"
+                  fontSize: TYPE_SCALE.base
                 }}
               >
                 {tr("appLock.cancel")}
@@ -197,7 +197,7 @@ export function AppLockMenu({
                     border: "none",
                     color: "#FFFFFF",
                     fontWeight: 700,
-                    fontSize: "16px"
+                    fontSize: TYPE_SCALE.base
                   }}
                 >
                   {tr("appLock.noPinSetup.button")}

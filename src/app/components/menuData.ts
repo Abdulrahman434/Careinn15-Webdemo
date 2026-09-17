@@ -200,7 +200,7 @@ const CHEMO_BREAKFAST = mkGroups([
   { id: "B", en: "Dessert", ar: "الحلوى", mode: "choose-1", items: [
     ["English Cake", "انجلش كيك"], ["Fruit", "فواكه"], ["Jelly", "جلي"], ["Fruit Salad", "سلطة فواكه"],
   ]},
-  { id: "C", en: "Complimentary", ar: "يأتي مع وجبتك", mode: "included", items: [
+  { id: "C", en: "Complimentary", ar: "مشمول مع وجبتك", mode: "included", items: [
     ["Water Bottle", "مياه معدنية"], ["Tetra Pack Juice", "عصير"],
   ]},
 ], "ch-b");
@@ -230,7 +230,7 @@ const CHEMO_LUNCH = mkGroups([
   { id: "D", en: "Dessert", ar: "الحلوى", mode: "choose-1", items: [
     ["English Cake", "انجلش كيك"], ["Fruit", "فواكه"], ["Jelly", "جلي"], ["Fruit Salad", "سلطة فواكه"],
   ]},
-  { id: "E", en: "Complimentary", ar: "يأتي مع وجبتك", mode: "included", items: [
+  { id: "E", en: "Complimentary", ar: "مشمول مع وجبتك", mode: "included", items: [
     ["Water Bottle", "مياه معدنية"], ["Tetra Pack Juice", "عصير"],
   ]},
 ], "ch-l");
@@ -260,7 +260,7 @@ const CHEMO_DINNER = mkGroups([
   { id: "D", en: "Dessert", ar: "الحلوى", mode: "choose-1", items: [
     ["English Cake", "انجلش كيك"], ["Fruit", "فواكه"], ["Jelly", "جلي"], ["Fruit Salad", "سلطة فواكه"],
   ]},
-  { id: "E", en: "Complimentary", ar: "يأتي مع وجبتك", mode: "included", items: [
+  { id: "E", en: "Complimentary", ar: "مشمول مع وجبتك", mode: "included", items: [
     ["Water Bottle", "مياه معدنية"], ["Tetra Pack Juice", "عصير"],
   ]},
 ], "ch-d");
@@ -428,7 +428,7 @@ const OB_BREAKFAST = mkGroups([
     ["Croissant", "كرواسان سادة"], ["Muffin Cake", "كيك المافن"],
     ["Danish Pastry", "فطيرة الدانش"], ["Cinnamon Roll", "لفائف القرفة"],
   ]},
-  { id: "H", en: "Complimentary", ar: "يأتي مع وجبتك", mode: "included", items: [
+  { id: "H", en: "Complimentary", ar: "مشمول مع وجبتك", mode: "included", items: [
     ["Water Bottle", "مياه معدنية"], ["Tetra Pack Juice", "عصير"],
   ]},
 ], "ob-b");
@@ -462,7 +462,7 @@ const OB_LUNCH = mkGroups([
   { id: "F", en: "Dessert", ar: "الحلوى", mode: "choose-1", items: [
     ["Dessert of The Day", "حلى اليوم"], ["Fruit Salad", "سلطة فواكه"],
   ]},
-  { id: "G", en: "Complimentary", ar: "يأتي مع وجبتك", mode: "included", items: [
+  { id: "G", en: "Complimentary", ar: "مشمول مع وجبتك", mode: "included", items: [
     ["Water Bottle", "مياه معدنية"], ["Tetra Pack Juice", "عصير"],
   ]},
 ], "ob-l");
@@ -496,7 +496,7 @@ const OB_DINNER = mkGroups([
   { id: "F", en: "Dessert", ar: "الحلوى", mode: "choose-1", items: [
     ["Dessert of The Day", "حلى اليوم"], ["Fruit Salad", "سلطة فواكه"],
   ]},
-  { id: "G", en: "Complimentary", ar: "يأتي مع وجبتك", mode: "included", items: [
+  { id: "G", en: "Complimentary", ar: "مشمول مع وجبتك", mode: "included", items: [
     ["Water Bottle", "مياه معدنية"], ["Tetra Pack Juice", "عصير"],
   ]},
 ], "ob-d");
@@ -522,7 +522,7 @@ const DIABETIC_BREAKFAST = mkGroups([
   { id: "D", en: "Cereals", ar: "حبوب الإفطار", mode: "choose-1", items: [
     ["Oats", "الشوفان"], ["Bran Flakes", "رقائق نخالة"],
   ]},
-  { id: "E", en: "Complimentary", ar: "يأتي مع وجبتك", mode: "included", items: [
+  { id: "E", en: "Complimentary", ar: "مشمول مع وجبتك", mode: "included", items: [
     ["Fresh Fruit (Whole)", "فواكه طازجة"], ["Water Bottle", "مياه معدنية"],
   ]},
 ], "db-b");
@@ -657,7 +657,7 @@ const LP_BREAKFAST = mkGroups([
     ["Plain Omelette", "أومليت سادة"], ["Vegetable Omelette", "أومليت الخضروات"],
     ["Scrambled Egg", "البيض المخفوق"], ["Boiled Egg", "بيض مسلوق"],
   ]},
-  { id: "D", en: "Complimentary", ar: "يأتي مع وجبتك", mode: "included", items: [
+  { id: "D", en: "Complimentary", ar: "مشمول مع وجبتك", mode: "included", items: [
     ["Corn Flakes", "رقائق الذرة"], ["Fresh Fruit (Whole)", "فواكه طازجة"],
     ["Water Bottle", "مياه معدنية"],
   ]},
@@ -724,7 +724,7 @@ const LS_BREAKFAST = mkGroups([
   { id: "D", en: "Cereals", ar: "حبوب الإفطار", mode: "choose-1", items: [
     ["Oats", "الشوفان"], ["Bran Flakes", "رقائق نخالة"],
   ]},
-  { id: "E", en: "Complimentary", ar: "يأتي مع وجبتك", mode: "included", items: [
+  { id: "E", en: "Complimentary", ar: "مشمول مع وجبتك", mode: "included", items: [
     ["Fresh Fruit (Whole)", "فواكه طازجة"], ["Water Bottle", "مياه معدنية"],
   ]},
 ], "ls-b");
@@ -801,7 +801,7 @@ const REG_BREAKFAST = mkGroups([
     ["Croissant", "كرواسان سادة"], ["Muffin Cake", "كيك المافن"],
     ["Danish Pastry", "فطيرة الدانش"], ["Cinnamon Roll", "لفائف القرفة"],
   ]},
-  { id: "G", en: "Complimentary", ar: "يأتي مع وجبتك", mode: "included", items: [
+  { id: "G", en: "Complimentary", ar: "مشمول مع وجبتك", mode: "included", items: [
     ["Water Bottle", "مياه معدنية"], ["Tetra Pack Juice", "عصير"],
   ]},
 ], "rg-b");
@@ -812,7 +812,7 @@ function regLunch(day: number, soups: I[], salads: I[], mains: I[], desserts: I[
     { id: "B", en: "Salad", ar: "سلطة", mode: "choose-1", items: salads },
     { id: "C", en: "Main Dish", ar: "الطبق الرئيسي", mode: "choose-1", items: mains },
     { id: "D", en: "Dessert", ar: "الحلوى", mode: "choose-1", items: desserts },
-    { id: "E", en: "Complimentary", ar: "يأتي مع وجبتك", mode: "included", items: [["Water Bottle","مياه معدنية"],["Tetra Pack Juice","عصير"]] },
+    { id: "E", en: "Complimentary", ar: "مشمول مع وجبتك", mode: "included", items: [["Water Bottle","مياه معدنية"],["Tetra Pack Juice","عصير"]] },
   ], `rg-${day}-l`);
 }
 
@@ -822,7 +822,7 @@ function regDinner(day: number, soups: I[], salads: I[], mains: I[], desserts: I
     { id: "B", en: "Salad", ar: "سلطة", mode: "choose-1", items: salads },
     { id: "C", en: "Main Dish", ar: "الطبق الرئيسي", mode: "choose-1", items: mains },
     { id: "D", en: "Dessert", ar: "الحلوى", mode: "choose-1", items: desserts },
-    { id: "E", en: "Complimentary", ar: "يأتي مع وجبتك", mode: "included", items: [["Water Bottle","مياه معدنية"],["Tetra Pack Juice","عصير"]] },
+    { id: "E", en: "Complimentary", ar: "مشمول مع وجبتك", mode: "included", items: [["Water Bottle","مياه معدنية"],["Tetra Pack Juice","عصير"]] },
   ], `rg-${day}-d`);
 }
 
@@ -927,7 +927,7 @@ const SD_BREAKFAST = mkGroups([
   { id: "F", en: "Pastries", ar: "المعجنات", mode: "choose-1", items: [
     ["Danish Pastry", "فطيرة دانش"], ["Cinnamon Roll", "لفائف القرفة"],
   ]},
-  { id: "G", en: "Complimentary", ar: "يأتي مع وجبتك", mode: "included", items: [
+  { id: "G", en: "Complimentary", ar: "مشمول مع وجبتك", mode: "included", items: [
     ["Water Bottle", "مياه معدنية"],
   ]},
 ], "sd-b");
@@ -940,7 +940,7 @@ function sdLunch(day: number, soups: I[], salad: I[], mains: I[], starch: I[], d
     { id: "D", en: "Starch", ar: "النشويات", mode: "choose-1", items: starch },
     { id: "E", en: "Sautéed Vegetables", ar: "خضار سوتيه", mode: "included", items: [["Sautéed Vegetables","خضار سوتيه"]] },
     { id: "F", en: "Dessert", ar: "الحلوى", mode: "choose-1", items: desserts },
-    { id: "G", en: "Complimentary", ar: "يأتي مع وجبتك", mode: "included", items: [["Water Bottle","مياه معدنية"],["Tetra Pack Juice","عصير"]] },
+    { id: "G", en: "Complimentary", ar: "مشمول مع وجبتك", mode: "included", items: [["Water Bottle","مياه معدنية"],["Tetra Pack Juice","عصير"]] },
   ], `sd-${day}-l`);
 }
 

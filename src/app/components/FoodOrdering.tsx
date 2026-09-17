@@ -35,7 +35,10 @@ import {
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 type MealId = MealIdData;
-type Step = "landing" | "select-type" | "select-meal" | "kids-breakfast-type" | "build-meal" | "confirmed" | "history";
+/* "My Orders" is an overlay from anywhere, never a step of its own: it used
+   to exist twice, once as this step and once as the overlay the top bar
+   opens, showing the same HistoryView either way. */
+type Step = "landing" | "select-type" | "select-meal" | "kids-breakfast-type" | "build-meal" | "confirmed";
 type OrderFor = "patient" | "guest";
 type GroupMode = GroupModeData;
 type KidsBreakfastType = "hot" | "cold" | null;
@@ -173,7 +176,8 @@ function setEnforceOrderTime(v: boolean) { _enforceOrderTime = v; if (typeof win
 function getEnforceOrderTime() { return _enforceOrderTime; }
 
 /* ── Ordering rules ───────────────────────────────────────────────────
- * The kitchen takes orders in one window each afternoon, 4:00 PM - 8:00 PM,
+ * The kitchen takes orders in one window each afternoon, 4:00 PM - 8:00 PM
+ * (2:00 PM at Fakeeh),
  * and that window buys exactly one day: tomorrow. One window for all three
  * meals, replacing the old per-meal orderCutoff, so the patient has a single
  * time to remember rather than three.
@@ -187,7 +191,18 @@ function getEnforceOrderTime() { return _enforceOrderTime; }
  * anything not ordered. The meal cards carry that promise, because the patient
  * most likely to miss the cutoff is the one who most needs to know they will
  * still be fed. */
-const ORDER_WINDOW_START = 16;
+/* Fakeeh's kitchen opens its run at 2 PM; every other hospital starts at 4.
+   Read off the active hospital rather than the theme, because the window is
+   also asked about outside React (orderWindowState below runs on a timer).
+   "active-hospital-id" is ThemeContext's key — it is the hospital the whole
+   app is branded as. */
+const ORDER_WINDOW_START_BY_HOSPITAL: Record<string, number> = { dsfh: 14 };
+const ORDER_WINDOW_START_DEFAULT = 16;
+function orderWindowStart(): number {
+  if (typeof window === "undefined") return ORDER_WINDOW_START_DEFAULT;
+  const id = localStorage.getItem("active-hospital-id") || "";
+  return ORDER_WINDOW_START_BY_HOSPITAL[id] ?? ORDER_WINDOW_START_DEFAULT;
+}
 const ORDER_WINDOW_END = 20;
 
 /** Tomorrow and the two days after it. Today is already in the kitchen's
@@ -213,7 +228,7 @@ function orderWindowState(): OrderWindowState {
   if (!_enforceOrderTime) return "open";
   const now = new Date();
   const nowHours = now.getHours() + now.getMinutes() / 60;
-  if (nowHours < ORDER_WINDOW_START) return "before";
+  if (nowHours < orderWindowStart()) return "before";
   if (nowHours < ORDER_WINDOW_END) return "open";
   return "closed";
 }
@@ -264,7 +279,7 @@ function formatClock(d: Date, isRTL: boolean, locale?: Locale): string {
 
 /** "4:00 PM – 8:00 PM" in the active language. */
 function orderWindowLabel(isRTL: boolean): string {
-  return `${formatHour(ORDER_WINDOW_START, isRTL)} – ${formatHour(ORDER_WINDOW_END, isRTL)}`;
+  return `${formatHour(orderWindowStart(), isRTL)} – ${formatHour(ORDER_WINDOW_END, isRTL)}`;
 }
 
 /** The calendar date `offset` days from today. */
@@ -578,24 +593,6 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
     };
   }, [orderFor, isRTL]);
 
-  /** Add the meal just built to the basket and return to the day's meals.
-   *  Re-opening a meal replaces its entry rather than adding a second one. */
-  const handleAddToPending = useCallback(() => {
-    if (!currentMeal) return;
-    const entry: PendingMeal = {
-      dayOffset: selectedDayOffset,
-      mealId: currentMeal.id,
-      selections: { ...selections },
-      orderData: buildOrderData(currentMeal, selections, selectedDayOffset),
-    };
-    setPendingMeals((prev) => [
-      ...prev.filter((e) => pendingKey(e.dayOffset, e.mealId) !== pendingKey(entry.dayOffset, entry.mealId)),
-      entry,
-    ]);
-    setSelectedMealId(null);
-    setStep("select-meal");
-  }, [currentMeal, selections, selectedDayOffset, buildOrderData]);
-
   /* A basket left unsent when the window shuts is still a choice the patient
      made, and the rules say a choice is kept. So it is submitted here rather
      than dropped — which also stops OrderStore's fallback from treating those
@@ -620,8 +617,28 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
    *  nothing was sent while the patient was still choosing. */
   const handleSubmitOrder = useCallback(() => {
     setShowSubmitConfirm(false);
-    if (pendingMeals.length === 0) return;
-    const ordered = [...pendingMeals].sort(
+    /* The meal on the dishes screen is not in the basket yet — it is added
+       here, on confirm, which is what lets "Review selection" leave the
+       patient exactly where they were. */
+    const building: PendingMeal | null =
+      step === "build-meal" && currentMeal
+        ? {
+            dayOffset: selectedDayOffset,
+            mealId: currentMeal.id,
+            selections: { ...selections },
+            orderData: buildOrderData(currentMeal, selections, selectedDayOffset),
+          }
+        : null;
+    const basket = building
+      ? [
+          ...pendingMeals.filter(
+            (e) => pendingKey(e.dayOffset, e.mealId) !== pendingKey(building.dayOffset, building.mealId),
+          ),
+          building,
+        ]
+      : pendingMeals;
+    if (basket.length === 0) return;
+    const ordered = [...basket].sort(
       (a, b) => a.dayOffset - b.dayOffset || a.mealId.localeCompare(b.mealId),
     );
     let firstNumber = "";
@@ -662,7 +679,8 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
       }, 500);
     }
     setStep("confirmed");
-  }, [pendingMeals, placeOrder, orderFor, theme.id, showToast, isRTL]);
+  }, [pendingMeals, placeOrder, orderFor, theme.id, showToast, isRTL,
+      step, currentMeal, selections, selectedDayOffset, buildOrderData]);
 
   const stepIndex: 1 | 2 | 3 | 4 =
     step === "select-type" ? 1 :
@@ -703,9 +721,17 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
       setSelections(getInitialSelections(m));
       setStep("build-meal");
     } else if (step === "build-meal") {
-      handleAddToPending();
+      /* One meal, one order. The old "Add to order" parked the meal in a
+         basket the patient then had to remember to send from another screen;
+         choosing the dishes and placing the order are now the same action,
+         and another meal is ordered with "Place new order" afterwards.
+
+         The step does NOT move here: "Review selection" has to land back on
+         these dishes with them still ticked, so the meal joins the basket on
+         confirm (see handleSubmitOrder), not on opening the dialog. */
+      setShowSubmitConfirm(true);
     }
-  }, [step, selectedMealId, effectiveDiet, dayOfWeek, kidsBreakfastType, meals, handleAddToPending, isNpo, orderFor, pendingMeals, selectedDayOffset]);
+  }, [step, selectedMealId, effectiveDiet, dayOfWeek, kidsBreakfastType, meals, isNpo, orderFor, pendingMeals, selectedDayOffset]);
 
   const handleBack = useCallback(() => {
     if (step === "select-type") onClose();
@@ -719,10 +745,9 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
       }
     }
     else if (step === "confirmed") onClose();
-    else if (step === "history") setStep("select-type");
   }, [step, onClose, effectiveDiet, selectedMealId]);
 
-  const showPatientBar = step !== "history" && step !== "confirmed";
+  const showPatientBar = step !== "confirmed";
   const showBottomBar = true;
   const showBackButton = true;
   const isFlow = step === "select-type" || step === "select-meal" || step === "kids-breakfast-type" || step === "build-meal" || step === "confirmed";
@@ -785,33 +810,39 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
       showBack={step !== "confirmed"}
       onContinue={
         step === "confirmed" ? onClose :
-        step === "history" ? () => { setStep("select-type"); setSelectedMealId(null); setOrderFor("patient"); } :
         handleContinue
       }
       leftAction={
         step === "confirmed"
-          ? { label: isRTL ? "طلباتي" : "View My Orders", onClick: () => setStep("history") }
+          ? { label: isRTL ? "طلباتي" : "View My Orders", onClick: () => setShowHistoryOverlay(true) }
           : undefined
       }
       secondaryAction={
-        // The basket can only be sent from the meal list — the one screen
-        // where the patient can see what is in it across all three days.
-        step === "select-meal" && windowState === "open" && pendingMeals.length > 0
+        /* Ordering another meal without leaving the confirmation: the patient
+           who has just done dinner is the one most likely to want breakfast.
+           Keeps who the order is for, so only the meal is picked again. */
+        step === "confirmed"
           ? {
-              label: isRTL
-                ? `إرسال الطلب (${pendingMeals.length})`
-                : `Place order (${pendingMeals.length})`,
-              onClick: () => setShowSubmitConfirm(true),
+              label: isRTL ? "طلب وجبة أخرى" : "Place new order",
+              onClick: () => { setSelectedMealId(null); setStep("select-meal"); },
             }
-          : undefined
+          // A basket left behind by cancelling the confirmation can still be
+          // sent from the meal list, the one screen that shows all of it.
+          : step === "select-meal" && windowState === "open" && pendingMeals.length > 0
+            ? {
+                label: isRTL
+                  ? `إرسال الطلب (${pendingMeals.length})`
+                  : `Place order (${pendingMeals.length})`,
+                onClick: () => setShowSubmitConfirm(true),
+              }
+            : undefined
       }
       backLabel={
         (isRTL ? "رجوع" : "Back")
       }
       continueLabel={
-        step === "build-meal" ? (isRTL ? "أضف إلى الطلب" : "Add to order") :
+        step === "build-meal" ? (isRTL ? "إرسال الطلب" : "Place order") :
         step === "confirmed"  ? (isRTL ? "خروج" : "Exit") :
-        step === "history" ? (isRTL ? "طلب جديد" : "New Order") :
                                 (isRTL ? "متابعة" : "Continue")
       }
       fontFamily={fontFamily}
@@ -877,7 +908,7 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
         onMyOrders={() => setShowHistoryOverlay(true)}
         showMyOrders={isFlow && step !== "confirmed"}
         onDemoClear={clearOpenOrders}
-        title={step === "history" ? (isRTL ? "طلباتي" : "My Orders") : (isRTL ? "طلب الوجبات" : "Meal Ordering")}
+        title={isRTL ? "طلب الوجبات" : "Meal Ordering"}
         fontFamily={fontFamily}
         isRTL={isRTL}
         BackArrow={BackArrow}
@@ -898,7 +929,12 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
           the canvas. The page is a flex column instead: top bar and patient
           bar are flex: none, this region is flex: 1 with min-height: 0, and
           the card fills exactly what is left of the canvas. ─── */}
-      <div className="flex-1 min-h-0 px-12 pt-3 pb-3 relative flex flex-col">
+      {/* pb-10, not pb-3: the footer's buttons sat within 12px of the bottom
+          edge of the screen, which on a wall- or arm-mounted terminal is the
+          hardest band for a patient in bed to see and to reach. Lifting the
+          whole card costs the body a little height and buys the two actions
+          that end every step a clear margin. */}
+      <div className="flex-1 min-h-0 px-12 pt-3 pb-10 relative flex flex-col">
         {isFlow && (
           <div className="flex-1 min-h-0 flex flex-col rounded-[30px] overflow-hidden" style={{ backgroundColor: SHEET, boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
             {showPatientBar ? renderPatientBar(true) : null}
@@ -960,16 +996,6 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
           </div>
         )}
 
-        {step === "history" && (
-          <HistoryView
-            activeOrders={activeOrders}
-            pastOrders={pastOrders}
-            fontFamily={fontFamily}
-            isRTL={isRTL}
-            meals={meals}
-          />
-        )}
-
         {/* ─── LANDING PAGE ─── */}
         {step === "landing" && (
           <motion.div
@@ -1010,7 +1036,7 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
 
             {/* View My Orders */}
             <button
-              onClick={() => setStep("history")}
+              onClick={() => setShowHistoryOverlay(true)}
               className="flex flex-col items-center justify-center gap-8 cursor-pointer transition-transform active:scale-[0.97] hover:scale-[1.02]"
               style={{
                 width: "420px", height: "380px",
@@ -2078,49 +2104,32 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
      a back button would tell them otherwise. */
   const [menuMeal, setMenuMeal] = React.useState<MealPeriod | null>(null);
   const windowStr = orderWindowLabel(isRTL);
-  const windowStartStr = formatHour(ORDER_WINDOW_START, isRTL, locale);
+  const windowStartStr = formatHour(orderWindowStart(), isRTL, locale);
   const windowEndStr = formatHour(ORDER_WINDOW_END, isRTL, locale);
   const dayOrderable = isOrderableDay(selectedDayOffset);
   /* A meal is choosable only on tomorrow's tab, and only inside the window.
      Outside it the same card opens the same menu to read. */
   const canOrder = dayOrderable && windowState === "open";
 
-  /* ── What the notice says about the day on screen ──────────────────────
+  /* ── What the preview note says about the day on screen ───────────────
    * Read off the SELECTED day, never off tomorrow.
+   *
+   * This used to be a banner across the top of the step. It said the same
+   * thing the meal cards already say with their "Opens 4:00 PM" chip, so it
+   * was a second voice for one fact. It now appears only where it adds
+   * something: inside a menu opened on a day that cannot be ordered yet,
+   * where the patient is reading a menu and may wonder why they cannot pick.
    *
    * A day the run cannot buy yet opens on the evening before it — that is the
    * whole rule, so the day it opens is simply the day before this one. */
   const dayName = formatDayWeekday(selectedDayOffset, isRTL, locale);
-  /* Icon and colour carry the state as much as the sentence does. One "i" on
-     all five made them read as a single template with the words swapped, and
-     the patient stopped reading it. The accent groups them: green for a day
-     that is settled either way, brand teal for the one state that invites an
-     action now, blue for a day still ahead. */
-  const notice =
+  const previewNote =
     !dayOrderable
-      ? { text: t("food.notice.previewDay", dayName,
-            formatDayWeekday(selectedDayOffset - 1, isRTL, locale), windowStartStr),
-          Icon: CalendarClock, accent: theme.info, surface: theme.infoSubtle }
-      : dayOrderStatus === "all"
-        ? { text: t("food.notice.ordered", dayName),
-            Icon: CheckCircle2, accent: theme.success, surface: theme.successSubtle }
-        : windowState === "before"
-          ? { text: t("food.notice.opensToday", dayName, windowStartStr),
-              Icon: Clock, accent: theme.info, surface: theme.infoSubtle }
-          : windowState === "open"
-            /* Part of the day already sent is neither "open" nor "all set":
-               saying the menu is open, flat, reads as though nothing had been
-               ordered while a card right below says otherwise. */
-            ? dayOrderStatus === "some"
-              ? { text: t("food.notice.partlyOrdered", dayName, windowEndStr),
-                  Icon: ClipboardList, accent: TEAL, surface: TEAL_15 }
-              : { text: t("food.notice.openUntil", dayName, windowEndStr),
-                  Icon: ChefHat, accent: TEAL, surface: TEAL_15 }
-            /* Closed is not a failure: something is still coming, so it takes
-               the settled green rather than an alarm colour. */
-            : { text: t("food.notice.closed", dayName),
-                Icon: Utensils, accent: theme.success, surface: theme.successSubtle };
-  const NoticeIcon = notice.Icon;
+      ? t("food.notice.previewDay", dayName,
+          formatDayWeekday(selectedDayOffset - 1, isRTL, locale), windowStartStr)
+      : windowState === "before"
+        ? t("food.notice.opensToday", dayName, windowStartStr)
+        : null;
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}
@@ -2133,9 +2142,8 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
 
         {/* Day tabs — a day and its date, nothing else. Every tab is live:
             switching to one shows that day's menu. Which day can be ordered
-            is said by the cards below (their badge) and by the notice, so the
-            tabs stay a plain row of dates rather than repeating it a third
-            time in smaller type. */}
+            is said by the cards below, on their badge, so the tabs stay a
+            plain row of dates rather than saying it twice. */}
         <div className="flex items-center justify-center gap-3" dir={isRTL ? "rtl" : "ltr"}>
           {ORDER_DAY_OFFSETS.map((offset) => {
             const active = offset === selectedDayOffset;
@@ -2183,26 +2191,6 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
             Never amber, in any state: none of these five is a warning, and an
             alarm colour on a routine cut-off makes it read as something going
             wrong. The icon and accent come from `notice` above. */}
-        <div data-fo-notice data-fo-window-state={windowState}
-          className="flex items-center gap-3"
-          style={{
-            maxWidth: "900px",
-            padding: "14px 26px",
-            borderRadius: "18px",
-            backgroundColor: notice.surface,
-            border: `1.5px solid ${notice.accent}`,
-          }}>
-          <NoticeIcon size={20} color={notice.accent} className="shrink-0" />
-          {/* One whole sentence per state, translated as a unit — see the
-              food.notice.* keys. Nothing here explains the rules; it says
-              where this day stands, in the words one would use out loud. */}
-          <p style={{
-            fontFamily, fontSize: "16px", fontWeight: WEIGHT.medium, color: theme.textBody,
-            margin: 0, lineHeight: 1.5, textAlign: isRTL ? "right" : "left",
-          }}>
-            {notice.text}
-          </p>
-        </div>
       </div>
 
       {/* Cards row — narrower, centered with whitespace, photo-led */}
@@ -2230,14 +2218,22 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
              the three cards stop reading as one row of equals. Only an order
              already with the kitchen earns a different badge, because that is
              a different fact about the day, not a selection. */
+          /* A sent order is filled and ticked; an open window is an outline in
+             the brand teal. They were both a green tint, which made "Order
+             placed" and "Open for ordering" read as the same state at a
+             glance — the colour, the fill and the tick now separate them. */
+          let statusBorder = "transparent";
+          let statusTick = false;
           if (dayOrderable) {
             if (placed) {
-              // GREEN is light: white on it measures 2.3:1, so the filled
-              // badge takes ink rather than white.
-              statusBg = GREEN; statusColor = "#10222B";
+              /* Tinted, not filled: white on this green measures ~2.3:1, and
+                 successOn is the contrast-checked ink for it. The tick and the
+                 green are what set it apart from the outlined teal below. */
+              statusBg = theme.successSubtle; statusColor = theme.successOn;
+              statusTick = true;
               statusText = isRTL ? "تم إرسال الطلب" : "Order placed";
             } else if (windowState === "open") {
-              statusBg = CHIP_OK; statusColor = ON_OK;
+              statusBg = "transparent"; statusColor = TEAL_ON; statusBorder = TEAL;
               statusText = isRTL ? "متاح للطلب" : "Open for ordering";
             } else if (windowState === "before") {
               statusBg = CHIP_WARN; statusColor = ON_WARN;
@@ -2348,7 +2344,9 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
                 <div className="flex items-center gap-2" data-fo-status style={{
                   padding: "9px 18px", borderRadius: "100px",
                   backgroundColor: statusBg,
+                  border: `1.5px solid ${statusBorder}`,
                 }}>
+                  {statusTick && <Check size={16} color={statusColor} strokeWidth={3} />}
                   <span style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.bold, color: statusColor }}>
                     {statusText}
                   </span>
@@ -2438,6 +2436,13 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
                   <p style={{ fontFamily, fontSize: "15px", fontWeight: WEIGHT.medium, color: INK_2, margin: "3px 0 0" }}>
                     {`${formatDayLong(selectedDayOffset, isRTL)} · ${locTimeRange(menuMeal.timeRange, isRTL)}`}
                   </p>
+                  {/* Why this menu cannot be picked from — said here, where
+                      the patient is reading it, rather than over the step. */}
+                  {previewNote && (
+                    <p style={{ fontFamily, fontSize: "14px", fontWeight: WEIGHT.medium, color: TEAL_ON, margin: "6px 0 0", lineHeight: 1.4 }}>
+                      {previewNote}
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={() => setMenuMeal(null)}
@@ -2463,7 +2468,7 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
                       </span>
                       {g.mode === "included" && (
                         <span style={{ fontFamily, fontSize: "12px", fontWeight: WEIGHT.semibold, color: GREEN }}>
-                          {isRTL ? "يأتي مع وجبتك" : "Comes with your meal"}
+                          {isRTL ? "مشمول مع وجبتك" : "Comes with your meal"}
                         </span>
                       )}
                     </div>
@@ -2901,6 +2906,7 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
   /** Everything sent in this submission, across the rolling window. */
   submitted?: { dayOffset: number; mealId: MealId }[];
 }) {
+  const { theme } = useTheme();
   const isGuest = orderFor === "guest";
   const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
   const required = getRequiredGroups(meal);
@@ -2933,8 +2939,8 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
         {/* ── LEFT — Success message ── */}
         <div style={{ padding: "36px 32px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "18px" }}>
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 220, damping: 18, delay: 0.1 }}
-            style={{ width: "72px", height: "72px", borderRadius: "50%", backgroundColor: GREEN, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 8px 22px ${GREEN}50` }}>
-            <Check size={38} color="#fff" strokeWidth={3} />
+            style={{ width: "72px", height: "72px", borderRadius: "50%", backgroundColor: theme.success, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: SHADOW.md }}>
+            <Check size={38} color={theme.textInverse} strokeWidth={3} />
           </motion.div>
           <div className="text-center">
             <h2 style={{ fontFamily, fontSize: "28px", fontWeight: WEIGHT.bold, color: INK, lineHeight: 1.2 }}>
@@ -2964,16 +2970,16 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
                     key={`${entry.dayOffset}-${entry.mealId}`}
                     style={{
                       width: "100%", padding: "12px 16px", borderRadius: "14px",
-                      backgroundColor: `${GREEN}12`, border: `1.5px solid ${GREEN}40`,
+                      backgroundColor: theme.successSubtle, border: CARD_LINE_1,
                       display: "flex", alignItems: "center", gap: "14px",
                     }}
                   >
                     <div style={{
                       width: "38px", height: "38px", borderRadius: "12px",
-                      backgroundColor: `${GREEN}15`,
+                      backgroundColor: theme.successSubtle,
                       display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                     }}>
-                      <MealIcon size={19} color={GREEN} />
+                      <MealIcon size={19} color={theme.successOn} />
                     </div>
                     <div style={{ flex: 1, textAlign: isRTL ? "right" : "left" }}>
                       <p style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.bold, color: INK, lineHeight: 1.2 }}>
@@ -2983,7 +2989,7 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
                         {`${formatDayWeekday(entry.dayOffset, isRTL)} · ${locTimeRange(m.timeRange, isRTL)}`}
                       </p>
                     </div>
-                    <Check size={18} color={GREEN} strokeWidth={3} />
+                    <Check size={18} color={theme.successOn} strokeWidth={3} />
                   </div>
                 );
               })}
@@ -3056,7 +3062,7 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
                   <Utensils size={16} color={TEAL_ON} />
                 </div>
                 <span style={{ fontFamily, fontSize: "12px", fontWeight: WEIGHT.bold, color: INK_2, letterSpacing: "0.5px", textTransform: "uppercase" as const }}>
-                  {isRTL ? "وجباتك" : "Your Meal Items"}
+                  {isRTL ? "عناصر وجبتك" : "Your Meal Items"}
                 </span>
               </div>
               <div className="flex-1 min-w-0 flex flex-col items-end">
@@ -3077,7 +3083,7 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
                       <Check size={16} color={GREEN} />
                     </div>
                     <span style={{ fontFamily, fontSize: "12px", fontWeight: WEIGHT.bold, color: INK_2, letterSpacing: "0.5px", textTransform: "uppercase" as const }}>
-                      {isRTL ? "يأتي مع وجبتك" : "Comes With Your Meal"}
+                      {isRTL ? "مشمول مع وجبتك" : "Comes With Your Meal"}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col items-end">
@@ -3133,7 +3139,7 @@ function BottomBar({ step, canContinue, onBack, showBack, onContinue, leftAction
 }) {
   const ChevBack = isRTL ? ChevronRight : ChevronLeft;
   const ChevForward = isRTL ? ChevronLeft : ChevronRight;
-  const continueEnabled = canContinue || step === "confirmed" || step === "history";
+  const continueEnabled = canContinue || step === "confirmed";
   return (
     <div
       data-fo-footer={inCard ? "card" : "page"}
@@ -3418,7 +3424,7 @@ function OrderCard({ order, fontFamily, isRTL, formatDate, mealDef }: {
                   const includedSet = new Set((comesWith || []).map((it: any) => `${it.en}|${it.ar}`));
                   const mealItems = (order.items || []).filter((item: any) => !includedSet.has(`${item.name.en}|${item.name.ar}`));
                   return (
-                    <DetailBlock icon={<Utensils size={18} color={TEAL_ON} />} label={isRTL ? "وجباتك" : "Your Meal Items"} count={mealItems.length} isRTL={isRTL} fontFamily={fontFamily} accentColor={TEAL} badgeBg={TEAL_15}>
+                    <DetailBlock icon={<Utensils size={18} color={TEAL_ON} />} label={isRTL ? "عناصر وجبتك" : "Your Meal Items"} count={mealItems.length} isRTL={isRTL} fontFamily={fontFamily} accentColor={TEAL} badgeBg={TEAL_15}>
                       <ul style={{ margin: 0, padding: 0, paddingLeft: "6px", listStyle: "none", display: "flex", flexDirection: "column", gap: "6px" }}>
                         {mealItems.map((item: any, i: number) => (
                           <li key={i} className="flex items-center gap-2.5">

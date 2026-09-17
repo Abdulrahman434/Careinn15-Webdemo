@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Lock, CheckCircle2, ShieldAlert, X } from "lucide-react";
-import { useTheme, SHADOW } from "./ThemeContext";
+import { useTheme, SHADOW, TEXT_STYLE, WEIGHT } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { isAccountSet, setAccount } from "../lib/accountAuth";
 import { lockedAppsStore } from "../lib/lockedApps";
@@ -133,14 +133,14 @@ export function AppLockSetupModal({
               <button
                 onClick={handleLockExistingPin}
                 className="w-full py-3.5 cursor-pointer active:scale-98 transition-all shadow-sm"
-                style={{ fontFamily, fontSize: "14px", fontWeight: 700, color: t.textInverse, backgroundColor: t.primary, borderRadius: t.radiusLg, border: "none" }}
+                style={{ fontFamily, ...TEXT_STYLE.buttonSm, fontWeight: WEIGHT.bold, color: t.textInverse, backgroundColor: t.primary, borderRadius: t.radiusLg, border: "none" }}
               >
                 {tr("appLock.setup.confirm") || "Lock App"}
               </button>
               <button
                 onClick={onClose}
                 className="w-full py-3.5 cursor-pointer active:scale-98 transition-all"
-                style={{ fontFamily, fontSize: "14px", fontWeight: 600, color: t.textMuted, backgroundColor: "transparent", borderRadius: t.radiusLg, border: `1.5px solid ${t.borderDefault}` }}
+                style={{ fontFamily, ...TEXT_STYLE.buttonSm, color: t.textMuted, backgroundColor: "transparent", borderRadius: t.radiusLg, border: `1.5px solid ${t.borderDefault}` }}
               >
                 {tr("appLock.cancel") || "Cancel"}
               </button>

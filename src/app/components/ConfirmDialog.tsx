@@ -1,5 +1,5 @@
 import React from "react";
-import { useTheme, SHADOW } from "./ThemeContext";
+import { useTheme, SHADOW, TYPE_SCALE, WEIGHT } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { AlertTriangle, X } from "lucide-react";
 
@@ -82,12 +82,12 @@ export function ConfirmDialog({
         </div>
 
         {title && (
-          <span style={{ fontFamily: t.fontFamily, fontSize: "19px", fontWeight: 700, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
+          <span style={{ fontFamily: t.fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.semibold, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
             {title}
           </span>
         )}
 
-        <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 500, color: t.textBody, textAlign: "center", marginBottom: "24px", lineHeight: "22px" }}>
+        <span style={{ fontFamily: t.fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.normal, color: t.textBody, textAlign: "center", marginBottom: "20px", lineHeight: "26px" }}>
           {message}
         </span>
 
@@ -96,7 +96,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             className="flex items-center justify-center w-full cursor-pointer active:scale-[0.98] transition-all"
             style={{
-              height: "50px",
+              height: "54px",
               borderRadius: t.radiusLg,
               backgroundColor: isDanger ? t.error : t.primary,
               border: "none",
@@ -106,7 +106,7 @@ export function ConfirmDialog({
               boxShadow: SHADOW.md,
             }}
           >
-            <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: isDanger ? t.onError : t.brandOnPrimary }}>
+            <span style={{ fontFamily: t.fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold, color: isDanger ? t.onError : t.brandOnPrimary }}>
               {confirmLabel || tr("general.confirm")}
             </span>
           </button>
@@ -115,14 +115,14 @@ export function ConfirmDialog({
             onClick={onCancel}
             className="flex items-center justify-center w-full cursor-pointer active:scale-[0.98] transition-transform"
             style={{
-              height: "50px",
+              height: "54px",
               borderRadius: t.radiusLg,
               backgroundColor: "transparent",
               border: `1.5px solid ${t.borderDefault}`,
               outline: "none",
             }}
           >
-            <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 600, color: t.textMuted }}>
+            <span style={{ fontFamily: t.fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.medium, color: t.textMuted }}>
               {cancelLabel || tr("general.cancel")}
             </span>
           </button>

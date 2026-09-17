@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useTheme, SHADOW } from "./ThemeContext";
+import { useTheme, SHADOW, TEXT_STYLE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { getAccount, verifyPin, verifyNfcUid } from "../lib/accountAuth";
 import { useNfcTap } from "../utils/nfc";
@@ -150,7 +150,7 @@ export function AccountLockScreen({ visible, onUnlock, onClose, onSkipAsGuest }:
               outline: "none",
             }}
           >
-            <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 600, color: t.textMuted }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.buttonSm, color: t.textMuted }}>
               {tr("lock.guest.button")}
             </span>
           </button>
