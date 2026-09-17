@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
+import { usePressFlash } from "./usePressFlash";
 import { setAccount, getAccount, updateNfcCard, clearAccount, verifyPin } from "../lib/accountAuth";
 import { useNfcTap } from "../utils/nfc";
 import { X, CheckCircle, Shield, AlertCircle, Trash2, ChevronRight, Globe, Layout, Settings, Image, Check, SlidersHorizontal } from "lucide-react";
@@ -152,6 +153,7 @@ export function PinKeypad({
 }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLocale();
+  const { pressedKey, flash } = usePressFlash();
 
   const handleDigit = (d: string) => {
     if (pin.length < 4) {
@@ -198,17 +200,23 @@ export function PinKeypad({
           <div key={ri} className="flex items-center gap-3">
             {row.map((key, ki) => {
               if (key === "") return <div key={ki} style={{ width: "64px", height: "52px" }} />;
+              const isPressed = pressedKey === key;
               return (
                 <button
                   key={ki}
+                  onPointerDown={() => flash(key)}
                   onClick={() => (key === "del" ? handleDelete() : handleDigit(key))}
-                  className="flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
+                  className="flex items-center justify-center cursor-pointer"
                   style={{
                     width: "64px",
                     height: "52px",
                     borderRadius: t.radiusLg,
-                    backgroundColor: key === "del" ? t.accentSubtle : t.tileInactiveBg,
+                    backgroundColor: isPressed
+                      ? (key === "del" ? t.accent : t.primary)
+                      : (key === "del" ? t.accentSubtle : t.tileInactiveBg),
                     border: "none",
+                    transform: isPressed ? "scale(0.92)" : "scale(1)",
+                    transition: "background-color 0.15s, transform 0.15s",
                   }}
                 >
                   <span
@@ -216,7 +224,8 @@ export function PinKeypad({
                       fontFamily: t.fontFamily,
                       fontSize: key === "del" ? "13px" : "20px",
                       fontWeight: 700,
-                      color: key === "del" ? t.accentOn : t.textHeading,
+                      color: isPressed ? t.textInverse : (key === "del" ? t.accentOn : t.textHeading),
+                      transition: "color 0.15s",
                     }}
                   >
                     {key === "del" ? tr("careteam.del") : key}
@@ -227,6 +236,16 @@ export function PinKeypad({
           </div>
         ))}
       </div>
+
+      {/* The keypad carries its own shake so the wrong-PIN feedback works in
+          every dialog that uses it, not only inside SettingsPanel. */}
+      <style>{`
+        @keyframes pinShake {
+          0%, 100% { transform: translateX(0); }
+          20%, 60% { transform: translateX(-4px); }
+          40%, 80% { transform: translateX(4px); }
+        }
+      `}</style>
     </>
   );
 }

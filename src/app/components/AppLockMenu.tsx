@@ -94,7 +94,7 @@ export function AppLockMenu({
           width: "340px",
           padding: "32px 24px 24px 24px",
           borderRadius: t.radiusXl,
-          backgroundColor: "#FFFFFF",
+          backgroundColor: t.surface,
           boxShadow: SHADOW.xl,
           animation: "lockDialogIn 0.2s ease-out",
         }}
@@ -113,7 +113,7 @@ export function AppLockMenu({
             outline: "none",
           }}
         >
-          <X size={18} style={{ color: t.textMuted }} />
+          <X size={16} style={{ color: t.textMuted }} />
         </button>
 
         {step === "menu" && (
@@ -206,10 +206,10 @@ export function AppLockMenu({
             ) : (
               <>
                 <div
-                  className="flex items-center justify-center mb-6"
+                  className="flex items-center justify-center mb-4"
                   style={{ width: "56px", height: "56px", borderRadius: t.radiusLg, backgroundColor: t.primarySubtle }}
                 >
-                  <Lock size={28} style={{ color: t.primary }} />
+                  <Lock size={28} style={{ color: t.primaryOn }} />
                 </div>
                 <span style={{ fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, textAlign: "center", marginBottom: "4px" }}>
                   {onOpenApp ? tr("appLock.open.title") : tr("appLock.verify.title")}

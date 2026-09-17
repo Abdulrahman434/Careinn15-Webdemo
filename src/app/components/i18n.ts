@@ -1233,6 +1233,7 @@ const translations: Record<string, TranslationEntry> = {
   "call.roomNo": { en: "Room No.", ar: "رقم الغرفة", ur: "کمرہ نمبر" },
   "call.room": { en: "Room", ar: "الغرفة", ur: "کمرہ" },
   "call.hospitalDirectory": { en: "Hospital Directory", ar: "دليل المستشفى", ur: "ہسپتال ڈائرکٹری" },
+  "call.chooseContact": { en: "Choose a contact", ar: "اختر جهة الاتصال", ur: "رابطہ منتخب کریں" },
   "call.tapToCall": { en: "Tap any extension to start a call", ar: "اضغط على أي تحويلة لبدء الاتصال", ur: "کال شروع کرنے کے لیے کسی بھی ایکسٹینشن پر ٹیپ کریں" },
   "call.recentCalls": { en: "Recent Calls", ar: "المكالمات الأخيرة", ur: "حالیہ کالز" },
   "call.callBack": { en: "Call Back", ar: "معاودة الاتصال", ur: "واپس کال کریں" },

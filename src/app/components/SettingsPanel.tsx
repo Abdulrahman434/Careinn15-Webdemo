@@ -59,6 +59,7 @@ import type { Locale } from "./i18n";
 import imgMosque from "../../assets/b51acb5e2ec4a2c930572c53103b020b12e76ee2.png";
 import { getPrayerStatus, getCountdown, formatPrayerTime, PRAYER_NAMES } from "../utils/prayerUtils";
 import { MyPreferencesDialog } from "./MyAccountDialog";
+import { PinDialog } from "./PinDialog";
 import { isAccountSet } from "../lib/accountAuth";
 import { resetAppLockTutorial } from "../lib/appLockTutorialStore";
 
@@ -1301,164 +1302,45 @@ function LanguageDialog({
 }
 
 /* ─── Care Team Access PIN Dialog ─── */
-function CareTeamAccessDialog({ 
-  onClose, 
-  onSuccess 
-}: { 
-  onClose: () => void; 
+function CareTeamAccessDialog({
+  onClose,
+  onSuccess
+}: {
+  onClose: () => void;
   onSuccess: (role: "nurse" | "doctor") => void;
 }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLocale();
   const [pin, setPin] = useState("");
   const [error, setError] = useState(false);
-  const [pressedKey, setPressedKey] = useState<string | null>(null);
 
-  const handleDigit = (d: string) => {
-    if (pin.length < 4) {
-      const newPin = pin + d;
-      setPin(newPin);
-      setError(false);
-
-      if (newPin.length === 4) {
-        if (newPin === "2580") {
-          onSuccess("nurse");
-          onClose();
-        } else if (newPin === "0000") {
-          onSuccess("doctor");
-          onClose();
-        } else {
-          setTimeout(() => {
-            setError(true);
-            setPin("");
-          }, 300);
-        }
-      }
+  const handleComplete = (completedPin: string) => {
+    if (completedPin === "2580") {
+      onSuccess("nurse");
+      onClose();
+    } else if (completedPin === "0000") {
+      onSuccess("doctor");
+      onClose();
+    } else {
+      setTimeout(() => {
+        setError(true);
+        setPin("");
+      }, 300);
     }
   };
 
-  const handleDelete = () => {
-    setPin((p) => p.slice(0, -1));
-    setError(false);
-  };
-
   return (
-    <CenteredDialog onClose={onClose} width={320}>
-      <div
-        className="flex flex-col items-center"
-        style={{ padding: "28px 24px 8px 24px" }}
-      >
-        <div
-          className="flex items-center justify-center"
-          style={{
-            width: "56px",
-            height: "56px",
-            borderRadius: t.radiusLg,
-            backgroundColor: "#E0F2FE",
-            marginBottom: "16px",
-          }}
-        >
-          <Stethoscope size={28} style={{ color: t.primaryOn }} />
-        </div>
-        <span
-          style={{
-            fontFamily: t.fontFamily,
-            fontSize: "18px",
-            fontWeight: 700,
-            color: t.textHeading,
-            textAlign: "center",
-          }}
-        >
-          {tr("careteam.title")}
-        </span>
-        <span
-          style={{
-            fontFamily: t.fontFamily,
-            fontSize: "13px",
-            fontWeight: 500,
-            color: error ? t.accentOn : t.textMuted,
-            textAlign: "center",
-            marginTop: "8px",
-            lineHeight: "20px",
-            transition: "color 0.2s",
-          }}
-        >
-          {error ? tr("careteam.incorrect") : tr("careteam.enterPin")}
-        </span>
-      </div>
-
-      {/* PIN dots */}
-      <div className="flex items-center justify-center gap-4" style={{ padding: "20px 0 16px 0" }}>
-        {[0, 1, 2, 3].map((i) => (
-          <div
-            key={i}
-            style={{
-              width: "16px",
-              height: "16px",
-              borderRadius: t.radiusFull,
-              backgroundColor: i < pin.length ? t.accent : t.borderDefault,
-              transition: "background-color 0.15s",
-              animation: error ? "pinShake 0.4s ease-out" : undefined,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Numpad */}
-      <div
-        className="flex flex-col items-center gap-3"
-        style={{ padding: "8px 32px 24px 32px" }}
-      >
-        {[
-          ["1", "2", "3"],
-          ["4", "5", "6"],
-          ["7", "8", "9"],
-          ["", "0", "del"],
-        ].map((row, ri) => (
-          <div key={ri} className="flex items-center gap-3">
-            {row.map((key, ki) => {
-              if (key === "") return <div key={ki} style={{ width: "64px", height: "52px" }} />;
-              const isPressed = pressedKey === key;
-              return (
-                <button
-                  key={ki}
-                  onClick={() => {
-                    if (key === "del") {
-                      handleDelete();
-                    } else {
-                      setPressedKey(key);
-                      setTimeout(() => setPressedKey(null), 150);
-                      handleDigit(key);
-                    }
-                  }}
-                  className="flex items-center justify-center cursor-pointer active:scale-90 transition-all"
-                  style={{
-                    width: "64px",
-                    height: "52px",
-                    borderRadius: t.radiusLg,
-                    backgroundColor: key === "del" ? t.accentSubtle : isPressed ? t.primary : t.tileInactiveBg,
-                    border: "none",
-                    transition: "background-color 0.15s, transform 0.15s",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontFamily: t.fontFamily,
-                      fontSize: key === "del" ? "13px" : "20px",
-                      fontWeight: 700,
-                      color: key === "del" ? t.accentOn : isPressed ? "#fff" : t.textHeading,
-                      transition: "color 0.15s",
-                    }}
-                  >
-                    {key === "del" ? tr("careteam.del") : key}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-    </CenteredDialog>
+    <PinDialog
+      icon={<Stethoscope size={28} style={{ color: t.primaryOn }} />}
+      title={tr("careteam.title")}
+      subtitle={tr("careteam.enterPin")}
+      errorText={tr("careteam.incorrect")}
+      error={error}
+      pin={pin}
+      setPin={(value) => { setPin(value); setError(false); }}
+      onComplete={handleComplete}
+      onClose={onClose}
+    />
   );
 }
 

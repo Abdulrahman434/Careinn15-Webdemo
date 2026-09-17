@@ -34,11 +34,16 @@ import {
   BookOpen,
   Headset,
   MapPin,
+  BedDouble,
+  Brush,
+  Users,
+  Check,
 } from "lucide-react";
 import { useTheme, TEXT_STYLE, WEIGHT, TYPE_SCALE, SHADOW } from "./ThemeContext";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { useLocale } from "./i18n";
 import { playTone } from "./useRipple";
+import { usePressFlash } from "./usePressFlash";
 import type { LucideIcon } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -70,12 +75,12 @@ interface CallLogEntry {
 type CallState = "idle" | "incoming" | "outgoing" | "active";
 
 const EXTENSIONS: Extension[] = [
-  { id: "nurse",       nameKey: "call.nurseStation",     descKey: "call.nurseStation.desc",     ext: "1001", icon: Stethoscope,     iconColor: "#E11D48", iconBg: "rgba(225,29,72,0.08)" },
+  { id: "nurse",       nameKey: "call.nurseStation",     descKey: "call.nurseStation.desc",     ext: "1001", icon: BedDouble,       iconColor: "#E11D48", iconBg: "rgba(225,29,72,0.08)" },
   { id: "reception",   nameKey: "call.reception",        descKey: "call.reception.desc",        ext: "1000", icon: ConciergeBell,   iconColor: "#0891B2", iconBg: "rgba(8,145,178,0.08)" },
   { id: "pharmacy",    nameKey: "call.pharmacy",         descKey: "call.pharmacy.desc",         ext: "1050", icon: Pill,            iconColor: "#7C3AED", iconBg: "rgba(124,58,237,0.08)" },
   { id: "dietary",     nameKey: "call.dietary",          descKey: "call.dietary.desc",          ext: "1060", icon: UtensilsCrossed, iconColor: "#EA580C", iconBg: "rgba(234,88,12,0.08)" },
-  { id: "housekeep",   nameKey: "call.housekeeping",     descKey: "call.housekeeping.desc",     ext: "1070", icon: Sparkles,        iconColor: "#0D9488", iconBg: "rgba(13,148,136,0.08)" },
-  { id: "relations",   nameKey: "call.patientRelations", descKey: "call.patientRelations.desc", ext: "1080", icon: Heart,           iconColor: "#DB2777", iconBg: "rgba(219,39,119,0.08)" },
+  { id: "housekeep",   nameKey: "call.housekeeping",     descKey: "call.housekeeping.desc",     ext: "1070", icon: Brush,           iconColor: "#0D9488", iconBg: "rgba(13,148,136,0.08)" },
+  { id: "relations",   nameKey: "call.patientRelations", descKey: "call.patientRelations.desc", ext: "1080", icon: Users,           iconColor: "#DB2777", iconBg: "rgba(219,39,119,0.08)" },
   { id: "it",          nameKey: "call.itSupport",        descKey: "call.itSupport.desc",        ext: "1090", icon: Monitor,         iconColor: "#4F46E5", iconBg: "rgba(79,70,229,0.08)" },
   { id: "religious",   nameKey: "call.religiousServices",descKey: "call.religiousServices.desc",ext: "1100", icon: BookOpen,        iconColor: "#059669", iconBg: "rgba(5,150,105,0.08)" },
   { id: "operator",    nameKey: "call.operator",         descKey: "call.operator.desc",         ext: "0",    icon: Headset,         iconColor: "#6366F1", iconBg: "rgba(99,102,241,0.08)" },
@@ -432,13 +437,22 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
     ? contacts.map(c => ({
         extension: c.extension,
         displayName: locale === 'ar' ? c.nameAr : c.nameEn,
-        emergency: !!c.emergency
+        emergency: !!c.emergency,
+        icon: EXTENSIONS.find((e) => e.ext === c.extension)?.icon ?? Phone,
       }))
     : EXTENSIONS.map(ext => ({
         extension: ext.ext,
         displayName: t(ext.nameKey),
-        emergency: !!ext.emergency
+        emergency: !!ext.emergency,
+        icon: ext.icon,
       }));
+
+  /* The dialer and the directory share one piece of state: whichever contact
+     matches what is in the display is the selected one, so tapping a row and
+     typing its extension by hand land in the same place. */
+  const dialContact = displayContacts.find((c) => c.extension === dialInput) ?? null;
+
+  const historyEntries = historyTab === "all" ? displayAll : historyTab === "missed" ? displayMissed : displayAttended;
 
   const primary = theme.primary;
   const DANGER = "#D10044";
@@ -477,12 +491,12 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
 
   const handleDialCustom = useCallback(() => {
     if (!dialInput) return;
-    handleDial({ 
-      extension: dialInput, 
-      displayName: dialInput,
-      emergency: false,
+    handleDial({
+      extension: dialInput,
+      displayName: dialContact?.displayName ?? dialInput,
+      emergency: dialContact?.emergency ?? false,
     });
-  }, [dialInput, handleDial]);
+  }, [dialInput, dialContact, handleDial]);
 
   const handleSimulateIncoming = useCallback(() => {
     setSimCallTarget(EXTENSIONS[0]); // Simulate incoming from Nurse
@@ -714,12 +728,12 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
                    {[["1","2","3"],["4","5","6"],["7","8","9"],["*","0","#"]].map((row, ri) => (
                       <div key={ri} className="flex gap-4 justify-center">
                         {row.map((digit) => (
-                           <button key={digit} data-keypad-digit={digit} data-no-tick="true" onPointerDown={() => { playDTMF(digit); setInCallDigits(prev => prev.length >= 16 ? prev : prev + digit); }} className="active:scale-90 transition-transform" style={{
-                             width:"68px", height:"68px", borderRadius:theme.radiusFull, backgroundColor:"rgba(255,255,255,0.12)",
-                             display:"flex", alignItems:"center", justifyContent:"center", border: "none",
-                           }}>
-                             <span style={{fontFamily:theme.fontFamilyMono || fontFamily, fontSize:"28px", color:"#fff", fontWeight: 500}}>{digit}</span>
-                           </button>
+                           <InCallKeypadButton
+                             key={digit}
+                             digit={digit}
+                             fontFamily={fontFamily}
+                             onPress={() => { playDTMF(digit); setInCallDigits(prev => prev.length >= 16 ? prev : prev + digit); }}
+                           />
                         ))}
                       </div>
                    ))}
@@ -921,52 +935,20 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
 
           <div className="flex-1 min-h-0 overflow-y-auto callscreen-scroll" style={{ padding: "20px 16px 16px 16px" }}>
             <AnimatePresence mode="wait">
-              {historyTab === "all" ? (
-                <motion.div key="all" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
-                  {displayAll.length === 0 ? (
-                    <EmptyState message={t("call.noHistory")} />
-                  ) : (
-                    <div className="flex flex-col gap-3">
-                      <p className="px-2 pt-1 pb-2" style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "16px", color: theme.textMuted }}>{t("call.today")}</p>
-                      {displayAll.map((entry) => (
-                        <CallLogRow key={entry.id} entry={entry} onCallback={(e) => {
-                          handleDial({ extension: e.ext, displayName: e.nameKey.startsWith('call.') ? t(e.nameKey) : e.nameKey });
-                        }} />
-                      ))}
-                    </div>
-                  )}
-                </motion.div>
-              ) : historyTab === "missed" ? (
-                <motion.div key="missed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
-                  {displayMissed.length === 0 ? (
-                    <EmptyState message={t("call.noMissed")} />
-                  ) : (
-                    <div className="flex flex-col gap-3">
-                      <p className="px-2 pt-1 pb-2" style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "16px", color: theme.textMuted }}>{t("call.today")}</p>
-                      {displayMissed.map((entry) => (
-                        <CallLogRow key={entry.id} entry={entry} onCallback={(e) => {
-                          handleDial({ extension: e.ext, displayName: e.nameKey.startsWith('call.') ? t(e.nameKey) : e.nameKey });
-                        }} />
-                      ))}
-                    </div>
-                  )}
-                </motion.div>
-              ) : (
-                <motion.div key="attended" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
-                  {displayAttended.length === 0 ? (
-                    <EmptyState message={t("call.noAttended")} />
-                  ) : (
-                    <div className="flex flex-col gap-3">
-                      <p className="px-2 pt-1 pb-2" style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "16px", color: theme.textMuted }}>{t("call.today")}</p>
-                      {displayAttended.map((entry) => (
-                        <CallLogRow key={entry.id} entry={entry} onCallback={(e) => {
-                          handleDial({ extension: e.ext, displayName: e.nameKey.startsWith('call.') ? t(e.nameKey) : e.nameKey });
-                        }} />
-                      ))}
-                    </div>
-                  )}
-                </motion.div>
-              )}
+              <motion.div key={historyTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
+                {historyEntries.length === 0 ? (
+                  <EmptyState message={t(historyTab === "all" ? "call.noHistory" : historyTab === "missed" ? "call.noMissed" : "call.noAttended")} />
+                ) : (
+                  <div className="flex flex-col">
+                    <p className="px-2 pt-1 pb-2" style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "16px", color: theme.textMuted }}>{t("call.today")}</p>
+                    {historyEntries.map((entry, i) => (
+                      <CallLogRow key={entry.id} entry={entry} isLast={i === historyEntries.length - 1} onCallback={(e) => {
+                        handleDial({ extension: e.ext, displayName: e.nameKey.startsWith('call.') ? t(e.nameKey) : e.nameKey });
+                      }} />
+                    ))}
+                  </div>
+                )}
+              </motion.div>
             </AnimatePresence>
           </div>
         </div>
@@ -990,8 +972,8 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
 
           <div className="flex-1 flex flex-col justify-center min-h-0 overflow-hidden pb-4" style={{ minWidth: 0 }}>
 
-          {/* Display */}
-          <div className="shrink-0 flex items-center justify-center px-5 mb-4" style={{ minHeight: "60px" }}>
+          {/* Display — the extension, and whose extension it is */}
+          <div className="shrink-0 flex flex-col items-center justify-center px-5 mb-4" style={{ minHeight: "84px" }}>
             <span style={{
               fontFamily: theme.fontFamilyMono, fontSize: "48px", fontWeight: WEIGHT.bold,
               color: dialInput ? theme.primaryOn : theme.textDisabled,
@@ -1000,6 +982,13 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
               transition: "all 0.3s ease",
             }}>
               {dialInput || "—"}
+            </span>
+            <span style={{
+              fontFamily, fontSize: "17px", fontWeight: WEIGHT.medium, color: theme.textMuted,
+              textAlign: "center", minHeight: "24px", transition: "opacity 0.2s ease",
+              opacity: dialContact ? 1 : 0,
+            }}>
+              {dialContact?.displayName ?? "\u00A0"}
             </span>
           </div>
 
@@ -1016,21 +1005,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
             <div className="flex gap-3 justify-center">
               <div style={{ width: "72px", height: "72px" }} />
               <KeypadButton digit="0" onPress={onKeypadPress} />
-              <button
-                data-no-tick="true"
-                onClick={onKeypadDelete}
-                className="flex items-center justify-center cursor-pointer transition-transform duration-300 active:scale-90"
-                style={{
-                  width: "72px", height: "72px", borderRadius: theme.radiusFull,
-                  backgroundColor: "transparent",
-                  border: "none",
-                  outline: "none",
-                  opacity: dialInput ? 1 : 0.3,
-                }}
-                disabled={!dialInput}
-              >
-                <Delete size={28} style={{ color: theme.textMuted }} strokeWidth={1.5} />
-              </button>
+              <KeypadDeleteButton onPress={onKeypadDelete} disabled={!dialInput} />
             </div>
 
             {/* Call button */}
@@ -1071,15 +1046,20 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
-          <div className="flex-1 min-h-0 overflow-y-auto callscreen-scroll" style={{ padding: "16px 20px 20px 20px" }}>
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, 1fr)",
-              gap: "16px",
-            }}>
-              {displayContacts.map((c) => (
-                 <ExtensionCard key={c.extension} contact={c} onDial={() => handleDial(c)} />
-               ))}
+          <div className="flex-1 min-h-0 overflow-y-auto callscreen-scroll" style={{ padding: "16px 12px 12px 12px" }}>
+            <p className="px-2 pb-2" style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "16px", color: theme.textMuted }}>
+              {t("call.chooseContact")}
+            </p>
+            <div className="flex flex-col">
+              {displayContacts.map((c, i) => (
+                <ContactRow
+                  key={c.extension}
+                  contact={c}
+                  selected={dialInput === c.extension}
+                  isLast={i === displayContacts.length - 1}
+                  onSelect={() => setDialInput(c.extension)}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -1102,66 +1082,73 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
  * SUB-COMPONENTS
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-function ExtensionCard({ contact, onDial }: { contact: { extension: string, displayName: string, emergency?: boolean }; onDial: () => void }) {
+/* One row per department: an icon that says what the department is, the name,
+   the extension, and a tick when it is the one loaded into the dialer. Rows are
+   separated by a hairline rather than being tiles of their own. */
+function ContactRow({
+  contact,
+  selected,
+  isLast,
+  onSelect,
+}: {
+  contact: { extension: string; displayName: string; emergency?: boolean; icon: LucideIcon };
+  selected: boolean;
+  isLast: boolean;
+  onSelect: () => void;
+}) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
-  const [pressed, setPressed] = useState(false);
-  const ExtIcon = contact.emergency ? Heart : Phone;
-  
-  const isHighlighted = contact.emergency;
-  const isFilled = isHighlighted ? !pressed : pressed;
+  const { t, fontFamily } = useLocale();
+  const Icon = contact.icon;
 
   return (
     <button
-      onPointerDown={() => setPressed(true)}
-      onPointerUp={() => setPressed(false)}
-      onPointerLeave={() => setPressed(false)}
-      onClick={onDial}
-      className="flex flex-col items-center justify-center gap-3 transition-transform"
+      onClick={onSelect}
+      className="flex items-center gap-4 w-full cursor-pointer active:scale-[0.99] transition-transform"
       style={{
-        cursor: "pointer",
-        aspectRatio: "1 / 1",
-        padding: "16px 12px",
-        borderRadius: theme.radiusXl,
-        backgroundColor: isFilled ? theme.primary : theme.background,
-        border: `2px solid ${isFilled ? theme.borderCardSelected : theme.borderCardColor}`,
+        padding: "12px 14px",
+        /* Only the selected row is a rounded plate; the rest are flat so their
+           hairline divider stays a straight line. */
+        borderRadius: selected ? theme.radiusLg : "0px",
+        backgroundColor: selected ? theme.primarySubtle : "transparent",
+        border: "none",
+        borderBottom: selected || isLast ? "1px solid transparent" : `1px solid ${theme.borderDefault}`,
         outline: "none",
-        textAlign: "center",
-        transform: pressed ? "scale(0.95)" : "scale(1)",
-        boxShadow: pressed ? "none" : (isHighlighted ? `0 4px 16px ${theme.primary}40` : "0 4px 12px rgba(0,0,0,0.05)"),
-        position: "relative",
-        overflow: "hidden",
+        textAlign: "start",
       }}
     >
-      {/* Department icon */}
-      <div className="flex items-center justify-center" style={{
+      <div className="shrink-0 flex items-center justify-center" style={{
         width: "44px", height: "44px", borderRadius: theme.radiusLg,
-        backgroundColor: isFilled ? "rgba(255,255,255,0.2)" : theme.primaryLight,
-        transition: "all 0.2s",
+        backgroundColor: selected ? theme.primaryLight : theme.primarySubtle,
       }}>
-        <ExtIcon size={24} color={isFilled ? theme.textInverse : theme.primaryOn} strokeWidth={2} />
+        <Icon size={22} color={theme.primaryOn} strokeWidth={2} />
       </div>
 
-      {/* Name */}
-      <p style={{
-        fontFamily, fontSize: "16px", fontWeight: WEIGHT.semibold,
-        color: isFilled ? theme.textInverse : theme.textHeading, margin: 0, lineHeight: "1.2",
-      }}>
-        {contact.displayName}
-      </p>
+      <div className="flex-1 min-w-0">
+        <p className="truncate" style={{
+          fontFamily, fontSize: "17px", fontWeight: WEIGHT.semibold, color: theme.textHeading, margin: 0,
+        }}>
+          {contact.displayName}
+        </p>
+        <span style={{
+          fontFamily: theme.fontFamilyMono, fontSize: "15px", fontWeight: WEIGHT.medium, color: theme.textMuted,
+        }}>
+          {t("call.ext")} {contact.extension}
+        </span>
+      </div>
 
-      {/* Extension number */}
-      <span style={{
-        fontFamily: theme.fontFamilyMono, fontSize: "15px", fontWeight: WEIGHT.medium,
-        color: isFilled ? "rgba(255,255,255,0.8)" : theme.textMuted,
-      }}>
-        {contact.extension}
-      </span>
+      {selected && (
+        <div className="shrink-0 flex items-center justify-center" style={{
+          width: "26px", height: "26px", borderRadius: theme.radiusFull, backgroundColor: theme.primary,
+          animation: "callCardPopIn 0.2s ease-out",
+        }}>
+          <Check size={16} color={theme.textInverse} strokeWidth={3} />
+        </div>
+      )}
     </button>
   );
 }
 
-function CallLogRow({ entry, onCallback }: { entry: CallLogEntry; onCallback: (entry: CallLogEntry) => void }) {
+function CallLogRow({ entry, isLast, onCallback }: { entry: CallLogEntry; isLast: boolean; onCallback: (entry: CallLogEntry) => void }) {
   const { theme } = useTheme();
   const { t, fontFamily, locale } = useLocale();
   const isMissed = entry.type === "missed";
@@ -1187,11 +1174,12 @@ function CallLogRow({ entry, onCallback }: { entry: CallLogEntry; onCallback: (e
       onClick={() => onCallback(entry)}
       className="flex items-center gap-4 w-full cursor-pointer active:scale-[0.99] transition-transform"
       style={{
-        padding: "12px 16px", borderRadius: theme.radiusXl,
-        backgroundColor: isMissed ? "rgba(209,0,68,0.03)" : "transparent",
-        // One inset edge for every row; the missed state is carried by the
-        // tint and the icon, not by a second border colour.
-        border: theme.borderInset,
+        padding: "12px 14px",
+        backgroundColor: "transparent",
+        // Rows are separated by a hairline, not boxed individually; the missed
+        // state is carried by the icon alone.
+        border: "none",
+        borderBottom: isLast ? "1px solid transparent" : `1px solid ${theme.borderDefault}`,
         outline: "none", textAlign: "start",
       }}
     >
@@ -1205,7 +1193,7 @@ function CallLogRow({ entry, onCallback }: { entry: CallLogEntry; onCallback: (e
       <div className="flex-1 min-w-0">
         <p className="truncate" style={{
           fontFamily, fontSize: "17px", fontWeight: WEIGHT.semibold,
-          color: isMissed ? DANGER : theme.textHeading, margin: 0,
+          color: theme.textHeading, margin: 0,
         }}>
           {entry.nameKey.startsWith('call.') ? t(entry.nameKey) : entry.nameKey}
         </p>
@@ -1225,7 +1213,7 @@ function CallLogRow({ entry, onCallback }: { entry: CallLogEntry; onCallback: (e
       </div>
 
       <div className="shrink-0 flex flex-col items-end gap-1">
-        <span style={{ fontFamily, fontSize: "15px", fontWeight: WEIGHT.medium, color: isMissed ? "rgba(209,0,68,0.7)" : theme.textMuted }}>
+        <span style={{ fontFamily, fontSize: "15px", fontWeight: WEIGHT.medium, color: theme.textMuted }}>
           {localizedTime}
         </span>
       </div>
@@ -1268,19 +1256,68 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
-function KeypadButton({ digit, onPress }: { digit: string; onPress: (digit: string) => void }) {
+function InCallKeypadButton({ digit, fontFamily, onPress }: { digit: string; fontFamily: string; onPress: () => void }) {
   const { theme } = useTheme();
-  const [pressed, setPressed] = useState(false);
-  
+  const { pressedKey, flash } = usePressFlash();
+  const pressed = pressedKey === digit;
+
   return (
     <button
       data-keypad-digit={digit}
       data-no-tick="true"
-      onPointerDown={() => setPressed(true)}
-      onPointerUp={() => setPressed(false)}
-      onPointerLeave={() => setPressed(false)}
+      onPointerDown={() => { flash(digit); onPress(); }}
+      style={{
+        width: "68px", height: "68px", borderRadius: theme.radiusFull,
+        backgroundColor: pressed ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.12)",
+        display: "flex", alignItems: "center", justifyContent: "center", border: "none",
+        transform: pressed ? "scale(0.92)" : "scale(1)",
+        transition: "background-color 0.15s, transform 0.15s",
+      }}
+    >
+      <span style={{ fontFamily: theme.fontFamilyMono || fontFamily, fontSize: "28px", color: "#fff", fontWeight: 500 }}>{digit}</span>
+    </button>
+  );
+}
+
+function KeypadDeleteButton({ onPress, disabled }: { onPress: () => void; disabled: boolean }) {
+  const { theme } = useTheme();
+  const { pressedKey, flash } = usePressFlash();
+  const pressed = pressedKey === "del";
+
+  return (
+    <button
+      data-no-tick="true"
+      onPointerDown={() => { if (!disabled) flash("del"); }}
+      onClick={onPress}
+      className="flex items-center justify-center cursor-pointer"
+      style={{
+        width: "72px", height: "72px", borderRadius: theme.radiusFull,
+        backgroundColor: pressed ? theme.accent : "transparent",
+        border: "none",
+        outline: "none",
+        opacity: disabled ? 0.3 : 1,
+        transform: pressed ? "scale(0.92)" : "scale(1)",
+        transition: "background-color 0.15s, transform 0.15s",
+      }}
+      disabled={disabled}
+    >
+      <Delete size={28} style={{ color: pressed ? theme.textInverse : theme.textMuted }} strokeWidth={1.5} />
+    </button>
+  );
+}
+
+function KeypadButton({ digit, onPress }: { digit: string; onPress: (digit: string) => void }) {
+  const { theme } = useTheme();
+  const { pressedKey, flash } = usePressFlash();
+  const pressed = pressedKey === digit;
+
+  return (
+    <button
+      data-keypad-digit={digit}
+      data-no-tick="true"
+      onPointerDown={() => flash(digit)}
       onClick={() => onPress(digit)}
-      className="flex items-center justify-center cursor-pointer transition-transform duration-300"
+      className="flex items-center justify-center cursor-pointer"
       style={{
         width: "72px", height: "72px", borderRadius: theme.radiusFull,
         backgroundColor: pressed ? theme.primary : theme.surfaceInset,
@@ -1288,12 +1325,13 @@ function KeypadButton({ digit, onPress }: { digit: string; onPress: (digit: stri
         outline: "none",
         boxShadow: "none",
         transform: pressed ? "scale(0.92)" : "scale(1)",
+        transition: "background-color 0.15s, transform 0.15s",
       }}
     >
       <span style={{
         fontFamily: theme.fontFamilyMono, fontSize: "32px", fontWeight: WEIGHT.medium,
-        color: pressed ? "#fff" : theme.textHeading,
-        transition: "color 0.2s",
+        color: pressed ? theme.textInverse : theme.textHeading,
+        transition: "color 0.15s",
       }}>
         {digit}
       </span>

@@ -105,17 +105,17 @@ export function AccountLockScreen({ visible, onUnlock, onClose, onSkipAsGuest }:
             outline: "none",
           }}
         >
-          <X size={18} style={{ color: t.textMuted }} />
+          <X size={16} style={{ color: t.textMuted }} />
         </button>
 
         <div
-          className="flex items-center justify-center mb-6"
-          style={{ width: "64px", height: "64px", borderRadius: t.radiusFull, backgroundColor: t.primarySubtle }}
+          className="flex items-center justify-center"
+          style={{ width: "56px", height: "56px", borderRadius: t.radiusLg, backgroundColor: t.primarySubtle, marginBottom: "16px" }}
         >
-          <Lock size={32} style={{ color: t.primaryOn }} />
+          <Lock size={28} style={{ color: t.primaryOn }} />
         </div>
-        
-        <span style={{ fontFamily: t.fontFamily, fontSize: "20px", fontWeight: 700, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
+
+        <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
           {tr("lock.title")}
         </span>
 
