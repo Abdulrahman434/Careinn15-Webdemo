@@ -429,6 +429,11 @@ function BedsideScreen() {
   }, []);
   const [isLocked, setIsLocked] = useState(false);
   const [openAccountDirectly, setOpenAccountDirectly] = useState(false);
+  /* CareMe's "Nurse View" shortcut asks for the care-team PIN, which lives in
+     the Settings panel — and that panel is only mounted while Settings is
+     open, so the event it fires had nobody to hear it. App opens the panel and
+     tells it to go straight to the PIN. */
+  const [openCareTeamDirectly, setOpenCareTeamDirectly] = useState(false);
 
   const [showCareMeExpanded, setShowCareMeExpanded] = useState(false);
   const [showCareMePinDialog, setShowCareMePinDialog] = useState(false);
@@ -1308,6 +1313,23 @@ function BedsideScreen() {
     } catch { }
   }, []);
 
+  /* The nurse-view shortcut can be pressed from anywhere, so the listener has
+     to live somewhere always mounted. */
+  useEffect(() => {
+    const open = () => {
+      /* Every full-screen module and the settings panel share one layer, and
+         the modules are painted after it — so whatever the patient had open
+         would cover the nurse view instead of giving way to it. */
+      setShowCareMeExpanded(false);
+      setShowNotifications(false);
+      setOpenCategory(null);
+      setShowSettings(true);
+      setOpenCareTeamDirectly(true);
+    };
+    window.addEventListener("open-nurse-view", open);
+    return () => window.removeEventListener("open-nurse-view", open);
+  }, []);
+
   const handleFullscreenTap = useCallback(() => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch((err) => {
@@ -1508,7 +1530,13 @@ function BedsideScreen() {
         if (showTasbih) { setShowTasbih(false); return; }
         if (showTour) { setShowTour(false); setTourDismissed(true); return; }
         if (showNotifications) { setShowNotifications(false); return; }
-        if (showSettings) { setShowSettings(false); return; }
+        if (showSettings) {
+          setShowSettings(false);
+          setActiveCareRole(null);
+          setOpenAccountDirectly(false);
+          setOpenCareTeamDirectly(false);
+          return;
+        }
         if (showAboutUs) { setShowAboutUs(false); return; }
         if (showSurvey) { setShowSurvey(false); return; }
         if (openCategory) { setOpenCategory(null); return; }
@@ -2027,12 +2055,14 @@ function BedsideScreen() {
               setShowSettings(false);
               setActiveCareRole(null);
               setOpenAccountDirectly(false);
+              setOpenCareTeamDirectly(false);
             }}
             onFullscreenTap={handleFullscreenTap}
             isFullscreen={isFullscreen}
             activeCareRole={activeCareRole}
             setActiveCareRole={setActiveCareRole}
             openAccountDirectly={openAccountDirectly}
+            openCareTeamDirectly={openCareTeamDirectly}
           />
         )}
 

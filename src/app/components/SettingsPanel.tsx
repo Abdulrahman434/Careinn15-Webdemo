@@ -1611,6 +1611,7 @@ export function SettingsPanel({
   activeCareRole,
   setActiveCareRole,
   openAccountDirectly,
+  openCareTeamDirectly,
 }: {
   onClose: () => void;
   onFullscreenTap: () => void;
@@ -1618,6 +1619,8 @@ export function SettingsPanel({
   activeCareRole: "nurse" | "doctor" | null;
   setActiveCareRole: (role: "nurse" | "doctor" | null) => void;
   openAccountDirectly?: boolean;
+  /** Arrived from CareMe's Nurse View shortcut: go straight to the PIN. */
+  openCareTeamDirectly?: boolean;
 }) {
   const { theme: t, darkMode, setDarkMode, castDevice, setCastDevice, locale: currentLocale, setLocale, prayerAlarm, setPrayerAlarm } = useTheme();
   const { t: tr, isRTL, fontFamily, locale } = useLocale();
@@ -1755,12 +1758,17 @@ export function SettingsPanel({
     }
   }, [openAccountDirectly]);
 
-  // Listen for CareMe "Nurse View" button event
+  /* Either route in: the shortcut fired while this panel was already open, or
+     App opened the panel for us because it was not. */
   useEffect(() => {
     const handler = () => setShowCareTeamDialog(true);
     window.addEventListener("open-nurse-view", handler);
     return () => window.removeEventListener("open-nurse-view", handler);
   }, []);
+
+  useEffect(() => {
+    if (openCareTeamDirectly) setShowCareTeamDialog(true);
+  }, [openCareTeamDirectly]);
 
 
 
@@ -1771,7 +1779,10 @@ export function SettingsPanel({
 
   return (
     <div
-      className="absolute inset-0 z-50 flex justify-end"
+      /* Above the modules, not beside them: Call, Meal Ordering, Patient
+         Services and expanded CareMe are all z-50 and are painted after this
+         panel, so at the same level the nurse view opened underneath them. */
+      className="absolute inset-0 z-[90] flex justify-end"
       style={{ animation: "settingsFadeIn 0.2s ease-out" }}
     >
       {/* Backdrop */}
@@ -2026,10 +2037,11 @@ export function SettingsPanel({
             />
           </div>
 
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* Clear Data */}
+          {/* Clear Data — no flex-1 spacer above it. A filler in a scrolling
+              column takes every pixel of slack for itself, which pushed this
+              button down and shoved the room and device lines past the bottom
+              edge: a panel with room for all of it still had to be scrolled to
+              read its last line. */}
           <button
             onClick={() => setShowClearConfirm(true)}
             className="flex items-center justify-center gap-3 w-full cursor-pointer active:scale-[0.96] transition-transform"
