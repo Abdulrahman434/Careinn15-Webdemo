@@ -5,7 +5,7 @@ import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
 import svgPaths from "../../imports/svg-ca68x68c4i";
 import { type LucideIcon, BookMarked, Stethoscope, BookOpenText, MessageSquareMore, Utensils } from "lucide-react";
-import roomControlIcon from "@/assets/room-control-icon.png";
+import roomControlIcon from "@/assets/screens/room-control-2-alpha.png";
 import quranIcon from "@/assets/5303963df7d14bbca33ccffa43f982a464344809.png";
 import mirrorIcon from "@/assets/0ab7565691ddb8401a21da44af1864e8f4058536.png";
 import podcastIcon from "@/assets/5513479d879a8c3fcdd1f6832dd30ce350c81789.png";
@@ -83,6 +83,11 @@ const getShortcutItems = (hospitalId: string, patientGuidePdf?: string): Shortcu
       : podcastData,
   ];
 };
+
+/** The Room Control tile's shade. Named rather than inline because it is the
+ *  background of a piece of artwork, not a themed surface — every brand shows
+ *  the same tile here. */
+const ROOM_CONTROL_TILE = "#3DAA9F";
 
 /* ─── Hub item SVG icon paths from Figma ─── */
 const hubSvgIcons: Record<string, { paths: { d: string; clipId?: string }[]; viewBox?: string }> = {
@@ -542,6 +547,30 @@ function ShortcutTile({ item, contained, onTap, onLongPress, isLocked }: { item:
             }}
           />
         </div>
+      ) : item.labelKey === "shortcut.roomControl" ? (
+        /* The artwork is a white glyph on transparency, so the colour behind
+           it is set here rather than baked into the PNG — the tile's shade is
+           a style decision, and this way it is one line to change. The old
+           asset carried its own teal and was then desaturated by a CSS filter,
+           which is what made it read grey on the wall. */
+        <div
+          style={{
+            width: SPACE[12],
+            height: SPACE[12],
+            borderRadius: theme.radiusXl,
+            backgroundColor: ROOM_CONTROL_TILE,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+          }}
+        >
+          <ApiImage
+            src={item.icon}
+            alt={t(item.labelKey)}
+            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+          />
+        </div>
       ) : (
         <ApiImage
           src={item.icon}
@@ -551,7 +580,6 @@ function ShortcutTile({ item, contained, onTap, onLongPress, isLocked }: { item:
             height: SPACE[12],
             borderRadius: theme.radiusXl,
             objectFit: "cover",
-            filter: item.labelKey === "shortcut.roomControl" ? "saturate(0) brightness(0.85) contrast(0.9)" : "none",
           }}
         />
       )}
@@ -638,6 +666,25 @@ function ShortcutTileCompact({ item, onTap, onLongPress, isLocked }: { item: Sho
             }}
           />
         </div>
+      ) : item.labelKey === "shortcut.roomControl" ? (
+        <div
+          style={{
+            width: "88px",
+            height: "88px",
+            borderRadius: theme.radiusLg,
+            backgroundColor: ROOM_CONTROL_TILE,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+          }}
+        >
+          <ApiImage
+            src={item.icon}
+            alt={t(item.labelKey)}
+            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+          />
+        </div>
       ) : (
         <ApiImage
           src={item.icon}
@@ -647,7 +694,6 @@ function ShortcutTileCompact({ item, onTap, onLongPress, isLocked }: { item: Sho
             height: "88px",
             borderRadius: theme.radiusLg,
             objectFit: "cover",
-            filter: item.labelKey === "shortcut.roomControl" ? "saturate(0) brightness(0.85) contrast(0.9)" : "none",
           }}
         />
       )}
@@ -735,6 +781,25 @@ function ShortcutTileBare({ item, onTap, onLongPress, isLocked }: { item: Shortc
             }}
           />
         </div>
+      ) : item.labelKey === "shortcut.roomControl" ? (
+        <div
+          style={{
+            width: "120px",
+            height: "120px",
+            borderRadius: theme.radiusXl,
+            backgroundColor: ROOM_CONTROL_TILE,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+          }}
+        >
+          <ApiImage
+            src={item.icon}
+            alt={t(item.labelKey)}
+            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+          />
+        </div>
       ) : (
         <ApiImage
           src={item.icon}
@@ -744,7 +809,6 @@ function ShortcutTileBare({ item, onTap, onLongPress, isLocked }: { item: Shortc
             height: "120px",
             borderRadius: theme.radiusXl,
             objectFit: "cover",
-            filter: item.labelKey === "shortcut.roomControl" ? "saturate(0) brightness(0.85) contrast(0.9)" : "none",
           }}
         />
       )}
