@@ -2023,7 +2023,10 @@ export function SettingsPanel({
             />
           </div>
 
-          <div className="flex items-center gap-2.5 mt-2.5">
+          {/* No margin of its own: the column's gap already separates it, and
+              the two together made this row sit further from the pair above it
+              than from the button below. */}
+          <div className="flex items-center gap-2.5">
             <ActionButton
               icon={<UserCircle size={20} style={{ color: t.primaryOn }} />}
               label={tr("settings.preferences")}
