@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { useTheme, TEXT_STYLE, WEIGHT, TYPE_SCALE, SHADOW } from "./ThemeContext";
 import { InternalPageHeader } from "./InternalPageHeader";
+import { DemoControls } from "./DemoControls";
 import { useLocale } from "./i18n";
 import { playTone } from "./useRipple";
 import { usePressFlash } from "./usePressFlash";
@@ -850,6 +851,8 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
         }
         onClose={onClose}
         rightAction={
+          <div className="flex items-center gap-3">
+          <DemoControls />
           <button 
             onClick={handleSimulateIncoming}
             className="flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform hover:brightness-110" 
@@ -868,25 +871,32 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
               <p style={{ fontFamily: theme.fontFamilyMono, fontSize: "20px", fontWeight: WEIGHT.bold, color: "#fff", letterSpacing: "1px", lineHeight: 1 }}>{localExtension || '—'}</p>
             </div>
           </button>
+          </div>
         }
       />
 
       {/* ── 3-Column Content ── */}
-      <div className={`min-h-0 flex pt-8 pb-20 relative z-10 ${isRTL ? "pr-[172px] pl-[172px]" : "pl-[172px] pr-[172px]"}`} style={{ flex: "1 1 0", maxHeight: "calc(100% - 130px)", gap: "20px" }}>
+      <div className={`min-h-0 flex items-center justify-center pt-8 pb-20 relative z-10 ${isRTL ? "pr-[172px] pl-[172px]" : "pl-[172px] pr-[172px]"}`} style={{ flex: "1 1 0", maxHeight: "calc(100% - 130px)", gap: "16px" }}>
 
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden" style={{
-          flex: "1 1 0", backgroundColor: theme.surface,
+        <div className="flex flex-col min-w-0 overflow-hidden" style={{
+          backgroundColor: theme.surface,
           borderRadius: theme.radiusXl, boxShadow: SHADOW.xl,
+          /* The same fixed card as CareMe's expanded columns — 415 x 710 — so
+             the two screens read as one system. Three of these do not fill the
+             row, so the row centres them rather than stretching them. */
+          width: "415px",
+          flexShrink: 0,
+          height: "710px",
         }}>
            {/* Header Row */}
            <div
-             className="flex items-center gap-3 px-5 py-3.5 shrink-0"
+             className="flex items-center gap-3 px-[22px] py-[18px] shrink-0"
              style={{ borderBottom: theme.borderCard }}
            >
               <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ backgroundColor: theme.primarySubtle, color: theme.primaryOn, borderRadius: theme.radiusMd }}>
                 <PhoneCall size={16} />
               </div>
-              <span style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.bold, color: theme.textHeading }}>{t("call.history")}</span>
+              <span style={{ fontFamily, fontSize: "20px", fontWeight: WEIGHT.bold, color: theme.textHeading }}>{t("call.history")}</span>
            </div>
 
            {/* Card Content */}
@@ -955,19 +965,25 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
       </div>
 
         {/* Column 2 — Keypad (center, takes remaining space) */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden" style={{
-          flex: "1 1 0", backgroundColor: theme.surface,
+        <div className="flex flex-col min-w-0 overflow-hidden" style={{
+          backgroundColor: theme.surface,
           borderRadius: theme.radiusXl, boxShadow: SHADOW.xl,
+          /* The same fixed card as CareMe's expanded columns — 415 x 710 — so
+             the two screens read as one system. Three of these do not fill the
+             row, so the row centres them rather than stretching them. */
+          width: "415px",
+          flexShrink: 0,
+          height: "710px",
         }}>
           {/* Header Row */}
           <div
-            className="flex items-center gap-3 px-5 py-3.5 shrink-0"
+            className="flex items-center gap-3 px-[22px] py-[18px] shrink-0"
             style={{ borderBottom: theme.borderCard }}
           >
              <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ backgroundColor: theme.primarySubtle, color: theme.primaryOn, borderRadius: theme.radiusMd }}>
                <Grid3X3 size={16} />
              </div>
-             <span style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.bold, color: theme.textHeading }}>{t("call.keypadHint")}</span>
+             <span style={{ fontFamily, fontSize: "20px", fontWeight: WEIGHT.bold, color: theme.textHeading }}>{t("call.keypadHint")}</span>
           </div>
 
           <div className="flex-1 flex flex-col justify-center min-h-0 overflow-hidden pb-4" style={{ minWidth: 0 }}>
@@ -1030,19 +1046,25 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden" style={{
-          flex: "1 1 0", backgroundColor: theme.surface,
+        <div className="flex flex-col min-w-0 overflow-hidden" style={{
+          backgroundColor: theme.surface,
           borderRadius: theme.radiusXl, boxShadow: SHADOW.xl,
+          /* The same fixed card as CareMe's expanded columns — 415 x 710 — so
+             the two screens read as one system. Three of these do not fill the
+             row, so the row centres them rather than stretching them. */
+          width: "415px",
+          flexShrink: 0,
+          height: "710px",
         }}>
           {/* Header Row */}
           <div
-            className="flex items-center gap-3 px-5 py-3.5 shrink-0"
+            className="flex items-center gap-3 px-[22px] py-[18px] shrink-0"
             style={{ borderBottom: theme.borderCard }}
           >
              <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ backgroundColor: theme.primarySubtle, color: theme.primaryOn, borderRadius: theme.radiusMd }}>
                <BookUser size={16} />
              </div>
-             <span style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.bold, color: theme.textHeading }}>{t("call.hospitalDirectory")}</span>
+             <span style={{ fontFamily, fontSize: "20px", fontWeight: WEIGHT.bold, color: theme.textHeading }}>{t("call.hospitalDirectory")}</span>
           </div>
 
           <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
