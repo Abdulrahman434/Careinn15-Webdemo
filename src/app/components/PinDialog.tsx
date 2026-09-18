@@ -50,7 +50,10 @@ export function PinDialog({
         className="relative flex flex-col items-center"
         style={{
           width: `${width}px`,
-          maxHeight: "90vh",
+          /* Per cent of the scaled canvas, not vh: the kiosk transform-scales
+             the whole 1920x1080 canvas, so vh resolves against the browser
+             window instead and clipped this dialog mid-keypad. */
+          maxHeight: "90%",
           overflowY: "auto",
           overflowX: "hidden",
           padding: "28px 24px 24px 24px",

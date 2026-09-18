@@ -59,7 +59,10 @@ function CenteredDialog({
         className="relative flex flex-col"
         style={{
           width: `${width}px`,
-          maxHeight: "90vh",
+          /* Per cent of the scaled canvas, not vh: the kiosk transform-scales
+             the whole 1920x1080 canvas, so vh resolves against the browser
+             window instead and clipped this dialog mid-keypad. */
+          maxHeight: "90%",
           overflowY: "auto",
           borderRadius: t.radiusXl,
           backgroundColor: t.surface,
@@ -171,7 +174,7 @@ export function PinKeypad({
 
   return (
     <>
-      <div className="flex items-center justify-center gap-4" style={{ padding: "20px 0 16px 0" }}>
+      <div dir="ltr" className="flex items-center justify-center gap-4" style={{ padding: "20px 0 16px 0" }}>
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
@@ -188,6 +191,7 @@ export function PinKeypad({
       </div>
 
       <div
+        dir="ltr"
         className="flex flex-col items-center gap-3"
         style={{ padding: "8px 32px 24px 32px" }}
       >
