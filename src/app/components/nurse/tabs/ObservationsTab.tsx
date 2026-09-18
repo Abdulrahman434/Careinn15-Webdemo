@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Activity, Droplet, Thermometer, Wind, Save, CheckCircle2,
-  Clock, Trash2, AlertTriangle, ClipboardList, Eye
+  Clock, Trash2, ClipboardList, Eye
 } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
 import { useLocale } from "../../i18n";
@@ -21,6 +21,67 @@ function painColor(n: number, dark: boolean) {
   return dark ? "#FF7B7B" : "#DC2626";
 }
 
+/* Blood pressure, as two boxes with the slash already between them.
+ *
+ * It is stored as one "120/80" string, because that is what the ticket, the
+ * board and the patient's card all read. Only the entry is split: on a touch
+ * keypad the slash sits behind a symbols key, and a nurse taking a round of
+ * vitals should never have to go looking for punctuation. Three digits fills
+ * a box and moves the caret on, so the whole reading is six taps. */
+function BloodPressureField({ value, onChange, unit }: {
+  value: string; onChange: (v: string) => void; unit: string;
+}) {
+  const { theme: t } = useTheme();
+  const [sys = "", dia = ""] = (value || "").split("/");
+  const diaRef = useRef<HTMLInputElement | null>(null);
+
+  const digits = (raw: string) => raw.replace(/\D/g, "").slice(0, 3);
+  /* An empty diastolic is not "120/" — a half-entered reading is stored as
+     just the number it has, so nothing downstream has to strip a stray slash. */
+  const join = (a: string, b: string) => (b ? `${a}/${b}` : a);
+
+  const box: React.CSSProperties = {
+    width: "3ch", minWidth: "3ch", textAlign: "center",
+    fontSize: "20px", fontWeight: 900, color: t.textHeading,
+    background: "transparent", border: "none", outline: "none",
+  };
+
+  return (
+    <div dir="ltr" className="flex items-baseline" style={{ gap: "2px" }}>
+      <input
+        value={sys}
+        onChange={(e) => {
+          const next = digits(e.target.value);
+          onChange(join(next, dia));
+          if (next.length === 3) diaRef.current?.focus();
+        }}
+        placeholder="120"
+        inputMode="numeric"
+        aria-label="Systolic"
+        style={box}
+      />
+      <span aria-hidden style={{ fontSize: "20px", fontWeight: 900, color: t.textMuted }}>/</span>
+      <input
+        ref={diaRef}
+        value={dia}
+        onChange={(e) => onChange(join(sys, digits(e.target.value)))}
+        onKeyDown={(e) => {
+          /* Backspace out of an empty diastolic goes back to the systolic,
+             so a mistyped reading is corrected without reaching for the box. */
+          if (e.key === "Backspace" && !dia) {
+            (e.currentTarget.previousElementSibling?.previousElementSibling as HTMLInputElement | null)?.focus();
+          }
+        }}
+        placeholder="80"
+        inputMode="numeric"
+        aria-label="Diastolic"
+        style={box}
+      />
+      <span style={{ fontSize: "11px", color: t.textMuted, marginInlineStart: "4px" }}>{unit}</span>
+    </div>
+  );
+}
+
 export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "doctor"; addNonce?: number }) {
   const { theme: t, darkMode } = useTheme();
   const { t: tr } = useLocale();
@@ -32,7 +93,7 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
   const [saved, setSaved] = useState(false);
 
   // Form state
-  const blankForm = { vitals: { bp: "", hr: "", temp: "", spo2: "", resp: "" }, painLevel: 0, risks: { fall: false, pressure: false, allergies: false, other: false } };
+  const blankForm = { vitals: { bp: "", hr: "", temp: "", spo2: "", resp: "" }, painLevel: 0 };
   const [form, setForm] = useState(blankForm);
 
   // "Add Observation" in the header bumps `addNonce`. A counter rather than a
@@ -56,7 +117,9 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
       nurseName: "clinical.nurse.nura",
       vitals: form.vitals,
       painLevel: form.painLevel,
-      risks: form.risks,
+      /* Kept on the record for the older readings that carry it; the form
+         does not ask for risks any more — the alerts live on Care Details. */
+      risks: { fall: false, pressure: false, allergies: false, other: false },
     };
     nurseActions.addObservation(obs);
     setSelectedId(obs.id);
@@ -98,7 +161,7 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
       <div className="flex-1">
         {isAdding ? (
           <div className="nurse-card">
-            <h3 style={{ color: t.textHeading }}><ClipboardList size={18} style={{ color: t.primaryOn }} /> New Observation</h3>
+            <h3 style={{ color: t.textHeading }}><ClipboardList size={18} style={{ color: t.primaryOn }} /> New Vital Signs</h3>
             <p style={{ fontSize: "13px", color: t.textMuted, marginBottom: 16 }}>{fmtFull(new Date())}</p>
 
             {/* Vitals */}
@@ -112,8 +175,15 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
               ].map((v) => (
                 <div key={v.key} className="p-3 rounded-xl" style={{ backgroundColor: t.surfaceInset, border: `1px solid ${t.borderDefault}` }}>
                   <div className="flex items-center gap-1.5 mb-2">{v.icon}<span style={{ fontSize: "10px", fontWeight: 700, color: t.textMuted }}>{v.label}</span></div>
-                  <div className="flex items-baseline gap-1">
-                    <input
+                  {v.key === "bp" ? (
+                    <BloodPressureField
+                      value={form.vitals.bp}
+                      onChange={(bp) => setForm({ ...form, vitals: { ...form.vitals, bp } })}
+                      unit={v.unit}
+                    />
+                  ) : (
+                  <div dir="ltr" className="flex items-baseline gap-1">
+                    <input dir="auto"
                       value={(form.vitals as any)[v.key]}
                       onChange={(e) => {
                         let val = e.target.value;
@@ -128,14 +198,6 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
                         } else if (v.key === "temp") {
                           val = val.replace(/[^0-9.]/g, "");
                           if ((val.match(/\./g) || []).length > 1) val = val.slice(0, -1);
-                        } else if (v.key === "bp") {
-                          // Allow numbers and one slash, max 3 digits per side
-                          val = val.replace(/[^0-9/]/g, "");
-                          const parts = val.split("/");
-                          if (parts.length > 2) val = parts[0] + "/" + parts[1];
-                          const p0 = parts[0]?.slice(0, 3) || "";
-                          const p1 = parts[1]?.slice(0, 3) || "";
-                          val = parts.length > 1 ? `${p0}/${p1}` : p0;
                         }
 
                         setForm({ ...form, vitals: { ...form.vitals, [v.key]: val } });
@@ -147,6 +209,7 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
                     />
                     <span style={{ fontSize: "11px", color: t.textMuted }}>{v.unit}</span>
                   </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -154,29 +217,15 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
             {/* Pain */}
             <div className="mb-5">
               <span style={{ fontSize: "12px", fontWeight: 600, color: t.textMuted }}>Pain Level: {form.painLevel}/10</span>
-              <input type="range" min={0} max={10} value={form.painLevel}
+              <input dir="auto" type="range" min={0} max={10} value={form.painLevel}
                 onChange={(e) => setForm({ ...form, painLevel: Number(e.target.value) })}
                 className="w-full mt-2" style={{ accentColor: painColor(form.painLevel, darkMode) }} />
-            </div>
-
-            {/* Risks */}
-            <div className="mb-5">
-              <span style={{ fontSize: "12px", fontWeight: 600, color: t.textMuted }}>Risk Assessment</span>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {(["fall", "pressure", "allergies", "other"] as const).map((k) => (
-                  <button key={k} onClick={() => setForm({ ...form, risks: { ...form.risks, [k]: !form.risks[k] } })}
-                    className="px-3 py-1.5 rounded-full cursor-pointer transition-all"
-                    style={{ fontSize: "12px", fontWeight: 700, backgroundColor: form.risks[k] ? t.errorSubtle : t.surfaceInset, color: form.risks[k] ? t.errorOn : t.textMuted, border: `1px solid ${form.risks[k] ? t.errorOn : t.borderDefault}` }}>
-                    <AlertTriangle size={12} className="inline mr-1" /> {k.charAt(0).toUpperCase() + k.slice(1)}
-                  </button>
-                ))}
-              </div>
             </div>
 
             <div className="flex items-center gap-3">
               <button onClick={handleSave} className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all active:scale-95 cursor-pointer"
                 style={{ backgroundColor: saved ? t.success : t.primary, color: saved ? t.successOn : t.brandOnPrimary, fontSize: "14px", border: "none" }}>
-                {saved ? <CheckCircle2 size={16} /> : <Save size={16} />} {saved ? "Saved!" : "Save Observation"}
+                {saved ? <CheckCircle2 size={16} /> : <Save size={16} />} {saved ? "Saved!" : "Save Vital Signs"}
               </button>
               <button onClick={() => { setIsAdding(false); setForm(blankForm); }}
                 className="px-6 py-3 rounded-xl font-bold cursor-pointer" style={{ fontSize: "14px", color: t.textMuted, border: `1.5px solid ${t.borderDefault}`, backgroundColor: t.surface }}>
@@ -187,7 +236,7 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
         ) : activeObs ? (
           <div className="nurse-card">
             <div className="mb-4">
-              <span style={{ fontSize: "12px", fontWeight: 700, color: t.primaryOn }}>Observation Review</span>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: t.primaryOn }}>Vital Signs</span>
               <div className="flex items-center gap-2 mt-1">
                 <span style={{ fontSize: "16px", fontWeight: 800, color: t.textHeading }}>{tr(activeObs.nurseName)}</span>
                 <span style={{ color: t.textMuted, opacity: 0.3 }}>|</span>
@@ -196,7 +245,7 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
             </div>
 
             {/* Vitals */}
-            <div className="grid grid-cols-5 gap-3 mb-5">
+            <div dir="ltr" className="grid grid-cols-5 gap-3 mb-5">
               {[
                 { val: activeObs.vitals.bp, label: "BP", unit: "mmHg", icon: <Droplet size={14} color={t.errorOn} /> },
                 { val: activeObs.vitals.hr, label: "HR", unit: "BPM", icon: <Activity size={14} color="#F43F5E" /> },
@@ -227,7 +276,7 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
                 <button onClick={() => setIsAdding(true)}
                   className="flex items-center gap-2 px-5 py-3 rounded-xl cursor-pointer transition-all active:scale-95"
                   style={{ backgroundColor: t.primary, color: t.brandOnPrimary, fontSize: "14px", fontWeight: 700, border: "none" }}>
-                  Add New Observation
+                  Add New Reading
                 </button>
               </div>
             )}
@@ -235,11 +284,11 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
         ) : (
           <div className="nurse-card flex flex-col items-center justify-center py-16">
             <ClipboardList size={40} style={{ color: t.textMuted, opacity: 0.5 }} />
-            <p className="mt-4" style={{ fontSize: "14px", color: t.textMuted }}>No observations recorded yet.</p>
+            <p className="mt-4" style={{ fontSize: "14px", color: t.textMuted }}>No vital signs recorded yet.</p>
             {isNurse && (
               <button onClick={() => setIsAdding(true)} className="mt-4 px-5 py-3 rounded-xl cursor-pointer"
                 style={{ backgroundColor: t.primary, color: t.brandOnPrimary, fontWeight: 700, border: "none" }}>
-                Add First Observation
+                Add First Reading
               </button>
             )}
           </div>

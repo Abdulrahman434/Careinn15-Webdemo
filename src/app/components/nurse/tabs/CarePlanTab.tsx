@@ -216,7 +216,7 @@ export function CarePlanTab({ role }: { role: "nurse" | "doctor" }) {
             <div className="flex-1 min-w-0">
               {editingId === item.id ? (
                 <div className="flex items-center gap-2">
-                  <input value={editLabel} onChange={(e) => setEditLabel(e.target.value)}
+                  <input dir="auto" value={editLabel} onChange={(e) => setEditLabel(e.target.value)}
                     className="flex-1 outline-none" style={{ padding: "4px 8px", borderRadius: 8, fontSize: "14px", border: `1px solid ${t.borderDefault}` }} />
                   <button onClick={() => { nurseActions.updateCarePlanItem(item.id, { label: editLabel }); setEditingId(null); }}
                     className="p-1 cursor-pointer" style={{ color: t.successOn, background: "none", border: "none" }}><Save size={14} /></button>
@@ -258,7 +258,7 @@ export function CarePlanTab({ role }: { role: "nurse" | "doctor" }) {
       {isNurse && (
         <div className="flex flex-col gap-3 mt-4 pt-4" style={{ borderTop: `1px solid ${t.borderDefault}` }}>
           <div className="flex items-center gap-2">
-          <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="New care plan item..."
+          <input dir="auto" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="New care plan item..."
             className="flex-1 outline-none" style={{ padding: "10px 14px", borderRadius: 12, fontSize: "14px", border: `1.5px solid ${t.borderDefault}` }}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()} />
           {mode === "overall" && (

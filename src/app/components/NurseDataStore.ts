@@ -173,7 +173,14 @@ export interface SafetyAlerts {
   /** Free text: "Contact", "Droplet", "Airborne", "Protective" … */
   isolationType: string;
   /** Assessed fall risk. "" when the ward has not assessed one. */
-  fallRisk: "" | "low" | "medium" | "high";
+  /** "" is not assessed; "none" is assessed and found to carry no risk —
+   *  a different fact, and the one a nurse wants to be able to state.
+   *  "medium" is kept so overrides saved before the rename still read. */
+  fallRisk: "" | "none" | "low" | "moderate" | "medium" | "high";
+  /** The nursing team's goal for today, shown at the top of the patient's
+   *  Person-Centered Care card. Free text so a ward can say what it means,
+   *  chosen from a preset list in the nurse interface. */
+  careGoal: string;
   /** Patient-friendly lines the ward wrote, one per row. Empty means the
    *  section does not appear — an isolation badge with no instructions under
    *  it tells the patient a rule applies without saying what it is. */
@@ -213,7 +220,10 @@ export interface PostDischargeContact {
 export interface DischargeInfo {
   followUps: FollowUpAppointment[];
   contacts: PostDischargeContact[];
-  instructions: string;
+  /** One instruction per entry — the nurse writes them as points, and the
+   *  patient reads them as points. Held as a list rather than one blob so
+   *  neither side has to guess where an instruction ends. */
+  instructions: string[];
 }
 
 /** Section keys matching CareMe slides + new nurse-only sections */
@@ -228,6 +238,7 @@ export type SectionKey =
   | "discharge"
   | "dischargePlan"
   | "observations"
+  | "pcc"
   | "forms"
   | "nfc";
 
@@ -357,6 +368,7 @@ function createDefaultState(): NurseStoreState {
       discharge: true,
       dischargePlan: true,
       observations: true,
+      pcc: true,
       forms: false, // Nurse-side signing tool, not a patient-facing CareMe slide
       nfc: false, // Not a patient-facing CareMe slide
     },
@@ -393,6 +405,7 @@ function createDefaultState(): NurseStoreState {
       isolation: true,
       isolationType: "Contact",
       fallRisk: "high",
+      careGoal: "Sit out of bed for all three meals",
       isolationInstructions: [
         "Check with your nurse before leaving the room.",
         "Visitors: check with the nurse before entering.",
@@ -470,7 +483,12 @@ function createDefaultState(): NurseStoreState {
         { id: "pc-2", label: "24/7 nurse advice line", value: "+966 12 665 0500" },
         { id: "pc-3", label: "Pharmacy enquiries", value: "+966 12 665 0310" },
       ],
-      instructions: "Take the discharge medication exactly as written on the label. Keep the dressing dry for 48 hours. Walk short distances daily and avoid lifting anything over 5 kg for two weeks. Come back to the emergency department if you develop a fever above 38°C, increasing pain, or bleeding from the wound.",
+      instructions: [
+        "Take the discharge medication exactly as written on the label.",
+        "Keep the dressing dry for 48 hours.",
+        "Walk short distances daily and avoid lifting anything over 5 kg for two weeks.",
+        "Come back to the emergency department if you develop a fever above 38°C, increasing pain, or bleeding from the wound.",
+      ],
     },
 
     /* Oldest first — the card reverses them, so the newest round leads. Two
@@ -537,6 +555,15 @@ function loadCachedState(): Partial<NurseStoreState> {
     // seven-step flow. An untouched cache of the old six seeded steps is
     // dropped so the new defaults take effect; a plan a nurse has edited,
     // added to or reordered is left alone.
+    /* Legacy migration: instructions were one free-text blob before they became
+       a list. A ward that had typed some keep them, one per line or sentence. */
+    if (parsed.dischargeInfo && typeof parsed.dischargeInfo.instructions === "string") {
+      const raw: string = parsed.dischargeInfo.instructions;
+      const byLine = raw.split(/\r?\n+/).map((l: string) => l.replace(/^\s*[-•*·]\s*/, "").trim()).filter(Boolean);
+      parsed.dischargeInfo.instructions = byLine.length > 1
+        ? byLine
+        : raw.split(/(?<=[.!?؟])\s+/).map((l: string) => l.trim()).filter(Boolean);
+    }
     if (Array.isArray(parsed.dischargePlan)) {
       const legacyKeys = [
         "care.discharge.order", "care.discharge.insurance", "care.discharge.medication",

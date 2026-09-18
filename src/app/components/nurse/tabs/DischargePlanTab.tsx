@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { LogOut, Plus, Trash2, Check, GripVertical, Edit2, Save, Eye, CalendarDays, Phone, FileText } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
+import { DateField } from "../DateField";
 import { useLocale } from "../../i18n";
 import { useNurseStore, nurseActions } from "../../NurseDataStore";
 
@@ -80,13 +81,11 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
 
       <div className="nurse-card">
         <h3 style={{ color: t.textHeading }}><CalendarDays size={18} style={{ color: t.primaryOn }} /> Expected Discharge</h3>
-        <input
+        <DateField
           value={store.patient.dischargeDate}
           readOnly={!isNurse}
-          onChange={(e) => nurseActions.updatePatientFromNurse({ dischargeDate: e.target.value })}
-          placeholder="e.g. 18 Sep 2026"
-          className="w-full outline-none"
-          style={{ padding: "10px 14px", borderRadius: 12, fontSize: "14px", color: t.textHeading, backgroundColor: t.surfaceInset, border: `1.5px solid ${t.borderDefault}` }}
+          onChange={(v) => nurseActions.updatePatientFromNurse({ dischargeDate: v })}
+          placeholder="Pick the expected discharge date"
         />
       </div>
 
@@ -117,7 +116,7 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
               {editingId === item.id ? (
                 <div className="flex flex-col gap-2 w-full">
                   <div className="flex items-center gap-2">
-                    <input value={editLabel} onChange={(e) => setEditLabel(e.target.value)} placeholder="English Label"
+                    <input dir="auto" value={editLabel} onChange={(e) => setEditLabel(e.target.value)} placeholder="English Label"
                       className="flex-1 outline-none" style={{ padding: "4px 8px", borderRadius: 8, fontSize: "14px", border: `1px solid ${t.borderDefault}` }} />
                     <button onClick={() => { nurseActions.updateDischargePlanItem(item.id, { label: editLabel, labelAr: editLabelAr }); setEditingId(null); }}
                       className="p-1 cursor-pointer" style={{ color: t.successOn, background: "none", border: "none" }}><Save size={14} /></button>
@@ -153,7 +152,7 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
       {isNurse && (
         <div className="flex flex-col gap-3 mt-4 pt-4" style={{ borderTop: `1px solid ${t.borderDefault}` }}>
           <div className="flex items-center gap-2">
-            <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="New item (English)..."
+            <input dir="auto" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="New item (English)..."
               className="flex-1 outline-none" style={{ padding: "10px 14px", borderRadius: 12, fontSize: "14px", border: `1.5px solid ${t.borderDefault}` }}
               onKeyDown={(e) => e.key === "Enter" && handleAdd()} />
             <button onClick={handleAdd} className="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all active:scale-95"
@@ -198,14 +197,18 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
         <div className="space-y-2">
           {info.followUps.map((f) => (
             <div key={f.id} className="flex items-center gap-2">
-              <input value={f.label} readOnly={!isNurse}
+              <input dir="auto" value={f.label} readOnly={!isNurse}
                 onChange={(e) => patchFollowUp(f.id, { label: e.target.value })}
                 placeholder="Clinic or specialty"
                 className="flex-1 outline-none" style={rowField} />
-              <input value={f.when} readOnly={!isNurse}
-                onChange={(e) => patchFollowUp(f.id, { when: e.target.value })}
+              <DateField
+                value={f.when}
+                readOnly={!isNurse}
+                onChange={(v) => patchFollowUp(f.id, { when: v })}
+                withTime
+                className="flex-1"
                 placeholder="Date and time"
-                className="flex-1 outline-none" style={rowField} />
+              />
               {isNurse && (
                 <button onClick={() => nurseActions.setDischargeInfo({ followUps: info.followUps.filter((x) => x.id !== f.id) })}
                   className="p-2 cursor-pointer" style={{ color: t.errorOn, background: "none", border: "none" }}><Trash2 size={14} /></button>
@@ -228,11 +231,11 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
         <div className="space-y-2">
           {info.contacts.map((c) => (
             <div key={c.id} className="flex items-center gap-2">
-              <input value={c.label} readOnly={!isNurse}
+              <input dir="auto" value={c.label} readOnly={!isNurse}
                 onChange={(e) => patchContact(c.id, { label: e.target.value })}
                 placeholder="Who to call"
                 className="flex-1 outline-none" style={rowField} />
-              <input value={c.value} readOnly={!isNurse}
+              <input dir="auto" value={c.value} readOnly={!isNurse}
                 onChange={(e) => patchContact(c.id, { value: e.target.value })}
                 placeholder="Number"
                 className="flex-1 outline-none" style={rowField} />
@@ -253,17 +256,52 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
         )}
       </div>
 
+      {/* One point per row, the same shape as the appointments and contacts
+          above — the patient reads these as bullets, so they are written as
+          bullets rather than typed into one box and split apart later. */}
       <div className="nurse-card">
         <h3 style={{ color: t.textHeading }}><FileText size={18} style={{ color: t.primaryOn }} /> Patient Instructions</h3>
-        <textarea
-          value={info.instructions}
-          readOnly={!isNurse}
-          onChange={(e) => nurseActions.setDischargeInfo({ instructions: e.target.value })}
-          rows={5}
-          placeholder="What the patient should do once they are home…"
-          className="w-full resize-none outline-none"
-          style={{ padding: "12px 14px", borderRadius: 12, fontSize: "14px", lineHeight: 1.6, fontFamily: "inherit", color: t.textHeading, backgroundColor: t.surfaceInset, border: `1.5px solid ${t.borderDefault}` }}
-        />
+        <div className="space-y-2">
+          {info.instructions.map((line, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span
+                aria-hidden
+                className="shrink-0"
+                style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: t.primary }}
+              />
+              <input
+                dir="auto"
+                value={line}
+                readOnly={!isNurse}
+                onChange={(e) => nurseActions.setDischargeInfo({
+                  instructions: info.instructions.map((x, n) => (n === i ? e.target.value : x)),
+                })}
+                placeholder="What the patient should do once they are home…"
+                className="flex-1 outline-none"
+                style={rowField}
+              />
+              {isNurse && (
+                <button
+                  onClick={() => nurseActions.setDischargeInfo({
+                    instructions: info.instructions.filter((_, n) => n !== i),
+                  })}
+                  className="p-2 cursor-pointer"
+                  style={{ color: t.errorOn, background: "none", border: "none" }}
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+        {isNurse && (
+          <button
+            onClick={() => nurseActions.setDischargeInfo({ instructions: [...info.instructions, ""] })}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all active:scale-95 mt-3"
+            style={{ backgroundColor: t.primary, color: t.brandOnPrimary, fontSize: "13px", fontWeight: 700, border: "none" }}>
+            <Plus size={16} /> Add instruction
+          </button>
+        )}
       </div>
     </div>
   );

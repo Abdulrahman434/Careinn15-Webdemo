@@ -2,6 +2,19 @@ import { useEffect, useRef, useState } from "react";
 import { useTheme } from "../ThemeContext";
 import { RotateCcw } from "lucide-react";
 
+/** Ink and paper for a signature, fixed in both themes.
+ *
+ *  A signature is saved as a PNG of its strokes and then shown again later,
+ *  possibly under a different theme: drawn in dark mode with a light stroke,
+ *  it came back as an invisible smudge on a dark card. So the ink is always
+ *  dark and the ground it is drawn and displayed on is always light — the way
+ *  a signature works on paper, and the only way a captured one keeps meaning
+ *  wherever it is shown. */
+export const SIGNATURE_INK = "#10222B";
+export const SIGNATURE_PAPER = "#FFFFFF";
+export const SIGNATURE_PAPER_LINE = "#C8D2D8";
+export const SIGNATURE_HINT = "#7A8A93";
+
 /** A finger-drawn signature on a bedside touchscreen.
  *
  *  The canvas is sized from its own laid-out box and the device pixel ratio, so
@@ -36,12 +49,12 @@ export function SignaturePad({
       ctx.lineWidth = 2.4;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.strokeStyle = t.textHeading;
+      ctx.strokeStyle = SIGNATURE_INK;
     };
     resize();
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
-  }, [t.textHeading]);
+  }, []);
 
   const pointFrom = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -94,8 +107,8 @@ export function SignaturePad({
           position: "relative",
           height,
           borderRadius: t.radiusLg,
-          backgroundColor: t.surfaceInset,
-          border: `1.5px dashed ${t.borderCardColor}`,
+          backgroundColor: SIGNATURE_PAPER,
+          border: `1.5px dashed ${SIGNATURE_PAPER_LINE}`,
           overflow: "hidden",
         }}
       >
@@ -111,7 +124,7 @@ export function SignaturePad({
         {!hasInk && (
           <span
             className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            style={{ fontFamily: t.fontFamily, fontSize: "14px", color: t.textMuted }}
+            style={{ fontFamily: t.fontFamily, fontSize: "14px", color: SIGNATURE_HINT }}
           >
             Sign here
           </span>

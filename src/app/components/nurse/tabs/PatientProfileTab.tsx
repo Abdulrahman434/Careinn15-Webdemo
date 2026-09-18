@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { User, Save, X, CheckCircle2 } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
+import { DateField } from "../DateField";
 import { useNurseStore, nurseActions } from "../../NurseDataStore";
 
 export function PatientProfileTab({ role }: { role: "nurse" | "doctor" }) {
@@ -60,8 +61,16 @@ export function PatientProfileTab({ role }: { role: "nurse" | "doctor" }) {
             <label style={{ fontSize: "12px", fontWeight: 600, color: t.textMuted, display: "block", marginBottom: 6 }}>
               {f.label}
             </label>
-            {editing ? (
-              <input
+            {editing && f.key === "admissionDate" ? (
+              /* A date, so it is picked rather than typed — same component as
+                 the discharge date and the follow-up appointments. */
+              <DateField
+                value={draft.admissionDate}
+                onChange={(v) => setDraft({ ...draft, admissionDate: v })}
+                placeholder="Pick the admission date"
+              />
+            ) : editing ? (
+              <input dir="auto"
                 value={draft[f.key]}
                 onChange={(e) => setDraft({ ...draft, [f.key]: e.target.value })}
                 disabled={(f as any).disabled}

@@ -1604,6 +1604,12 @@ function BedsideScreen() {
     >
       <div
         dir={dir}
+        /* The scaled canvas is the app's coordinate system. Anything that has
+           to cover the whole screen from deep inside a card — a modal opened
+           from a CareMe slide, say — portals here: the carousel between them
+           carries a transform, and `position: fixed` resolves against the
+           nearest transformed ancestor, not the viewport. */
+        id="careinn-canvas"
         style={{
           width: DESIGN_W,
           height: DESIGN_H,

@@ -2,6 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, LEADING, type ThemeConfig } from "./ThemeContext";
 import { useLocale, type Locale } from "./i18n";
 import {
+  readCarePartner, writeCarePartner, EMPTY_CARE_PARTNER, type CarePartnerRecord,
+} from "./carePartnerStore";
+import { CarePartnerAgreement } from "./CarePartnerAgreement";
+import {
   ClipboardList, UtensilsCrossed, Users, Clock, HeartHandshake,
   ShieldCheck, MessageSquarePlus, Check, CheckCircle2,
   ChevronLeft, ChevronRight, X,
@@ -119,22 +123,18 @@ export interface PreferenceAnswer {
   note?: NoteValue;
 }
 
-/** Who the patient nominated as their care partner. Both fields are required
- *  once the programme is accepted — a partner with no name is not a partner.
+/** Who the patient nominated as their care partner.
  *
- *  `accepted`/`acceptedAt` are legacy: the form used to present an agreement
- *  to tick. Records written then still carry them, so they are read but never
- *  written, and nothing gates on them any more. */
+ *  LEGACY. The Care Partner Programme moved out of this form and into its own
+ *  section of Person-Centered Care (carePartnerStore.ts), which is where a
+ *  nomination is made and where the partner signs. This type and the record
+ *  field below survive only so a nomination written by the old form can be
+ *  read once and carried across — nothing writes them any more. */
 export interface CarePartnerAgreement {
   name: string;
   relationship: string;
   accepted?: boolean;
   acceptedAt?: string | null;
-}
-
-/** Both details present and non-blank. */
-export function carePartnerComplete(p?: CarePartnerAgreement | null): boolean {
-  return !!p && !!p.name.trim() && !!p.relationship.trim();
 }
 
 export interface PreferenceFormRecord {
@@ -187,6 +187,16 @@ interface QuestionDef {
   kind: ControlKind;
   /** Option ids for `choice` questions (stored verbatim, translated for display). */
   options?: readonly string[];
+  /** The answer that makes this question incomplete on its own.
+   *
+   *  "Do you have any dietary preferences?" answered yes tells the kitchen
+   *  nothing; "Are the standard meal times suitable?" answered no tells them
+   *  nothing either. On that answer the notes box appears and has to be
+   *  filled in before the patient can move on. Every other question is a
+   *  plain yes or no with no box at all — a box on every screen reads as
+   *  homework, and the closing comments screen already catches anything
+   *  else the patient wants to say. */
+  noteRequiredOn?: "yes" | "no";
 }
 
 interface SectionDef {
@@ -235,16 +245,8 @@ const SECTIONS: readonly SectionDef[] = [
     id: "food",
     icon: UtensilsCrossed,
     questions: [
-      { id: "food.mealTiming", kind: "yesno" },
-      { id: "food.dietary", kind: "yesno" },
-    ],
-  },
-  {
-    id: "partner",
-    icon: Users,
-    questions: [
-      { id: "partner.participate", kind: "yesno" },
-      { id: "partner.appAccess", kind: "yesno" },
+      { id: "food.mealTiming", kind: "yesno", noteRequiredOn: "no" },
+      { id: "food.dietary", kind: "yesno", noteRequiredOn: "yes" },
     ],
   },
   {
@@ -260,7 +262,7 @@ const SECTIONS: readonly SectionDef[] = [
     icon: HeartHandshake,
     questions: [
       { id: "religious.support", kind: "yesno" },
-      { id: "religious.interpreter", kind: "yesno" },
+      { id: "religious.interpreter", kind: "yesno", noteRequiredOn: "yes" },
     ],
   },
   {
@@ -273,17 +275,27 @@ const SECTIONS: readonly SectionDef[] = [
     ],
   },
   {
+    /* The programme is introduced here, as one of the patient's preferences.
+       Saying yes does not open an agreement in this form any more — the
+       nomination and the partner's signature live in Person-Centered Care,
+       and the partner's name is reported back into these answers once it is
+       signed (see preferenceSummaryRows). */
+    id: "partner",
+    icon: Users,
+    questions: [
+      { id: "partner.participate", kind: "yesno" },
+      { id: "partner.appAccess", kind: "yesno" },
+    ],
+  },
+  {
     id: "other",
     icon: MessageSquarePlus,
     questions: [
-      { id: "other.otherPreference", kind: "yesno" },
-      { id: "other.virtualRoom", kind: "yesno" },
+      { id: "other.otherPreference", kind: "yesno", noteRequiredOn: "yes" },
     ],
   },
 ] as const;
 
-/** The question whose "yes" inserts the care-partner agreement screen. */
-const CARE_PARTNER_TRIGGER = "partner.participate";
 
 /** This admission's saved record, or null when there is none.
  *
@@ -356,9 +368,6 @@ export function isPreferenceFormComplete(record: PreferenceFormRecord | null): b
   const answers = record.answers ?? {};
   const answered = (id: string) => !!answers[id]?.value;
   if (!REQUIRED_QUESTION_IDS.every(answered)) return false;
-  /* The care-partner details screen is part of the form whenever its trigger
-     is "yes", and it is only done when both details are filled in. */
-  if (answers[CARE_PARTNER_TRIGGER]?.value === "yes" && !carePartnerComplete(record.carePartner)) return false;
   return true;
 }
 
@@ -422,21 +431,29 @@ export function preferenceSummaryRows(
         ...(note ? { note } : {}),
       });
 
-      /* The partner the patient nominated belongs with the question that
-         asked for them, not at the end of the list. */
-      if (q.id === CARE_PARTNER_TRIGGER && a.value === "yes" && carePartnerComplete(record.carePartner)) {
-        rows.push({
-          id: "partner.name",
-          label: t("ppf.short.partner.name"),
-          value: record.carePartner!.name.trim(),
-          kind: "text",
-        });
-        rows.push({
-          id: "partner.relationship",
-          label: t("ppf.short.partner.relationship"),
-          value: record.carePartner!.relationship.trim(),
-          kind: "text",
-        });
+      /* Who the partner turned out to be belongs with the question that asked
+         about the programme. The answer to that question is the patient's
+         intent; this is the fact, and it only exists once the partner has
+         actually signed the agreement in Person-Centered Care — a nomination
+         still waiting to be signed is not yet anybody's care partner. */
+      if (q.id === "partner.participate" && a.value === "yes") {
+        const partner = readCarePartner();
+        if (partner.status === "active" && partner.name.trim()) {
+          rows.push({
+            id: "partner.name",
+            label: t("ppf.short.partner.name"),
+            value: partner.name.trim(),
+            kind: "text",
+          });
+          if (partner.relationship.trim()) {
+            rows.push({
+              id: "partner.relationship",
+              label: t("ppf.short.partner.relationship"),
+              value: partner.relationship.trim(),
+              kind: "text",
+            });
+          }
+        }
       }
     }
   }
@@ -445,6 +462,27 @@ export function preferenceSummaryRows(
 
 /** The question named in a few words, falling back to the question itself for
  *  anything with no short label yet. */
+/** Write the Care Partner Programme answer from outside the form.
+ *
+ *  The question lives in the form because the ward's paper form has it there,
+ *  but the decision can also be made on the Person-Centered Care card. One
+ *  answer, written from either place, so the record the hospital receives
+ *  says the same thing the patient's screen does. */
+export function setCarePartnerAnswer(value: "yes" | "no") {
+  const record = readPreferenceRecord();
+  if (!record) return;   // nothing submitted yet; the form will ask in its own time
+  const answers = { ...(record.answers ?? {}) };
+  if (answers["partner.participate"]?.value === value) return;
+  answers["partner.participate"] = { ...(answers["partner.participate"] ?? {}), value };
+  try {
+    localStorage.setItem(PREFS_ANSWERS_KEY, JSON.stringify({ ...record, answers }));
+  } catch {
+    /* A failed write is a lost save, not a dead screen — same rule the form
+       itself follows. */
+  }
+  window.dispatchEvent(new CustomEvent(PREFS_SAVED_EVENT));
+}
+
 function shortLabel(
   id: string,
   t: (key: string, ...args: (string | number)[]) => string,
@@ -484,7 +522,6 @@ function formatAnswer(
 
 type Screen =
   | { kind: "question"; section: SectionDef; q: QuestionDef }
-  | { kind: "carePartner"; section: SectionDef }
   | { kind: "comments" };
 
 /** One scroll-snapping column.
@@ -816,12 +853,10 @@ export function PatientPreferenceForm({
    * Either way it opens on question 1; restoring picks up the answers, not the
    * position. */
   const saved = useMemo(() => readPreferenceRecord(), []);
+  const [showPartnerAgreement, setShowPartnerAgreement] = useState(false);
   const [answers, setAnswers] = useState<Record<string, PreferenceAnswer>>(
     () => saved?.answers ?? {});
   const [comments, setComments] = useState(() => saved?.comments?.text ?? "");
-  const [partner, setPartner] = useState<CarePartnerAgreement>(() => saved?.carePartner ?? {
-    name: "", relationship: "",
-  });
   const [index, setIndex] = useState(0);
   const [submitted, setSubmitted] = useState(false);
 
@@ -868,25 +903,19 @@ export function PatientPreferenceForm({
         qGap: "20px", stackGap: "12px", notesH: "92px",
         footerY: "20px", reserved: "56px", wheelItem: 56, pillY: "14px" };
 
-  const wantsCarePartner = answers[CARE_PARTNER_TRIGGER]?.value === "yes";
-
-  /* ── Screen list. The care-partner agreement is spliced in directly after
-   *    its trigger question, so answering "yes" grows the total *while the
-   *    patient is still looking at that question* — the count changes in
-   *    response to their own tap, never as a surprise on a later screen. ── */
+  /* ── Screen list: one screen per question, then the comments. The
+   *    care-partner agreement used to be spliced in here; it is now its own
+   *    section of Person-Centered Care, filled in and signed on the card. ── */
   const screens = useMemo<Screen[]>(() => {
     const list: Screen[] = [];
     for (const section of SECTIONS) {
       for (const q of section.questions) {
         list.push({ kind: "question", section, q });
-        if (q.id === CARE_PARTNER_TRIGGER && wantsCarePartner) {
-          list.push({ kind: "carePartner", section });
-        }
       }
     }
     list.push({ kind: "comments" });
     return list;
-  }, [wantsCarePartner]);
+  }, []);
 
   // Defensive: if the list shrinks (yes → no) while further along, stay in range.
   const safeIndex = Math.min(index, screens.length - 1);
@@ -901,8 +930,27 @@ export function PatientPreferenceForm({
 
   /** Tapping the selected pill again clears it. Next then blocks again, which
    *  is the point: an answer is only recorded when the patient chose it. */
-  const setValue = (id: string, value: string) =>
-    patch(id, { value: answers[id]?.value === value ? undefined : value });
+  const setValue = (id: string, value: string) => {
+    const next = answers[id]?.value === value ? undefined : value;
+    patch(id, { value: next });
+
+    /* The Care Partner Programme is answered here but lived with elsewhere.
+       The answer to this question is the one source of truth for whether the
+       patient wants a partner; the Person-Centered Care card holds the
+       nomination and the signed agreement. Keeping them in step here means
+       the two can never disagree — and saying yes opens the agreement at
+       once, which is what the ward asked for: it is filled in with the
+       patient while the conversation is happening. */
+    if (id === "partner.participate") {
+      if (next === "yes") {
+        setShowPartnerAgreement(true);
+      } else if (next === "no") {
+        const current = readCarePartner();
+        writeCarePartner({ ...EMPTY_CARE_PARTNER, status: "declined" });
+        void current;
+      }
+    }
+  };
 
   /** Free text is the only place a raw language string is stored, so tag it
    *  with the locale it was written in. */
@@ -920,12 +968,19 @@ export function PatientPreferenceForm({
    * re-answering. */
   const canAdvance = (() => {
     if (screen.kind === "comments") return true;          // closing screen, optional by design
-    if (screen.kind === "carePartner") return carePartnerComplete(partner);
     /* Free text is not gated — no question uses it now, but a restored one
-       would have no answer to gate on. The optional note is never gated
-       either: only the yes/no is. */
+       would have no answer to gate on. */
     if (screen.q.kind === "text") return true;
-    return !!answers[screen.q.id]?.value;
+    const value = answers[screen.q.id]?.value;
+    if (!value) return false;
+    /* The one case where an answer is not an answer: "yes, I have dietary
+       preferences" with nothing in the box leaves the kitchen exactly where
+       it started. The box only appears on that answer, so this can never
+       block a question that is not asking for detail. */
+    if (screen.q.noteRequiredOn && value === screen.q.noteRequiredOn) {
+      return !!answers[screen.q.id]?.note?.text.trim();
+    }
+    return true;
   })();
 
   const goNext = () => {
@@ -943,7 +998,6 @@ export function PatientPreferenceForm({
     admission: admissionKey(),
     answers,
     ...(comments.trim() ? { comments: { text: comments, lang: locale } } : {}),
-    ...(wantsCarePartner ? { carePartner: partner } : {}),
   });
 
   /** Never throws: a blocked or full store must not trap the patient on a
@@ -973,10 +1027,10 @@ export function PatientPreferenceForm({
   useEffect(() => {
     if (submitted) return;   // handleSubmit already wrote the final record
     const hasAnswer =
-      Object.keys(answers).length > 0 || comments.trim() !== "" || carePartnerComplete(partner);
+      Object.keys(answers).length > 0 || comments.trim() !== "";
     if (!hasAnswer) return;  // opening and closing an empty form saves nothing
     persist(buildRecord(completedAtRef.current));
-  }, [answers, comments, partner, submitted]);
+  }, [answers, comments, submitted]);
 
   const handleSubmit = () => {
     const record = buildRecord(new Date().toISOString());
@@ -1057,14 +1111,19 @@ export function PatientPreferenceForm({
   };
 
   /** Selectable pill — same geometry as the concern "area" chips. */
-  const renderPill = (key: string, selected: boolean, onClick: () => void, label: string) => (
+  const renderPill = (key: string, selected: boolean, onClick: () => void, label: string, wide = false) => (
     <button
       key={key}
       onClick={onClick}
       data-ppf-pill={key}
       className="transition-transform duration-200 active:scale-[0.96] cursor-pointer"
       style={{
-        padding: `${M.pillY} 40px`,
+        /* A sentence does not fit in a pill. Questions whose answers are
+           whole arrangements rather than yes and no get full-width rows,
+           read down the page instead of across it. */
+        ...(wide
+          ? { width: "100%", maxWidth: "760px", textAlign: (isRTL ? "right" : "left") as const, padding: `${M.pillY} 24px` }
+          : { padding: `${M.pillY} 40px` }),
         borderRadius: theme.radiusLg,
         border: selected ? `2px solid ${iconColor}` : `1.5px solid ${theme.borderDefault}`,
         backgroundColor: selected ? theme.primarySubtle : theme.surface,
@@ -1081,6 +1140,19 @@ export function PatientPreferenceForm({
       {label}
     </button>
   );
+
+  /** A question's own wording for yes and no, falling back to the plain pair.
+   *  "Would you prefer to be present at handover…" is answered with an
+   *  arrangement, not with the word "yes". */
+  const yesNoLabel = (q: QuestionDef, which: "yes" | "no", tr: typeof t) => {
+    const key = `ppf.answer.${q.id}.${which}`;
+    const own = tr(key);
+    return own === key ? tr(which === "yes" ? "ppf.yes" : "ppf.no") : own;
+  };
+
+  /** True when either answer carries its own sentence. */
+  const wideAnswers = (q: QuestionDef) =>
+    t(`ppf.answer.${q.id}.yes`) !== `ppf.answer.${q.id}.yes`;
 
   /** Free-text questions share one control; only the prompt differs. Falls
    *  back to the generic placeholder for questions that need no special one. */
@@ -1127,7 +1199,7 @@ export function PatientPreferenceForm({
             textAlign: isRTL ? "right" : "left",
           }}
         >
-          {t("ppf.notes.optionalLabel")}
+          {t("ppf.notes.requiredLabel")}
         </label>
         <textarea
           id={fieldId}
@@ -1148,11 +1220,11 @@ export function PatientPreferenceForm({
       case "yesno":
         return (
           <div className="flex flex-col items-center w-full" style={{ gap: M.stackGap }}>
-            <div className="flex flex-wrap justify-center gap-4">
-              {renderPill("yes", answers[q.id]?.value === "yes", () => setValue(q.id, "yes"), t("ppf.yes"))}
-              {renderPill("no", answers[q.id]?.value === "no", () => setValue(q.id, "no"), t("ppf.no"))}
+            <div className={wideAnswers(q) ? "flex flex-col w-full items-center gap-3" : "flex flex-wrap justify-center gap-4"}>
+              {renderPill("yes", answers[q.id]?.value === "yes", () => setValue(q.id, "yes"), yesNoLabel(q, "yes", t), wideAnswers(q))}
+              {renderPill("no", answers[q.id]?.value === "no", () => setValue(q.id, "no"), yesNoLabel(q, "no", t), wideAnswers(q))}
             </div>
-            {renderNote(q)}
+            {q.noteRequiredOn && answers[q.id]?.value === q.noteRequiredOn && renderNote(q)}
           </div>
         );
 
@@ -1232,79 +1304,6 @@ export function PatientPreferenceForm({
     </>
   );
 
-  /** Care Partner details — its own screen, reached immediately after the
-   *  patient answers "yes", so it is completed in the same flow. Both fields
-   *  are required: the ward needs a person to call, and a name with no stated
-   *  relationship tells them nothing about who is allowed to hear what. */
-  const renderCarePartnerScreen = (section: SectionDef) => (
-    <>
-      {renderSectionBadge(section)}
-      <h2 style={{ ...questionHeading, margin: "0 0 12px" }}>
-        {t("ppf.partner.details.title")}
-      </h2>
-      <p style={{
-        fontFamily, fontSize: TYPE_SCALE.base, color: theme.textMuted,
-        lineHeight: LEADING.normal, textAlign: "center",
-        maxWidth: "860px", margin: "0 0 24px",
-      }}>
-        {t("ppf.partner.details.intro")}
-      </p>
-
-      <div
-        className="flex flex-col w-full shrink-0"
-        style={{ maxWidth: "720px", gap: "16px" }}
-      >
-        <div className="flex flex-col" style={{ gap: "6px" }}>
-          <label
-            htmlFor="ppf-partner-name"
-            style={{
-              fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.semibold,
-              color: theme.textMuted, textAlign: isRTL ? "right" : "left",
-            }}
-          >
-            {t("ppf.partner.agreement.name")}
-          </label>
-          <input
-            id="ppf-partner-name"
-            value={partner.name}
-            onChange={(e) => setPartner((p) => ({ ...p, name: e.target.value }))}
-            placeholder={t("ppf.partner.agreement.namePlaceholder")}
-            aria-label={t("ppf.partner.agreement.name")}
-            className="ppf-field"
-            style={fieldStyle("58px")}
-          />
-        </div>
-
-        <div className="flex flex-col" style={{ gap: "6px" }}>
-          <label
-            htmlFor="ppf-partner-rel"
-            style={{
-              fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.semibold,
-              color: theme.textMuted, textAlign: isRTL ? "right" : "left",
-            }}
-          >
-            {t("ppf.partner.agreement.relationship")}
-          </label>
-          <input
-            id="ppf-partner-rel"
-            value={partner.relationship}
-            onChange={(e) => setPartner((p) => ({ ...p, relationship: e.target.value }))}
-            placeholder={t("ppf.partner.agreement.relationshipPlaceholder")}
-            aria-label={t("ppf.partner.agreement.relationship")}
-            className="ppf-field"
-            style={fieldStyle("58px")}
-          />
-        </div>
-
-        <p style={{
-          fontFamily, fontSize: TYPE_SCALE.sm, color: theme.textMuted,
-          textAlign: isRTL ? "right" : "left",
-        }}>
-          {t("ppf.partner.details.required")}
-        </p>
-      </div>
-    </>
-  );
 
   const renderCommentsScreen = () => (
     <>
@@ -1383,19 +1382,24 @@ export function PatientPreferenceForm({
   /* Chevrons are part of the button label and inherit its text colour —
      forcing the accent onto the white-on-primary Next button would fail
      contrast. Every *content* icon uses iconColor. */
+  /* Mirrored ONCE. The glyph is chosen by direction — forward is leftward in
+     Arabic and Urdu — and the side it sits on is left to the flex row, which
+     the RTL page already reverses. Swapping the slot by hand as well mirrored
+     it twice and put each chevron back where it started, pointing the wrong
+     way for the edge it was on. */
   const backChevron = isRTL ? <ChevronRight size={24} /> : <ChevronLeft size={24} />;
   const nextChevron = isRTL ? <ChevronLeft size={24} /> : <ChevronRight size={24} />;
 
   const renderBack = () =>
-    isFirst ? <div /> : navButton(t("ppf.back"), goBack, "ghost", !isRTL ? backChevron : null, isRTL ? backChevron : null);
+    isFirst ? <div /> : navButton(t("ppf.back"), goBack, "ghost", backChevron, null);
 
   const renderNext = () =>
     navButton(
       isLast ? t("ppf.submit") : t("ppf.next"),
       goNext,
       "primary",
-      isRTL ? nextChevron : null,
-      !isRTL ? nextChevron : null,
+      null,
+      nextChevron,
       !canAdvance,
     );
 
@@ -1632,7 +1636,6 @@ export function PatientPreferenceForm({
           style={{ marginTop: "auto", marginBottom: "auto" }}
         >
           {screen.kind === "question" && renderQuestionScreen(screen.section, screen.q)}
-          {screen.kind === "carePartner" && renderCarePartnerScreen(screen.section)}
           {screen.kind === "comments" && renderCommentsScreen()}
         </div>
       </div>
@@ -1650,6 +1653,24 @@ export function PatientPreferenceForm({
         {renderBack()}
         {renderNext()}
       </div>
+
+      {/* Filled in with the patient, right where they said yes. It portals to
+          the canvas, so it sits over this form rather than inside it. */}
+      {showPartnerAgreement && (
+        <CarePartnerAgreement
+          initial={readCarePartner()}
+          onClose={() => setShowPartnerAgreement(false)}
+          onAccept={(details) => {
+            writeCarePartner({
+              ...readCarePartner(),
+              ...details,
+              status: "active",
+              agreedAt: new Date().toISOString(),
+            });
+            setShowPartnerAgreement(false);
+          }}
+        />
+      )}
     </>
   );
 }

@@ -155,7 +155,7 @@ function FormReader({
   const field = (value: string, set: (v: string) => void, label: string, placeholder: string) => (
     <div className="flex flex-col flex-1 min-w-0" style={{ gap: 6 }}>
       <label style={{ fontSize: "12.5px", fontWeight: 600, color: t.textMuted }}>{label}</label>
-      <input
+      <input dir="auto"
         value={value}
         onChange={(e) => set(e.target.value)}
         placeholder={placeholder}

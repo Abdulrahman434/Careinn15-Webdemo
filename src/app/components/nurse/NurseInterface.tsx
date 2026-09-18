@@ -3,13 +3,14 @@ import {
   X, ClipboardList, Stethoscope, User, Heart,
   FlaskConical, Image as ImageIcon, LogOut, Activity,
   Hash, DoorOpen, Clock, Plus, Bed, CreditCard, ExternalLink,
-  FileSignature,
+  FileSignature, HeartHandshake,
 } from "lucide-react";
 import { useTheme } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { useNurseStore, nurseActions, type SectionKey } from "../NurseDataStore";
 import { PatientProfileTab } from "./tabs/PatientProfileTab";
 import { CareOverviewTab } from "./tabs/CareOverviewTab";
+import { PersonCenteredCareTab } from "./tabs/PersonCenteredCareTab";
 import { CarePlanTab } from "./tabs/CarePlanTab";
 import { LabResultsTab } from "./tabs/LabResultsTab";
 import { ImagingTab } from "./tabs/ImagingTab";
@@ -32,7 +33,8 @@ const TABS: TabDef[] = [
   { key: "labs", label: "Lab Results", icon: FlaskConical, hasVisibility: true },
   { key: "imaging", label: "Imaging", icon: ImageIcon, hasVisibility: true },
   { key: "discharge", label: "Discharge Process", icon: LogOut, hasVisibility: true },
-  { key: "observations", label: "Observations", icon: Activity, hasVisibility: true },
+  { key: "observations", label: "Vital Signs", icon: Activity, hasVisibility: true },
+  { key: "pcc", label: "Person-Centered Care", icon: HeartHandshake, hasVisibility: true },
   { key: "forms", label: "Forms", icon: FileSignature, hasVisibility: false },
   { key: "nfc", label: "Update Nurse Info", icon: CreditCard, hasVisibility: false },
 ];
@@ -47,7 +49,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
   const { t: tr } = useLocale();
   const store = useNurseStore();
   const [activeTab, setActiveTab] = useState<SectionKey>("profile");
-  // Bumped by the header's "Add Observation" so the observations tab opens its
+  // Bumped by the header's "Add Vital Signs" so that tab opens its
   // form — switching tab alone did nothing when that tab was already active.
   const [addObsNonce, setAddObsNonce] = useState(0);
 
@@ -62,6 +64,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
       case "imaging": return <ImagingTab role={role} />;
       case "discharge": return <DischargePlanTab role={role} />;
       case "observations": return <ObservationsTab role={role} addNonce={addObsNonce} />;
+      case "pcc": return <PersonCenteredCareTab role={role} />;
       case "forms": return <FormsTab />;
       case "nfc": return <NfcTab />;
       default: return null;
@@ -154,7 +157,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
             className="flex items-center gap-2 px-5 py-3 cursor-pointer transition-all active:scale-95"
             style={{ backgroundColor: t.primary, color: t.brandOnPrimary, fontSize: "14px", fontWeight: 800, borderRadius: "14px", border: "none" }}
           >
-            <Plus size={18} /> Add Observation
+            <Plus size={18} /> Add Vital Signs
           </button>
         )}
       </div>
@@ -282,6 +285,20 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
         }
         .ni-root input::placeholder,
         .ni-root textarea::placeholder { color: var(--ni-ink-muted); opacity: 1; }
+        /* This interface is used with a finger on a bedside touchscreen, not a
+           mouse. 44px is the smallest target a fingertip hits reliably, so it
+           is the floor for every field, option chip and button here — set once
+           rather than remembered at each of the ~40 call sites. `.ni-inline`
+           opts out the small remove buttons that sit INSIDE a chip, which
+           would otherwise stretch the chip around them. */
+        .ni-root input:not([type="checkbox"]):not([type="radio"]),
+        .ni-root select,
+        .ni-root button:not(.ni-inline) {
+          min-height: 44px;
+        }
+        .ni-root textarea { min-height: 96px; }
+        .ni-root button:not(.ni-inline) { min-width: 44px; }
+        .ni-root .ni-inline { min-height: 0; min-width: 0; }
         .ni-root select option { background: var(--ni-surface); color: var(--ni-ink); }
         .ni-scroll::-webkit-scrollbar { width: 5px; }
         .ni-scroll::-webkit-scrollbar-thumb { background: var(--ni-card-line); border-radius: 99px; }
