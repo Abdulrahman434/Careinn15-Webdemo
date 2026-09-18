@@ -17,6 +17,7 @@ import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW } from "./ThemeContext
 import { useLocale, type Locale } from "./i18n";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { ApiImage } from "./ApiImage";
+import { orderWindowStart, ORDER_WINDOW_END } from "./orderWindow";
 import { useOrders } from "./OrderStore";
 import { useNurseStore, nurseActions } from "./NurseDataStore";
 import { useToast } from "./ToastNotifications";
@@ -192,19 +193,6 @@ function getEnforceOrderTime() { return _enforceOrderTime; }
  * anything not ordered. The meal cards carry that promise, because the patient
  * most likely to miss the cutoff is the one who most needs to know they will
  * still be fed. */
-/* Fakeeh's kitchen opens its run at 2 PM; every other hospital starts at 4.
-   Read off the active hospital rather than the theme, because the window is
-   also asked about outside React (orderWindowState below runs on a timer).
-   "active-hospital-id" is ThemeContext's key — it is the hospital the whole
-   app is branded as. */
-const ORDER_WINDOW_START_BY_HOSPITAL: Record<string, number> = { dsfh: 14 };
-const ORDER_WINDOW_START_DEFAULT = 16;
-function orderWindowStart(): number {
-  if (typeof window === "undefined") return ORDER_WINDOW_START_DEFAULT;
-  const id = localStorage.getItem("active-hospital-id") || "";
-  return ORDER_WINDOW_START_BY_HOSPITAL[id] ?? ORDER_WINDOW_START_DEFAULT;
-}
-const ORDER_WINDOW_END = 20;
 
 /** Tomorrow and the two days after it. Today is already in the kitchen's
  *  hands by the time this window opens, so the run starts at +1. */
@@ -2255,6 +2243,10 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
              something. A timestamp opens nothing, so it takes the muted
              weight the deadline line already uses for a plain statement. */
           const actionIsLink = !placedAt && (placed || !canOrder);
+          /* The one line on the card that is a deadline reads as one: a cut-off
+             the patient can still miss is red, where "View menu" is teal and a
+             sent-at timestamp is muted. */
+          const actionIsDeadline = !placedAt && !placed && canOrder;
 
           /* Outside the window the card still opens, to read rather than to
              pick. A sent order opens nothing: its menu is a list of choices
@@ -2352,11 +2344,13 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
                   <div style={{ width: "100%", height: "1px", backgroundColor: theme.borderDefault, marginBottom: "16px" }} />
                   <div className="flex items-center justify-center gap-2" data-fo-action={meal.id}>
                     {/* The clock belongs to the deadline, not to "View menu". */}
-                    {canOrder && !placed && <Clock size={15} color={INK_2} className="shrink-0" />}
+                    {canOrder && !placed && (
+                      <Clock size={15} color={actionIsDeadline ? ON_ERR : INK_2} className="shrink-0" />
+                    )}
                     <span style={{
                       fontFamily, fontSize: "16px",
-                      fontWeight: actionIsLink ? WEIGHT.bold : WEIGHT.medium,
-                      color: actionIsLink ? TEAL_ON : INK_2,
+                      fontWeight: actionIsLink || actionIsDeadline ? WEIGHT.bold : WEIGHT.medium,
+                      color: actionIsDeadline ? ON_ERR : actionIsLink ? TEAL_ON : INK_2,
                       textAlign: "center",
                     }}>
                       {actionLabel}

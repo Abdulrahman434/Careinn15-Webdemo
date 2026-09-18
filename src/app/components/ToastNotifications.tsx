@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useRef, useState, ReactNode, us
 import { Utensils, X, ShieldCheck, ShieldOff } from "lucide-react";
 import { useTheme, TEXT_STYLE, WEIGHT, TYPE_SCALE, SHADOW, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
+import { reminderText, type DueReminder } from "./mealReminders";
+import { windowClock } from "./orderWindow";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * HBS — Toast Notifications
@@ -32,6 +34,10 @@ export interface ToastInput {
   category: string;
   /** Bold headline */
   title: string;
+  /** Optional second line under the headline — the detail the headline drops:
+   *  which meals are left, when ordering shuts. Replaces the "just now" stamp,
+   *  which says nothing a toast that just appeared does not already say. */
+  body?: string;
   /** Optional coloured action tag on the trailing edge, e.g. "On the Way" */
   actionText?: string;
   actionColor?: string;
@@ -71,7 +77,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const idRef = useRef(0);
   const timers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
 
   const remove = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -115,15 +121,33 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       hkDemoIdx.current++;
     };
     (window as any).__demoMealToast = () => {
-      /* Reminders → ordering page | Status updates → My Orders */
+      /* The real reminder set, in the order the afternoon fires them — so the
+         demo badge shows exactly what a patient sees, without waiting for the
+         clock to reach each hour. See mealReminders.ts. */
       const navOrder = () => window.dispatchEvent(new CustomEvent("toast-navigate", { detail: "meal" }));
-      const navMyOrders = () => window.dispatchEvent(new CustomEvent("toast-navigate", { detail: "meal-orders" }));
-      const demos: ToastInput[] = [
-        { variant: "meal", category: t("toast.meal.category"), title: t("toast.meal.dinnerOpen"), actionText: t("toast.meal.orderNow"), actionColor: "#2563EB", onTap: navOrder },
-        { variant: "meal", category: t("toast.meal.category"), title: t("toast.meal.hurryLunch"), actionText: t("toast.meal.hurry"), actionColor: "#D97706", onTap: navOrder },
-        { variant: "meal", category: t("toast.meal.category"), title: t("toast.meal.breakfast"), actionText: t("toast.meal.bonAppetit"), actionColor: "#16A34A", onTap: navMyOrders },
-        { variant: "meal", category: t("toast.meal.category"), title: t("toast.meal.lunch"), actionText: t("toast.hk.onTheWay"), actionColor: "#2563EB", onTap: navMyOrders },
-      ];
+      const clock = (hour: number) => windowClock(hour).toLocaleTimeString(
+        locale === "ar" ? "ar" : locale === "ur" ? "ur-PK" : "en-US",
+        { hour: "numeric", minute: "2-digit", hour12: true },
+      );
+      const demos: ToastInput[] = ([
+        { kind: "open", slot: "demo", missing: [] },
+        { kind: "none", slot: "demo", missing: ["breakfast", "lunch", "dinner"] },
+        { kind: "some", slot: "demo", missing: ["lunch", "dinner"] },
+        { kind: "some", slot: "demo", missing: ["dinner"] },
+        { kind: "last", slot: "demo", missing: ["dinner"] },
+        { kind: "closed", slot: "demo", missing: ["dinner"] },
+      ] as DueReminder[]).map((r) => {
+        const { title, body } = reminderText(r, t, clock);
+        return {
+          variant: "meal" as const,
+          category: t("toast.meal.category"),
+          title,
+          body,
+          actionText: r.kind === "closed" ? undefined : t("toast.meal.orderNow"),
+          actionColor: r.kind === "last" ? "#D97706" : "#2563EB",
+          onTap: r.kind === "closed" ? undefined : navOrder,
+        };
+      });
       showToast(demos[mealDemoIdx.current % demos.length]);
       mealDemoIdx.current++;
     };
@@ -133,7 +157,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       delete (window as any).__demoMealToast;
       delete (window as any).__demoToast;
     };
-  }, [showToast, t]);
+  }, [showToast, t, locale]);
 
   /* ── RTLS demo — uses actual care team images from NurseDataStore ── */
   useEffect(() => {
@@ -450,10 +474,10 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => vo
               fontSize: TYPE_SCALE.sm,
               color: theme.textMuted,
               margin: "3px 0 0",
-              lineHeight: 1.2,
+              lineHeight: 1.35,
             }}
           >
-            {t("toast.justNow")}
+            {toast.body || t("toast.justNow")}
           </p>
         </div>
 

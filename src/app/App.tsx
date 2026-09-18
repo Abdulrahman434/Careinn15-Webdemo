@@ -40,6 +40,8 @@ import { FoodOrdering } from "./components/FoodOrdering";
 import { NeedSomething } from "./components/NeedSomething";
 import { OrderProvider, useOrders } from "./components/OrderStore";
 import { ToastProvider, useToast } from "./components/ToastNotifications";
+import { dueReminder, reminderText, alreadyFired, markFired } from "./components/mealReminders";
+import { windowClock } from "./components/orderWindow";
 import { AuthProvider, useAuth } from "./components/AuthContext";
 import { PasswordGate } from "./components/PasswordGate";
 import { HospitalBroadcast, SAMPLE_BROADCAST } from "./components/HospitalBroadcast";
@@ -456,63 +458,55 @@ function BedsideScreen() {
   const [showBlankPage, setShowBlankPage] = useState(false);
   const [showIptv, setShowIptv] = useState(false);
 
-  // Fakeeh ONLY: Home page landing toast if food order was not ordered yet
-  const isHomeScreen =
-    !openCategory &&
-    !showFoodOrder &&
-    !showCareMeExpanded &&
-    !showCall &&
-    !showSurvey &&
-    !showAboutUs &&
-    !showSettings &&
-    !showNotifications &&
-    !showTasbih &&
-    !showConfigurator &&
-    !showBlankPage &&
-    !showIptv &&
-    !activeGame &&
-    !activeTool &&
-    !showNeedSomething;
 
-  const prevIsHomeScreenRef = useRef(false);
+  /* Tomorrow's meals, reminded on the hour.
+   *
+   * The kitchen's window is the whole of the patient's chance to choose: it
+   * opens in the afternoon and shuts at eight, and nothing they do after that
+   * changes tomorrow's tray. So the screen speaks up when the window opens,
+   * again on each hour while meals are still unchosen, once more when the last
+   * hour starts, and once when it has shut on something.
+   *
+   * Every reminder is fired at most once, remembered across reloads — see
+   * mealReminders.ts — and the whole set goes quiet the moment all three of
+   * tomorrow's meals are with the kitchen. */
+  const mealClock = useCallback(
+    (hour: number) => windowClock(hour).toLocaleTimeString(
+      locale === "ar" ? "ar" : locale === "ur" ? "ur-PK" : "en-US",
+      { hour: "numeric", minute: "2-digit", hour12: true },
+    ),
+    [locale],
+  );
+
   useEffect(() => {
-    const isFakeeh = theme.id === "dsfh" || theme.id.includes("dsfh") || theme.id.includes("fakeeh");
-    if (!isFakeeh) return;
-
-    const checkAndShowToast = () => {
-      const hasPatientOrdered = orders.some(
-        (o) => o.orderFor === "patient" || !o.orderFor
-      );
-      if (!hasPatientOrdered) {
-        showToast({
-          variant: "meal",
-          category: isRTL ? "تذكير الوجبات" : "MEAL REMINDER",
-          title: isRTL
-            ? "لا تنسَ اختيار وجبات الغد اللذيذة"
-            : "Do not forget to choose your tommorows delicius meals",
-          actionText: isRTL ? "اطلب الآن" : "Order Now",
-          actionColor: "#2563EB",
-          onTap: () => {
-            setFoodOrderInitialView(undefined);
-            setShowFoodOrder(true);
-          },
-        });
-      }
+    const check = () => {
+      /* Not while they are on the meal screen: the reminder would be telling
+         someone already ordering to go and order. It is not consumed either —
+         the next tick after they leave will still find it due. */
+      if (showFoodOrder) return;
+      const due = dueReminder(new Date(), orders as any[]);
+      if (!due || alreadyFired(due.slot)) return;
+      markFired(due.slot);
+      const { title, body } = reminderText(due, t, mealClock);
+      showToast({
+        variant: "meal",
+        category: t("toast.meal.category"),
+        title,
+        body,
+        /* Nothing can be ordered once the window has shut, so the closing
+           notice is a statement, not an invitation. */
+        actionText: due.kind === "closed" ? undefined : t("toast.meal.orderNow"),
+        actionColor: due.kind === "last" ? "#D97706" : "#2563EB",
+        onTap: due.kind === "closed" ? undefined : () => {
+          setFoodOrderInitialView(undefined);
+          setShowFoodOrder(true);
+        },
+      });
     };
-
-    // Show initial toast on landing on Home screen
-    if (isHomeScreen && !prevIsHomeScreenRef.current) {
-      checkAndShowToast();
-    }
-    prevIsHomeScreenRef.current = isHomeScreen;
-
-    // Recurring check every 5 minutes (300,000 ms) as long as food has not been ordered
-    const intervalId = setInterval(() => {
-      checkAndShowToast();
-    }, 5 * 60 * 1000);
-
-    return () => clearInterval(intervalId);
-  }, [isHomeScreen, theme.id, orders, isRTL, showToast]);
+    check();
+    const id = setInterval(check, 60 * 1000);
+    return () => clearInterval(id);
+  }, [orders, showToast, t, mealClock, showFoodOrder]);
 
   // Queue of immediate alerts to show as broadcast popups
   const [broadcastQueue, setBroadcastQueue] = useState<BroadcastNotification[]>([]);

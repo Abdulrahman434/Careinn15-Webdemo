@@ -276,6 +276,43 @@ const translations: Record<string, TranslationEntry> = {
   "toast.meal.bonAppetit": { en: "Bon Appétit!", ar: "بالهناء والشفاء!", ur: "بالعافیہ!" },
   "toast.meal.breakfast": { en: "Breakfast", ar: "الفطور", ur: "ناشتہ" },
   "toast.meal.lunch": { en: "Lunch", ar: "الغداء", ur: "دوپہر کا کھانا" },
+  "toast.meal.dinner": { en: "Dinner", ar: "العشاء", ur: "رات کا کھانا" },
+
+  /* ─── Tomorrow's meals: the window opening, the hours after it, the
+         cut-off. {0} is the closing time, {1} the opening time. ─── */
+  "food.remind.open.title": { en: "Tomorrow's menu is open", ar: "قائمة الغد متاحة الآن", ur: "کل کا مینو کھل گیا ہے" },
+  "food.remind.open.body": {
+    en: "Choose your breakfast, lunch and dinner for tomorrow. Ordering closes at {0}.",
+    ar: "اختر الفطور والغداء والعشاء ليوم غد. يغلق الطلب الساعة {0}.",
+    ur: "کل کے لیے اپنا ناشتہ، دوپہر اور رات کا کھانا منتخب کریں۔ آرڈر {0} پر بند ہو جائے گا۔",
+  },
+  "food.remind.none.title": { en: "Tomorrow's meals aren't ordered yet", ar: "لم تطلب وجبات الغد بعد", ur: "کل کے کھانے ابھی آرڈر نہیں ہوئے" },
+  "food.remind.none.body": {
+    en: "Breakfast, lunch and dinner are still open. Ordering closes at {0}.",
+    ar: "الفطور والغداء والعشاء ما زالت متاحة. يغلق الطلب الساعة {0}.",
+    ur: "ناشتہ، دوپہر اور رات کا کھانا ابھی کھلے ہیں۔ آرڈر {0} پر بند ہو جائے گا۔",
+  },
+  "food.remind.some.title.one": { en: "1 meal still to order", ar: "بقيت وجبة واحدة لطلبها", ur: "1 کھانا ابھی آرڈر کرنا ہے" },
+  "food.remind.some.title.two": { en: "2 meals still to order", ar: "بقيت وجبتان لطلبهما", ur: "2 کھانے ابھی آرڈر کرنے ہیں" },
+  "food.remind.some.body": {
+    en: "Not ordered yet: {0}. Ordering closes at {1}.",
+    ar: "لم تُطلب بعد: {0}. يغلق الطلب الساعة {1}.",
+    ur: "ابھی آرڈر نہیں ہوا: {0}۔ آرڈر {1} پر بند ہو جائے گا۔",
+  },
+  "food.remind.last.title": { en: "Last hour to order tomorrow's meals", ar: "آخر ساعة لطلب وجبات الغد", ur: "کل کے کھانے آرڈر کرنے کا آخری گھنٹہ" },
+  "food.remind.last.body": {
+    en: "Ordering closes at {0}, and tomorrow's menu can't be changed after that.",
+    ar: "يغلق الطلب الساعة {0}، ولا يمكن تغيير قائمة الغد بعدها.",
+    ur: "آرڈر {0} پر بند ہو جائے گا، اور اس کے بعد کل کا مینو تبدیل نہیں ہو سکتا۔",
+  },
+  "food.remind.closed.title": { en: "Ordering is closed for tomorrow", ar: "أُغلق الطلب لوجبات الغد", ur: "کل کے لیے آرڈرنگ بند ہو چکی ہے" },
+  "food.remind.closed.body": {
+    en: "Tomorrow's menu closed at {0}. The next window opens at {1}.",
+    ar: "أُغلقت قائمة الغد الساعة {0}. ويفتح الطلب التالي الساعة {1}.",
+    ur: "کل کا مینو {0} پر بند ہو گیا۔ اگلی ونڈو {1} پر کھلے گی۔",
+  },
+  /* Joins two meal names in a list: "lunch and dinner". */
+  "food.remind.and": { en: "{0} and {1}", ar: "{0} و{1}", ur: "{0} اور {1}" },
 
   /* ─── Idle Screen ─── */
   "idle.welcome": { en: "Welcome to {0}", ar: "مرحباً بك في {0}", ur: "{0} میں خوش آمدید" },
