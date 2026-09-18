@@ -408,6 +408,19 @@ const translations: Record<string, TranslationEntry> = {
   /* ─── Shortcut Items ─── */
   "shortcut.whatsapp": { en: "WhatsApp", ar: "واتساب", ur: "واٹس ایپ" },
   "shortcut.quran": { en: "Quran", ar: "القرآن", ur: "قرآن" },
+  /* Tool screens. Their headers used to hardcode an English title and a
+     left-pointing back arrow, so in Arabic the mirror said "Mirror" and the
+     arrow pointed away from where "back" is. */
+  "tool.mirror": { en: "Mirror", ar: "المرآة", ur: "آئینہ" },
+  "tool.notes": { en: "Notes", ar: "الملاحظات", ur: "نوٹس" },
+  "tool.breathing": { en: "Breathing Exercise", ar: "تمرين التنفس", ur: "سانس کی ورزش" },
+  "tool.whiteboard": { en: "Whiteboard", ar: "السبورة", ur: "وائٹ بورڈ" },
+  "tool.calculator": { en: "Calculator", ar: "الآلة الحاسبة", ur: "کیلکولیٹر" },
+  "tool.unitConverter": { en: "Unit Converter", ar: "محوّل الوحدات", ur: "یونٹ کنورٹر" },
+  "tool.reminders": { en: "Reminders", ar: "التذكيرات", ur: "یاد دہانیاں" },
+  "tool.stopwatch": { en: "Stopwatch", ar: "ساعة الإيقاف", ur: "اسٹاپ واچ" },
+  "tool.mirror.liveView": { en: "Live view", ar: "بث مباشر", ur: "لائیو ویو" },
+  "tool.mirror.noCamera": { en: "Could not access the camera. Please make sure permission is granted.", ar: "لا يمكن الوصول إلى الكاميرا. يرجى التأكد من منح الإذن.", ur: "کیمرے تک رسائی ممکن نہیں۔ براہ کرم اجازت دینا یقینی بنائیں۔" },
   "shortcut.mirror": { en: "Mirror", ar: "المرآة", ur: "آئینہ" },
   "shortcut.patientGuide": { en: "Patient Guide", ar: "دليل المريض", ur: "مریض گائیڈ" },
 "ppf.back": { en: "Back", ar: "رجوع", ur: "واپس" },

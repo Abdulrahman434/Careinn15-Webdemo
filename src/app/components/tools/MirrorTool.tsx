@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
-import { ArrowLeft, Camera, RefreshCw } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, RefreshCw } from "lucide-react";
 
 export function MirrorTool({
   onClose,
@@ -11,9 +11,11 @@ export function MirrorTool({
   onBackToTools: () => void;
 }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, t, isRTL } = useLocale();
+  /* "Back" is to the right in Arabic and Urdu. */
+  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
 
   useEffect(() => {
@@ -38,7 +40,7 @@ export function MirrorTool({
         }
       } catch (err) {
         console.error("Error accessing camera:", err);
-        setError("Could not access camera. Please ensure permissions are granted.");
+        setError(true);
       }
     }
 
@@ -85,7 +87,7 @@ export function MirrorTool({
               outline: "none",
             }}
           >
-            <ArrowLeft size={24} color="#fff" />
+            <BackArrow size={24} color="#fff" />
           </button>
           <h1
             style={{
@@ -96,7 +98,7 @@ export function MirrorTool({
               textShadow: "0 2px 4px rgba(0,0,0,0.5)",
             }}
           >
-            Mirror
+            {t("tool.mirror")}
           </h1>
         </div>
         <button
@@ -124,7 +126,7 @@ export function MirrorTool({
               <Camera size={40} color="#FF4D4D" />
             </div>
             <p style={{ color: "#fff", fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.medium }}>
-              {error}
+              {t("tool.mirror.noCamera")}
             </p>
             <button
                onClick={() => window.location.reload()}
@@ -172,7 +174,7 @@ export function MirrorTool({
                     letterSpacing: "0.5px"
                 }}
             >
-                LIVE VIEW
+                {t("tool.mirror.liveView")}
             </div>
         )}
       </div>

@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
-import { ArrowLeft, ArrowLeftRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowLeftRight } from "lucide-react";
 
 type ConversionCategory = "temperature" | "weight" | "length";
 
@@ -110,7 +110,9 @@ const conversions: Record<ConversionCategory, { units: ConversionUnit[]; icon: s
 
 export function UnitConverterTool({ onClose, onBackToTools }: { onClose: () => void; onBackToTools: () => void }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, t, isRTL } = useLocale();
+  /* "Back" is to the right in Arabic and Urdu. */
+  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const [category, setCategory] = useState<ConversionCategory>("temperature");
   const [fromUnit, setFromUnit] = useState(0);
   const [toUnit, setToUnit] = useState(1);
@@ -160,7 +162,7 @@ export function UnitConverterTool({ onClose, onBackToTools }: { onClose: () => v
               outline: "none",
             }}
           >
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <BackArrow size={24} color={theme.textHeading} />
           </button>
           <h1
             style={{
@@ -170,7 +172,7 @@ export function UnitConverterTool({ onClose, onBackToTools }: { onClose: () => v
               color: theme.textHeading,
             }}
           >
-            Unit Converter
+            {t("tool.unitConverter")}
           </h1>
         </div>
         <button

@@ -1,7 +1,7 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
-import { ArrowLeft, Trash2, Pencil, Eraser } from "lucide-react";
+import { ArrowLeft, ArrowRight, Trash2, Pencil, Eraser } from "lucide-react";
 
 type Tool = "pen" | "eraser";
 
@@ -10,7 +10,9 @@ const SIZES = [4, 8, 16, 24];
 
 export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void; onBackToTools: () => void }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, t, isRTL } = useLocale();
+  /* "Back" is to the right in Arabic and Urdu. */
+  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [tool, setTool] = useState<Tool>("pen");
@@ -128,7 +130,7 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
               outline: "none",
             }}
           >
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <BackArrow size={24} color={theme.textHeading} />
           </button>
           <h1
             style={{
@@ -138,7 +140,7 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
               color: theme.textHeading,
             }}
           >
-            Whiteboard
+            {t("tool.whiteboard")}
           </h1>
         </div>
         <button

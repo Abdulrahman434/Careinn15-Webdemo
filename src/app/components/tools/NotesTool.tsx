@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
-import { ArrowLeft, Plus, Trash2, FileText } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, FileText } from "lucide-react";
 
 interface Note {
   id: string;
@@ -12,7 +12,9 @@ interface Note {
 
 export function NotesTool({ onClose, onBackToTools }: { onClose: () => void; onBackToTools: () => void }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, t, isRTL } = useLocale();
+  /* "Back" is to the right in Arabic and Urdu. */
+  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const [notes, setNotes] = useState<Note[]>([
     {
       id: "1",
@@ -115,7 +117,7 @@ export function NotesTool({ onClose, onBackToTools }: { onClose: () => void; onB
               outline: "none",
             }}
           >
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <BackArrow size={24} color={theme.textHeading} />
           </button>
           <h1
             style={{
@@ -125,7 +127,7 @@ export function NotesTool({ onClose, onBackToTools }: { onClose: () => void; onB
               color: theme.textHeading,
             }}
           >
-            Notes
+            {t("tool.notes")}
           </h1>
         </div>
         <div className="flex items-center gap-4">

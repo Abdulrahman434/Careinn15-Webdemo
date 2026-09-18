@@ -1,11 +1,13 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
-import { ArrowLeft, Play, Pause, RotateCcw, Timer } from "lucide-react";
+import { ArrowLeft, ArrowRight, Play, Pause, RotateCcw, Timer } from "lucide-react";
 
 export function StopwatchTool({ onClose, onBackToTools }: { onClose: () => void; onBackToTools: () => void }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, t, isRTL } = useLocale();
+  /* "Back" is to the right in Arabic and Urdu. */
+  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const [time, setTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [laps, setLaps] = useState<number[]>([]);
@@ -89,7 +91,7 @@ export function StopwatchTool({ onClose, onBackToTools }: { onClose: () => void;
               outline: "none",
             }}
           >
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <BackArrow size={24} color={theme.textHeading} />
           </button>
           <h1
             style={{
@@ -99,7 +101,7 @@ export function StopwatchTool({ onClose, onBackToTools }: { onClose: () => void;
               color: theme.textHeading,
             }}
           >
-            Stopwatch
+            {t("tool.stopwatch")}
           </h1>
         </div>
         <button

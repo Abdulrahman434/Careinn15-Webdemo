@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
-import { ArrowLeft, Plus, Bell, BellRing, Check, Trash2, Clock } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Bell, BellRing, Check, Trash2, Clock } from "lucide-react";
 
 export interface Reminder {
   id: string;
@@ -75,7 +75,9 @@ export function RemindersTool({
   setReminders: React.Dispatch<React.SetStateAction<Reminder[]>>;
 }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, t, isRTL } = useLocale();
+  /* "Back" is to the right in Arabic and Urdu. */
+  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const [showAddForm, setShowAddForm] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newTime, setNewTime] = useState("");
@@ -198,7 +200,7 @@ export function RemindersTool({
               outline: "none",
             }}
           >
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <BackArrow size={24} color={theme.textHeading} />
           </button>
           <h1
             style={{
@@ -208,7 +210,7 @@ export function RemindersTool({
               color: theme.textHeading,
             }}
           >
-            Reminders
+            {t("tool.reminders")}
           </h1>
         </div>
         <div className="flex items-center gap-4">

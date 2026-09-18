@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
-import { ArrowLeft, Play, Pause, Wind } from "lucide-react";
+import { ArrowLeft, ArrowRight, Play, Pause, Wind } from "lucide-react";
 
 type BreathingPhase = "inhale" | "hold1" | "exhale" | "hold2";
 
@@ -35,7 +35,9 @@ const techniques: BreathingTechnique[] = [
 
 export function BreathingTool({ onClose, onBackToTools }: { onClose: () => void; onBackToTools: () => void }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, t, isRTL } = useLocale();
+  /* "Back" is to the right in Arabic and Urdu. */
+  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const [selectedTechnique, setSelectedTechnique] = useState<BreathingTechnique>(techniques[0]);
   const [isActive, setIsActive] = useState(false);
   const [currentPhase, setCurrentPhase] = useState<BreathingPhase>("inhale");
@@ -149,7 +151,7 @@ export function BreathingTool({ onClose, onBackToTools }: { onClose: () => void;
               outline: "none",
             }}
           >
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <BackArrow size={24} color={theme.textHeading} />
           </button>
           <h1
             style={{
@@ -159,7 +161,7 @@ export function BreathingTool({ onClose, onBackToTools }: { onClose: () => void;
               color: theme.textHeading,
             }}
           >
-            Breathing Exercise
+            {t("tool.breathing")}
           </h1>
         </div>
         <button

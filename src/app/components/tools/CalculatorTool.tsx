@@ -1,11 +1,13 @@
 import { useState, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
-import { ArrowLeft, Delete } from "lucide-react";
+import { ArrowLeft, ArrowRight, Delete } from "lucide-react";
 
 export function CalculatorTool({ onClose, onBackToTools }: { onClose: () => void; onBackToTools: () => void }) {
   const { theme } = useTheme();
-  const { fontFamily } = useLocale();
+  const { fontFamily, t, isRTL } = useLocale();
+  /* "Back" is to the right in Arabic and Urdu. */
+  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const [display, setDisplay] = useState("0");
   const [previousValue, setPreviousValue] = useState<number | null>(null);
   const [operation, setOperation] = useState<string | null>(null);
@@ -173,7 +175,7 @@ export function CalculatorTool({ onClose, onBackToTools }: { onClose: () => void
               outline: "none",
             }}
           >
-            <ArrowLeft size={24} color={theme.textHeading} />
+            <BackArrow size={24} color={theme.textHeading} />
           </button>
           <h1
             style={{
@@ -183,7 +185,7 @@ export function CalculatorTool({ onClose, onBackToTools }: { onClose: () => void
               color: theme.textHeading,
             }}
           >
-            Calculator
+            {t("tool.calculator")}
           </h1>
         </div>
         <button
