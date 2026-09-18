@@ -152,12 +152,26 @@ const ROOM_CARE_ITEMS: CardDef[] = [
 ];
 
 /* Services that come from a person rather than a supply cupboard: a language,
-   a faith, a pair of scissors, a hand with washing. */
+   a faith, a pair of scissors. Personal care (bathing, dressing) is not one of
+   them — that is nursing care, asked for with the call button, not booked. */
 const SUPPORT_ITEMS: CardDef[] = [
-  { key: "need.support.personal", emoji: "🤝", Icon: HandHelping, subtitle: "need.support.personal.sub" },
   { key: "need.support.interpreter", emoji: "🗣️", Icon: Languages, subtitle: "need.support.interpreter.sub" },
   { key: "need.support.clergy", emoji: "🕌", Icon: BookOpen, subtitle: "need.support.clergy.sub" },
   { key: "need.support.barber", emoji: "💈", Icon: Scissors, subtitle: "need.support.barber.sub" },
+];
+
+/* Which language the interpreter has to speak. Sign language sits in the same
+   list because to the patient it is the same question — see the equivalent
+   preference, "Do you need a translator or sign language service?". */
+const INTERPRETER_KEY = "need.support.interpreter";
+const LANGUAGE_CHIPS: string[] = [
+  "need.lang.arabic",
+  "need.lang.english",
+  "need.lang.urdu",
+  "need.lang.hindi",
+  "need.lang.tagalog",
+  "need.lang.sign",
+  "need.lang.other",
 ];
 
 const ICON_BY_KEY: Record<string, LucideIcon> = Object.fromEntries(
@@ -206,11 +220,13 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
 
   /* Items ticked in the grid but not yet sent.
    *
-   * Only on the tabs where an item IS the whole request — supplies, room care,
-   * support. A fault report carries its own issue chip, so two faults are two
-   * different reports and batching them would attach one chip to both. */
+   * Only where an item IS the whole request and several arrive on one trolley:
+   * supplies and room care. A fault report carries its own issue chip, so two
+   * faults are two different reports. Support is one person coming to the bed
+   * — an interpreter and a barber are two visits, not one basket — and asking
+   * for them together would tell the ward nothing useful about either. */
   const [picked, setPicked] = useState<CardDef[]>([]);
-  const isMultiTab = tab !== "report";
+  const isMultiTab = tab === "request" || tab === "roomcare";
   const togglePick = (card: CardDef) =>
     setPicked((prev) => prev.some((c) => c.key === card.key)
       ? prev.filter((c) => c.key !== card.key)
@@ -271,18 +287,28 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
     setSelectedChip(null);
   };
 
+  /* An interpreter request is useless without a language, so the sheet asks for
+     one and will not send until it has it. */
+  const asksLanguage = !!selected && selected.cards.some((c) => c.key === INTERPRETER_KEY);
+  const languageMissing = asksLanguage && !selectedChip;
+
   const sendRequest = () => {
     if (!selected || selected.cards.length === 0) return;
+    if (languageMissing) return;
     const at = Date.now();
     /* One entry per item, so each is tracked and delivered on its own — the
        shared note rides along with every one of them. Newest first, and the
        list the patient ticked keeps its order within that batch. */
+    const noteText = [
+      asksLanguage && selectedChip ? t("need.support.interpreter.summary", t(selectedChip)) : "",
+      note.trim(),
+    ].filter(Boolean).join(" \u00b7 ");
     const entries: NeedRequest[] = selected.cards.map((card, i) => ({
       id: `${at}-${i}-${Math.random().toString(36).slice(2, 7)}`,
       kind: selected.kind,
       itemKey: card.key,
       emoji: card.emoji,
-      note: note.trim(),
+      note: noteText,
       createdAt: at,
     }));
     setRequests((prev) => [...entries, ...prev]);
@@ -826,82 +852,86 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                   </AnimatePresence>
                 </div>
 
-                {/* What is ticked so far. It sits above the pager rather than
-                    floating over the grid, so it never covers a card the
-                    patient is still choosing. */}
-                {isMultiTab && picked.length > 0 && (
-                  <div
-                    className="shrink-0 flex items-center gap-3 mx-auto"
-                    style={{
-                      width: "100%",
-                      marginTop: 10,
-                      padding: "10px 14px",
-                      borderRadius: theme.radiusLg,
-                      backgroundColor: theme.surface,
-                      border: theme.borderCard,
-                      boxShadow: SHADOW.md,
-                    }}
-                  >
-                    <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textHeading }}>
-                      {t("need.multi.selected", String(picked.length))}
-                    </span>
-                    <button
-                      onClick={() => setPicked([])}
-                      className="cursor-pointer active:scale-95 transition-transform"
-                      style={{
-                        padding: "6px 12px", borderRadius: theme.radiusMd,
-                        backgroundColor: "transparent", border: "none", outline: "none",
-                      }}
-                    >
-                      <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textMuted }}>
-                        {t("need.multi.clear")}
-                      </span>
-                    </button>
-                    <div className="flex-1" />
-                    <button
-                      onClick={() => openSheet(picked, gridKind)}
-                      className="flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] transition-transform"
-                      style={{
-                        height: 48, padding: "0 24px",
-                        borderRadius: theme.radiusMd,
-                        backgroundColor: theme.primary,
-                        border: "none", outline: "none",
-                        boxShadow: SHADOW.md,
-                      }}
-                    >
-                      <Send
-                        size={18}
-                        color={theme.textInverse}
-                        strokeWidth={2.4}
-                        style={isRTL ? { transform: "scaleX(-1)" } : undefined}
-                      />
-                      <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textInverse }}>
-                        {t("need.multi.continue")}
-                      </span>
-                    </button>
-                  </div>
-                )}
+                {/* One constant-height footer under the grid: page dots in the
+                    middle, and — only on the tabs that batch — the tick count
+                    and the send button on either side. The row is always there
+                    whether or not anything is ticked, so choosing an item never
+                    resizes the cards above it. */}
+                {(isMultiTab || totalPages > 1) && (
+                  <div className="shrink-0 relative flex items-center" style={{ height: 56 }}>
+                    {totalPages > 1 && (
+                      <div
+                        className="absolute inset-0 flex items-center justify-center gap-3"
+                        style={{ pointerEvents: "none" }}
+                      >
+                        {Array.from({ length: totalPages }).map((_, i) => (
+                          <button
+                            key={i}
+                            onClick={() => goPage(i)}
+                            className="rounded-full cursor-pointer transition-all duration-300"
+                            style={{
+                              pointerEvents: "auto",
+                              width: i === gridPage ? "24px" : "8px",
+                              height: "8px",
+                              backgroundColor: i === gridPage ? theme.primary : theme.borderDefault,
+                              border: "none",
+                              outline: "none",
+                              padding: 0,
+                              transition: "width 0.3s ease, background-color 0.3s ease",
+                            }}
+                            aria-label={`Page ${i + 1}`}
+                          />
+                        ))}
+                      </div>
+                    )}
 
-                {/* Pagination: dots only (no arrows) — swipe to navigate */}
-                {totalPages > 1 && (
-                  <div className="shrink-0 flex items-center justify-center gap-3 py-3">
-                    {Array.from({ length: totalPages }).map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => goPage(i)}
-                        className="rounded-full cursor-pointer transition-all duration-300"
-                        style={{
-                          width: i === gridPage ? "24px" : "8px",
-                          height: "8px",
-                          backgroundColor: i === gridPage ? theme.primary : theme.borderDefault,
-                          border: "none",
-                          outline: "none",
-                          padding: 0,
-                          transition: "width 0.3s ease, background-color 0.3s ease",
-                        }}
-                        aria-label={`Page ${i + 1}`}
-                      />
-                    ))}
+                    {isMultiTab && picked.length > 0 && (
+                      <>
+                        <div className="flex items-center gap-1 relative">
+                          <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textHeading }}>
+                            {t("need.multi.selected", String(picked.length))}
+                          </span>
+                          <button
+                            onClick={() => setPicked([])}
+                            className="cursor-pointer active:scale-95 transition-transform"
+                            style={{
+                              padding: "8px 12px",
+                              backgroundColor: "transparent",
+                              border: "none",
+                              outline: "none",
+                            }}
+                          >
+                            <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textMuted, textDecoration: "underline" }}>
+                              {t("need.multi.clear")}
+                            </span>
+                          </button>
+                        </div>
+                        <div className="flex-1" />
+                        <button
+                          onClick={() => openSheet(picked, gridKind)}
+                          className="relative flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] transition-transform"
+                          style={{
+                            height: 48,
+                            padding: "0 24px",
+                            borderRadius: theme.radiusFull,
+                            backgroundColor: theme.primary,
+                            border: "none",
+                            outline: "none",
+                            boxShadow: SHADOW.md,
+                          }}
+                        >
+                          <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textInverse }}>
+                            {t("need.multi.continue")}
+                          </span>
+                          <Send
+                            size={18}
+                            color={theme.textInverse}
+                            strokeWidth={2.4}
+                            style={isRTL ? { transform: "scaleX(-1)" } : undefined}
+                          />
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -1037,6 +1067,46 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                 </div>
               )}
 
+              {/* Which language — required, so the ward sends the right person */}
+              {asksLanguage && (
+                <div className="mb-4">
+                  <p style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textHeading, marginBottom: 10, fontWeight: WEIGHT.semibold }}>
+                    {t("need.support.interpreter.which")}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {LANGUAGE_CHIPS.map((chipKey) => {
+                      const isActive = selectedChip === chipKey;
+                      return (
+                        <button
+                          key={chipKey}
+                          onClick={() => setSelectedChip(isActive ? null : chipKey)}
+                          className="cursor-pointer active:scale-95 transition-transform"
+                          style={{
+                            minHeight: 48,
+                            padding: "10px 18px",
+                            borderRadius: theme.radiusFull,
+                            backgroundColor: isActive ? theme.primaryLight : theme.surface,
+                            border: `1.5px solid ${isActive ? theme.primary : theme.borderCardColor}`,
+                            outline: "none",
+                            fontFamily,
+                            fontSize: TYPE_SCALE.base,
+                            fontWeight: isActive ? WEIGHT.bold : WEIGHT.medium,
+                            color: isActive ? theme.primaryOn : theme.textHeading,
+                          }}
+                        >
+                          {t(chipKey)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {selectedChip === "need.lang.other" && (
+                    <p style={{ ...TEXT_STYLE.helper, fontFamily, color: theme.textMuted, marginTop: 8 }}>
+                      {t("need.lang.otherHint")}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Details label */}
               {selected.kind === "report" && (
                 <p style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textMuted, marginBottom: 8 }}>
@@ -1094,7 +1164,8 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                 </button>
                 <button
                   onClick={sendRequest}
-                  className="flex-1 flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.98] transition-transform"
+                  disabled={languageMissing}
+                  className={`flex-1 flex items-center justify-center gap-2.5 transition-transform${languageMissing ? "" : " cursor-pointer active:scale-[0.98]"}`}
                   style={{
                     height: 60,
                     borderRadius: theme.radiusMd,
@@ -1102,6 +1173,8 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                     border: "1.5px solid transparent",
                     boxShadow: SHADOW.md,
                     outline: "none",
+                    opacity: languageMissing ? 0.45 : 1,
+                    cursor: languageMissing ? "not-allowed" : "pointer",
                   }}
                 >
                   <Send
