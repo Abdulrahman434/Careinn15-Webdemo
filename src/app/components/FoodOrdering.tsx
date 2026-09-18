@@ -665,8 +665,8 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
       setTimeout(() => {
         showToast({
           variant: "meal",
-          category: isRTL ? "وجبة المرافق" : "COMPANION MEAL",
-          title: isRTL ? "هل ترغب في طلب وجبات لمرافقك؟" : "Order for your companion",
+          category: isRTL ? "وجبة المرافق" : "GUEST MEAL",
+          title: isRTL ? "هل ترغب في طلب وجبات لمرافقك؟" : "Order for your guest",
           actionText: isRTL ? "اطلب الآن" : "Order Now",
           actionColor: "#16A34A",
           onTap: () => {
@@ -792,7 +792,7 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
       orderFor={orderFor}
       dietLabel={dietDisplayLabel}
       allergiesLabel={allergiesLabel}
-      name={orderFor === "guest" ? (isRTL ? "مرافق" : "Companion") : (isRTL ? DEMO_PATIENT.name.ar : DEMO_PATIENT.name.en)}
+      name={orderFor === "guest" ? (isRTL ? "مرافق" : "Guest") : (isRTL ? DEMO_PATIENT.name.ar : DEMO_PATIENT.name.en)}
       mealName={currentMeal ? loc(currentMeal.label) : null}
       fontFamily={fontFamily}
       isRTL={isRTL}
@@ -973,7 +973,7 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
                   <ConfirmStep key="c"
                     orderNumber={lastOrderNumber} meal={currentMeal} selections={selections}
                     orderFor={orderFor}
-                    patientName={orderFor === "guest" ? (isRTL ? "مرافق" : "Companion") : (isRTL ? DEMO_PATIENT.name.ar : DEMO_PATIENT.name.en)}
+                    patientName={orderFor === "guest" ? (isRTL ? "مرافق" : "Guest") : (isRTL ? DEMO_PATIENT.name.ar : DEMO_PATIENT.name.en)}
                     room={DEMO_PATIENT.room.replace("Room ", "")}
                     dietLabel={dietDisplayLabel}
                     allergiesLabel={allergiesLabel}
@@ -1735,7 +1735,7 @@ function DietAllergiesModal({
                       <p style={{ fontSize: "13px", fontWeight: WEIGHT.medium, color: ON_ERR, margin: 0, marginTop: "2px", lineHeight: 1.4 }}>
                         {isRTL
                           ? "عند تفعيل وضع الصيام، سيتم تعطيل طلب الوجبات للمريض مع إمكانية طلب المرافقين."
-                          : "When NPO is active, patient meal ordering is disabled while companion meal orders remain allowed."}
+                          : "When NPO is active, patient meal ordering is disabled while guest meal orders remain allowed."}
                       </p>
                     </div>
                   </div>
@@ -2032,7 +2032,7 @@ function OrderTypeStep({ orderFor, onSelect, fontFamily, isRTL, isNpo }: {
 
                 {/* Label */}
                 <span style={{ fontFamily, fontSize: "32px", fontWeight: WEIGHT.bold, color: selected ? "#fff" : INK }}>
-                  {type === "patient" ? (isRTL ? "المريض" : "Patient") : (isRTL ? "المرافق" : "Companion")}
+                  {type === "patient" ? (isRTL ? "المريض" : "Patient") : (isRTL ? "المرافق" : "Guest")}
                 </span>
               </motion.button>
             );
@@ -2554,7 +2554,7 @@ function KidsBreakfastTypeStep({ selected, onSelect, fontFamily, isRTL }: {
         </p>
       </div>
 
-      {/* Cards — same dimensions & style as Patient/Companion */}
+      {/* Cards — same dimensions & style as Patient/Guest */}
       <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-[20px]">
         <div className="flex items-center justify-center gap-[30px]">
           {options.map((opt) => {
@@ -2942,9 +2942,13 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
               {isRTL ? "تم تأكيد طلب الوجبة" : "Meal Order Confirmed"}
             </h2>
             <p style={{ fontFamily, fontSize: "15px", fontWeight: WEIGHT.medium, color: INK_2, lineHeight: 1.5, marginTop: "12px", maxWidth: "360px" }}>
-              {isRTL
-                ? `تم إرسال طلبك إلى المطبخ وسيتم توصيله في الوقت المحدد.`
-                : `Your order has been sent to the kitchen and will be delivered during the scheduled time.`}
+              {isGuest
+                ? (isRTL
+                    ? `تم إرسال طلب المرافق إلى المطبخ وسيتم توصيله في الوقت المحدد.`
+                    : `The guest's order has been sent to the kitchen and will be delivered during the scheduled time.`)
+                : (isRTL
+                    ? `تم إرسال طلبك إلى المطبخ وسيتم توصيله في الوقت المحدد.`
+                    : `Your order has been sent to the kitchen and will be delivered during the scheduled time.`)}
             </p>
           </div>
 
@@ -2953,7 +2957,7 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
             <div style={{ marginTop: "8px", width: "100%", maxWidth: "360px", display: "flex", flexDirection: "column", gap: "10px" }}>
               <p style={{ fontFamily, fontSize: "13px", fontWeight: WEIGHT.bold, color: INK_3, textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "center", marginBottom: "2px" }}>
                 {isRTL
-                  ? `وجباتك المطلوبة (${summary.length}) · ${dayCount} ${dayCount === 1 ? "يوم" : "أيام"}`
+                  ? `${isGuest ? "وجبات المرافق المطلوبة" : "وجباتك المطلوبة"} (${summary.length}) · ${dayCount} ${dayCount === 1 ? "يوم" : "أيام"}`
                   : `Meals In This Order (${summary.length}) · ${dayCount} ${dayCount === 1 ? "day" : "days"}`}
               </p>
               {summary.map((entry) => {
@@ -3057,7 +3061,9 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
                   <Utensils size={16} color={TEAL_ON} />
                 </div>
                 <span style={{ fontFamily, fontSize: "12px", fontWeight: WEIGHT.bold, color: INK_2, letterSpacing: "0.5px", textTransform: "uppercase" as const }}>
-                  {isRTL ? "عناصر وجبتك" : "Your Meal Items"}
+                  {isGuest
+                    ? (isRTL ? "عناصر وجبة المرافق" : "Guest's Meal Items")
+                    : (isRTL ? "عناصر وجبتك" : "Your Meal Items")}
                 </span>
               </div>
               <div className="flex-1 min-w-0 flex flex-col items-end">
@@ -3078,7 +3084,9 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
                       <Check size={16} color={GREEN} />
                     </div>
                     <span style={{ fontFamily, fontSize: "12px", fontWeight: WEIGHT.bold, color: INK_2, letterSpacing: "0.5px", textTransform: "uppercase" as const }}>
-                      {isRTL ? "مشمول مع وجبتك" : "Comes With Your Meal"}
+                      {isGuest
+                        ? (isRTL ? "مشمول مع وجبة المرافق" : "Comes With the Guest's Meal")
+                        : (isRTL ? "مشمول مع وجبتك" : "Comes With Your Meal")}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col items-end">
@@ -3280,7 +3288,7 @@ function HistoryView({ activeOrders, pastOrders, fontFamily, isRTL, meals }: {
         <div className="flex items-center gap-3 flex-wrap">
           <HistoryTab active={tab === "all"} onClick={() => setTab("all")} label={isRTL ? "جميع الطلبات" : "All Orders"} count={all.length} fontFamily={fontFamily} />
           <HistoryTab active={tab === "patient"} onClick={() => setTab("patient")} label={isRTL ? "للمريض" : "Patient"} count={patientOrders.length} fontFamily={fontFamily} />
-          <HistoryTab active={tab === "companion"} onClick={() => setTab("companion")} label={isRTL ? "للمرافق" : "Companion"} count={companionOrders.length} fontFamily={fontFamily} />
+          <HistoryTab active={tab === "companion"} onClick={() => setTab("companion")} label={isRTL ? "للمرافق" : "Guest"} count={companionOrders.length} fontFamily={fontFamily} />
         </div>
         <span style={{ fontFamily, fontSize: "22px", fontWeight: WEIGHT.semibold, color: INK_2 }}>
           {display.length} {isRTL ? (display.length > 1 ? "طلبات" : "طلب") : "Orders"}
@@ -3401,7 +3409,7 @@ function OrderCard({ order, fontFamily, isRTL, formatDate, mealDef }: {
         }}>
           <User size={16} color={isGuest ? SECONDARY : TEAL} />
           <span style={{ fontFamily, fontSize: "15px", fontWeight: WEIGHT.semibold, color: isGuest ? SECONDARY_ON : TEAL_ON, whiteSpace: "nowrap" }}>
-            {isGuest ? (isRTL ? "للمرافق" : "For Companion") : (isRTL ? "للمريض" : "For Patient")}
+            {isGuest ? (isRTL ? "للمرافق" : "For Guest") : (isRTL ? "للمريض" : "For Patient")}
           </span>
         </div>
         <div className="shrink-0 flex items-center justify-center" style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: TINT_BG }}>
