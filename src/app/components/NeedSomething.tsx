@@ -2,7 +2,7 @@ import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, PanInfo } from "motion/react";
 import {
   HandHelping, Wrench, ClipboardList,
-  CheckCircle2, Clock, X, Send, Inbox, Globe,
+  CheckCircle2, Clock, X, Send, Inbox,
   ChevronLeft, ChevronRight, Check, ListChecks,
   CircleDot, UserRound, Truck,
   // Unified Patient Services icon set — clean, outlined, single-stroke lucide
@@ -16,6 +16,7 @@ import {
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW, SPACE, LEADING } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { InternalPageHeader } from "./InternalPageHeader";
+import { DemoControls } from "./DemoControls";
 import { ApiImage } from "./ApiImage";
 
 /* ── Housekeeping product photos (compressed JPEG — 12-31 KB each) ── */
@@ -183,13 +184,8 @@ interface NeedSomethingProps {
 type Tab = "request" | "roomcare" | "support" | "report";
 
 export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
-  const { theme, setLocale } = useTheme();
+  const { theme } = useTheme();
   const { t, isRTL, fontFamily, locale } = useLocale();
-
-  /* Header language switcher — same en/ar toggle behaviour as the global TopBar
-     and the Meal Ordering module, so patients can flip language without leaving
-     the page. Any non-English locale (ar/ur) returns to English. */
-  const toggleLanguage = () => setLocale(locale === "en" ? "ar" : "en");
 
   /* ── Semantic status styles — all from theme tokens, so they re-theme ── */
   /* Friendly status display. Colours are intentionally config-independent
@@ -453,23 +449,9 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
               <ClipboardList size={20} />
               {t("need.tab.mine")}
             </button>
-            {/* Language switcher — icon only */}
-            <button
-              onClick={toggleLanguage}
-              aria-label={t("settings.language")}
-              className="cursor-pointer active:scale-95 transition-transform"
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: 42, height: 42,
-                backgroundColor: "rgba(255,255,255,0.15)",
-                borderRadius: "10px",
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.15)",
-                outline: "none",
-              }}
-            >
-              <Globe size={20} />
-            </button>
+            {/* Language, dark mode and fullscreen — the demo trio, same on
+                every internal screen. */}
+            <DemoControls />
           </div>
         }
       />

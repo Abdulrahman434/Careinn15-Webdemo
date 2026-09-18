@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowLeft, ArrowRight, Sun, Sunrise, Coffee, Moon,
   Check, Clock, Calendar, Utensils, Soup, ClipboardList, ChefHat,
-  Star, Heart, Droplets, Flame, Snowflake, Globe,
+  Star, Heart, Droplets, Flame, Snowflake,
   Baby, User, FlaskConical, ChevronDown, ChevronRight, ChevronLeft, Home,
   AlertTriangle, X, Plus, ShieldAlert, Sparkles, CheckCircle2, Circle, SlidersHorizontal, Trash2,
   CalendarClock,
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { DemoControls } from "./DemoControls";
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW } from "./ThemeContext";
 import { useLocale, type Locale } from "./i18n";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
@@ -1175,7 +1176,6 @@ function TopBar({ onBack, onMyOrders, showMyOrders, onDemoClear, title, fontFami
   onBack: () => void; onMyOrders: () => void; showMyOrders?: boolean; onDemoClear: () => void;
   title: string; fontFamily: string; isRTL: boolean; BackArrow: any;
 }) {
-  const { locale, setLocale } = useTheme();
   const [enforceTime, setEnforceTimeLocal] = React.useState(() => getEnforceOrderTime());
 
   const iconBtnStyle: React.CSSProperties = {
@@ -1203,14 +1203,9 @@ function TopBar({ onBack, onMyOrders, showMyOrders, onDemoClear, title, fontFami
               {isRTL ? "طلباتي" : "My Orders"}
             </button>
           )}
-          {/* Language switcher — Globe icon */}
-          <button
-            onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
-            title={locale === "ar" ? "Switch to English" : "التبديل للعربية"}
-            style={iconBtnStyle}
-          >
-            <Globe size={20} />
-          </button>
+          {/* Language, dark mode and fullscreen — the demo trio, same on
+              every internal screen. */}
+          <DemoControls compact />
           {/* Time restriction toggle */}
           <button
             onClick={() => {
