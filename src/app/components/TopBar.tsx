@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ApiImage } from "./ApiImage";
-import { Settings, Globe, Bell, Cast, AlertTriangle } from "lucide-react";
+import { Settings, Globe, Bell, Cast, AlertTriangle, Moon, Sun } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import svgPaths from "../../imports/svg-ca68x68c4i";
@@ -43,7 +43,7 @@ function SunIcon() {
 }
 
 export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onMaghribTap, onIshaTap, onWeatherTap, onSettingsTap, onBellTap, unreadCount = 3, logoUrl, hideSettings = false, greeting }: { showPrayer?: boolean; onFajrTap?: () => void; onDhuhrTap?: () => void; onAsrTap?: () => void; onMaghribTap?: () => void; onIshaTap?: () => void; onWeatherTap?: () => void; onSettingsTap?: () => void; onBellTap?: () => void; unreadCount?: number; logoUrl?: string; hideSettings?: boolean; greeting?: string }) {
-  const { theme, castDevice, setLocale, locale: currentLocale } = useTheme();
+  const { theme, castDevice, setLocale, locale: currentLocale, darkMode, setDarkMode } = useTheme();
   const { t, locale, isRTL, fontFamily } = useLocale();
   const [time, setTime] = useState(new Date());
   const [prayerData, setPrayerData] = useState(() => getPrayerStatus(new Date()));
@@ -396,6 +396,31 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
             aria-label="Language"
           >
             <Globe size={20} style={{ color: theme.primaryOn }} />
+          </button>
+        </div>
+
+        {/* Dark mode — beside the language switch, the same pairing the
+            internal screens use: what the screen says, then how it looks.
+            It was reachable only from Settings, two taps away from the one
+            place a patient actually notices the room is dark. */}
+        <div className="relative">
+          <button
+            data-nav="true"
+            onClick={() => setDarkMode(!darkMode)}
+            className="rounded-full cursor-pointer flex items-center justify-center transition-transform active:scale-90"
+            style={{
+              backgroundColor: theme.primarySubtle,
+              width: theme.touchTargetMin,
+              height: theme.touchTargetMin,
+              outline: 'none',
+              border: 'none',
+            }}
+            aria-label={darkMode ? "Light mode" : "Dark mode"}
+            title={darkMode ? "Light mode" : "Dark mode"}
+          >
+            {darkMode
+              ? <Sun size={20} style={{ color: theme.primaryOn }} />
+              : <Moon size={20} style={{ color: theme.primaryOn }} />}
           </button>
         </div>
 
