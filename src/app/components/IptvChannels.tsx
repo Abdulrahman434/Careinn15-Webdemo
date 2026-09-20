@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { DemoControls } from "./DemoControls";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { Tv, ArrowLeft, RefreshCw, AlertCircle, Square } from "lucide-react";
@@ -135,6 +136,10 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
           >
             <RefreshCw size={24} color={theme.textHeading} className={loading ? "animate-spin" : ""} />
           </button>
+
+          {/* Language, dark mode, fullscreen — last in the row, as on every
+              other internal screen. */}
+          <DemoControls variant="onSurface" />
         </div>
       </div>
 

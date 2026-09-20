@@ -1,6 +1,7 @@
 import { Home } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE } from "./ThemeContext";
 import { useLocale } from "./i18n";
+import { DemoControls } from "./DemoControls";
 
 interface InternalPageHeaderProps {
   title: string;
@@ -8,9 +9,12 @@ interface InternalPageHeaderProps {
   icon: React.ReactNode;
   onClose: () => void;
   rightAction?: React.ReactNode;
+  /** Off only where the trio cannot work — a screen that owns the whole
+   *  display, say. Every internal page shows them by default. */
+  demoControls?: boolean;
 }
 
-export function InternalPageHeader({ title, subtitle, icon, onClose, rightAction }: InternalPageHeaderProps) {
+export function InternalPageHeader({ title, subtitle, icon, onClose, rightAction, demoControls = true }: InternalPageHeaderProps) {
   const { theme } = useTheme();
   const { isRTL, fontFamily } = useLocale();
   return (
@@ -73,7 +77,17 @@ export function InternalPageHeader({ title, subtitle, icon, onClose, rightAction
           )}
         </div>
       </div>
-      {rightAction && <div className="shrink-0">{rightAction}</div>}
+      {/* The page's own action first, then language / dark mode / fullscreen
+          at the far edge — the same three in the same order on every internal
+          screen, so the demo never has to hunt for them. Rendered here rather
+          than passed in by each page, which is how they drifted into a
+          different corner on each screen. */}
+      {(rightAction || demoControls) && (
+        <div className="shrink-0 flex items-center gap-3">
+          {rightAction}
+          {demoControls && <DemoControls />}
+        </div>
+      )}
     </div>
   );
 }

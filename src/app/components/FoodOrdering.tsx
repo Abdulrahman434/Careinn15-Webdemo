@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { DemoControls } from "./DemoControls";
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW } from "./ThemeContext";
 import { useLocale, type Locale } from "./i18n";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
@@ -1191,9 +1190,6 @@ function TopBar({ onBack, onMyOrders, showMyOrders, onDemoClear, title, fontFami
               {isRTL ? "طلباتي" : "My Orders"}
             </button>
           )}
-          {/* Language, dark mode and fullscreen — the demo trio, same on
-              every internal screen. */}
-          <DemoControls compact />
           {/* Time restriction toggle */}
           <button
             onClick={() => {

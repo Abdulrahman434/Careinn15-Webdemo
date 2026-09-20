@@ -21,8 +21,17 @@ import { type Locale } from "./i18n";
    Urdu is still chosen deliberately, from Settings. */
 const LOCALE_NAME: Record<Locale, string> = { en: "English", ar: "العربية", ur: "اردو" };
 
-export function DemoControls({ compact = false }: { compact?: boolean }) {
-  const { locale, setLocale, darkMode, setDarkMode } = useTheme();
+export function DemoControls({
+  compact = false,
+  variant = "onBrand",
+}: {
+  compact?: boolean;
+  /** "onBrand" for the translucent dark headers, "onSurface" for the light
+   *  toolbars the browser and the TV channel list use — the same three
+   *  buttons either way, only the skin changes. */
+  variant?: "onBrand" | "onSurface";
+}) {
+  const { theme, locale, setLocale, darkMode, setDarkMode } = useTheme();
   const [isFullscreen, setIsFullscreen] = useState(
     () => typeof document !== "undefined" && !!document.fullscreenElement,
   );
@@ -52,13 +61,14 @@ export function DemoControls({ compact = false }: { compact?: boolean }) {
 
   const size = compact ? 38 : 44;
   const glyph = compact ? 18 : 20;
+  const onBrand = variant === "onBrand";
   const btn: React.CSSProperties = {
     width: `${size}px`,
     height: `${size}px`,
     borderRadius: "12px",
-    backgroundColor: "rgba(255,255,255,0.12)",
-    border: "1px solid rgba(255,255,255,0.15)",
-    color: "#fff",
+    backgroundColor: onBrand ? "rgba(255,255,255,0.12)" : theme.surfaceInset,
+    border: `1px solid ${onBrand ? "rgba(255,255,255,0.15)" : theme.borderCardColor}`,
+    color: onBrand ? "#fff" : theme.textHeading,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",

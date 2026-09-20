@@ -16,7 +16,6 @@ import {
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW, SPACE, LEADING } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { InternalPageHeader } from "./InternalPageHeader";
-import { DemoControls } from "./DemoControls";
 import { ApiImage } from "./ApiImage";
 import { PatientServicesIcon } from "./appIcons";
 
@@ -478,9 +477,6 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
               <ClipboardList size={20} />
               {t("need.tab.mine")}
             </button>
-            {/* Language, dark mode and fullscreen — the demo trio, same on
-                every internal screen. */}
-            <DemoControls />
           </div>
         }
       />

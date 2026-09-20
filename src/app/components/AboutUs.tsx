@@ -784,7 +784,10 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
         <div
           className="flex-1 rounded-3xl overflow-hidden relative"
           style={{
-            backgroundColor: "rgba(255,255,255,0.95)",
+            /* Token, not a white wash: this sheet is the page's reading
+               surface, and a literal white kept the content light while the
+               rest of the app went dark. */
+            backgroundColor: theme.surface,
             boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
           }}
         >
@@ -944,7 +947,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                         key={idx}
                         className="p-8 rounded-3xl flex flex-col gap-4 transition-transform hover:scale-[1.02]"
                         style={{
-                          backgroundColor: "#fff",
+                          backgroundColor: theme.surfaceElevated,
                           border: `1px solid ${theme.borderCardColor}`,
                           boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
                           direction: isRTL ? "rtl" : "ltr",
@@ -973,7 +976,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                               fontFamily: isRTL ? theme.fontFamilyAr : theme.fontFamily,
                               fontSize: "14px",
                               fontWeight: 500,
-                              color: "#4A5568",
+                              color: theme.textBody,
                               lineHeight: 1.7,
                             }}
                           >
@@ -988,7 +991,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                       key={num}
                       className="p-8 rounded-3xl flex flex-col gap-4 transition-transform hover:scale-[1.02]"
                       style={{
-                        backgroundColor: "#fff",
+                        backgroundColor: theme.surfaceElevated,
                         border: `1px solid ${theme.borderCardColor}`,
                         boxShadow: "0 4px 20px rgba(0,0,0,0.04)"
                       }}
@@ -1019,7 +1022,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                           fontFamily: theme.fontFamily,
                           fontSize: "14px",
                           fontWeight: 500,
-                          color: "#4A5568",
+                          color: theme.textBody,
                           lineHeight: 1.6
                         }}
                       >
@@ -1037,7 +1040,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                   fontFamily: theme.fontFamily,
                   fontSize: TYPE_SCALE.md,
                   fontWeight: WEIGHT.medium,
-                  color: "#1B2A32",
+                  color: theme.textHeading,
                   lineHeight: 1.8,
                   whiteSpace: "pre-line",
                 }}
@@ -1068,7 +1071,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                 </a>
                 <div className="flex items-center gap-2">
                   <MapPin size={18} color={theme.primaryOn} />
-                  <span style={{ fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.medium, color: "#4A5568" }}>
+                  <span style={{ fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.medium, color: theme.textBody }}>
                     {theme.location}
                   </span>
                 </div>

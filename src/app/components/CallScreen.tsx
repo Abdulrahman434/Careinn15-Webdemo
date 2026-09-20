@@ -38,7 +38,6 @@ import {
 } from "lucide-react";
 import { useTheme, TEXT_STYLE, WEIGHT, TYPE_SCALE, SHADOW } from "./ThemeContext";
 import { InternalPageHeader } from "./InternalPageHeader";
-import { DemoControls } from "./DemoControls";
 import { NurseIcon } from "./appIcons";
 import { useLocale } from "./i18n";
 import { playTone } from "./useRipple";
@@ -849,8 +848,6 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
         }
         onClose={onClose}
         rightAction={
-          <div className="flex items-center gap-3">
-          <DemoControls />
           <button 
             onClick={handleSimulateIncoming}
             className="flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform hover:brightness-110" 
@@ -869,7 +866,6 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
               <p style={{ fontFamily: theme.fontFamilyMono, fontSize: "20px", fontWeight: WEIGHT.bold, color: "#fff", letterSpacing: "1px", lineHeight: 1 }}>{localExtension || '—'}</p>
             </div>
           </button>
-          </div>
         }
       />
 

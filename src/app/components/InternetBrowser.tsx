@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ApiImage } from "./ApiImage";
 import { ArrowLeft, RefreshCw, X, Globe, Shield, ExternalLink, Info } from "lucide-react";
+import { DemoControls } from "./DemoControls";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import edgeLogo from "../../assets/edge_logo.png";
@@ -152,6 +153,10 @@ export function InternetBrowser({ initialUrl, onClose }: InternetBrowserProps) {
           >
             <X size={24} color={theme.textHeading} />
           </button>
+
+          {/* Language, dark mode, fullscreen — last in the row, as on every
+              other internal screen. */}
+          <DemoControls compact variant="onSurface" />
         </div>
       </div>
 

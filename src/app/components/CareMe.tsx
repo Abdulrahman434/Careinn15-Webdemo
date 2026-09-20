@@ -75,7 +75,6 @@ import { SlidersHorizontal,
   HeartHandshake,
 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { DemoControls } from "./DemoControls";
 import {
   readCarePartner, writeCarePartner, adoptLegacyCarePartner,
   CARE_PARTNER_EVENT, EMPTY_CARE_PARTNER,
@@ -4152,7 +4151,6 @@ export function CareMeExpanded({ onClose, onOpenPreferences }: { onClose: () => 
         subtitle={t("care.subtitle")}
         icon={<Heart size={26} fill="#fff" style={{ color: "#fff" }} />}
         onClose={onClose}
-        rightAction={<DemoControls />}
       />
 
       {/* Vertically centered content area */}
