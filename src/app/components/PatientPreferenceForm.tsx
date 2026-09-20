@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, LEADING, type ThemeConfig } from "./ThemeContext";
 import { useLocale, type Locale } from "./i18n";
 import {
-  readCarePartner, writeCarePartner, EMPTY_CARE_PARTNER, type CarePartnerRecord,
+  readCarePartner, writeCarePartner, clearCarePartner, EMPTY_CARE_PARTNER, type CarePartnerRecord,
 } from "./carePartnerStore";
 import { CarePartnerAgreement } from "./CarePartnerAgreement";
 import {
@@ -350,6 +350,10 @@ export function clearPreferenceRecord(): void {
   } catch {
     /* ignored by design — see above */
   }
+  /* The care partner starts with a question in this form, so it cannot
+     survive the answers being thrown away: the card would go on naming a
+     partner the patient is about to be asked about from scratch. */
+  clearCarePartner();
   window.dispatchEvent(new CustomEvent(PREFS_SAVED_EVENT));
 }
 

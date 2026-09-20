@@ -81,6 +81,22 @@ export function writeCarePartner(next: CarePartnerRecord) {
   window.dispatchEvent(new CustomEvent(CARE_PARTNER_EVENT));
 }
 
+/** Back to never-asked: no nomination, no agreement, no signature.
+ *
+ *  Called when the patient clears their preferences to answer them again. The
+ *  question that starts this programme lives in that form, so an answer sheet
+ *  wiped while a signed partner stayed on the card left the two contradicting
+ *  each other — the card naming a care partner the patient had never been
+ *  asked about. Clearing one clears the other. */
+export function clearCarePartner() {
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    /* Same as a failed write: the record simply stays. */
+  }
+  window.dispatchEvent(new CustomEvent(CARE_PARTNER_EVENT));
+}
+
 /** Carry a nomination made in the old preferences form across, once. Called
  *  with whatever the preference record holds; does nothing if the patient has
  *  since answered here. */
