@@ -37,8 +37,17 @@ export default defineConfig({
         // so it's implicitly excluded from runtime caching.
         runtimeCaching: [
           {
-            // Build assets carry a content hash, so a URL never changes meaning
-            // — cache first, and never race the network for one.
+            // Build assets carry a content hash, so a URL never changes
+            // meaning and the cache is always right to answer first.
+            //
+            // StaleWhileRevalidate rather than CacheFirst, though: CacheFirst
+            // never looks again. An entry that went in wrong — and entries in
+            // this app have gone in wrong twice, HTML stored under an image's
+            // URL — stays wrong until somebody clears site data, and one
+            // browser sits broken while another is fine. This serves the cache
+            // just as fast and refetches behind it, so a bad entry heals on
+            // the next load. The refetch is nearly free: these responses carry
+            // immutable/max-age=1y, so it comes from the HTTP cache.
             //
             // They have to be kept out of the shell rule below, because the
             // demo server answers a file it does not have with 200 and the
@@ -50,7 +59,7 @@ export default defineConfig({
             // different names.
             urlPattern: ({ url }) =>
               url.origin === self.location.origin && url.pathname.includes('/assets/'),
-            handler: 'CacheFirst',
+            handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'careinn-build-assets',
               expiration: {
