@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, LEADING, type ThemeConfig } from "./ThemeContext";
 import { useLocale, type Locale } from "./i18n";
 import {
-  readCarePartner, writeCarePartner, clearCarePartner, EMPTY_CARE_PARTNER, type CarePartnerRecord,
+  readCarePartner, writeCarePartner, clearCarePartner, CARE_PARTNER_EVENT,
+  EMPTY_CARE_PARTNER, type CarePartnerRecord,
 } from "./carePartnerStore";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { CarePartnerAgreement } from "./CarePartnerAgreement";
 import {
   ClipboardList, UtensilsCrossed, Users, Clock, HeartHandshake,
@@ -197,6 +199,12 @@ interface QuestionDef {
    *  homework, and the closing comments screen already catches anything
    *  else the patient wants to say. */
   noteRequiredOn?: "yes" | "no";
+  /** Where a `time` question's wheels rest, "HH:MM", when it wants an hour of
+   *  its own. The rounds question names a period in its own wording — "between
+   *  8:00 AM and 12:00 PM" — and a wheel resting an hour before it made the
+   *  patient scroll past the hour the question had just quoted. Questions that
+   *  name no hour keep WHEEL_REST. */
+  defaultTime?: string;
 }
 
 interface SectionDef {
@@ -218,14 +226,10 @@ const WHEEL_MINUTES = ["00", "15", "30", "45"] as const;
 
 interface WheelState { hour: number; minute: string; pm: boolean }
 
-/** Where the wheels start when the question has no answer yet.
- *
- *  8:00 AM, because the question above the wheel says rounds run "between
- *  8:00 AM and 12:00 PM" — a wheel resting an hour before the period it is
- *  asking about reads as a suggestion, and the patient has to scroll past the
- *  hour the question just quoted to reach it. It suits the other time question
- *  too: a daily bath is a morning one. */
-const WHEEL_REST: WheelState = { hour: 8, minute: "00", pm: false };
+/** Where the wheels start when the question has no answer yet, and — since
+ *  the resting value is committed on mount — the answer for a patient who
+ *  pages past without turning them. */
+const WHEEL_REST: WheelState = { hour: 7, minute: "00", pm: false };
 
 /** "HH:MM" (24h) → wheel position. The old grid could only store :00 and :30,
  *  but any minute off the wheel is pulled to the nearest quarter rather than
@@ -259,7 +263,7 @@ const SECTIONS: readonly SectionDef[] = [
     id: "handover",
     icon: Clock,
     questions: [
-      { id: "handover.roundTime", kind: "time" },
+      { id: "handover.roundTime", kind: "time", defaultTime: "08:00" },
       { id: "handover.presence", kind: "yesno" },
     ],
   },
@@ -478,6 +482,16 @@ export function preferenceSummaryRows(
  *  but the decision can also be made on the Person-Centered Care card. One
  *  answer, written from either place, so the record the hospital receives
  *  says the same thing the patient's screen does. */
+/** Is there somebody in the Person-Centered Care section to speak of?
+ *
+ *  Named counts, not only signed: a nomination waiting for a signature is
+ *  still a person the patient put there, and answering "no" would throw it
+ *  away as surely as it would throw away a signed one. */
+function partnerOnCard(): boolean {
+  const s = readCarePartner().status;
+  return s === "active" || s === "nominated";
+}
+
 export function setCarePartnerAnswer(value: "yes" | "no") {
   /* No record yet means the patient answered this from the Person-Centered
      Care card without ever opening the form. That is still an answer to the
@@ -668,10 +682,12 @@ function WheelColumn({
  *  — writes the same single stored value, so no two columns can disagree with
  *  the record. */
 function TimeWheelPicker({
-  value, onPickTime, theme, t, fontFamily, iconColor, itemH, gap,
+  value, rest, onPickTime, theme, t, fontFamily, iconColor, itemH, gap,
 }: {
   /** The stored answer: a 24-hour "HH:MM", or nothing yet. */
   value: string | undefined;
+  /** Where the wheels sit with nothing stored — the question's own hour. */
+  rest?: string;
   onPickTime: (hhmm: string) => void;
   theme: ThemeConfig;
   t: (key: string, ...args: (string | number)[]) => string;
@@ -684,8 +700,9 @@ function TimeWheelPicker({
      a record from when this question still offered a "no preference" answer —
      starts the wheels at their resting value instead. */
   const stored = value && /^\d{2}:\d{2}$/.test(value) ? value : undefined;
+  const restAt = rest && /^\d{2}:\d{2}$/.test(rest) ? toWheel(rest) : WHEEL_REST;
 
-  const [draft, setDraft] = useState<WheelState>(() => (stored ? toWheel(stored) : WHEEL_REST));
+  const [draft, setDraft] = useState<WheelState>(() => (stored ? toWheel(stored) : restAt));
 
   const commit = (next: WheelState) => {
     setDraft(next);
@@ -693,20 +710,20 @@ function TimeWheelPicker({
   };
 
   /* THE RESTING VALUE IS THE ANSWER, committed as the screen opens, so the
-     question arrives answered at 8:00 AM and Next is live from the first
+     question arrives answered at its resting hour and Next is live from the first
      frame. The wheels already show that time; requiring a turn of them to
      record what is plainly displayed reads as the control being broken.
 
      Know what this trades away. The commit was removed once for a reason:
-     nobody chose 8:00 AM, and it now reaches the care plan looking exactly
+     nobody chose that hour, and it now reaches the care plan looking exactly
      like a time the patient set — the same objection as a pre-selected pill,
      which the yes/no screens still refuse to do. The two time questions
-     (handover.roundTime, comfort.bathingTime) will carry 08:00 for every
+     (handover.roundTime, comfort.bathingTime) will carry their resting hour for every
      patient who pages past them without looking. If that default turns out to
      be worth less than an empty answer, this effect is the whole of it:
      delete it and the wheel goes back to committing only on a real gesture. */
   useEffect(() => {
-    if (!stored) onPickTime(fromWheel(WHEEL_REST));
+    if (!stored) onPickTime(fromWheel(restAt));
     /* Mount only: a later clear would otherwise be written straight back. */
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -879,6 +896,8 @@ export function PatientPreferenceForm({
     () => saved?.answers ?? {});
   const [comments, setComments] = useState(() => saved?.comments?.text ?? "");
   const [index, setIndex] = useState(0);
+  /* Raised when "no" would discard a signed partner; cleared either way. */
+  const [pendingUnassign, setPendingUnassign] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   /* ── THE layout constraint ────────────────────────────────────────────
@@ -949,10 +968,35 @@ export function PatientPreferenceForm({
   const patch = (id: string, next: Partial<PreferenceAnswer>) =>
     setAnswers((prev) => ({ ...prev, [id]: { ...prev[id], ...next } }));
 
+  /* A partner already signed on the Person-Centered Care card answers this
+     question by itself: the patient has one, whatever the form last recorded.
+     Kept in step while the form is open, since the card can be reached from
+     the agreement sheet this very screen opens. */
+  useEffect(() => {
+    const sync = () => {
+      if (!partnerOnCard()) return;
+      setAnswers((prev) => prev["partner.participate"]?.value === "yes"
+        ? prev
+        : { ...prev, "partner.participate": { ...prev["partner.participate"], value: "yes" } });
+    };
+    sync();
+    window.addEventListener(CARE_PARTNER_EVENT, sync);
+    return () => window.removeEventListener(CARE_PARTNER_EVENT, sync);
+  }, []);
+
   /** Tapping the selected pill again clears it. Next then blocks again, which
    *  is the point: an answer is only recorded when the patient chose it. */
   const setValue = (id: string, value: string) => {
     const next = answers[id]?.value === value ? undefined : value;
+
+    /* Saying no when somebody has already signed is not just an answer — it
+       throws away a partner and their agreement. Ask before doing that, and
+       leave the question as it was until the patient says so. */
+    if (id === "partner.participate" && next === "no" && partnerOnCard()) {
+      setPendingUnassign(true);
+      return;
+    }
+
     patch(id, { value: next });
 
     /* The Care Partner Programme is answered here but lived with elsewhere.
@@ -1262,6 +1306,7 @@ export function PatientPreferenceForm({
         return (
           <TimeWheelPicker
             value={answers[q.id]?.value}
+            rest={q.defaultTime}
             onPickTime={(hhmm) => patch(q.id, { value: hhmm })}
             theme={theme}
             t={t}
@@ -1677,6 +1722,23 @@ export function PatientPreferenceForm({
 
       {/* Filled in with the patient, right where they said yes. It portals to
           the canvas, so it sits over this form rather than inside it. */}
+      {/* "No" against a signed partner. Nothing moves until this is answered. */}
+      <ConfirmDialog
+        visible={pendingUnassign}
+        variant="danger"
+        title={t("ppf.partner.unassign.title")}
+        message={t("ppf.partner.unassign.body",
+          readCarePartner().name.trim() || t("ppf.partner.unassign.someone"))}
+        confirmLabel={t("ppf.partner.unassign.confirm")}
+        cancelLabel={t("ppf.partner.unassign.keep")}
+        onConfirm={() => {
+          setPendingUnassign(false);
+          patch("partner.participate", { value: "no" });
+          writeCarePartner({ ...EMPTY_CARE_PARTNER, status: "declined" });
+        }}
+        onCancel={() => setPendingUnassign(false)}
+      />
+
       {showPartnerAgreement && (
         <CarePartnerAgreement
           initial={readCarePartner()}

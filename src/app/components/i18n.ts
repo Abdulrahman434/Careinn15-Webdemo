@@ -483,6 +483,14 @@ const translations: Record<string, TranslationEntry> = {
 "ppf.notes.label": { en: "Notes", ar: "ملاحظات", ur: "نوٹس" },
 "ppf.notes.optionalLabel": { en: "Notes · Optional", ar: "ملاحظات · اختياري", ur: "نوٹس · اختیاری" },
 "ppf.notes.requiredLabel": { en: "Please tell us more", ar: "يرجى إخبارنا بالتفاصيل", ur: "براہ کرم ہمیں مزید بتائیں" },
+/* Answering "no" here when somebody has already signed: the question and the
+   card would otherwise disagree, so the form says what the answer costs. */
+"ppf.partner.unassign.title": { en: "Remove your care partner?", ar: "إلغاء تعيين شريك الرعاية؟", ur: "اپنا کیئر پارٹنر ہٹائیں؟" },
+"ppf.partner.unassign.body": { en: "Answering No will unassign {0} from the Care Partner section, along with the signed agreement.", ar: "اختيار «لا» سيؤدي إلى إلغاء تعيين {0} من قسم شريك الرعاية مع الاتفاقية الموقعة.", ur: "\"نہیں\" کا انتخاب {0} کو کیئر پارٹنر سیکشن سے اور دستخط شدہ معاہدے سمیت ہٹا دے گا۔" },
+"ppf.partner.unassign.confirm": { en: "Yes, unassign", ar: "نعم، إلغاء التعيين", ur: "ہاں، ہٹا دیں" },
+"ppf.partner.unassign.keep": { en: "Keep my care partner", ar: "الاحتفاظ بشريك الرعاية", ur: "میرا کیئر پارٹنر رہنے دیں" },
+/* The partner named on the card, when the sheet never asked for a name. */
+"ppf.partner.unassign.someone": { en: "your care partner", ar: "شريك الرعاية", ur: "آپ کا کیئر پارٹنر" },
 "ppf.notes.placeholder": { en: "Add anything you'd like the team to know", ar: "أضف أي شيء تود أن يعرفه الفريق", ur: "کوئی بھی بات لکھیں جو آپ ٹیم کو بتانا چاہتے ہیں" },
 "ppf.optional": { en: "Optional", ar: "اختياري", ur: "اختیاری" },
 "ppf.partner.agreement.accept": { en: "I have read the Care Partner Agreement and agree to it.", ar: "لقد قرأت اتفاقية شريك الرعاية وأوافق عليها.", ur: "میں نے کیئر پارٹنر معاہدہ پڑھ لیا ہے اور اس سے متفق ہوں۔" },
