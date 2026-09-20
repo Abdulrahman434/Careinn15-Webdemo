@@ -1,6 +1,6 @@
 import { isAndroidApp } from "../utils/androidBridge";
 import { nurseActions } from "../components/NurseDataStore";
-import { clearUserData, clearEverything } from "./onboardingStore";
+import { clearUserData, clearEverything, DEVICE_LOGIN_KEY } from "./onboardingStore";
 import { getPackagesCache } from "./hospitalApi";
 import { clearImageCache } from "./imageProxy";
 
@@ -129,6 +129,16 @@ export async function clearAllDataAndReload(): Promise<void> {
      another hospital still works: logging in as that hospital overwrites
      them. */
   clearEverything();
+
+  /* 1.0.1 Sign the device out. "Clear Everything" is the button a nurse
+     presses when the screen is being handed on, and everything is what it
+     says: the next person starts at the access code.
+
+     It lives here rather than in clearEverything() because that function is
+     also the discharge reset — dataLifecycle polls the admit reference every
+     five minutes and calls it unattended. A bed emptying overnight must not
+     leave a screen asking for a code nobody is there to type. */
+  localStorage.removeItem(DEVICE_LOGIN_KEY);
 
   // 1.1 Clear patient overrides
   nurseActions.clearPatientOverrides();

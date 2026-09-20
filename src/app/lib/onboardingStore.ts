@@ -13,6 +13,14 @@ import { lockedAppsStore } from "./lockedApps";
  *             Wiped by both clear functions.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
+/** The access code this device signed in with.
+ *  A DEVICE key: neither clear function in this module touches it, and in
+ *  particular the discharge reset must not — that runs unattended, and a
+ *  screen that logged itself out at 3am is a screen nobody can use until a
+ *  nurse comes with the code. The "Clear Everything" button does remove it,
+ *  deliberately, in clearAllData.ts. */
+export const DEVICE_LOGIN_KEY = "hbs-auth-v1";
+
 /** Device-level config keys — do NOT add patient/session keys here. */
 const DEVICE_KEYS = new Set<string>([
   "active-hospital-id",
@@ -20,7 +28,7 @@ const DEVICE_KEYS = new Set<string>([
   "hospital-configs",       // saved hospital theme configs (ThemeContext)
   "hbs-active-config-id",   // CMS active config (useCmsContent)
   "careinn-api-config",     // server IP + API key (apiConfig)
-  "hbs-auth-v1",            // device login (AuthContext / PasswordGate)
+  DEVICE_LOGIN_KEY,         // device login (AuthContext / PasswordGate)
   "careinn-nfc-cards",      // nurse-registered NFC card map (utils/nfc)
   "careinn-layout-mode",    // staff-chosen layout (1/2/3)
   "careinn-layout2-theme",  // Layout 2 theme overrides (ThemeContext)

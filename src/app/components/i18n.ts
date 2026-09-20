@@ -1010,7 +1010,7 @@ const translations: Record<string, TranslationEntry> = {
   "settings.clearData.clearMyData.title": { en: "Clear My Data", ar: "مسح بياناتي", ur: "میرا ڈیٹا صاف کریں" },
   "settings.clearData.clearMyData.desc": { en: "Clears third-party apps, browser cache, and website logins. Your preferences and PIN remain safe.", ar: "يمسح التطبيقات الخارجية وسجل التصفح وتسجيلات الدخول. تظل إعداداتك ورمز PIN الخاص بك آمنين.", ur: "تھرڈ پارٹی ایپس، براؤزر کیشے اور ویب سائٹ لاگ ان کو صاف کرتا ہے۔ آپ کی ترجیحات اور PIN محفوظ رہیں گے۔" },
   "settings.clearData.clearEverything.title": { en: "Clear Everything", ar: "مسح كل شيء", ur: "سب کچھ صاف کریں" },
-  "settings.clearData.clearEverything.desc": { en: "Resets the device fully to factory defaults. Wipes all preferences, language setup, and PIN.", ar: "إعادة ضبط الجهاز بالكامل إلى إعدادات المصنع. يمسح جميع التفضيلات وإعداد اللغة ورمز PIN.", ur: "ڈیوائس کو فیکٹری ڈیفالٹس پر مکمل طور پر ری سیٹ کرتا ہے۔ تمام ترجیحات، زبان کے سیٹ اپ اور PIN کو صاف کرتا ہے۔" },
+  "settings.clearData.clearEverything.desc": { en: "Resets the device fully to factory defaults. Wipes all preferences, language setup, and PIN, and signs out back to the access code.", ar: "إعادة ضبط الجهاز بالكامل إلى إعدادات المصنع. يمسح جميع التفضيلات وإعداد اللغة ورمز PIN، ويعود إلى شاشة رمز الدخول.", ur: "ڈیوائس کو فیکٹری ڈیفالٹس پر مکمل طور پر ری سیٹ کرتا ہے۔ تمام ترجیحات، زبان کے سیٹ اپ اور PIN کو صاف کرتا ہے، اور سائن آؤٹ کر کے رسائی کوڈ پر واپس لے جاتا ہے۔" },
   "settings.clearData.btn.clearEverything": { en: "Clear Everything", ar: "مسح كل شيء", ur: "سب کچھ صاف کریں" },
   "settings.clearData.btn.clearMyData": { en: "Clear My Data", ar: "مسح بياناتي", ur: "میرا ڈیٹا صاف کریں" },
 
