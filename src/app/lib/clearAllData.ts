@@ -1,6 +1,6 @@
 import { isAndroidApp } from "../utils/androidBridge";
 import { nurseActions } from "../components/NurseDataStore";
-import { clearUserData } from "./onboardingStore";
+import { clearUserData, clearEverything } from "./onboardingStore";
 import { getPackagesCache } from "./hospitalApi";
 import { clearImageCache } from "./imageProxy";
 
@@ -116,8 +116,19 @@ export async function clearUserDataAndReload(): Promise<void> {
  * This function does not return — the page reloads.
  */
 export async function clearAllDataAndReload(): Promise<void> {
-  // 1. Clear all localStorage keys
-  localStorage.clear();
+  /* 1. Everything the patient and the setup left behind — but not what makes
+     this device this device. localStorage.clear() used to run here, which
+     also took active-hospital-id, the API config, the device login, the NFC
+     card map and the layout. The kiosk then forgot which hospital it was
+     standing in: generic login art, no server, and a nurse re-provisioning a
+     screen that only needed the patient wiped off it.
+
+     clearEverything() keeps exactly the DEVICE keys onboardingStore defines
+     and clears the rest, which is the contract that module documents and the
+     one the other clear path has always honoured. Handing the screen to
+     another hospital still works: logging in as that hospital overwrites
+     them. */
+  clearEverything();
 
   // 1.1 Clear patient overrides
   nurseActions.clearPatientOverrides();
