@@ -185,6 +185,18 @@ export const SPACE = {
  *   buttonSm     → 18 / 600 / 1.0  — small button / link text (About Us, etc.)
  *   helper       → 14 / 400 / 1.4  — helper text, field hints
  *   display      → 30 / 700 / 1.2  — hero greetings, patient names
+ *
+ * Dialogs — one hierarchy for every popup in the app. Three sizes, no more:
+ * the title leads, the body explains at the app's reading size, and the
+ * buttons sit below the title so they cannot compete with it. Dialogs used to
+ * run two unrelated systems — 22/18/22 in the confirm and offline popups,
+ * 18/13 in the PIN and account ones — so the same kind of message arrived in a
+ * different voice depending on which screen raised it.
+ *
+ *   dialogTitle  → 22 / 700 / 1.3  — the one line that says what this is
+ *   dialogBody   → 18 / 400 / 1.5  — what it means, what happens next
+ *   dialogButton → 18 / 600 / 1.0  — every action in the dialog
+ *   dialogHelper → 14 / 400 / 1.4  — the line under a field, an error, a hint
  */
 export const TEXT_STYLE = {
   pageTitle: { fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, lineHeight: LEADING.snug, letterSpacing: "-0.3px" },
@@ -201,6 +213,11 @@ export const TEXT_STYLE = {
   buttonSm: { fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold, lineHeight: LEADING.none, letterSpacing: "0px" },
   helper: { fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.normal, lineHeight: LEADING.compact, letterSpacing: "0px" },
   display: { fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, lineHeight: LEADING.tight, letterSpacing: "-0.5px" },
+  /* ── Dialogs — see the note above. Use these four for every popup. ── */
+  dialogTitle: { fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.bold, lineHeight: LEADING.snug, letterSpacing: "-0.2px" },
+  dialogBody: { fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.normal, lineHeight: LEADING.normal, letterSpacing: "0px" },
+  dialogButton: { fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold, lineHeight: LEADING.none, letterSpacing: "0px" },
+  dialogHelper: { fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.normal, lineHeight: LEADING.compact, letterSpacing: "0px" },
 } as const;
 
 /* ═══════════════════════════════════════════════════════════════════════════

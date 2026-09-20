@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useTheme } from "./ThemeContext";
+import { useTheme, TEXT_STYLE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { usePressFlash } from "./usePressFlash";
 import { setAccount, getAccount, updateNfcCard, clearAccount, verifyPin } from "../lib/accountAuth";
@@ -116,8 +116,7 @@ function DialogHeader({
         <span
           style={{
             fontFamily: t.fontFamily,
-            fontSize: "17px",
-            fontWeight: 700,
+            ...TEXT_STYLE.dialogTitle,
             color: t.textHeading,
           }}
         >
@@ -735,10 +734,10 @@ export function MyPreferencesDialog({
         return (
           <div className="flex flex-col items-center" style={{ padding: "28px 24px" }}>
             <Shield size={40} style={{ color: t.primaryOn, marginBottom: 16 }} />
-            <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, marginBottom: 8, textAlign: "center" }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, marginBottom: 8, textAlign: "center" }}>
               Admin Controls
             </span>
-            <span style={{ fontFamily: t.fontFamily, fontSize: "14px", color: t.textMuted, marginBottom: 24, textAlign: "center" }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogBody, color: t.textMuted, marginBottom: 24, textAlign: "center" }}>
               Admin mode active — 10 min window
             </span>
             <div className="flex flex-col gap-3 w-full">
@@ -777,10 +776,10 @@ export function MyPreferencesDialog({
             >
               <CheckCircle size={28} style={{ color: t.primaryOn }} />
             </div>
-            <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, marginBottom: "4px" }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, marginBottom: "4px" }}>
               {tr("settings.preferences.subtitle.set")}
             </span>
-            <span style={{ fontFamily: t.fontFamily, fontSize: "13px", fontWeight: 500, color: t.textMuted, marginBottom: "24px" }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogBody, color: t.textMuted, marginBottom: "24px" }}>
               Last updated: {account?.setAt ? new Date(account.setAt).toLocaleDateString() : 'Unknown'}
             </span>
 
@@ -837,10 +836,10 @@ export function MyPreferencesDialog({
           <>
             <div className="flex flex-col items-center" style={{ padding: "28px 24px 0 24px" }}>
               <Shield size={28} style={{ color: t.primaryOn, marginBottom: "16px" }} />
-              <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, textAlign: "center" }}>
+              <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center" }}>
                 {tr("pinSetup.title")}
               </span>
-              <span style={{ fontFamily: t.fontFamily, fontSize: "13px", fontWeight: 500, color: t.textMuted, textAlign: "center", marginTop: "8px" }}>
+              <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogBody, color: t.textMuted, textAlign: "center", marginTop: "8px" }}>
                 {tr("pinSetup.subtitle")}
               </span>
             </div>
@@ -853,7 +852,7 @@ export function MyPreferencesDialog({
           <>
             <div className="flex flex-col items-center" style={{ padding: "28px 24px 0 24px" }}>
               <Shield size={28} style={{ color: t.primaryOn, marginBottom: "16px" }} />
-              <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, textAlign: "center" }}>
+              <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center" }}>
                 {tr("pinSetup.confirm")}
               </span>
             </div>
@@ -883,7 +882,7 @@ export function MyPreferencesDialog({
         return (
           <div className="flex flex-col items-center justify-center" style={{ padding: "40px 24px" }}>
             <AlertCircle size={40} style={{ color: t.accentOn, marginBottom: "16px" }} />
-            <span style={{ fontFamily: t.fontFamily, fontSize: "16px", fontWeight: 600, color: t.textHeading, textAlign: "center" }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center" }}>
               {tr("pinSetup.mismatch")}
             </span>
           </div>
@@ -895,10 +894,10 @@ export function MyPreferencesDialog({
             <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
               <Shield size={32} style={{ color: t.primaryOn }} />
             </div>
-            <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, textAlign: "center" }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center" }}>
               {tr("nfcSetup.title")}
             </span>
-            <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 500, color: t.textMuted, textAlign: "center", marginTop: "12px", marginBottom: "24px" }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogBody, color: t.textMuted, textAlign: "center", marginTop: "12px", marginBottom: "24px" }}>
               {tr("nfcSetup.subtitle")}
             </span>
             <div className="flex gap-3 w-full">
@@ -909,7 +908,7 @@ export function MyPreferencesDialog({
                 className="flex-1 flex items-center justify-center"
                 style={{ height: "48px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none" }}
               >
-                <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 600, color: t.textHeading }}>
+                <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogButton, color: t.textHeading }}>
                   {tr("nfcSetup.skip")}
                 </span>
               </button>
@@ -918,7 +917,7 @@ export function MyPreferencesDialog({
                 className="flex-1 flex items-center justify-center"
                 style={{ height: "48px", borderRadius: t.radiusLg, backgroundColor: t.primary, border: "none" }}
               >
-                <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 600, color: "#fff" }}>
+                <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogButton, color: "#fff" }}>
                   {tr("nfcSetup.pair")}
                 </span>
               </button>
@@ -937,10 +936,10 @@ export function MyPreferencesDialog({
                 <Shield size={32} color="#FFFFFF" />
               </div>
             </div>
-            <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, textAlign: "center" }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center" }}>
               {step === 'nfc-tap1' ? tr("nfcSetup.tap1") : tr("nfcSetup.tap2")}
             </span>
-            <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 500, color: t.textMuted, textAlign: "center", marginTop: "12px", marginBottom: "24px" }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogBody, color: t.textMuted, textAlign: "center", marginTop: "12px", marginBottom: "24px" }}>
               {tr("nfcSetup.hold")}
             </span>
             <button
@@ -959,7 +958,7 @@ export function MyPreferencesDialog({
         return (
           <div className="flex flex-col items-center justify-center" style={{ padding: "40px 24px" }}>
             <AlertCircle size={40} style={{ color: t.accentOn, marginBottom: "16px" }} />
-            <span style={{ fontFamily: t.fontFamily, fontSize: "16px", fontWeight: 600, color: t.textHeading, textAlign: "center" }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center" }}>
               {tr("nfcSetup.mismatch")}
             </span>
           </div>
@@ -974,7 +973,7 @@ export function MyPreferencesDialog({
             >
               <Shield size={28} style={{ color: t.primaryOn }} />
             </div>
-            <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
               {pendingAction === 'admin-login' ? "Admin Login" : "Verify PIN"}
             </span>
             <span style={{ fontFamily: t.fontFamily, fontSize: "13px", color: t.textMuted, textAlign: "center", marginBottom: "24px" }}>
@@ -1081,7 +1080,7 @@ export function MyPreferencesDialog({
         return (
           <div className="flex flex-col items-center justify-center" style={{ padding: "40px 24px" }}>
             <CheckCircle size={48} style={{ color: "#10B981", marginBottom: "16px" }} />
-            <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, textAlign: "center" }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center" }}>
               {pendingAction === 'remove-account' ? tr("pinSetup.removed") : tr("pinSetup.saved")}
             </span>
           </div>

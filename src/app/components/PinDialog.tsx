@@ -1,6 +1,6 @@
 import React from "react";
 import { X } from "lucide-react";
-import { useTheme, SHADOW } from "./ThemeContext";
+import { useTheme, SHADOW, TEXT_STYLE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { PinKeypad } from "./MyAccountDialog";
 
@@ -19,7 +19,8 @@ export function PinDialog({
   onClose,
   hint,
   footer,
-  width = 340,
+  /* Same card width as the confirm dialog — one popup shape for the app. */
+  width = 360,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -94,18 +95,16 @@ export function PinDialog({
           {icon}
         </div>
 
-        <span style={{ fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, textAlign: "center" }}>
+        <span style={{ fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center" }}>
           {title}
         </span>
         <span
           style={{
             fontFamily,
-            fontSize: "13px",
-            fontWeight: 500,
+            ...TEXT_STYLE.dialogBody,
             color: error ? t.errorOn : t.textMuted,
             textAlign: "center",
             marginTop: "8px",
-            lineHeight: "20px",
             transition: "color 0.2s",
           }}
         >

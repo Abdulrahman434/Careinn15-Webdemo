@@ -120,7 +120,7 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
             <p
               style={{
                 fontFamily,
-                ...TEXT_STYLE.cardTitle,
+                ...TEXT_STYLE.dialogTitle,
                 color: t.textHeading,
                 margin: "0 0 8px 0",
               }}
@@ -130,7 +130,7 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
             <p
               style={{
                 fontFamily,
-                ...TEXT_STYLE.body,
+                ...TEXT_STYLE.dialogBody,
                 color: t.textMuted,
                 margin: 0,
               }}
@@ -162,7 +162,7 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
                   border: "none",
                   cursor: "pointer",
                   fontFamily,
-                  ...TEXT_STYLE.button,
+                  ...TEXT_STYLE.dialogButton,
                   color: t.textInverse,
                 }}
               >
@@ -183,7 +183,7 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
                   border: `1.5px solid ${t.borderDefault}`,
                   cursor: "pointer",
                   fontFamily,
-                  ...TEXT_STYLE.button,
+                  ...TEXT_STYLE.dialogButton,
                   color: t.textBody,
                 }}
               >
@@ -221,7 +221,7 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
                   border: `1.5px solid ${pinError ? "#dc2626" : t.borderDefault}`,
                   outline: "none",
                   fontFamily,
-                  ...TEXT_STYLE.body,
+                  ...TEXT_STYLE.dialogBody,
                   color: t.textBody,
                   textAlign: "center",
                   letterSpacing: "0.4em",
@@ -238,7 +238,7 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
                   cursor: pin ? "pointer" : "not-allowed",
                   opacity: pin ? 1 : 0.5,
                   fontFamily,
-                  ...TEXT_STYLE.button,
+                  ...TEXT_STYLE.dialogButton,
                   color: t.textInverse,
                 }}
               >

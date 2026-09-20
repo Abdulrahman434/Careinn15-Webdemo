@@ -1,5 +1,5 @@
 import React from "react";
-import { useTheme, SHADOW, TYPE_SCALE, WEIGHT } from "./ThemeContext";
+import { useTheme, SHADOW, TEXT_STYLE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { AlertTriangle, X } from "lucide-react";
 
@@ -82,12 +82,12 @@ export function ConfirmDialog({
         </div>
 
         {title && (
-          <span style={{ fontFamily: t.fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.semibold, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
+          <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
             {title}
           </span>
         )}
 
-        <span style={{ fontFamily: t.fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.normal, color: t.textBody, textAlign: "center", marginBottom: "20px", lineHeight: "26px" }}>
+        <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogBody, color: t.textBody, textAlign: "center", marginBottom: "20px" }}>
           {message}
         </span>
 
@@ -106,7 +106,7 @@ export function ConfirmDialog({
               boxShadow: SHADOW.md,
             }}
           >
-            <span style={{ fontFamily: t.fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold, color: isDanger ? t.onError : t.brandOnPrimary }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogButton, color: isDanger ? t.onError : t.brandOnPrimary }}>
               {confirmLabel || tr("general.confirm")}
             </span>
           </button>
@@ -122,7 +122,7 @@ export function ConfirmDialog({
               outline: "none",
             }}
           >
-            <span style={{ fontFamily: t.fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.medium, color: t.textMuted }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogButton, color: t.textMuted }}>
               {cancelLabel || tr("general.cancel")}
             </span>
           </button>

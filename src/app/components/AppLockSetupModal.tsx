@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Lock, CheckCircle2, ShieldAlert, X } from "lucide-react";
-import { useTheme, SHADOW, TEXT_STYLE, WEIGHT } from "./ThemeContext";
+import { useTheme, SHADOW, TEXT_STYLE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { isAccountSet, setAccount } from "../lib/accountAuth";
 import { lockedAppsStore } from "../lib/lockedApps";
@@ -121,11 +121,11 @@ export function AppLockSetupModal({
               <Lock size={32} strokeWidth={2.2} />
             </div>
 
-            <h3 style={{ fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, lineHeight: 1.3 }}>
+            <h3 style={{ fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading }}>
               {tr("appLock.setup.title")?.replace("{name}", appName) || `Lock ${appName}?`}
             </h3>
 
-            <p className="px-2" style={{ fontFamily, fontSize: "13px", fontWeight: 500, color: t.textMuted, marginTop: "8px", lineHeight: "20px" }}>
+            <p className="px-2" style={{ fontFamily, ...TEXT_STYLE.dialogBody, color: t.textMuted, marginTop: "8px" }}>
               {tr("appLock.setup.desc") || "A PIN will be required whenever someone opens this app."}
             </p>
 
@@ -133,14 +133,14 @@ export function AppLockSetupModal({
               <button
                 onClick={handleLockExistingPin}
                 className="w-full py-3.5 cursor-pointer active:scale-98 transition-all shadow-sm"
-                style={{ fontFamily, ...TEXT_STYLE.buttonSm, fontWeight: WEIGHT.bold, color: t.textInverse, backgroundColor: t.primary, borderRadius: t.radiusLg, border: "none" }}
+                style={{ fontFamily, ...TEXT_STYLE.dialogButton, color: t.textInverse, backgroundColor: t.primary, borderRadius: t.radiusLg, border: "none" }}
               >
                 {tr("appLock.setup.confirm") || "Lock App"}
               </button>
               <button
                 onClick={onClose}
                 className="w-full py-3.5 cursor-pointer active:scale-98 transition-all"
-                style={{ fontFamily, ...TEXT_STYLE.buttonSm, color: t.textMuted, backgroundColor: "transparent", borderRadius: t.radiusLg, border: `1.5px solid ${t.borderDefault}` }}
+                style={{ fontFamily, ...TEXT_STYLE.dialogButton, color: t.textMuted, backgroundColor: "transparent", borderRadius: t.radiusLg, border: `1.5px solid ${t.borderDefault}` }}
               >
                 {tr("appLock.cancel") || "Cancel"}
               </button>
@@ -158,10 +158,10 @@ export function AppLockSetupModal({
               <Lock size={28} style={{ color: t.primaryOn }} />
             </div>
 
-            <h3 style={{ fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading }}>
+            <h3 style={{ fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading }}>
               {tr("appLock.createPin.title") || "Create Privacy PIN"}
             </h3>
-            <p style={{ fontFamily, fontSize: "13px", fontWeight: 500, color: t.textMuted, marginTop: "8px", lineHeight: "20px" }}>
+            <p style={{ fontFamily, ...TEXT_STYLE.dialogBody, color: t.textMuted, marginTop: "8px" }}>
               {tr("appLock.createPin.sub1") || `Set a 4-digit PIN to lock ${appName}`}
             </p>
 
@@ -186,10 +186,10 @@ export function AppLockSetupModal({
               <Lock size={28} style={{ color: t.primaryOn }} />
             </div>
 
-            <h3 style={{ fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading }}>
+            <h3 style={{ fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading }}>
               {tr("appLock.createPin.confirmTitle") || "Confirm Privacy PIN"}
             </h3>
-            <p style={{ fontFamily, fontSize: "13px", fontWeight: 500, color: t.textMuted, marginTop: "8px", lineHeight: "20px" }}>
+            <p style={{ fontFamily, ...TEXT_STYLE.dialogBody, color: t.textMuted, marginTop: "8px" }}>
               {tr("appLock.createPin.sub2") || "Re-enter your 4-digit PIN to confirm"}
             </p>
 
@@ -210,7 +210,7 @@ export function AppLockSetupModal({
             <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 animate-in zoom-in-75 duration-200">
               <CheckCircle2 size={40} strokeWidth={2.2} />
             </div>
-            <h3 style={{ fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading }}>
+            <h3 style={{ fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading }}>
               {toastMessage}
             </h3>
           </div>
