@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import {
   ArrowLeft,
   Play,
@@ -38,7 +38,9 @@ import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
 import { InternalPageHeader } from "./InternalPageHeader";
-import { PdfReaderModal } from "./PdfReaderModal";
+/* pdf.js is ~128 KB gzipped. Every boot paid it so that a patient who
+   opens a document does not wait; almost none of them open one. */
+const PdfReaderModal = lazy(() => import("./PdfReaderModal").then((m) => ({ default: m.PdfReaderModal })));
 import { apps, isAndroidApp, KNOWN_APPS } from "../utils/androidBridge";
 import { useApiPdfApps, API_CATEGORY_MAP, getPackagesCache } from "../lib/hospitalApi";
 import edgeLogo from "../../assets/edge_logo.webp";
@@ -2110,11 +2112,13 @@ export function AppLauncher({
 
       {/* PDF Reader Overlay */}
       {showPdf && (
-        <PdfReaderModal
-          onClose={() => setShowPdf(false)}
-          pdfSource={pdfSource}
-          title={pdfTitle}
-        />
+        <Suspense fallback={null}>
+          <PdfReaderModal
+            onClose={() => setShowPdf(false)}
+            pdfSource={pdfSource}
+            title={pdfTitle}
+          />
+        </Suspense>
       )}
 
       {/* Dedicated URL Navigator Screen (Standalone App View) */}

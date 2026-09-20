@@ -2,6 +2,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { getApiConfig } from "../lib/apiConfig";
 import { isAggressiveMemoryMode } from "../lib/deviceCapability";
 import * as pdfjsLib from "pdfjs-dist";
+// ?url makes Vite emit the worker as its own asset and hand back its hashed
+// path, so it is served from the same origin as everything else.
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import {
   X, ChevronUp, ChevronDown, ZoomIn, ZoomOut,
   Bookmark, RotateCw, Search, Loader2,
@@ -12,8 +15,11 @@ import {
 // ═══════════════════════════════════════════════════════════
 // PDF.js Worker
 // ═══════════════════════════════════════════════════════════
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  `https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs`;
+// Bundled, not fetched from unpkg.com. A hospital network that does not let
+// the kiosk reach a public CDN — or a version unpublished from under us —
+// left every PDF in the app unopenable, and the pinned version had to be kept
+// in step with package.json by hand.
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 // ═══════════════════════════════════════════════════════════
 // Constants

@@ -1,5 +1,7 @@
+import { lazy, Suspense } from "react";
 import { useLocale } from "./i18n";
-import { PdfReaderModal } from "./PdfReaderModal";
+
+const PdfReaderModal = lazy(() => import("./PdfReaderModal").then((m) => ({ default: m.PdfReaderModal })));
 
 /**
  * Fullscreen viewer for a bundled patient-guide PDF.
@@ -12,10 +14,12 @@ export function PatientGuideModal({ src, onClose }: { src: string; onClose: () =
   const { t } = useLocale();
 
   return (
-    <PdfReaderModal
-      onClose={onClose}
-      pdfSource={src}
-      title={t("shortcut.patientGuide")}
-    />
+    <Suspense fallback={null}>
+      <PdfReaderModal
+        onClose={onClose}
+        pdfSource={src}
+        title={t("shortcut.patientGuide")}
+      />
+    </Suspense>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, type CSSProperties } from "react";
+import { useEffect, useState, useCallback, useRef, lazy, Suspense, type CSSProperties } from "react";
 import { getAuthorizedCards, getNurseCardUid } from "./utils/nfc";
 import { isTvDevice } from "./utils/deviceDetect";
 import { ThemeProvider, useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "./components/ThemeContext";
@@ -18,7 +18,7 @@ import KidsHomescreen from "./components/KidsHomescreen";
 import { RippleStyles } from "./components/useRipple";
 import { AppLauncher } from "./components/AppLauncher";
 import { SurveyModal } from "./components/SurveyModal";
-import { PdfReaderModal } from "./components/PdfReaderModal";
+const PdfReaderModal = lazy(() => import("./components/PdfReaderModal").then((m) => ({ default: m.PdfReaderModal })));
 import { UpdateBanner } from "./components/UpdateBanner";
 import { MediaViewerModal } from "./components/MediaViewerModal";
 import { AboutUs } from "./components/AboutUs";
@@ -30,7 +30,7 @@ import { AutoCarousel } from "./components/AutoCarousel";
 import fakeehSymbol from "../assets/7b9b440667ca2ce8678111ec37e1fb104ae88026.webp";
 import caremedicalicon from "../assets/caremedicalicon.webp";
 import careinnliteVideo from "../assets/careinnlite.mp4";
-import { HospitalConfigurator } from "./components/HospitalConfigurator";
+const HospitalConfigurator = lazy(() => import("./components/HospitalConfigurator").then((m) => ({ default: m.HospitalConfigurator })));
 import { ThemeAppearanceDialog } from "./components/ThemeAppearanceDialog";
 import { TasbihScreenSaver } from "./components/TasbihScreenSaver";
 import { VideoScreenSaver } from "./components/VideoScreenSaver";
@@ -46,30 +46,30 @@ import { AuthProvider, useAuth } from "./components/AuthContext";
 import { PasswordGate } from "./components/PasswordGate";
 import { HospitalBroadcast, SAMPLE_BROADCAST } from "./components/HospitalBroadcast";
 import type { BroadcastNotification } from "./components/HospitalBroadcast";
-import { MemoryGame } from "./components/games/MemoryGame";
-import { TicTacToeGame } from "./components/games/TicTacToeGame";
-import { SlidingPuzzleGame } from "./components/games/SlidingPuzzleGame";
-import { ColorMatchGame } from "./components/games/ColorMatchGame";
-import { PatternMemoryGame } from "./components/games/PatternMemoryGame";
-import { EmojiMatchGame } from "./components/games/EmojiMatchGame";
-import { SimonSaysGame } from "./components/games/SimonSaysGame";
-import { WordSearchGame } from "./components/games/WordSearchGame";
-import { ReactionTimeGame } from "./components/games/ReactionTimeGame";
-import { BrainMathGame } from "./components/games/BrainMathGame";
-import { TriviaQuizGame } from "./components/games/TriviaQuizGame";
-import { ImageJigsawGame } from "./components/games/ImageJigsawGame";
-import { WordChainGame } from "./components/games/WordChainGame";
-import { CalculatorTool } from "./components/tools/CalculatorTool";
-import { NotesTool } from "./components/tools/NotesTool";
+const MemoryGame = lazy(() => import("./components/games/MemoryGame").then((m) => ({ default: m.MemoryGame })));
+const TicTacToeGame = lazy(() => import("./components/games/TicTacToeGame").then((m) => ({ default: m.TicTacToeGame })));
+const SlidingPuzzleGame = lazy(() => import("./components/games/SlidingPuzzleGame").then((m) => ({ default: m.SlidingPuzzleGame })));
+const ColorMatchGame = lazy(() => import("./components/games/ColorMatchGame").then((m) => ({ default: m.ColorMatchGame })));
+const PatternMemoryGame = lazy(() => import("./components/games/PatternMemoryGame").then((m) => ({ default: m.PatternMemoryGame })));
+const EmojiMatchGame = lazy(() => import("./components/games/EmojiMatchGame").then((m) => ({ default: m.EmojiMatchGame })));
+const SimonSaysGame = lazy(() => import("./components/games/SimonSaysGame").then((m) => ({ default: m.SimonSaysGame })));
+const WordSearchGame = lazy(() => import("./components/games/WordSearchGame").then((m) => ({ default: m.WordSearchGame })));
+const ReactionTimeGame = lazy(() => import("./components/games/ReactionTimeGame").then((m) => ({ default: m.ReactionTimeGame })));
+const BrainMathGame = lazy(() => import("./components/games/BrainMathGame").then((m) => ({ default: m.BrainMathGame })));
+const TriviaQuizGame = lazy(() => import("./components/games/TriviaQuizGame").then((m) => ({ default: m.TriviaQuizGame })));
+const ImageJigsawGame = lazy(() => import("./components/games/ImageJigsawGame").then((m) => ({ default: m.ImageJigsawGame })));
+const WordChainGame = lazy(() => import("./components/games/WordChainGame").then((m) => ({ default: m.WordChainGame })));
+const CalculatorTool = lazy(() => import("./components/tools/CalculatorTool").then((m) => ({ default: m.CalculatorTool })));
+const NotesTool = lazy(() => import("./components/tools/NotesTool").then((m) => ({ default: m.NotesTool })));
 import { RemindersTool, DEFAULT_REMINDERS, parseReminderTime } from "./components/tools/RemindersTool";
 import type { Reminder } from "./components/tools/RemindersTool";
 
-import { StopwatchTool } from "./components/tools/StopwatchTool";
-import { UnitConverterTool } from "./components/tools/UnitConverterTool";
-import { BreathingTool } from "./components/tools/BreathingTool";
-import { WhiteboardTool } from "./components/tools/WhiteboardTool";
-import { MirrorTool } from "./components/tools/MirrorTool";
-import { RoomControl } from "./components/RoomControl";
+const StopwatchTool = lazy(() => import("./components/tools/StopwatchTool").then((m) => ({ default: m.StopwatchTool })));
+const UnitConverterTool = lazy(() => import("./components/tools/UnitConverterTool").then((m) => ({ default: m.UnitConverterTool })));
+const BreathingTool = lazy(() => import("./components/tools/BreathingTool").then((m) => ({ default: m.BreathingTool })));
+const WhiteboardTool = lazy(() => import("./components/tools/WhiteboardTool").then((m) => ({ default: m.WhiteboardTool })));
+const MirrorTool = lazy(() => import("./components/tools/MirrorTool").then((m) => ({ default: m.MirrorTool })));
+const RoomControl = lazy(() => import("./components/RoomControl").then((m) => ({ default: m.RoomControl })));
 
 import { getPrayerStatus, PRAYER_NAMES, formatPrayerTime } from "./utils/prayerUtils";
 import { Prayer } from "adhan";
@@ -2142,7 +2142,9 @@ function BedsideScreen() {
 
         {/* Hospital Configurator */}
         {showConfigurator && (
-          <HospitalConfigurator onClose={() => setShowConfigurator(false)} />
+          <Suspense fallback={null}>
+            <HospitalConfigurator onClose={() => setShowConfigurator(false)} />
+          </Suspense>
         )}
 
         {/* Theme & Appearance Configurator */}
@@ -2202,7 +2204,11 @@ function BedsideScreen() {
           />
         )}
 
-        {/* Games */}
+        {/* Games — each its own chunk, fetched on the tap that opens it.
+            The boundary sits here rather than higher up: only one game is ever
+            active, and when none is the block renders nothing, so a null
+            fallback shows nothing rather than blanking the screen behind it. */}
+        <Suspense fallback={null}>
         {activeGame === "memory" && <MemoryGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "tictactoe" && <TicTacToeGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "puzzle" && <SlidingPuzzleGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
@@ -2216,6 +2222,7 @@ function BedsideScreen() {
         {activeGame === "triviaquiz" && <TriviaQuizGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "picturepuzzle" && <ImageJigsawGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "wordchain" && <WordChainGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        </Suspense>
 
         {/* IPTV Channels Overlay */}
         {showIptv && (
@@ -2223,6 +2230,7 @@ function BedsideScreen() {
         )}
 
         {/* Tools */}
+        <Suspense fallback={null}>
         {activeTool === "calculator" && <CalculatorTool onClose={() => setActiveTool(null)} onBackToTools={() => { setActiveTool(null); setOpenCategory("Tools"); }} />}
         {activeTool === "notes" && <NotesTool onClose={() => setActiveTool(null)} onBackToTools={() => { setActiveTool(null); setOpenCategory("Tools"); }} />}
         {activeTool === "reminders" && <RemindersTool onClose={() => setActiveTool(null)} onBackToTools={() => { setActiveTool(null); setOpenCategory("Tools"); }} reminders={reminders} setReminders={setReminders} />}
@@ -2233,6 +2241,7 @@ function BedsideScreen() {
         {activeTool === "whiteboard" && <WhiteboardTool onClose={() => setActiveTool(null)} onBackToTools={() => { setActiveTool(null); setOpenCategory("Tools"); }} />}
         {activeTool === "mirror" && <MirrorTool onClose={() => setActiveTool(null)} onBackToTools={() => { setActiveTool(null); setOpenCategory("Tools"); }} />}
         {activeTool === "roomcontrol" && <RoomControl onClose={() => setActiveTool(null)} />}
+        </Suspense>
 
 
         {/* Blank Page Overlay */}
@@ -2265,11 +2274,13 @@ function BedsideScreen() {
 
       {/* PDF Reader Modal from CTA */}
       {ctaPdfConfig && (
-        <PdfReaderModal
-          onClose={() => setCtaPdfConfig(null)}
-          pdfSource={ctaPdfConfig.url}
-          title={ctaPdfConfig.title}
-        />
+        <Suspense fallback={null}>
+          <PdfReaderModal
+            onClose={() => setCtaPdfConfig(null)}
+            pdfSource={ctaPdfConfig.url}
+            title={ctaPdfConfig.title}
+          />
+        </Suspense>
       )}
 
       {/* Media Viewer Modal from CTA */}
