@@ -218,8 +218,14 @@ const WHEEL_MINUTES = ["00", "15", "30", "45"] as const;
 
 interface WheelState { hour: number; minute: string; pm: boolean }
 
-/** Where the wheels start when the question has no answer yet. */
-const WHEEL_REST: WheelState = { hour: 7, minute: "00", pm: false };
+/** Where the wheels start when the question has no answer yet.
+ *
+ *  8:00 AM, because the question above the wheel says rounds run "between
+ *  8:00 AM and 12:00 PM" — a wheel resting an hour before the period it is
+ *  asking about reads as a suggestion, and the patient has to scroll past the
+ *  hour the question just quoted to reach it. It suits the other time question
+ *  too: a daily bath is a morning one. */
+const WHEEL_REST: WheelState = { hour: 8, minute: "00", pm: false };
 
 /** "HH:MM" (24h) → wheel position. The old grid could only store :00 and :30,
  *  but any minute off the wheel is pulled to the nearest quarter rather than
@@ -687,15 +693,15 @@ function TimeWheelPicker({
   };
 
   /* THE RESTING VALUE IS THE ANSWER, committed as the screen opens, so the
-     question arrives answered at 7:00 AM and Next is live from the first
+     question arrives answered at 8:00 AM and Next is live from the first
      frame. The wheels already show that time; requiring a turn of them to
      record what is plainly displayed reads as the control being broken.
 
      Know what this trades away. The commit was removed once for a reason:
-     nobody chose 7:00 AM, and it now reaches the care plan looking exactly
+     nobody chose 8:00 AM, and it now reaches the care plan looking exactly
      like a time the patient set — the same objection as a pre-selected pill,
      which the yes/no screens still refuse to do. The two time questions
-     (handover.roundTime, comfort.bathingTime) will carry 07:00 for every
+     (handover.roundTime, comfort.bathingTime) will carry 08:00 for every
      patient who pages past them without looking. If that default turns out to
      be worth less than an empty answer, this effect is the whole of it:
      delete it and the wheel goes back to committing only on a real gesture. */
