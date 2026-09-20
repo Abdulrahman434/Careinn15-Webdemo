@@ -5,6 +5,7 @@ import { Lock, Unlock, X, CheckCircle, ShieldAlert } from "lucide-react";
 import { lockedAppsStore } from "../lib/lockedApps";
 import { verifyPin, isAccountSet } from "../lib/accountAuth";
 import { PinKeypad } from "./MyAccountDialog";
+import { PIN_METRICS } from "./pinMetrics";
 
 interface AppLockMenuProps {
   appId: string;
@@ -91,8 +92,9 @@ export function AppLockMenu({
       <div
         className="relative flex flex-col items-center"
         style={{
-          width: "340px",
-          padding: "32px 24px 24px 24px",
+          /* Same card as every other PIN prompt — see pinMetrics.ts. */
+          width: PIN_METRICS.card,
+          padding: PIN_METRICS.pad,
           borderRadius: t.radiusXl,
           backgroundColor: t.surface,
           boxShadow: SHADOW.xl,

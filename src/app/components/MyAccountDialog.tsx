@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTheme, TEXT_STYLE } from "./ThemeContext";
+import { PIN_METRICS, PIN_TYPE } from "./pinMetrics";
 import { useLocale } from "./i18n";
 import { usePressFlash } from "./usePressFlash";
 import { setAccount, getAccount, updateNfcCard, clearAccount, verifyPin } from "../lib/accountAuth";
@@ -173,13 +174,13 @@ export function PinKeypad({
 
   return (
     <>
-      <div dir="ltr" className="flex items-center justify-center gap-4" style={{ padding: "20px 0 16px 0" }}>
+      <div dir="ltr" className="flex items-center justify-center gap-4" style={{ padding: "20px 0 18px 0" }}>
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
             style={{
-              width: "16px",
-              height: "16px",
+              width: `${PIN_METRICS.dot}px`,
+              height: `${PIN_METRICS.dot}px`,
               borderRadius: t.radiusFull,
               backgroundColor: i < pin.length ? t.accent : t.borderDefault,
               transition: "background-color 0.15s",
@@ -191,8 +192,8 @@ export function PinKeypad({
 
       <div
         dir="ltr"
-        className="flex flex-col items-center gap-3"
-        style={{ padding: "8px 32px 24px 32px" }}
+        className="flex flex-col items-center"
+        style={{ padding: "8px 0 16px 0", gap: `${PIN_METRICS.keyGap}px` }}
       >
         {[
           ["1", "2", "3"],
@@ -200,9 +201,9 @@ export function PinKeypad({
           ["7", "8", "9"],
           ["", "0", "del"],
         ].map((row, ri) => (
-          <div key={ri} className="flex items-center gap-3">
+          <div key={ri} className="flex items-center" style={{ gap: `${PIN_METRICS.keyGap}px` }}>
             {row.map((key, ki) => {
-              if (key === "") return <div key={ki} style={{ width: "64px", height: "52px" }} />;
+              if (key === "") return <div key={ki} style={{ width: PIN_METRICS.key, height: PIN_METRICS.key }} />;
               const isPressed = pressedKey === key;
               return (
                 <button
@@ -211,8 +212,8 @@ export function PinKeypad({
                   onClick={() => (key === "del" ? handleDelete() : handleDigit(key))}
                   className="flex items-center justify-center cursor-pointer"
                   style={{
-                    width: "64px",
-                    height: "52px",
+                    width: PIN_METRICS.key,
+                    height: PIN_METRICS.key,
                     borderRadius: t.radiusLg,
                     backgroundColor: isPressed
                       ? (key === "del" ? t.accent : t.primary)
@@ -225,8 +226,8 @@ export function PinKeypad({
                   <span
                     style={{
                       fontFamily: t.fontFamily,
-                      fontSize: key === "del" ? "13px" : "20px",
-                      fontWeight: 700,
+                      fontSize: key === "del" ? PIN_TYPE.del : PIN_TYPE.key,
+                      fontWeight: 600,
                       color: isPressed ? t.textInverse : (key === "del" ? t.accentOn : t.textHeading),
                       transition: "color 0.15s",
                     }}

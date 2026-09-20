@@ -1,8 +1,9 @@
 import React from "react";
 import { X } from "lucide-react";
-import { useTheme, SHADOW, TEXT_STYLE } from "./ThemeContext";
+import { useTheme, SHADOW, TEXT_STYLE, WEIGHT } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { PinKeypad } from "./MyAccountDialog";
+import { PIN_METRICS, PIN_TYPE } from "./pinMetrics";
 
 /* One shell for every 4-digit PIN prompt in the app: same card, same (×) in
    the same corner, same icon tile, same type sizes, same keypad. Screens that
@@ -19,8 +20,8 @@ export function PinDialog({
   onClose,
   hint,
   footer,
-  /* Same card width as the confirm dialog — one popup shape for the app. */
-  width = 360,
+  /* Sized for the panel this runs on — see pinMetrics.ts. */
+  width = PIN_METRICS.card,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -38,7 +39,7 @@ export function PinDialog({
   width?: number;
 }) {
   const { theme: t } = useTheme();
-  const { fontFamily } = useLocale();
+  const { t: tr, fontFamily } = useLocale();
 
   return (
     <div
@@ -57,7 +58,7 @@ export function PinDialog({
           maxHeight: "90%",
           overflowY: "auto",
           overflowX: "hidden",
-          padding: "28px 24px 24px 24px",
+          padding: PIN_METRICS.pad,
           borderRadius: t.radiusXl,
           backgroundColor: t.surface,
           border: t.cardBorder,
@@ -65,21 +66,35 @@ export function PinDialog({
           animation: "pinDialogIn 0.2s ease-out",
         }}
       >
+        {/* 44x44 of touch area around a 36px disc: the target is the finger's,
+            the circle is the eye's. */}
         <button
           onClick={onClose}
+          aria-label={tr("general.close")}
           className="absolute flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
           style={{
-            top: "12px",
-            insetInlineEnd: "12px",
-            width: "32px",
-            height: "32px",
+            top: "10px",
+            insetInlineEnd: "10px",
+            width: PIN_METRICS.close,
+            height: PIN_METRICS.close,
             borderRadius: t.radiusFull,
-            backgroundColor: t.tileInactiveBg,
+            backgroundColor: "transparent",
             border: "none",
             outline: "none",
+            padding: 0,
           }}
         >
-          <X size={16} style={{ color: t.textMuted }} />
+          <span
+            className="flex items-center justify-center"
+            style={{
+              width: PIN_METRICS.closeDisc,
+              height: PIN_METRICS.closeDisc,
+              borderRadius: t.radiusFull,
+              backgroundColor: t.tileInactiveBg,
+            }}
+          >
+            <X size={18} style={{ color: t.textMuted }} />
+          </span>
         </button>
 
         <div
@@ -95,7 +110,7 @@ export function PinDialog({
           {icon}
         </div>
 
-        <span style={{ fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center" }}>
+        <span style={{ fontFamily, ...TEXT_STYLE.dialogTitle, fontSize: PIN_TYPE.title, fontWeight: WEIGHT.semibold, color: t.textHeading, textAlign: "center" }}>
           {title}
         </span>
         <span

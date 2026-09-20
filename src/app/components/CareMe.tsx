@@ -86,6 +86,7 @@ import { SIGNATURE_PAPER, SIGNATURE_PAPER_LINE } from "./nurse/SignaturePad";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { CareMePinDialog } from "./CareMePinDialog";
 import { PinKeypad } from "./MyAccountDialog";
+import { PIN_METRICS } from "./pinMetrics";
 import { isAccountSet, setAccount } from "../lib/accountAuth";
 import svgPaths from "../../imports/svg-ca68x68c4i";
 
@@ -1745,7 +1746,7 @@ function ResultsPinGate({ theme, isExpanded = false, titleKey, onUnlock }: {
         <div className="fixed inset-0 z-[10050] flex items-center justify-center" style={{ backgroundColor: theme.overlay }}>
           <div
             className="flex flex-col items-center gap-4"
-            style={{ width: "340px", padding: "28px 24px", borderRadius: theme.radiusXl, backgroundColor: theme.surface, boxShadow: SHADOW.xl }}
+            style={{ width: PIN_METRICS.card, padding: PIN_METRICS.pad, borderRadius: theme.radiusXl, backgroundColor: theme.surface, boxShadow: SHADOW.xl }}
           >
             <div className="flex items-center justify-center" style={{ width: "48px", height: "48px", borderRadius: theme.radiusLg, backgroundColor: theme.primarySubtle }}>
               <Lock size={22} style={{ color: theme.primaryOn }} />

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useTheme, SHADOW, TEXT_STYLE } from "./ThemeContext";
+import { useTheme, SHADOW, TEXT_STYLE, WEIGHT } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { getAccount, verifyPin, verifyNfcUid } from "../lib/accountAuth";
 import { useNfcTap } from "../utils/nfc";
 import { Lock, Smartphone, X } from "lucide-react";
 import { PinKeypad } from "./MyAccountDialog";
 import { guestModeStore } from "../lib/guestMode";
+import { PIN_METRICS, PIN_TYPE } from "./pinMetrics";
 
 interface Props {
   visible: boolean;
@@ -78,8 +79,9 @@ export function AccountLockScreen({ visible, onUnlock, onClose, onSkipAsGuest }:
       <div
         className="relative flex flex-col items-center justify-center"
         style={{
-          width: "340px",
-          padding: "32px 24px 24px 24px",
+          /* Same card as every other PIN prompt — see pinMetrics.ts. */
+          width: PIN_METRICS.card,
+          padding: PIN_METRICS.pad,
           borderRadius: t.radiusXl,
           /* Token, not #FFFFFF: the keypad's digits and tiles are already
              theme-driven, so a hardcoded white card put near-white text on a
@@ -91,21 +93,34 @@ export function AccountLockScreen({ visible, onUnlock, onClose, onSkipAsGuest }:
         }}
       >
         {/* (×) close button */}
+        {/* 44x44 of touch area around a 36px disc: the target is the finger's,
+            the circle is the eye's. */}
         <button
           onClick={onClose}
           className="absolute flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
           style={{
-            top: "12px",
-            right: "12px",
-            width: "32px",
-            height: "32px",
+            top: "10px",
+            right: "10px",
+            width: PIN_METRICS.close,
+            height: PIN_METRICS.close,
             borderRadius: t.radiusFull,
-            backgroundColor: t.tileInactiveBg,
+            backgroundColor: "transparent",
             border: "none",
             outline: "none",
+            padding: 0,
           }}
         >
-          <X size={16} style={{ color: t.textMuted }} />
+          <span
+            className="flex items-center justify-center"
+            style={{
+              width: PIN_METRICS.closeDisc,
+              height: PIN_METRICS.closeDisc,
+              borderRadius: t.radiusFull,
+              backgroundColor: t.tileInactiveBg,
+            }}
+          >
+            <X size={18} style={{ color: t.textMuted }} />
+          </span>
         </button>
 
         <div
@@ -115,21 +130,21 @@ export function AccountLockScreen({ visible, onUnlock, onClose, onSkipAsGuest }:
           <Lock size={28} style={{ color: t.primaryOn }} />
         </div>
 
-        <span style={{ fontFamily: t.fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
+        <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, fontSize: PIN_TYPE.title, fontWeight: WEIGHT.semibold, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
           {tr("lock.title")}
         </span>
 
         {account?.nfcCardUid && (
           <div className="flex items-center gap-2 mb-4" style={{ padding: "8px 16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg }}>
             <Smartphone size={16} style={{ color: t.textMuted }} />
-            <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 500, color: t.textMuted }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogHelper, color: t.textMuted }}>
               {tr("lock.nfc.hint")}
             </span>
           </div>
         )}
 
         {error && (
-          <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 600, color: t.errorOn, marginBottom: "16px", animation: "settingsFadeIn 0.2s ease-out" }}>
+          <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogBody, fontWeight: WEIGHT.semibold, color: t.errorOn, marginBottom: "16px", animation: "settingsFadeIn 0.2s ease-out" }}>
             {tr("lock.wrongPin")}
           </span>
         )}
@@ -143,18 +158,18 @@ export function AccountLockScreen({ visible, onUnlock, onClose, onSkipAsGuest }:
             onClick={handleSkipAsGuest}
             className="flex items-center justify-center w-full cursor-pointer active:scale-[0.98] transition-transform"
             style={{
-              height: "48px",
+              height: PIN_METRICS.action,
               borderRadius: t.radiusLg,
               backgroundColor: "transparent",
               border: `1.5px solid ${t.borderDefault}`,
               outline: "none",
             }}
           >
-            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.buttonSm, color: t.textMuted }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogButton, color: t.textMuted }}>
               {tr("lock.guest.button")}
             </span>
           </button>
-          <span style={{ fontFamily: t.fontFamily, fontSize: "11px", fontWeight: 500, color: t.textMuted, textAlign: "center", opacity: 0.8 }}>
+          <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogHelper, color: t.textMuted, textAlign: "center" }}>
             {tr("lock.guest.subtitle")}
           </span>
         </div>
