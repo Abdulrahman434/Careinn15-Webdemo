@@ -3403,7 +3403,11 @@ function PreferencesBody({ theme, isExpanded = false, onOpenForm }: {
 
   if (!submitted) {
     return (
-      <div className="flex flex-col items-start gap-3">
+      /* No items-start: the button stretches and centres its label, the same
+         shape Assign Care Partner takes one section below. Two cards in the
+         same stack, each offering its one action, should offer it the same
+         way. */
+      <div className="flex flex-col gap-3">
         <p style={{ fontFamily, ...R.body, color: theme.textBody }}>
           {t("care.preferences.description")}
         </p>
