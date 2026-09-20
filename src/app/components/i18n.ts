@@ -413,7 +413,7 @@ const translations: Record<string, TranslationEntry> = {
   "news.burjeel.5": { en: "New specialized centers for oncology and cardiology launched at Burjeel facilities.", ar: "إطلاق مراكز متخصصة جديدة للأورام وأمراض القلب في مرافق برجيل.", ur: "برجیل کی سہولیات میں آنکولوجی اور کارڈیالوجی کے لیے نئے خصوصی مراکز کا آغاز کیا گیا۔" },
 
   /* ─── Hub Items ─── */
-  "hub.media": { en: "Media", ar: "الوسائط", ur: "میڈیا" },
+  "hub.media": { en: "Media", ar: "مشاهدة وترفيه", ur: "میڈیا" },
   "hub.media.desc": { en: "TV, music & radio", ar: "تلفزيون، موسيقى وراديو", ur: "ٹی وی، موسیقی اور ریڈیو" },
   "hub.reading": { en: "Reading", ar: "القراءة", ur: "مطالعہ" },
   "hub.reading.desc": { en: "Books & magazines", ar: "كتب ومجلات", ur: "کتابیں اور رسائل" },
@@ -485,10 +485,10 @@ const translations: Record<string, TranslationEntry> = {
 "ppf.notes.requiredLabel": { en: "Please tell us more", ar: "يرجى إخبارنا بالتفاصيل", ur: "براہ کرم ہمیں مزید بتائیں" },
 /* Answering "no" here when somebody has already signed: the question and the
    card would otherwise disagree, so the form says what the answer costs. */
-"ppf.partner.unassign.title": { en: "Remove your care partner?", ar: "إلغاء تعيين شريك الرعاية؟", ur: "اپنا کیئر پارٹنر ہٹائیں؟" },
-"ppf.partner.unassign.body": { en: "Answering No will unassign {0} from the Care Partner section, along with the signed agreement.", ar: "اختيار «لا» سيؤدي إلى إلغاء تعيين {0} من قسم شريك الرعاية مع الاتفاقية الموقعة.", ur: "\"نہیں\" کا انتخاب {0} کو کیئر پارٹنر سیکشن سے اور دستخط شدہ معاہدے سمیت ہٹا دے گا۔" },
-"ppf.partner.unassign.confirm": { en: "Yes, unassign", ar: "نعم، إلغاء التعيين", ur: "ہاں، ہٹا دیں" },
-"ppf.partner.unassign.keep": { en: "Keep my care partner", ar: "الاحتفاظ بشريك الرعاية", ur: "میرا کیئر پارٹنر رہنے دیں" },
+"ppf.partner.unassign.title": { en: "Remove your care partner?", ar: "إزالة شريك الرعاية؟", ur: "اپنا کیئر پارٹنر ہٹائیں؟" },
+"ppf.partner.unassign.body": { en: "Answering No will remove {0} from the Care Partner section, along with the signed agreement.", ar: "اختيار «لا» سيؤدي إلى إزالة {0} من قسم شريك الرعاية وإلغاء الاتفاقية الموقّعة.", ur: "\"نہیں\" کا انتخاب {0} کو کیئر پارٹنر سیکشن سے اور دستخط شدہ معاہدے سمیت ہٹا دے گا۔" },
+"ppf.partner.unassign.confirm": { en: "Yes, remove", ar: "نعم، إزالة", ur: "ہاں، ہٹا دیں" },
+"ppf.partner.unassign.keep": { en: "Keep them", ar: "الاحتفاظ به", ur: "رہنے دیں" },
 /* The partner named on the card, when the sheet never asked for a name. */
 "ppf.partner.unassign.someone": { en: "your care partner", ar: "شريك الرعاية", ur: "آپ کا کیئر پارٹنر" },
 "ppf.notes.placeholder": { en: "Add anything you'd like the team to know", ar: "أضف أي شيء تود أن يعرفه الفريق", ur: "کوئی بھی بات لکھیں جو آپ ٹیم کو بتانا چاہتے ہیں" },

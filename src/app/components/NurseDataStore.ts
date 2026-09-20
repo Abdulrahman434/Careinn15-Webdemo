@@ -602,6 +602,16 @@ const nurseStore = (() => {
   let state = {
     ...defaultState,
     ...cachedState,
+    /* Field by field, not wholesale. A cached patient replaced the default
+       one entirely, so any field missing from the cache came back undefined
+       rather than falling back — and the migration above deletes the MRN when
+       it still holds the seeded value, on the assumption the default would
+       show through. It did not: the record lost its MRN completely, and the
+       greeting showed "MRN" with nothing after it. */
+    patient: {
+      ...defaultState.patient,
+      ...(cachedState.patient || {}),
+    },
     hisSections: {
       ...defaultState.hisSections,
       ...(cachedState.hisSections || {}),
@@ -827,6 +837,13 @@ const nurseStore = (() => {
 
       // Apply nurse update normally
       let nextPatient = { ...state.patient, ...updates };
+
+      /* A bed always has a file number. Clearing the field in the nurse form
+         — by accident, or to retype it — must not leave the patient's own
+         screen showing an empty MRN chip, so a blank keeps what was there. */
+      if ("mrn" in updates && !String(updates.mrn ?? "").trim()) {
+        nextPatient.mrn = state.patient.mrn;
+      }
       if (updates.name && updates.name !== state.patient.name) {
         nextPatient.nameKey = "";
       }

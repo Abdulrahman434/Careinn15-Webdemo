@@ -42,6 +42,17 @@ function SunIcon() {
   );
 }
 
+/* ── CONNECTION_INDICATORS ─────────────────────────────────────────────────
+ * The "● Connected" line under the hospital logo and the red warning triangle
+ * beside the clock. Both are hidden for now at the ward's request — on a demo
+ * screen they read as something being wrong with the kiosk rather than as
+ * status. The components, their wiring and their strings are all still here
+ * and still compile; this flag is the whole of the removal.
+ *
+ * Ask for "the connection indicators" and this goes back to true.
+ * Hidden 20 Sep 2026. */
+const SHOW_CONNECTION_INDICATORS = false;
+
 export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onMaghribTap, onIshaTap, onWeatherTap, onSettingsTap, onBellTap, unreadCount = 3, logoUrl, hideSettings = false, greeting }: { showPrayer?: boolean; onFajrTap?: () => void; onDhuhrTap?: () => void; onAsrTap?: () => void; onMaghribTap?: () => void; onIshaTap?: () => void; onWeatherTap?: () => void; onSettingsTap?: () => void; onBellTap?: () => void; unreadCount?: number; logoUrl?: string; hideSettings?: boolean; greeting?: string }) {
   const { theme, castDevice, setLocale, locale: currentLocale, darkMode, setDarkMode } = useTheme();
   const { t, locale, isRTL, fontFamily } = useLocale();
@@ -178,7 +189,7 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
             style={{ height: SPACE[10], width: "auto", maxWidth: "300px", objectFit: "contain" }}
           />
         </a>
-        <ConnectionStatus />
+        {SHOW_CONNECTION_INDICATORS && <ConnectionStatus />}
       </div>
 
       {/* Center: Prayer Times — always dead-center on screen */}
@@ -257,7 +268,7 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
 
         {/* Clock + Date stacked (with connection warning icon beside clock) */}
         <div className="relative flex items-center gap-2.5">
-          {(!nurseStore.isHisConnected || nurseStore.isLocalFallback) && (
+          {SHOW_CONNECTION_INDICATORS && (!nurseStore.isHisConnected || nurseStore.isLocalFallback) && (
             <div className="relative">
               <button
                 onClick={() => setShowConnDetails(!showConnDetails)}
