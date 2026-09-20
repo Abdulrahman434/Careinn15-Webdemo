@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Wifi, WifiOff, Shield } from "lucide-react";
+import { Wifi, WifiOff } from "lucide-react";
 import { useTheme, SHADOW, TEXT_STYLE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { wifi, isAndroidApp } from "../utils/androidBridge";
+import { PIN_METRICS } from "./pinMetrics";
 import { verifyPin } from "../lib/accountAuth";
 
 interface OfflineBannerProps {
@@ -71,7 +72,9 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
         style={{
           position: "fixed",
           inset: 0,
-          backgroundColor: "rgba(0,0,0,0.4)",
+          backgroundColor: t.overlay,
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
           zIndex: 9000,
         }}
       />
@@ -88,35 +91,41 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
       >
         <div
           style={{
-            width: 440,
-            maxWidth: "92vw",
-            padding: 28,
-            borderRadius: t.radiusLg,
+            /* The same card as the PIN prompt and the confirm dialog: one
+               popup shape for the app, rather than this one keeping its own
+               width, radius and edgeless surface. */
+            width: PIN_METRICS.card,
+            maxWidth: "92%",
+            padding: PIN_METRICS.pad,
+            borderRadius: t.radiusXl,
             backgroundColor: t.surface,
+            border: t.cardBorder,
             boxShadow: SHADOW.xl,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
           }}
         >
-          {/* Icon */}
+          {/* A tinted tile, like every other dialog's icon. Warning tones
+              rather than grey: losing the network is not a routine state, and
+              a grey glyph on a grey disc gave the card no focal point. */}
           <div
             style={{
-              width: 64,
-              height: 64,
-              borderRadius: 32,
-              backgroundColor: t.background,
+              width: 56,
+              height: 56,
+              borderRadius: t.radiusLg,
+              backgroundColor: t.warningSubtle,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              marginBottom: 16,
+              marginBottom: 18,
             }}
           >
-            <WifiOff size={32} color={t.textMuted} />
+            <WifiOff size={28} color={t.warningOn} />
           </div>
 
           {/* Title + subtitle */}
-          <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <div style={{ textAlign: "center", marginBottom: 26, textWrap: "balance" } as any}>
             <p
               style={{
                 fontFamily,
@@ -145,7 +154,7 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: "12px",
+                gap: "8px",
                 width: "100%",
               }}
             >
@@ -156,8 +165,9 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "10px",
-                  padding: "14px",
-                  borderRadius: t.radiusMd,
+                  minHeight: `${PIN_METRICS.action}px`,
+                  padding: "0 20px",
+                  borderRadius: t.radiusLg,
                   backgroundColor: t.primary,
                   border: "none",
                   cursor: "pointer",
@@ -170,24 +180,27 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
                 {tr("offline.openWifi")}
               </button>
 
+              {/* Quiet, and no shield on it. Two filled-and-outlined buttons
+                  of the same width read as two equal choices, when one of
+                  them is "carry on, the screen still works" — and a shield
+                  belongs on something that protects, not on a way out. */}
               <button
                 onClick={handleContinueOffline}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: "10px",
-                  padding: "14px",
+                  minHeight: "44px",
+                  padding: "0 16px",
                   borderRadius: t.radiusMd,
-                  backgroundColor: t.background,
-                  border: `1.5px solid ${t.borderDefault}`,
+                  backgroundColor: "transparent",
+                  border: "none",
                   cursor: "pointer",
                   fontFamily,
                   ...TEXT_STYLE.dialogButton,
-                  color: t.textBody,
+                  color: t.textMuted,
                 }}
               >
-                <Shield size={20} color={t.textMuted} />
                 {tr("offline.adminPin")}
               </button>
             </div>
@@ -215,10 +228,11 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
                 }}
                 placeholder={tr("offline.enterPin")}
                 style={{
-                  padding: "14px",
-                  borderRadius: t.radiusMd,
-                  backgroundColor: t.background,
-                  border: `1.5px solid ${pinError ? "#dc2626" : t.borderDefault}`,
+                  minHeight: `${PIN_METRICS.action}px`,
+                  padding: "0 18px",
+                  borderRadius: t.radiusLg,
+                  backgroundColor: t.surfaceInset,
+                  border: `1.5px solid ${pinError ? t.errorOn : t.borderDefault}`,
                   outline: "none",
                   fontFamily,
                   ...TEXT_STYLE.dialogBody,
@@ -231,8 +245,9 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
                 onClick={submitPin}
                 disabled={!pin}
                 style={{
-                  padding: "14px",
-                  borderRadius: t.radiusMd,
+                  minHeight: `${PIN_METRICS.action}px`,
+                  padding: "0 20px",
+                  borderRadius: t.radiusLg,
                   backgroundColor: t.primary,
                   border: "none",
                   cursor: pin ? "pointer" : "not-allowed",
