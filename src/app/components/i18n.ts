@@ -1457,6 +1457,71 @@ const translations: Record<string, TranslationEntry> = {
   "settings.account.success.updated": { en: "Account updated successfully!", ar: "تم تحديث الحساب بنجاح!" },
   "settings.account.cancel": { en: "Cancel", ar: "إلغاء" },
 
+  /* ── Access gate (the login screen, shown before ThemeProvider mounts) ──
+     PasswordGate cannot call useLocale() — that hook reads the theme context,
+     which does not exist yet at the gate. It reads "active-locale" itself and
+     translates through translateWithLocale(). */
+  "gate.welcome": {
+    en: "Welcome",
+    ar: "مرحباً",
+    ur: "خوش آمدید"
+  },
+  "gate.subtitle": {
+    en: "Enter your MRN or access code to continue.",
+    ar: "أدخل رقم الملف الطبي أو رمز الدخول للمتابعة.",
+    ur: "جاری رکھنے کے لیے اپنا MRN یا رسائی کوڈ درج کریں۔"
+  },
+  "gate.fieldLabel": {
+    en: "MRN or access code",
+    ar: "رقم الملف الطبي أو رمز الدخول",
+    ur: "MRN یا رسائی کوڈ"
+  },
+  "gate.placeholder": {
+    en: "Enter MRN or access code",
+    ar: "أدخل رقم الملف الطبي أو رمز الدخول",
+    ur: "MRN یا رسائی کوڈ درج کریں"
+  },
+  "gate.signIn": {
+    en: "Sign in",
+    ar: "تسجيل الدخول",
+    ur: "سائن ان"
+  },
+  "gate.signingIn": {
+    en: "Signing in…",
+    ar: "جارٍ تسجيل الدخول…",
+    ur: "سائن ان ہو رہا ہے…"
+  },
+  "gate.or": {
+    en: "or",
+    ar: "أو",
+    ur: "یا"
+  },
+  "gate.error": {
+    en: "Invalid access code. Please try again.",
+    ar: "رمز الدخول غير صحيح. يرجى المحاولة مرة أخرى.",
+    ur: "رسائی کوڈ غلط ہے۔ دوبارہ کوشش کریں۔"
+  },
+  "gate.showCode": {
+    en: "Show access code",
+    ar: "إظهار رمز الدخول",
+    ur: "رسائی کوڈ دکھائیں"
+  },
+  "gate.hideCode": {
+    en: "Hide access code",
+    ar: "إخفاء رمز الدخول",
+    ur: "رسائی کوڈ چھپائیں"
+  },
+  "gate.language": {
+    en: "Change language",
+    ar: "تغيير اللغة",
+    ur: "زبان تبدیل کریں"
+  },
+  "gate.footer": {
+    en: "Hospital Bedside Companion by CareInn © {0}",
+    ar: "رفيق السرير من كيرإن © {0}",
+    ur: "کیئر اِن کی جانب سے ہاسپٹل بیڈ سائیڈ کمپینین © {0}"
+  },
+
   // Lock Screen
   "lock.title": { en: "Enter PIN", ar: "أدخل الرمز السري" },
   "lock.nfc.hint": { en: "or tap your NFC card to unlock", ar: "أو قم بتمرير بطاقتك لفتح الشاشة" },
