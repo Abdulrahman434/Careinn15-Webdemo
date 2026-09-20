@@ -1275,13 +1275,8 @@ function DischargePlanSlide({ theme, isExpanded = false }: { theme: any; isExpan
     </span>
   );
 
-  /* The nurse writes these as points, one per row, so they arrive as a list.
-     The blank rows an unfinished edit leaves behind are dropped here rather
-     than shown to the patient as empty bullets. */
-  const instructionPoints = (info.instructions ?? []).map((l) => l.trim()).filter(Boolean);
-
   /* Built as a list so the hairline lands between whichever blocks the ward
-     actually filled in — any of the three can be absent. */
+     actually filled in — either can be absent. */
   const blocks = [
     info.followUps.length > 0 && {
       key: "followUps", icon: CalendarDays, title: t("care.discharge.followUps"),
@@ -1290,44 +1285,6 @@ function DischargePlanSlide({ theme, isExpanded = false }: { theme: any; isExpan
     info.contacts.length > 0 && {
       key: "contacts", icon: Phone, title: t("care.discharge.contacts"),
       body: info.contacts.map((c, i) => row(`${c.label}-${i}`, c.label, value(c.value, true), i === 0)),
-    },
-    instructionPoints.length > 0 && {
-      key: "instructions", icon: FileText, title: t("care.discharge.instructions"),
-      body: (
-        <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
-          {instructionPoints.map((line, i) => (
-            <li
-              key={i}
-              className="flex items-start"
-              style={{ gap: SPACE[1], marginTop: i === 0 ? 0 : SPACE[1] }}
-            >
-              <span
-                aria-hidden
-                className="shrink-0"
-                style={{
-                  width: "6px", height: "6px", borderRadius: "50%",
-                  backgroundColor: theme.primary,
-                  /* Sits on the first line's optical centre, whatever the
-                     body size is. */
-                  marginTop: `calc(${TYPE_SCALE.base} * ${LEADING.relaxed} / 2 - 3px)`,
-                }}
-              />
-              <span
-                dir="auto"
-                style={{
-                  fontFamily: theme.fontFamily,
-                  ...R.body,
-                  color: theme.textBody,
-                  lineHeight: LEADING.relaxed,
-                  overflowWrap: "anywhere",
-                }}
-              >
-                {line}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ),
     },
   ].filter(Boolean) as { key: string; icon: any; title: string; body: React.ReactNode }[];
 

@@ -738,7 +738,6 @@ const translations: Record<string, TranslationEntry> = {
   "care.isolation.desc": { en: "Please follow the precautions posted at the door before entering", ar: "يرجى اتباع الإجراءات الموضحة على الباب قبل الدخول", ur: "داخل ہونے سے پہلے دروازے پر درج ہدایات پر عمل کریں" },
   "care.discharge.followUps": { en: "Follow-up Appointments", ar: "مواعيد المتابعة", ur: "فالو اپ اپائنٹمنٹس" },
   "care.discharge.contacts": { en: "Contact Numbers", ar: "أرقام التواصل", ur: "رابطہ نمبر" },
-  "care.discharge.instructions": { en: "Your Instructions at Home", ar: "تعليماتك في المنزل", ur: "گھر پر آپ کی ہدایات" },
   "care.imaging.locked.title": { en: "Scans & Imaging Are Private", ar: "الأشعة والصور خاصة", ur: "اسکینز اور امیجنگ نجی ہیں" },
   "care.labs.locked.title": { en: "Lab Results Are Private", ar: "نتائج التحاليل خاصة", ur: "لیب رپورٹس نجی ہیں" },
   "care.labs.locked.desc": { en: "Enter your PIN to view your results on this screen", ar: "أدخل رمزك السري لعرض نتائجك على هذه الشاشة", ur: "اس اسکرین پر اپنے نتائج دیکھنے کے لیے اپنا پن درج کریں" },

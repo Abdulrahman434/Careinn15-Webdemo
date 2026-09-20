@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LogOut, Plus, Trash2, Check, GripVertical, Edit2, Save, Eye, CalendarDays, Phone, FileText } from "lucide-react";
+import { LogOut, Plus, Trash2, Check, GripVertical, Edit2, Save, Eye, CalendarDays, Phone } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
 import { DateField } from "../DateField";
 import { useLocale } from "../../i18n";
@@ -256,53 +256,6 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
         )}
       </div>
 
-      {/* One point per row, the same shape as the appointments and contacts
-          above — the patient reads these as bullets, so they are written as
-          bullets rather than typed into one box and split apart later. */}
-      <div className="nurse-card">
-        <h3 style={{ color: t.textHeading }}><FileText size={18} style={{ color: t.primaryOn }} /> Patient Instructions</h3>
-        <div className="space-y-2">
-          {info.instructions.map((line, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span
-                aria-hidden
-                className="shrink-0"
-                style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: t.primary }}
-              />
-              <input
-                dir="auto"
-                value={line}
-                readOnly={!isNurse}
-                onChange={(e) => nurseActions.setDischargeInfo({
-                  instructions: info.instructions.map((x, n) => (n === i ? e.target.value : x)),
-                })}
-                placeholder="What the patient should do once they are home…"
-                className="flex-1 outline-none"
-                style={rowField}
-              />
-              {isNurse && (
-                <button
-                  onClick={() => nurseActions.setDischargeInfo({
-                    instructions: info.instructions.filter((_, n) => n !== i),
-                  })}
-                  className="p-2 cursor-pointer"
-                  style={{ color: t.errorOn, background: "none", border: "none" }}
-                >
-                  <Trash2 size={14} />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-        {isNurse && (
-          <button
-            onClick={() => nurseActions.setDischargeInfo({ instructions: [...info.instructions, ""] })}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all active:scale-95 mt-3"
-            style={{ backgroundColor: t.primary, color: t.brandOnPrimary, fontSize: "13px", fontWeight: 700, border: "none" }}>
-            <Plus size={16} /> Add instruction
-          </button>
-        )}
-      </div>
     </div>
   );
 }

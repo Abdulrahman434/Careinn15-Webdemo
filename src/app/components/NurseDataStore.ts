@@ -220,10 +220,6 @@ export interface PostDischargeContact {
 export interface DischargeInfo {
   followUps: FollowUpAppointment[];
   contacts: PostDischargeContact[];
-  /** One instruction per entry — the nurse writes them as points, and the
-   *  patient reads them as points. Held as a list rather than one blob so
-   *  neither side has to guess where an instruction ends. */
-  instructions: string[];
 }
 
 /** Section keys matching CareMe slides + new nurse-only sections */
@@ -483,12 +479,6 @@ function createDefaultState(): NurseStoreState {
         { id: "pc-2", label: "24/7 nurse advice line", value: "+966 12 665 0500" },
         { id: "pc-3", label: "Pharmacy enquiries", value: "+966 12 665 0310" },
       ],
-      instructions: [
-        "Take the discharge medication exactly as written on the label.",
-        "Keep the dressing dry for 48 hours.",
-        "Walk short distances daily and avoid lifting anything over 5 kg for two weeks.",
-        "Come back to the emergency department if you develop a fever above 38°C, increasing pain, or bleeding from the wound.",
-      ],
     },
 
     /* Oldest first — the card reverses them, so the newest round leads. Two
@@ -555,15 +545,10 @@ function loadCachedState(): Partial<NurseStoreState> {
     // seven-step flow. An untouched cache of the old six seeded steps is
     // dropped so the new defaults take effect; a plan a nurse has edited,
     // added to or reordered is left alone.
-    /* Legacy migration: instructions were one free-text blob before they became
-       a list. A ward that had typed some keep them, one per line or sentence. */
-    if (parsed.dischargeInfo && typeof parsed.dischargeInfo.instructions === "string") {
-      const raw: string = parsed.dischargeInfo.instructions;
-      const byLine = raw.split(/\r?\n+/).map((l: string) => l.replace(/^\s*[-•*·]\s*/, "").trim()).filter(Boolean);
-      parsed.dischargeInfo.instructions = byLine.length > 1
-        ? byLine
-        : raw.split(/(?<=[.!?؟])\s+/).map((l: string) => l.trim()).filter(Boolean);
-    }
+    /* Instructions were withdrawn from the discharge section. Anything a
+       stored record still carries for them is ignored on the way in. */
+    if (parsed.dischargeInfo) delete parsed.dischargeInfo.instructions;
+
     if (Array.isArray(parsed.dischargePlan)) {
       const legacyKeys = [
         "care.discharge.order", "care.discharge.insurance", "care.discharge.medication",
