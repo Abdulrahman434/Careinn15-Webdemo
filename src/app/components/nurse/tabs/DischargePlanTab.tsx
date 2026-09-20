@@ -167,31 +167,8 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
       )}
       </div>
 
-      {/* Going-home information — its own bedside section, "Discharge Plan" */}
-      {isNurse && (
-        <div className="nurse-card flex items-center justify-between" style={{ marginBottom: 0 }}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: t.primarySubtle }}>
-              <Eye size={18} style={{ color: t.primaryOn }} />
-            </div>
-            <div>
-              <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading, display: "block" }}>Show Section to Patient</span>
-              <span style={{ fontSize: "12px", color: t.textMuted }}>Toggle visibility for "Discharge Plan" on the bedside screen</span>
-            </div>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={store.sectionVisibility.dischargePlan}
-              onChange={(e) => nurseActions.setSectionVisible("dischargePlan", e.target.checked)}
-              className="sr-only peer"
-            />
-            <div className="ni-switch"
-              style={{ backgroundColor: store.sectionVisibility.dischargePlan ? t.primary : undefined }} />
-          </label>
-        </div>
-      )}
-
+      {/* Follow-ups and contacts are recorded here for the ward's own use;
+          the bedside card that used to show them has been withdrawn. */}
       <div className="nurse-card">
         <h3 style={{ color: t.textHeading }}><CalendarDays size={18} style={{ color: t.primaryOn }} /> Follow-up Appointments</h3>
         <div className="space-y-2">

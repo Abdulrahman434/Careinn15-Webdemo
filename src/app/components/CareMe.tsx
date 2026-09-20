@@ -166,7 +166,6 @@ const ALL_SLIDES: SlideConfig[] = [
   { key: "observations", title: "Vital Signs", titleKey: "care.observations.title", icon: Activity },
   { key: "tests", title: "Tests and Procedures", titleKey: "care.tests.title", icon: ClipboardCheck },
   { key: "discharge", title: "Discharge Process", titleKey: "care.discharge.title", icon: LogOut },
-  { key: "dischargePlan", title: "Discharge Plan", titleKey: "care.dischargePlan.title", icon: FileText },
 ];
 
 /** Map CareMe slide keys → NurseDataStore SectionKey. Tests & Procedures has
@@ -177,7 +176,6 @@ const SLIDE_TO_SECTION: Record<string, SectionKey> = {
   overview: "careOverview",
   plan: "carePlan",
   discharge: "discharge",
-  dischargePlan: "dischargePlan",
   observations: "observations",
 };
 
@@ -1207,8 +1205,7 @@ function CarePlanSlide({ theme, isExpanded = false }: { theme: any; isExpanded?:
 }
 
 /* ─── Discharge Process Slide ───
- * The step list, headed by the date the patient is expected to leave. What
- * they leave WITH is its own section — see DischargePlanSlide. */
+ * The step list, headed by the date the patient is expected to leave. */
 function DischargeSlide({ theme, isExpanded = false }: { theme: any; isExpanded?: boolean }) {
   const { t } = useLocale();
   const nurseStore = useNurseStore();
@@ -1229,78 +1226,6 @@ function DischargeSlide({ theme, isExpanded = false }: { theme: any; isExpanded?
       )}
 
       <TimelineSlide items={nurseStore.dischargePlan} theme={theme} isExpanded={isExpanded} type="discharge" />
-    </div>
-  );
-}
-
-/* ─── Discharge Plan Slide ───
- * What the patient goes home with: where to come back to, who to call, and
- * what to do. Label sits over value rather than beside it — at the width of
- * the inline carousel card a two-column row puts a wrapped clinic name next
- * to a phone number and both become unreadable. Stacking costs a line and
- * buys legibility from a bed. */
-function DischargePlanSlide({ theme, isExpanded = false }: { theme: any; isExpanded?: boolean }) {
-  const R = roles(isExpanded);
-  const { t } = useLocale();
-  const nurseStore = useNurseStore();
-  const info = nurseStore.dischargeInfo;
-  
-  /* One fact per row: the label the patient scans for, the detail under it.
-     Spacing separates them, not a rule — the hairlines belong between the
-     sections, and a line under every pair turned three facts into a form. */
-  const row = (key: string, heading: string, detail: React.ReactNode, first: boolean) => (
-    <div
-      key={key}
-      className="flex flex-col"
-      style={{ gap: LABEL_GAP, marginTop: first ? 0 : (isExpanded ? "14px" : "12px") }}
-    >
-      <span
-        dir="auto"
-        style={{ fontFamily: theme.fontFamily, ...R.label, color: theme.textMuted, overflowWrap: "anywhere" }}
-      >
-        {heading}
-      </span>
-      {detail}
-    </div>
-  );
-
-  const value = (text: React.ReactNode, ltr = false) => (
-    <span
-      style={{
-        fontFamily: theme.fontFamily, ...R.value, color: theme.textHeading,
-        overflowWrap: "anywhere",
-      }}
-    >
-      {ltr ? <Ltr>{text}</Ltr> : text}
-    </span>
-  );
-
-  /* Built as a list so the hairline lands between whichever blocks the ward
-     actually filled in — either can be absent. */
-  const blocks = [
-    info.followUps.length > 0 && {
-      key: "followUps", icon: CalendarDays, title: t("care.discharge.followUps"),
-      body: info.followUps.map((f, i) => row(`${f.label}-${i}`, f.label, value(f.when, true), i === 0)),
-    },
-    info.contacts.length > 0 && {
-      key: "contacts", icon: Phone, title: t("care.discharge.contacts"),
-      body: info.contacts.map((c, i) => row(`${c.label}-${i}`, c.label, value(c.value, true), i === 0)),
-    },
-  ].filter(Boolean) as { key: string; icon: any; title: string; body: React.ReactNode }[];
-
-  return (
-    <div className="flex flex-col">
-      {blocks.map((b, i) => (
-        <Section isExpanded={isExpanded}
-          key={b.key}
-          theme={theme}
-                    first={i === 0}
-          icon={b.icon}
-          title={b.title}
-        >
-          {b.body}
-        </Section>
-      ))}
     </div>
   );
 }
@@ -2810,7 +2735,6 @@ function SlideIcon({ slideKey }: { slideKey: string }) {
     case "billing": return <Wallet {...iconProps} style={{ color }} />;
     case "baby": return <Baby {...iconProps} style={{ color }} />;
     case "discharge": return <LogOut {...iconProps} style={{ color }} />;
-    case "dischargePlan": return <FileText {...iconProps} style={{ color }} />;
     case "observations": return <Activity {...iconProps} style={{ color }} />;
     default: return <Heart {...iconProps} style={{ color }} />;
   }
@@ -3879,7 +3803,6 @@ export function CareMe({ onExpand, onOpenPreferences }: { onExpand?: () => void;
       case "tests": return <TestsAndProceduresSlide theme={theme} />;
       case "preferences": return <PersonCenteredCareSlide theme={theme} onOpenForm={onOpenPreferences} />;
       case "discharge": return <DischargeSlide theme={theme} />;
-      case "dischargePlan": return <DischargePlanSlide theme={theme} />;
       case "observations": return <ClinicalObservationsSlide theme={theme} />;
       default: return null;
     }
@@ -4090,7 +4013,6 @@ function ExpandedSlideIcon({ slideKey, size = 22 }: { slideKey: string; size?: n
     case "preferences": return <HeartHandshake {...iconProps} />;
     case "billing": return <Wallet {...iconProps} />;
     case "discharge": return <LogOut {...iconProps} />;
-    case "dischargePlan": return <FileText {...iconProps} />;
     case "observations": return <Activity {...iconProps} />;
     default: return <Heart {...iconProps} />;
   }
@@ -4104,7 +4026,6 @@ function renderExpandedSlideContent(key: string, theme: any, t: (k: string) => s
     case "tests": return <TestsAndProceduresSlide theme={theme} isExpanded />;
     case "preferences": return <PersonCenteredCareSlide theme={theme} isExpanded onOpenForm={onOpenPreferences} />;
     case "discharge": return <DischargeSlide theme={theme} isExpanded />;
-    case "dischargePlan": return <DischargePlanSlide theme={theme} isExpanded />;
     case "observations": return <ClinicalObservationsSlide theme={theme} isExpanded />;
     default: return null;
   }
