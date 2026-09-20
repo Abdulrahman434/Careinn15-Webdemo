@@ -1941,13 +1941,17 @@ function ClinicalObservationsSlide({ theme, isExpanded = false }: { theme: any; 
   /* One reading per tile. The icon carries the meaning at a glance — a patient
      in a bed reads the picture before the word — so each gets its own glyph
      rather than six variations on a wave. */
+  /* An em dash where a reading is missing. Blank space under a label looks
+     like the screen failed; a dash says the ward has not recorded it. */
+  const orDash = (v: any) => (v === 0 || (v !== null && v !== undefined && String(v).trim() !== "") ? v : "—");
+
   const readingsFor = (o: any) => [
-    { icon: Gauge,      label: t("care.vitals.bp"),   value: o.vitals.bp,   unit: t("care.vitals.bpUnit") },
-    { icon: HeartPulse, label: t("care.vitals.hr"),   value: o.vitals.hr,   unit: t("care.vitals.hrUnit") },
-    { icon: Thermometer,label: t("care.vitals.temp"), value: o.vitals.temp, unit: "°C" },
-    { icon: Droplet,    label: t("care.vitals.spo2"), value: o.vitals.spo2, unit: "%" },
-    { icon: Wind,       label: t("care.vitals.resp"), value: o.vitals.resp, unit: t("care.vitals.respUnit") },
-    { icon: Frown,      label: t("care.vitals.pain"), value: o.painLevel ?? "", unit: "/ 10" },
+    { icon: Gauge,      label: t("care.vitals.bp"),   value: orDash(o.vitals.bp),   unit: t("care.vitals.bpUnit") },
+    { icon: HeartPulse, label: t("care.vitals.hr"),   value: orDash(o.vitals.hr),   unit: t("care.vitals.hrUnit") },
+    { icon: Thermometer,label: t("care.vitals.temp"), value: orDash(o.vitals.temp), unit: "°C" },
+    { icon: Droplet,    label: t("care.vitals.spo2"), value: orDash(o.vitals.spo2), unit: "%" },
+    { icon: Wind,       label: t("care.vitals.resp"), value: orDash(o.vitals.resp), unit: t("care.vitals.respUnit") },
+    { icon: Frown,      label: t("care.vitals.pain"), value: orDash(o.painLevel), unit: "/ 10" },
   ];
 
   /* Every set of readings is drawn the same way, latest or not — a round of

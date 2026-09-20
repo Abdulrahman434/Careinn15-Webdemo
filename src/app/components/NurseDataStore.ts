@@ -562,9 +562,22 @@ function loadCachedState(): Partial<NurseStoreState> {
     // without this every persisted observation comes back with a string
     // timestamp and renders as "—" instead of its date.
     if (Array.isArray(parsed.observations)) {
+      /* Respiratory rate was added to the vitals after these seeds were first
+         cached, so a kiosk that has been running since then holds rounds with
+         no `resp` and shows an empty tile for it. The seeded rounds get their
+         value back — they are demo data, and the numbers are the ones the
+         defaults carry. A round a nurse actually entered is left alone: a
+         missing observation is a fact about the record, and filling it in
+         would be inventing a vital sign. */
+      const SEEDED_RESP: Record<string, string> = {
+        "seed-3": "16", "seed-2": "15", "seed-1": "14",
+      };
       parsed.observations = parsed.observations.map((o: any) => ({
         ...o,
         timestamp: o?.timestamp ? new Date(o.timestamp) : o?.timestamp,
+        vitals: o?.vitals && !o.vitals.resp && SEEDED_RESP[o.id]
+          ? { ...o.vitals, resp: SEEDED_RESP[o.id] }
+          : o?.vitals,
       }));
     }
     if (Array.isArray(parsed.careTeam)) {
