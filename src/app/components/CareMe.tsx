@@ -76,7 +76,7 @@ import { SlidersHorizontal,
 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import {
-  readCarePartner, writeCarePartner, adoptLegacyCarePartner,
+  readCarePartner, writeCarePartner, clearCarePartner, adoptLegacyCarePartner,
   CARE_PARTNER_EVENT, EMPTY_CARE_PARTNER,
   type CarePartnerRecord,
 } from "./carePartnerStore";
@@ -3176,6 +3176,25 @@ function CarePartnerBody({ theme, isExpanded = false }: { theme: any; isExpanded
     };
   }, []);
 
+  /* The preferences question is what asks for a care partner at all, so it is
+     the one thing that decides whether there is a partner to show. Until it
+     carries an answer, this section is back to explaining and asking — a
+     nomination standing on a card the patient was never asked about is the
+     screen answering for them.
+     
+     Nominating from this card writes that answer too (see save below), so the
+     card's own route does not fall foul of this. What it does clear is a
+     record left behind by a cleared form or an older build. */
+  useEffect(() => {
+    const sync = () => {
+      const asked = !!readPreferenceRecord()?.answers?.["partner.participate"]?.value;
+      if (!asked && readCarePartner().status !== "unasked") clearCarePartner();
+    };
+    sync();
+    window.addEventListener(PREFS_SAVED_EVENT, sync);
+    return () => window.removeEventListener(PREFS_SAVED_EVENT, sync);
+  }, []);
+
   const save = (next: Partial<CarePartnerRecord>) => {
     const merged = { ...record, ...next };
     writeCarePartner(merged);
@@ -3373,7 +3392,15 @@ function PersonCenteredCareSlide({ theme, isExpanded = false, onOpenForm }: {
   /* A nomination made in the old preferences form is carried over once, then
      this record is the only one that counts. */
   const [partner, setPartner] = useState<CarePartnerRecord>(() => {
-    adoptLegacyCarePartner(readPreferenceRecord()?.carePartner);
+    const legacy = readPreferenceRecord()?.carePartner;
+    adoptLegacyCarePartner(legacy);
+    /* A patient who named somebody in the old form was asked the question and
+       said yes, so the answer is written alongside the nomination. Without it
+       the section would read the record as never-asked and clear the very
+       nomination it had just carried over. */
+    if (legacy?.name?.trim() && readCarePartner().status !== "unasked") {
+      setCarePartnerAnswer("yes");
+    }
     return readCarePartner();
   });
   useEffect(() => {

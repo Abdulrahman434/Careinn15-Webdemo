@@ -473,8 +473,19 @@ export function preferenceSummaryRows(
  *  answer, written from either place, so the record the hospital receives
  *  says the same thing the patient's screen does. */
 export function setCarePartnerAnswer(value: "yes" | "no") {
-  const record = readPreferenceRecord();
-  if (!record) return;   // nothing submitted yet; the form will ask in its own time
+  /* No record yet means the patient answered this from the Person-Centered
+     Care card without ever opening the form. That is still an answer to the
+     form's question, so it starts a record rather than being dropped —
+     otherwise the card holds a partner the preferences have never heard of,
+     and the two disagree about whether the patient was ever asked.
+     completedAt stays empty: one answer is not a finished form. */
+  const record = readPreferenceRecord() ?? {
+    formVersion: "V12" as const,
+    locale: (localStorage.getItem("careinn-locale") as Locale) || "en",
+    completedAt: "",
+    admission: admissionKey(),
+    answers: {},
+  };
   const answers = { ...(record.answers ?? {}) };
   if (answers["partner.participate"]?.value === value) return;
   answers["partner.participate"] = { ...(answers["partner.participate"] ?? {}), value };
