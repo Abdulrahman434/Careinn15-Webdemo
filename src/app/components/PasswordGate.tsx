@@ -26,6 +26,7 @@ import careinnLogo from "../../assets/logos/careinn-logo-lockup.png";
 /* ── CareInn brand ── */
 const NAVY = "#16274D";       // headings and primary text
 const BLUE = "#4EBEE3";       // Sign in button and accents
+const BLUE_ON = "#FFFFFF";    // type on BLUE
 const PAGE = "#EEF3F8";       // the ground the rounded split card sits on
 const FIELD_BG = "#F4F7FA";
 const LINE = "#E2E8F0";       // subtle gray borders
@@ -472,7 +473,7 @@ function CareInnGate() {
                       letterSpacing: f.password && !f.showPassword ? "2px" : "0px",
                     }}
                   />
-                  {/* Single visibility toggle — Eye = hidden, EyeOff = visible */}
+                  {/* Single visibility toggle — EyeOff = hidden, Eye = visible */}
                   <button
                     type="button"
                     className="gate-focusable"
@@ -496,7 +497,7 @@ function CareInnGate() {
                       color: MUTED,
                     }}
                   >
-                    {f.showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                    {f.showPassword ? <Eye size={19} /> : <EyeOff size={19} />}
                   </button>
                 </div>
 
@@ -531,7 +532,7 @@ function CareInnGate() {
                     border: "none",
                     borderRadius: "12px",
                     background: BLUE,
-                    color: NAVY,
+                    color: BLUE_ON,
                     fontSize: "17px",
                     fontWeight: 800,
                     fontFamily: "inherit",
@@ -821,9 +822,9 @@ function HospitalGate({ wallpaper }: { wallpaper: string }) {
                     }}
                   >
                     {f.showPassword ? (
-                      <EyeOff size={18} color={INK_MUTED} />
-                    ) : (
                       <Eye size={18} color={INK_MUTED} />
+                    ) : (
+                      <EyeOff size={18} color={INK_MUTED} />
                     )}
                   </button>
                 </div>
