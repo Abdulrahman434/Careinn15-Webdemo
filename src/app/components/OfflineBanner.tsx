@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Wifi, WifiOff } from "lucide-react";
-import { useTheme, SHADOW, TEXT_STYLE } from "./ThemeContext";
+import { useTheme, SHADOW, TEXT_STYLE, TYPE_SCALE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { wifi, isAndroidApp } from "../utils/androidBridge";
 import { PIN_METRICS } from "./pinMetrics";
@@ -106,22 +106,22 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
             alignItems: "center",
           }}
         >
-          {/* A tinted tile, like every other dialog's icon. Warning tones
-              rather than grey: losing the network is not a routine state, and
-              a grey glyph on a grey disc gave the card no focal point. */}
+          {/* The same tile every other popup wears: brand tint, brand glyph,
+              48px. Amber read as an alarm — this is a screen telling the
+              patient what it is showing them, not a fault to act on. */}
           <div
             style={{
-              width: 56,
-              height: 56,
+              width: 48,
+              height: 48,
               borderRadius: t.radiusLg,
-              backgroundColor: t.warningSubtle,
+              backgroundColor: t.primarySubtle,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              marginBottom: 18,
+              marginBottom: 16,
             }}
           >
-            <WifiOff size={28} color={t.warningOn} />
+            <WifiOff size={22} color={t.primaryOn} />
           </div>
 
           {/* Title + subtitle */}
@@ -130,8 +130,9 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
               style={{
                 fontFamily,
                 ...TEXT_STYLE.dialogTitle,
+                fontSize: TYPE_SCALE.base,
                 color: t.textHeading,
-                margin: "0 0 8px 0",
+                margin: "0 0 6px 0",
               }}
             >
               {tr("offline.title")}
@@ -140,6 +141,7 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
               style={{
                 fontFamily,
                 ...TEXT_STYLE.dialogBody,
+                fontSize: TYPE_SCALE.sm,
                 color: t.textMuted,
                 margin: 0,
               }}
@@ -165,7 +167,7 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "10px",
-                  minHeight: `${PIN_METRICS.action}px`,
+                  minHeight: "48px",
                   padding: "0 20px",
                   borderRadius: t.radiusLg,
                   backgroundColor: t.primary,
@@ -173,6 +175,7 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
                   cursor: "pointer",
                   fontFamily,
                   ...TEXT_STYLE.dialogButton,
+                  fontSize: TYPE_SCALE.sm,
                   color: t.textInverse,
                 }}
               >
@@ -198,6 +201,7 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
                   cursor: "pointer",
                   fontFamily,
                   ...TEXT_STYLE.dialogButton,
+                  fontSize: TYPE_SCALE.sm,
                   color: t.textMuted,
                 }}
               >
@@ -228,7 +232,7 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
                 }}
                 placeholder={tr("offline.enterPin")}
                 style={{
-                  minHeight: `${PIN_METRICS.action}px`,
+                  minHeight: "48px",
                   padding: "0 18px",
                   borderRadius: t.radiusLg,
                   backgroundColor: t.surfaceInset,
@@ -245,7 +249,7 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
                 onClick={submitPin}
                 disabled={!pin}
                 style={{
-                  minHeight: `${PIN_METRICS.action}px`,
+                  minHeight: "48px",
                   padding: "0 20px",
                   borderRadius: t.radiusLg,
                   backgroundColor: t.primary,
@@ -254,6 +258,7 @@ export function OfflineBanner({ visible, onBypass }: OfflineBannerProps) {
                   opacity: pin ? 1 : 0.5,
                   fontFamily,
                   ...TEXT_STYLE.dialogButton,
+                  fontSize: TYPE_SCALE.sm,
                   color: t.textInverse,
                 }}
               >
