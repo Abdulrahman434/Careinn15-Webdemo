@@ -24,7 +24,6 @@ import {
   PhoneIncoming,
   Delete,
   BookUser,
-  Stethoscope,
   ConciergeBell,
   Pill,
   UtensilsCrossed,
@@ -40,6 +39,7 @@ import {
 import { useTheme, TEXT_STYLE, WEIGHT, TYPE_SCALE, SHADOW } from "./ThemeContext";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { DemoControls } from "./DemoControls";
+import { NurseIcon } from "./appIcons";
 import { useLocale } from "./i18n";
 import { playTone } from "./useRipple";
 import { usePressFlash } from "./usePressFlash";
@@ -74,7 +74,7 @@ interface CallLogEntry {
 type CallState = "idle" | "incoming" | "outgoing" | "active";
 
 const EXTENSIONS: Extension[] = [
-  { id: "nurse",       nameKey: "call.nurseStation",     descKey: "call.nurseStation.desc",     ext: "1001", icon: Stethoscope,     iconColor: "#E11D48", iconBg: "rgba(225,29,72,0.08)" },
+  { id: "nurse",       nameKey: "call.nurseStation",     descKey: "call.nurseStation.desc",     ext: "1001", icon: NurseIcon,       iconColor: "#E11D48", iconBg: "rgba(225,29,72,0.08)" },
   { id: "reception",   nameKey: "call.reception",        descKey: "call.reception.desc",        ext: "1000", icon: ConciergeBell,   iconColor: "#0891B2", iconBg: "rgba(8,145,178,0.08)" },
   { id: "pharmacy",    nameKey: "call.pharmacy",         descKey: "call.pharmacy.desc",         ext: "1050", icon: Pill,            iconColor: "#7C3AED", iconBg: "rgba(124,58,237,0.08)" },
   { id: "dietary",     nameKey: "call.dietary",          descKey: "call.dietary.desc",          ext: "1060", icon: UtensilsCrossed, iconColor: "#EA580C", iconBg: "rgba(234,88,12,0.08)" },

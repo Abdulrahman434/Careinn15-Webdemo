@@ -18,6 +18,7 @@ import { useLocale } from "./i18n";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { DemoControls } from "./DemoControls";
 import { ApiImage } from "./ApiImage";
+import { PatientServicesIcon } from "./appIcons";
 
 /* ── Housekeeping product photos (compressed JPEG — 12-31 KB each) ── */
 import imgBlanket from "../../assets/Housekeeping/blanket.jpg";
@@ -455,7 +456,9 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
       <InternalPageHeader
         title={t("need.header.title")}
         subtitle={t("need.header.subtitle")}
-        icon={<HandHelping size={24} />}
+        /* The same sparkle the home screen's Patient Services tile wears —
+           the header of a module and the tile that opens it are one thing. */
+        icon={<PatientServicesIcon size={24} />}
         onClose={onClose}
         rightAction={
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
