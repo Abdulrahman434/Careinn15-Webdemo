@@ -921,11 +921,16 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
         {
           id: "calculator",
           name: locale === "ar" ? "آلة حاسبة" : "Calculator",
-          bg: "#fff",
+          /* The artwork's own near-black, not white. Both icons are rounded
+             squares with transparent corners, so whatever the tile is painted
+             shows through them — against this near-black a white tile left a
+             pale rim around the icon. The image fills the tile exactly, so
+             only those corners can show it at all. */
+          bg: "#1C1C1E",
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <ApiImage src={calculatorIcon} alt="Calculator" style={{ width: 150, height: 150, objectFit: "cover" }} />
+            <ApiImage src={calculatorIcon} alt="Calculator" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ),
           isInteractive: true,
         },
@@ -1123,11 +1128,14 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
         {
           id: "mirror",
           name: locale === "ar" ? "المرآة" : "Mirror",
-          bg: "#fff",
+          /* The artwork's own gradient. This one was worse than the
+             calculator: 130px of icon in a 140px tile left a white ring on all
+             four sides as well as at the corners. */
+          bg: "linear-gradient(180deg, #7D9AFF 0%, #9EC9EB 100%)",
           mark: "",
           textColor: "#333",
           customRender: () => (
-            <ApiImage src={mirrorIcon} alt="Mirror" style={{ width: 130, height: 130, objectFit: "contain" }} />
+            <ApiImage src={mirrorIcon} alt="Mirror" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ),
           isInteractive: true,
         },
