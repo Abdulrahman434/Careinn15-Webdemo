@@ -29,6 +29,7 @@ export function NewsTicker({ items }: NewsTickerProps = {}) {
       ]
     : theme.id === "dsfh"
     ? [
+        `🤝  ${t("news.dsfh.jeddah.6")}`,
         `🏆  ${t("news.dsfh.jeddah.2")}`,
         `🌍  ${t("news.dsfh.jeddah.1")}`,
         `🧠  ${t("news.dsfh.jeddah.5")}`,
