@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Check, UserRound } from "lucide-react";
+import { X, Check, UserRound, AlertTriangle } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, LEADING, SHADOW } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { SignaturePad } from "./nurse/SignaturePad";
-import { DateField } from "./nurse/DateField";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { CARE_PARTNER_ITEMS, type CarePartnerRecord } from "./carePartnerStore";
 
 /**
@@ -26,24 +26,53 @@ export function CarePartnerAgreement({
   onAccept: (next: Pick<CarePartnerRecord, "name" | "relationship" | "mobile" | "signature" | "signedOn">) => void;
   onClose: () => void;
 }) {
-  const { theme: t } = useTheme();
+  const { theme: t, darkMode, locale } = useTheme();
   const { t: tr, fontFamily, isRTL, dir } = useLocale();
 
   const [name, setName] = useState(initial.name);
   const [relationship, setRelationship] = useState(initial.relationship);
   const [mobile, setMobile] = useState(initial.mobile);
   const [signature, setSignature] = useState<string | null>(initial.signature);
-  /* Dated today by default — the partner is signing now — but editable,
-     because the paper form has a date line and wards use it. */
-  const [signedOn, setSignedOn] = useState(
-    initial.signedOn || new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).replace(/,/g, ""),
+  /* Ticking this is its own act. Reading the statements and accepting them are
+     two different things, and a consent that was pre-ticked is not a consent. */
+  const [consent, setConsent] = useState(false);
+  const [askExit, setAskExit] = useState(false);
+
+  /* The day the partner signs, stated rather than asked for: a typed date can
+     be wrong, and a signed consent carrying the wrong date is worse than one
+     carrying none. Fixed when the sheet opens so it cannot change under a
+     partner who is halfway through reading. */
+  const [signedOn] = useState(() =>
+    new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).replace(/,/g, ""));
+  const signedOnShown = new Date(signedOn).toLocaleDateString(
+    locale === "ar" ? "ar-SA" : locale === "ur" ? "ur-PK" : "en-GB",
+    { day: "numeric", month: "long", year: "numeric" },
   );
 
-  const ready = !!name.trim() && !!relationship.trim() && !!mobile.trim() && !!signature;
+  /* What is still missing, in the order the form asks for it — one line at a
+     time, because a list of five faults is a wall, not an instruction. */
+  const digits = mobile.replace(/\D/g, "");
+  const missing =
+    !name.trim() ? "care.cp.need.name"
+    : !relationship.trim() ? "care.cp.need.relationship"
+    : digits.length < 9 ? "care.cp.need.mobile"
+    : !consent ? "care.cp.need.consent"
+    : !signature ? "care.cp.need.signature"
+    : null;
+  const ready = missing === null;
+
+  /* Anything typed or drawn is work the partner would lose on a stray tap. */
+  const dirty = !!name.trim() || !!relationship.trim() || !!mobile.trim() || !!signature || consent;
+  const requestClose = () => (dirty ? setAskExit(true) : onClose());
+
+  /* Muted grey is legible on a white sheet and disappears on a dark one, and
+     the people reading this are mostly not twenty. Labels and hints step up a
+     level in dark mode rather than staying at the same token. */
+  const labelColor = darkMode ? t.textBody : t.textMuted;
 
   const label: React.CSSProperties = {
     fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.semibold,
-    color: t.textMuted, display: "block", marginBottom: "6px",
+    color: labelColor, display: "block", marginBottom: "6px",
   };
   const field: React.CSSProperties = {
     width: "100%", minHeight: "52px", padding: "12px 16px",
@@ -71,6 +100,13 @@ export function CarePartnerAgreement({
          dialogs (z 10000), which must be able to cover everything. */
       style={{ zIndex: 8700, backgroundColor: t.overlay, backdropFilter: "blur(4px)" }}
     >
+      {/* Placeholders come from the browser otherwise, which in dark mode puts
+          faint grey on a dark field — the one piece of text in here that says
+          what a field wants. */}
+      <style>{`
+        .cp-field::placeholder { color: ${darkMode ? t.textMuted : t.textDisabled}; opacity: 1; }
+      `}</style>
+
       <div
         className="relative flex flex-col"
         style={{
@@ -104,7 +140,7 @@ export function CarePartnerAgreement({
             {tr("care.cp.title")}
           </h2>
           <button
-            onClick={onClose}
+            onClick={requestClose}
             aria-label={tr("care.pcc.partner.cancel")}
             className="shrink-0 flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
             style={{
@@ -153,15 +189,54 @@ export function CarePartnerAgreement({
             ))}
           </ol>
 
-          {/* The acknowledgement the signature belongs to */}
-          <p style={{
-            fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold,
-            color: t.textHeading, lineHeight: LEADING.normal,
+          {/* The acknowledgement, and the tick that turns it into a consent.
+              Both the box and its words are the target — asking a 22px square
+              of a shaky hand on a touchscreen is asking it to fail. */}
+          <div style={{
             backgroundColor: t.primarySubtle, border: t.borderInset,
             borderRadius: t.radiusMd, padding: "16px 18px", margin: "20px 0 24px",
           }}>
-            {tr("care.cp.ack")}
-          </p>
+            <p style={{
+              fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold,
+              color: t.textHeading, lineHeight: LEADING.normal, margin: 0,
+            }}>
+              {tr("care.cp.ack")}
+            </p>
+
+            <label
+              className="flex items-center gap-3 cursor-pointer"
+              style={{
+                marginTop: "14px", minHeight: "44px",
+                paddingInlineEnd: "8px", userSelect: "none",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+                className="sr-only"
+              />
+              <span
+                aria-hidden
+                className="shrink-0 flex items-center justify-center"
+                style={{
+                  width: "28px", height: "28px",
+                  borderRadius: t.radiusSm,
+                  backgroundColor: consent ? t.primary : t.surface,
+                  border: `2px solid ${consent ? t.primary : t.borderCardColor}`,
+                  transition: "background-color .15s, border-color .15s",
+                }}
+              >
+                {consent && <Check size={19} strokeWidth={3.2} style={{ color: t.brandOnPrimary }} />}
+              </span>
+              <span style={{
+                fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold,
+                color: t.textHeading, lineHeight: LEADING.snug,
+              }}>
+                {tr("care.cp.consent")}
+              </span>
+            </label>
+          </div>
 
           {/* The signature block, in the order the paper form has it */}
           <div className="grid grid-cols-2" style={{ gap: "16px" }}>
@@ -172,6 +247,7 @@ export function CarePartnerAgreement({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={tr("care.pcc.partner.namePlaceholder")}
+                className="cp-field"
                 style={field}
               />
             </div>
@@ -182,6 +258,7 @@ export function CarePartnerAgreement({
                 value={relationship}
                 onChange={(e) => setRelationship(e.target.value)}
                 placeholder={tr("care.pcc.partner.relationshipPlaceholder")}
+                className="cp-field"
                 style={field}
               />
             </div>
@@ -193,19 +270,37 @@ export function CarePartnerAgreement({
                 value={mobile}
                 onChange={(e) => setMobile(e.target.value.replace(/[^\d+\s-]/g, ""))}
                 placeholder={tr("care.cp.mobilePlaceholder")}
+                className="cp-field"
                 style={{ ...field, textAlign: isRTL ? "right" : "left" }}
               />
             </div>
             <div>
               <label style={label}>{tr("care.cp.field.date")}</label>
-              <DateField value={signedOn} onChange={setSignedOn} style={{ minHeight: "52px" }} />
+              <div
+                style={{
+                  ...field,
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  gap: "10px", cursor: "default",
+                }}
+              >
+                <span dir="auto" style={{ fontFamily, fontSize: TYPE_SCALE.base, color: t.textHeading }}>
+                  {signedOnShown}
+                </span>
+                <span style={{
+                  fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.semibold,
+                  color: t.primaryOn, backgroundColor: t.primarySubtle,
+                  borderRadius: t.radiusFull, padding: "4px 12px",
+                }}>
+                  {tr("care.cp.dateToday")}
+                </span>
+              </div>
             </div>
           </div>
 
           <div style={{ marginTop: "20px" }}>
             <label style={label}>{tr("care.cp.field.sign")} <span style={{ color: t.errorOn }}>*</span></label>
             <p style={{
-              fontFamily, fontSize: TYPE_SCALE.sm, color: t.textMuted, margin: "0 0 8px",
+              fontFamily, fontSize: TYPE_SCALE.sm, color: labelColor, margin: "0 0 8px",
             }}>
               {tr("care.cp.signHint")}
             </p>
@@ -220,9 +315,23 @@ export function CarePartnerAgreement({
           className="shrink-0 flex items-center justify-between gap-3"
           style={{ padding: "18px 28px", borderTop: `1px solid ${t.borderDefault}`, backgroundColor: t.surfaceInset }}
         >
-          <span style={{ flex: 1, minWidth: 0 }} />
+          {/* The one thing still standing between here and a signed agreement.
+              Silent once nothing is. */}
+          <span className="flex items-center gap-2" style={{ flex: 1, minWidth: 0 }}>
+            {missing && (
+              <>
+                <AlertTriangle size={17} style={{ color: t.warningOn }} strokeWidth={2.4} className="shrink-0" />
+                <span style={{
+                  fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.semibold,
+                  color: darkMode ? t.textBody : t.textMuted,
+                }}>
+                  {tr(missing)}
+                </span>
+              </>
+            )}
+          </span>
           <button
-            onClick={onClose}
+            onClick={requestClose}
             className="cursor-pointer active:scale-[0.98] transition-transform"
             style={{
               minHeight: "54px", padding: "0 26px", borderRadius: t.radiusLg,
@@ -251,6 +360,19 @@ export function CarePartnerAgreement({
           </button>
         </div>
       </div>
+
+      {/* Leaving with something typed or drawn. The state behind this sheet is
+          untouched while it is up, so "keep editing" really does keep it. */}
+      <ConfirmDialog
+        visible={askExit}
+        variant="danger"
+        title={tr("care.cp.exit.title")}
+        message={tr("care.cp.exit.body")}
+        confirmLabel={tr("care.cp.exit.discard")}
+        cancelLabel={tr("care.cp.exit.keep")}
+        onConfirm={() => { setAskExit(false); onClose(); }}
+        onCancel={() => setAskExit(false)}
+      />
     </div>,
     canvas,
   );

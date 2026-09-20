@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "../ThemeContext";
+import { useLocale } from "../i18n";
 import { RotateCcw } from "lucide-react";
 
 /** Ink and paper for a signature, fixed in both themes.
@@ -28,6 +29,7 @@ export function SignaturePad({
   height?: number;
 }) {
   const { theme: t } = useTheme();
+  const { t: tr, fontFamily } = useLocale();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef(false);
   const dirty = useRef(false);
@@ -102,6 +104,39 @@ export function SignaturePad({
 
   return (
     <div className="flex flex-col" style={{ gap: 8 }}>
+      {/* Above the paper, not under it. Under the pad it sat where the hand
+          rests while signing — easy to hit by accident, and out of sight once
+          the pad filled the screen. */}
+      <div className="flex justify-end">
+        <button
+          onClick={clear}
+          disabled={!hasInk}
+          aria-label={tr("care.cp.signClear")}
+          className="flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform"
+          style={{
+            /* A real target: this used to be a 31px-tall chip of muted grey on
+               a muted grey ground, which is neither easy to see nor to hit. */
+            minHeight: "44px",
+            minWidth: "44px",
+            padding: "0 16px",
+            borderRadius: t.radiusMd,
+            backgroundColor: hasInk ? t.surfaceInset : "transparent",
+            border: `1.5px solid ${hasInk ? t.borderCardColor : t.borderDefault}`,
+            outline: "none",
+            opacity: hasInk ? 1 : 0.45,
+            cursor: hasInk ? "pointer" : "default",
+          }}
+        >
+          <RotateCcw size={17} style={{ color: hasInk ? t.textHeading : t.textMuted }} strokeWidth={2.2} />
+          <span style={{
+            fontFamily, fontSize: "15px", fontWeight: 600,
+            color: hasInk ? t.textHeading : t.textMuted,
+          }}>
+            {tr("care.cp.signClear")}
+          </span>
+        </button>
+      </div>
+
       <div
         style={{
           position: "relative",
@@ -124,31 +159,12 @@ export function SignaturePad({
         {!hasInk && (
           <span
             className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            style={{ fontFamily: t.fontFamily, fontSize: "14px", color: SIGNATURE_HINT }}
+            style={{ fontFamily, fontSize: "15px", color: SIGNATURE_HINT }}
           >
-            Sign here
+            {tr("care.cp.signHere")}
           </span>
         )}
       </div>
-      <button
-        onClick={clear}
-        disabled={!hasInk}
-        className="self-start flex items-center gap-2 cursor-pointer active:scale-95 transition-transform"
-        style={{
-          padding: "8px 14px",
-          borderRadius: t.radiusMd,
-          backgroundColor: t.tileInactiveBg,
-          border: "none",
-          outline: "none",
-          opacity: hasInk ? 1 : 0.5,
-          cursor: hasInk ? "pointer" : "default",
-        }}
-      >
-        <RotateCcw size={15} style={{ color: t.textMuted }} />
-        <span style={{ fontFamily: t.fontFamily, fontSize: "13px", fontWeight: 600, color: t.textMuted }}>
-          Clear
-        </span>
-      </button>
     </div>
   );
 }

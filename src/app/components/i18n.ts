@@ -803,7 +803,7 @@ const translations: Record<string, TranslationEntry> = {
 "care.pcc.partner.commit.privacy": { en: "Keep what I hear about other patients private", ar: "الحفاظ على خصوصية ما أسمعه عن المرضى الآخرين", ur: "دوسرے مریضوں کے بارے میں سنی باتیں نجی رکھوں" },
 "care.pcc.partner.commit.hygiene": { en: "Follow hand hygiene and any precautions posted at the door", ar: "الالتزام بنظافة اليدين وأي احتياطات موضحة على الباب", ur: "ہاتھوں کی صفائی اور دروازے پر درج احتیاطی تدابیر پر عمل کروں" },
 "care.pcc.partner.sign": { en: "Care partner's signature", ar: "توقيع شريك الرعاية", ur: "کیئر پارٹنر کے دستخط" },
-"care.pcc.partner.accept": { en: "I agree and accept", ar: "أوافق وأقبل", ur: "میں متفق ہوں اور قبول کرتا/کرتی ہوں" },
+"care.pcc.partner.accept": { en: "Confirm agreement", ar: "تأكيد الموافقة", ur: "معاہدے کی تصدیق کریں" },
 "care.pcc.partner.cancel": { en: "Cancel", ar: "إلغاء", ur: "منسوخ کریں" },
 "care.pcc.partner.agreedOn": { en: "Agreed on {0}", ar: "تمت الموافقة في {0}", ur: "{0} کو منظور ہوا" },
 "care.pcc.partner.remove": { en: "Remove care partner", ar: "إزالة شريك الرعاية", ur: "کیئر پارٹنر ہٹائیں" },
@@ -841,6 +841,26 @@ const translations: Record<string, TranslationEntry> = {
 "care.cp.field.sign": { en: "Sign", ar: "التوقيع", ur: "دستخط" },
 "care.cp.mobilePlaceholder": { en: "e.g. 05X XXX XXXX", ar: "مثال: ٠٥X XXX XXXX", ur: "مثلاً 05X XXX XXXX" },
 "care.cp.signHint": { en: "Sign with your finger in the box below", ar: "وقّع بإصبعك في المساحة أدناه", ur: "نیچے خانے میں اپنی انگلی سے دستخط کریں" },
+"care.cp.signClear": { en: "Clear signature", ar: "مسح التوقيع", ur: "دستخط مٹائیں" },
+"care.cp.signHere": { en: "Sign here", ar: "وقّع هنا", ur: "یہاں دستخط کریں" },
+/* The date is the day the partner signs, so the screen states it rather than
+   asking for it — a typed date can be wrong, and a signed consent dated wrong
+   is worse than one with no date at all. */
+"care.cp.dateToday": { en: "Today", ar: "اليوم", ur: "آج" },
+/* Consent, separate from the statements: reading them and accepting them are
+   two different acts, and the tick is the second one. */
+"care.cp.consent": { en: "I confirm that I have read and understood this agreement and I accept it.", ar: "أقر بأني قرأت وفهمت الاتفاقية وأوافق عليها.", ur: "میں تصدیق کرتا/کرتی ہوں کہ میں نے یہ معاہدہ پڑھا اور سمجھا ہے اور میں اسے قبول کرتا/کرتی ہوں۔" },
+/* What is still missing, one thing at a time, in the order the form asks. */
+"care.cp.need.name": { en: "Enter the care partner's name to continue.", ar: "أدخل اسم شريك الرعاية للمتابعة.", ur: "جاری رکھنے کے لیے کیئر پارٹنر کا نام درج کریں۔" },
+"care.cp.need.relationship": { en: "Enter the relationship to the patient.", ar: "أدخل صلة القرابة بالمريض.", ur: "مریض سے رشتہ درج کریں۔" },
+"care.cp.need.mobile": { en: "Enter a mobile number to continue.", ar: "أدخل رقم جوال للمتابعة.", ur: "جاری رکھنے کے لیے موبائل نمبر درج کریں۔" },
+"care.cp.need.consent": { en: "Tick the acknowledgement above to continue.", ar: "ضع علامة على الإقرار أعلاه للمتابعة.", ur: "جاری رکھنے کے لیے اوپر دیے گئے اقرار پر نشان لگائیں۔" },
+"care.cp.need.signature": { en: "Sign in the box above to continue.", ar: "وقّع في المساحة أعلاه للمتابعة.", ur: "جاری رکھنے کے لیے اوپر خانے میں دستخط کریں۔" },
+/* Leaving with something typed or signed. */
+"care.cp.exit.title": { en: "Leave without saving?", ar: "هل تريد الخروج؟", ur: "محفوظ کیے بغیر جائیں؟" },
+"care.cp.exit.body": { en: "Do you want to leave? The details you entered will be lost.", ar: "هل تريد الخروج؟ ستفقد البيانات المدخلة.", ur: "کیا آپ جانا چاہتے ہیں؟ درج کردہ تفصیلات ضائع ہو جائیں گی۔" },
+"care.cp.exit.keep": { en: "Keep editing", ar: "متابعة التعديل", ur: "ترمیم جاری رکھیں" },
+"care.cp.exit.discard": { en: "Discard and exit", ar: "الخروج دون حفظ", ur: "مسترد کر کے باہر نکلیں" },
 "care.pcc.board.title": { en: "Communication Board", ar: "لوحة التواصل", ur: "رابطہ بورڈ" },
 "care.pcc.board.intro": { en: "Write down anything you want to raise with your care team. They will read it with you at the bedside.", ar: "دوّن ما ترغب في مناقشته مع فريق الرعاية. سيطّلعون عليه معك بجانب السرير.", ur: "جو بات آپ اپنی نگہداشت ٹیم سے کہنا چاہتے ہیں لکھ لیں۔ وہ بستر کے پاس آپ کے ساتھ اسے پڑھیں گے۔" },
 "care.pcc.board.add": { en: "Add to the board", ar: "إضافة إلى اللوحة", ur: "بورڈ میں شامل کریں" },

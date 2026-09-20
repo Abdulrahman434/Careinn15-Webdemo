@@ -3233,8 +3233,18 @@ function CarePartnerBody({ theme, isExpanded = false }: { theme: any; isExpanded
           )}
           {!!(record.signedOn || record.agreedAt) && (
             <span style={{ fontFamily, ...R.cellLabel, color: theme.textMuted }}>
-              {t("care.pcc.partner.agreedOn", record.signedOn
-                || new Date(record.agreedAt!).toLocaleDateString(dateLocale(locale), { day: "numeric", month: "long", year: "numeric" }))}
+              {t("care.pcc.partner.agreedOn", (() => {
+                /* The agreement stores the signing day as "20 Sep 2026". Shown
+                   raw it was the one Gregorian English date on an Arabic card,
+                   next to Hijri everywhere else — so it goes through the same
+                   formatter, and falls back to the stored text if some older
+                   record holds something this cannot read. */
+                const raw = record.signedOn || record.agreedAt;
+                const d = raw ? new Date(raw) : null;
+                return d && !Number.isNaN(d.getTime())
+                  ? d.toLocaleDateString(dateLocale(locale), { day: "numeric", month: "long", year: "numeric" })
+                  : String(record.signedOn ?? "");
+              })())}
             </span>
           )}
         </div>
