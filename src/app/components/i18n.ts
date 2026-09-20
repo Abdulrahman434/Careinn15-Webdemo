@@ -914,7 +914,6 @@ const translations: Record<string, TranslationEntry> = {
 "ppf.note.food.dietary": { en: "Tell us about your dietary preferences", ar: "أخبرنا عن تفضيلاتك الغذائية", ur: "ہمیں اپنی غذائی ترجیحات کے بارے میں بتائیں" },
 "ppf.note.partner.participate": { en: "Let us know if you would like to join later", ar: "أخبرنا إذا كنت ترغب في الانضمام لاحقاً", ur: "ہمیں بتائیں اگر آپ بعد میں شامل ہونا چاہیں" },
 "ppf.note.partner.appAccess": { en: "Tell us how you would prefer to receive your results", ar: "أخبرنا بالطريقة التي تفضل استلام نتائجك بها", ur: "ہمیں بتائیں کہ آپ اپنے نتائج کس طرح وصول کرنا پسند کریں گے" },
-"ppf.note.religious.support": { en: "Tell us the support you would like", ar: "أخبرنا بالدعم الذي ترغب فيه", ur: "ہمیں بتائیں کہ آپ کو کس قسم کی معاونت درکار ہے" },
 "ppf.note.religious.interpreter": { en: "Tell us the language you need", ar: "أخبرنا باللغة التي تحتاجها", ur: "ہمیں بتائیں کہ آپ کو کون سی زبان درکار ہے" },
 "ppf.note.comfort.grooming": { en: "Tell us which services you need", ar: "أخبرنا بالخدمات التي تحتاجها", ur: "ہمیں بتائیں کہ آپ کو کون سی خدمات درکار ہیں" },
 "ppf.note.comfort.rights": { en: "Tell us what you would like explained", ar: "أخبرنا بما تود أن يتم شرحه لك", ur: "ہمیں بتائیں کہ آپ کو کیا سمجھایا جائے" },
