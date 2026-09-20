@@ -7,6 +7,14 @@ import { nurseActions } from "./NurseDataStore";
  * ORDER TYPES
  * ═══════════════════════════════════════════════════════════════════════════ */
 
+/** An order number as the patient reads it.
+ *
+ *  The store holds digits; the "#" is punctuation added where it is shown.
+ *  It used to be baked into the stored value and added again at one of the
+ *  two places that display it, which printed "##3847". Legacy records still
+ *  carry the hash, so it is stripped before being put back. */
+export const orderRef = (n: string) => `#${String(n ?? "").replace(/^#+/, "")}`;
+
 export type OrderStatus = "preparing" | "quality-check" | "delivering" | "delivered";
 
 export interface OrderItem {
@@ -153,7 +161,7 @@ function createMockPastOrders(): PlacedOrder[] {
   return [
     {
       id: "past-1",
-      orderNumber: "#3847",
+      orderNumber: "3847",
       items: [
         { id: "m1", name: { en: "Grilled Chicken", ar: "دجاج مشوي" }, quantity: 1, calories: 380, image: "" },
         { id: "m2", name: { en: "Garden Salad", ar: "سلطة خضراء" }, quantity: 1, calories: 120, image: "" },
@@ -173,7 +181,7 @@ function createMockPastOrders(): PlacedOrder[] {
     },
     {
       id: "past-2",
-      orderNumber: "#3812",
+      orderNumber: "3812",
       items: [
         { id: "m3", name: { en: "Oatmeal Bowl", ar: "وعاء شوفان" }, quantity: 1, calories: 280, image: "" },
         { id: "m4", name: { en: "Fresh Orange Juice", ar: "عصير برتقال طازج" }, quantity: 2, calories: 220, image: "" },
@@ -193,7 +201,7 @@ function createMockPastOrders(): PlacedOrder[] {
     },
     {
       id: "past-3",
-      orderNumber: "#3795",
+      orderNumber: "3795",
       items: [
         { id: "g1", name: { en: "Beef Burger", ar: "برجر لحم" }, quantity: 1, calories: 620, image: "" },
         { id: "g2", name: { en: "French Fries", ar: "بطاطس مقلية" }, quantity: 1, calories: 350, image: "" },
@@ -211,7 +219,7 @@ function createMockPastOrders(): PlacedOrder[] {
     },
     {
       id: "past-4",
-      orderNumber: "#3756",
+      orderNumber: "3756",
       items: [
         { id: "g4", name: { en: "Caesar Salad", ar: "سلطة سيزر" }, quantity: 1, calories: 320, image: "" },
         { id: "g5", name: { en: "Cappuccino", ar: "كابوتشينو" }, quantity: 1, calories: 120, image: "" },
@@ -275,7 +283,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     const newOrder: PlacedOrder = {
       ...data,
       id: `order-${Date.now()}`,
-      orderNumber: `#${Math.floor(1000 + Math.random() * 9000)}`,
+      orderNumber: String(Math.floor(1000 + Math.random() * 9000)),
       placedAt: new Date(),
       status: "preparing",
     };
@@ -325,7 +333,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
           const w = MEAL_WINDOWS[mealId];
           return {
             id: `order-auto-${dateStr}-${mealId}`,
-            orderNumber: `#${Math.floor(1000 + Math.random() * 9000)}`,
+            orderNumber: String(Math.floor(1000 + Math.random() * 9000)),
             placedAt: new Date(),
             status: "preparing",
             items,

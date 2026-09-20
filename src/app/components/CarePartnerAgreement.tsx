@@ -189,54 +189,45 @@ export function CarePartnerAgreement({
             ))}
           </ol>
 
-          {/* The acknowledgement, and the tick that turns it into a consent.
-              Both the box and its words are the target — asking a 22px square
-              of a shaky hand on a touchscreen is asking it to fail. */}
-          <div style={{
-            backgroundColor: t.primarySubtle, border: t.borderInset,
-            borderRadius: t.radiusMd, padding: "16px 18px", margin: "20px 0 24px",
-          }}>
-            <p style={{
-              fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold,
-              color: t.textHeading, lineHeight: LEADING.normal, margin: 0,
-            }}>
-              {tr("care.cp.ack")}
-            </p>
-
-            <label
-              className="flex items-center gap-3 cursor-pointer"
+          {/* The acknowledgement is the consent, so the tick belongs to it —
+              not to a second sentence underneath saying the same thing twice.
+              The whole panel is the target: asking a shaky hand to find a
+              28px square on glass is asking it to fail. */}
+          <label
+            className="flex items-start gap-3 cursor-pointer"
+            style={{
+              backgroundColor: t.primarySubtle,
+              border: consent ? `1.5px solid ${t.primary}` : t.borderInset,
+              borderRadius: t.radiusMd, padding: "16px 18px", margin: "20px 0 24px",
+              userSelect: "none", transition: "border-color .15s",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="sr-only"
+            />
+            <span
+              aria-hidden
+              className="shrink-0 flex items-center justify-center"
               style={{
-                marginTop: "14px", minHeight: "44px",
-                paddingInlineEnd: "8px", userSelect: "none",
+                width: "28px", height: "28px", marginTop: "2px",
+                borderRadius: t.radiusSm,
+                backgroundColor: consent ? t.primary : t.surface,
+                border: `2px solid ${consent ? t.primary : t.borderCardColor}`,
+                transition: "background-color .15s, border-color .15s",
               }}
             >
-              <input
-                type="checkbox"
-                checked={consent}
-                onChange={(e) => setConsent(e.target.checked)}
-                className="sr-only"
-              />
-              <span
-                aria-hidden
-                className="shrink-0 flex items-center justify-center"
-                style={{
-                  width: "28px", height: "28px",
-                  borderRadius: t.radiusSm,
-                  backgroundColor: consent ? t.primary : t.surface,
-                  border: `2px solid ${consent ? t.primary : t.borderCardColor}`,
-                  transition: "background-color .15s, border-color .15s",
-                }}
-              >
-                {consent && <Check size={19} strokeWidth={3.2} style={{ color: t.brandOnPrimary }} />}
-              </span>
-              <span style={{
-                fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold,
-                color: t.textHeading, lineHeight: LEADING.snug,
-              }}>
-                {tr("care.cp.consent")}
-              </span>
-            </label>
-          </div>
+              {consent && <Check size={19} strokeWidth={3.2} style={{ color: t.brandOnPrimary }} />}
+            </span>
+            <span style={{
+              fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold,
+              color: t.textHeading, lineHeight: LEADING.normal,
+            }}>
+              {tr("care.cp.ack")}
+            </span>
+          </label>
 
           {/* The signature block, in the order the paper form has it */}
           <div className="grid grid-cols-2" style={{ gap: "16px" }}>

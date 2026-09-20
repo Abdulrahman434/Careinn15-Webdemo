@@ -849,7 +849,6 @@ const translations: Record<string, TranslationEntry> = {
 "care.cp.dateToday": { en: "Today", ar: "اليوم", ur: "آج" },
 /* Consent, separate from the statements: reading them and accepting them are
    two different acts, and the tick is the second one. */
-"care.cp.consent": { en: "I confirm that I have read and understood this agreement and I accept it.", ar: "أقر بأني قرأت وفهمت الاتفاقية وأوافق عليها.", ur: "میں تصدیق کرتا/کرتی ہوں کہ میں نے یہ معاہدہ پڑھا اور سمجھا ہے اور میں اسے قبول کرتا/کرتی ہوں۔" },
 /* What is still missing, one thing at a time, in the order the form asks. */
 "care.cp.need.name": { en: "Enter the care partner's name to continue.", ar: "أدخل اسم شريك الرعاية للمتابعة.", ur: "جاری رکھنے کے لیے کیئر پارٹنر کا نام درج کریں۔" },
 "care.cp.need.relationship": { en: "Enter the relationship to the patient.", ar: "أدخل صلة القرابة بالمريض.", ur: "مریض سے رشتہ درج کریں۔" },
@@ -1484,7 +1483,9 @@ const translations: Record<string, TranslationEntry> = {
   },
   "guest.careMe.unlock.button": {
     en: "Unlock",
-    ar: "فتح",
+    /* "فتح" on its own is "open" — of what, the button did not say, sitting
+       under a padlock on a guest's screen. This names what opens. */
+    ar: "استعراض بياناتي الشخصية",
     ur: "کھولیں"
   },
   "guest.careMe.dialog.title": {

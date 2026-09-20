@@ -1683,6 +1683,11 @@ export function PatientPreferenceForm({
               agreedAt: new Date().toISOString(),
             });
             setShowPartnerAgreement(false);
+            /* Straight on to the next question. Closing the sheet back onto
+               the question that opened it left the patient looking at a "yes"
+               they had just acted on, with nothing to say whether the
+               agreement had been taken — so they answered it again. */
+            goNext();
           }}
         />
       )}

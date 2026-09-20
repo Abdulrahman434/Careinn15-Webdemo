@@ -17,7 +17,7 @@ import { useLocale, type Locale } from "./i18n";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { ApiImage } from "./ApiImage";
 import { orderWindowStart, ORDER_WINDOW_END } from "./orderWindow";
-import { useOrders } from "./OrderStore";
+import { orderRef, useOrders } from "./OrderStore";
 import { useNurseStore, nurseActions } from "./NurseDataStore";
 import { useToast } from "./ToastNotifications";
 import mealSvg from "../../imports/meal.svg";
@@ -3016,7 +3016,7 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
                 </p>
               </div>
               <span style={{ fontFamily, fontSize: "15px", fontWeight: WEIGHT.bold, color: isGuest ? SECONDARY_ON : TEAL_ON, whiteSpace: "nowrap", flexShrink: 0 }}>
-                {isRTL ? "رقم الطلب:" : "Order ID:"} #{orderNumber}
+                {isRTL ? "رقم الطلب:" : "Order ID:"} {orderRef(orderNumber)}
               </span>
             </div>
 
@@ -3357,7 +3357,7 @@ function OrderCard({ order, fontFamily, isRTL, formatDate, mealDef }: {
               {translatedMealType}
             </span>
             <span style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.normal, color: INK_2 }}>
-              {order.orderNumber}
+              {orderRef(order.orderNumber)}
             </span>
           </div>
           <div className="flex items-center gap-3 mt-1.5 flex-wrap">

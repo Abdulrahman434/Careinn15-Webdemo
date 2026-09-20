@@ -19,7 +19,7 @@ import {
   Info,
   Clock,
 } from "lucide-react";
-import { useOrders } from "./OrderStore";
+import { orderRef, useOrders } from "./OrderStore";
 import type { OrderStatus } from "./OrderStore";
 import type { BroadcastNotification } from "./HospitalBroadcast";
 import { DeviceAlert, getSeenAlertIds, markAlertSeen, getHiddenAlertIds, markAlertHidden, markAllAlertsHidden } from "../lib/hospitalApi";
@@ -731,7 +731,7 @@ export function NotificationsPanel({
                         marginTop: "2px",
                       }}
                     >
-                      {order.orderNumber} · {order.items.map((it) => `${it.quantity}x ${loc(it.name)}`).join(", ")}
+                      {orderRef(order.orderNumber)} · {order.items.map((it) => `${it.quantity}x ${loc(it.name)}`).join(", ")}
                     </span>
                   </div>
                   <span
