@@ -23,7 +23,7 @@ export function AppLockTutorialOverlay({
   onClose,
   onStartLockSetup,
 }: AppLockTutorialOverlayProps) {
-  const { theme: t } = useTheme();
+  const { theme: t, darkMode } = useTheme();
   const { t: tr, isRTL, fontFamily } = useLocale();
 
   const [holdProgress, setHoldProgress] = useState(0); // 0 to 100
@@ -194,7 +194,7 @@ export function AppLockTutorialOverlay({
           top: `${tileTop}px`,
           width: `${tileWidth}px`,
           height: `${tileHeight}px`,
-          backgroundColor: "#FFFFFF",
+          backgroundColor: t.surfaceElevated,
           borderRadius: t.radiusCard || "16px",
           border: `2.5px solid ${primaryCyan}`,
           boxShadow: `0 0 30px rgba(0, 144, 184, 0.55), ${t.shadowMd || "0 4px 12px rgba(0,0,0,0.1)"}`,
@@ -279,18 +279,23 @@ export function AppLockTutorialOverlay({
 
       {/* ─── COACHMARK CARD BESIDE TILE ─── */}
       <div
-        className="fixed z-[9996] flex flex-col bg-white rounded-2xl p-5 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200"
+        className="fixed z-[9996] flex flex-col rounded-2xl p-5 animate-in fade-in zoom-in-95 duration-200"
         style={{
           left: `${coachLeft}px`,
           top: `${coachTop}px`,
           width: `${coachmarkWidth}px`,
-          boxShadow: "0 20px 40px -10px rgba(15, 23, 42, 0.25)",
+          backgroundColor: t.surfaceElevated,
+          border: `1px solid ${t.borderSubtle}`,
+          boxShadow: "0 20px 40px -10px rgba(15, 23, 42, 0.45)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-row items-center gap-5">
           {/* Left Column — Animated Touch Illustration */}
-          <div className="relative w-24 h-24 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-center shrink-0 overflow-hidden">
+          <div
+            className="relative w-24 h-24 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden"
+            style={{ backgroundColor: t.surfaceInset, border: `1px solid ${t.borderDefault}` }}
+          >
             {/* Outer Circular Progress Ring */}
             <svg className="absolute inset-0 w-full h-full p-2" viewBox="0 0 100 100">
               <circle
@@ -298,7 +303,7 @@ export function AppLockTutorialOverlay({
                 cy="50"
                 r="40"
                 fill="none"
-                stroke="#E2E8F0"
+                stroke={darkMode ? "rgba(255, 255, 255, 0.16)" : "#E2E8F0"}
                 strokeWidth="6"
               />
               <circle
@@ -320,7 +325,7 @@ export function AppLockTutorialOverlay({
               {/* 3x3 Keypad dots */}
               <div className="grid grid-cols-3 gap-1.5 opacity-30">
                 {Array.from({ length: 9 }).map((_, i) => (
-                  <div key={i} className="w-2 h-2 rounded-full bg-slate-700" />
+                  <div key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: t.textBody }} />
                 ))}
               </div>
 
@@ -339,7 +344,10 @@ export function AppLockTutorialOverlay({
 
               {/* Lock pop-up badge when completed */}
               {demoProgress >= 98 && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white/90 rounded-full animate-in zoom-in-75 duration-150">
+                <div
+                  className="absolute inset-0 flex items-center justify-center rounded-full animate-in zoom-in-75 duration-150"
+                  style={{ backgroundColor: t.surfaceElevated, opacity: 0.9 }}
+                >
                   <div className="w-8 h-8 rounded-full bg-[#0090B8] flex items-center justify-center text-white shadow-md">
                     <Check size={18} strokeWidth={3} />
                   </div>
@@ -350,10 +358,10 @@ export function AppLockTutorialOverlay({
 
           {/* Right Column — Content */}
           <div className="flex flex-col flex-1 min-w-0">
-            <h3 className="text-base font-bold text-slate-900 leading-snug">
+            <h3 className="text-base font-bold leading-snug" style={{ color: t.textHeading }}>
               {tr("appLock.tutorial.title") || "Keep an app private"}
             </h3>
-            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+            <p className="text-xs mt-1 leading-relaxed" style={{ color: t.textBody }}>
               {tr("appLock.tutorial.body") || "Touch and hold any app to lock it with your PIN."}
             </p>
             <span
@@ -384,8 +392,11 @@ export function AppLockTutorialOverlay({
         </div>
 
         {/* Footer Progress Indicator */}
-        <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-center">
-          <span className="text-[11px] font-medium text-slate-400">
+        <div
+          className="mt-3 pt-2.5 flex items-center justify-center"
+          style={{ borderTop: `1px solid ${t.borderSubtle}` }}
+        >
+          <span className="text-[11px] font-medium" style={{ color: t.textMuted }}>
             {tr("appLock.tutorial.progress") || "1 of 1"}
           </span>
         </div>
