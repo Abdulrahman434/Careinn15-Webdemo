@@ -3219,7 +3219,14 @@ function CarePartnerBody({ theme, isExpanded = false }: { theme: any; isExpanded
     );
   }
 
-  /* ── Never asked: explain first, then ask ── */
+  /* ── Nobody named yet: explain, and offer the one thing this card does ──
+   *
+   * It does not ask. "Would you like a care partner?" is a question the
+   * preferences form puts to the patient once, with a yes and a no, and the
+   * answer is kept there — a second asking on this card is the same question
+   * in two places, and a "no" tapped here would be answering a form the
+   * patient may not have reached yet. What is left is the explanation and the
+   * way to name somebody, for a patient who has decided they want to. */
   return (
     <div className="flex flex-col gap-3">
       <p style={{ fontFamily, ...R.body, color: theme.textBody }}>
@@ -3228,23 +3235,8 @@ function CarePartnerBody({ theme, isExpanded = false }: { theme: any; isExpanded
       <p style={{ fontFamily, ...R.cellLabel, color: theme.textMuted }}>
         {t("care.pcc.partner.optional")}
       </p>
-      <div className="flex flex-wrap items-center gap-2.5">
-        <CardButton theme={theme} isExpanded={isExpanded}
-          onClick={() => setAgreementOpen(true)} label={t("care.pcc.partner.yes")} />
-        <button
-          type="button"
-          onClick={() => save({ ...EMPTY_CARE_PARTNER, status: "declined" })}
-          className="cursor-pointer active:scale-[0.98] transition-transform"
-          style={{
-            ...ctaStyle(theme, isExpanded),
-            backgroundColor: "transparent",
-            border: `1.5px solid ${theme.borderDefault}`,
-            fontFamily, ...R.value, color: theme.textMuted,
-          }}
-        >
-          {t("care.pcc.partner.no")}
-        </button>
-      </div>
+      <CardButton theme={theme} isExpanded={isExpanded}
+        onClick={() => setAgreementOpen(true)} label={t("care.pcc.partner.assign")} />
       {agreement}
     </div>
   );

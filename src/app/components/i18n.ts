@@ -789,8 +789,6 @@ const translations: Record<string, TranslationEntry> = {
 "care.pcc.partner.title": { en: "My Care Partner", ar: "شريك الرعاية", ur: "میرا کیئر پارٹنر" },
 "care.pcc.partner.what": { en: "A care partner is a family member or friend you choose to take part in your care — joining rounds, learning how to help you at home, and speaking up for you if something does not seem right.", ar: "شريك الرعاية هو أحد أفراد العائلة أو الأصدقاء تختاره للمشاركة في رعايتك — يحضر الجولات الطبية، ويتعلم كيف يساعدك في المنزل، ويتحدث نيابة عنك إذا لاحظ أمرًا غير صحيح.", ur: "کیئر پارٹنر آپ کا منتخب کردہ خاندان کا فرد یا دوست ہے جو آپ کی نگہداشت میں شریک ہوتا ہے — راؤنڈز میں شامل ہوتا ہے، گھر پر مدد کرنا سیکھتا ہے، اور کچھ ٹھیک نہ لگے تو آپ کی طرف سے بات کرتا ہے۔" },
 "care.pcc.partner.optional": { en: "It is entirely your choice, and you can change your mind at any time.", ar: "القرار لك وحدك، ويمكنك تغييره في أي وقت.", ur: "یہ مکمل طور پر آپ کی مرضی ہے، اور آپ کسی بھی وقت اپنا فیصلہ بدل سکتے ہیں۔" },
-"care.pcc.partner.yes": { en: "Yes, I'd like a care partner", ar: "نعم، أرغب في شريك رعاية", ur: "جی ہاں، مجھے کیئر پارٹنر چاہیے" },
-"care.pcc.partner.no": { en: "Not now", ar: "ليس الآن", ur: "ابھی نہیں" },
 "care.pcc.partner.declined": { en: "You chose not to assign a care partner. You can do this at any time during your stay.", ar: "اخترت عدم تعيين شريك رعاية. يمكنك القيام بذلك في أي وقت خلال إقامتك.", ur: "آپ نے کیئر پارٹنر مقرر نہ کرنے کا انتخاب کیا۔ آپ قیام کے دوران کسی بھی وقت یہ کر سکتے ہیں۔" },
 "care.pcc.partner.assign": { en: "Assign a care partner", ar: "تعيين شريك رعاية", ur: "کیئر پارٹنر مقرر کریں" },
 "care.pcc.partner.name": { en: "Care partner's full name", ar: "اسم شريك الرعاية الكامل", ur: "کیئر پارٹنر کا پورا نام" },
