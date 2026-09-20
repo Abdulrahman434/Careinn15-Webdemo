@@ -26,7 +26,7 @@ import careinnLogo from "../../assets/logos/careinn-logo-lockup.png";
 /* ── CareInn brand ── */
 const NAVY = "#16274D";       // headings and primary text
 const BLUE = "#4EBEE3";       // Sign in button and accents
-const BLUE_ON = "#FFFFFF";    // type on BLUE
+const BLUE_ON = NAVY;         // type on BLUE — 6.9:1; white would be 2.1:1
 const PAGE = "#EEF3F8";       // the ground the rounded split card sits on
 const FIELD_BG = "#F4F7FA";
 const LINE = "#E2E8F0";       // subtle gray borders
@@ -56,11 +56,12 @@ function hospitalWallpaper(): string | null {
 
 /* ═══════════════════ LOCALE ═══════════════════
  * Same storage key ThemeContext reads, so a language picked at the gate is the
- * one the app comes up in. The switch cycles rather than opening a menu: three
- * locales is a lot of chrome for the corner of a login screen, and the label
- * always names the language one tap away. */
+ * one the app comes up in. A plain toggle rather than a menu: the gate offers
+ * English and Arabic only, and the label names the one a tap away. Urdu is
+ * still a locale inside the app — it is just not offered here. A device left
+ * on Urdu reads as Arabic for the purpose of the toggle, so the button always
+ * has somewhere to go. */
 const LOCALE_KEY = "active-locale";
-const LOCALE_CYCLE: Locale[] = ["en", "ar", "ur"];
 const LOCALE_NAME: Record<Locale, string> = { en: "English", ar: "العربية", ur: "اردو" };
 
 function readLocale(): Locale {
@@ -75,11 +76,13 @@ function readLocale(): Locale {
 function useGateLocale() {
   const [locale, setLocale] = useState<Locale>(readLocale);
 
-  const nextLocale = LOCALE_CYCLE[(LOCALE_CYCLE.indexOf(locale) + 1) % LOCALE_CYCLE.length];
+  // Urdu is not in the toggle, so it counts as "not English" and hands the
+  // button English to offer.
+  const nextLocale: Locale = locale === "en" ? "ar" : "en";
 
   const cycleLocale = useCallback(() => {
     setLocale((current) => {
-      const next = LOCALE_CYCLE[(LOCALE_CYCLE.indexOf(current) + 1) % LOCALE_CYCLE.length];
+      const next: Locale = current === "en" ? "ar" : "en";
       try {
         localStorage.setItem(LOCALE_KEY, next);
       } catch {
