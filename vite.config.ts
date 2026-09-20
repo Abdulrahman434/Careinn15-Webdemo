@@ -37,11 +37,43 @@ export default defineConfig({
         // so it's implicitly excluded from runtime caching.
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.origin === self.location.origin,
+            // Build assets carry a content hash, so a URL never changes meaning
+            // — cache first, and never race the network for one.
+            //
+            // They have to be kept out of the shell rule below, because the
+            // demo server answers a file it does not have with 200 and the
+            // index page rather than 404. Under NetworkFirst that HTML is a
+            // cacheable 200, and it gets stored under the image's own URL: the
+            // browser then renders a web page as a photograph, which is to say
+            // it renders nothing, for as long as the entry lives. CacheFirst on
+            // a hashed URL cannot go stale, so a rebuild simply asks for
+            // different names.
+            urlPattern: ({ url }) =>
+              url.origin === self.location.origin && url.pathname.includes('/assets/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'careinn-build-assets',
+              expiration: {
+                maxEntries: 400,
+                maxAgeSeconds: 30 * 24 * 60 * 60,
+              },
+              // 200 only. A 206 is a video range request, which belongs on the
+              // network, and a 0 is an opaque response worth nothing here.
+              cacheableResponse: {
+                statuses: [200],
+              },
+            },
+          },
+          {
+            urlPattern: ({ url }) =>
+              url.origin === self.location.origin && !url.pathname.includes('/assets/'),
             handler: 'NetworkFirst',
+            // Four seconds was short enough that a slow server lost the race to
+            // its own cache, and the kiosk kept coming up on the build before
+            // last. The shell is small; it is worth waiting for.
             options: {
               cacheName: 'careinn-app-shell',
-              networkTimeoutSeconds: 4,
+              networkTimeoutSeconds: 10,
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 7 * 24 * 60 * 60,
