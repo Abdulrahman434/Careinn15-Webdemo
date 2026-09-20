@@ -32,6 +32,11 @@
   AddType video/mp4                 .mp4
   AddType font/woff2                .woff2
   AddType image/svg+xml             .svg
+  # Apache sends WebP with no Content-Type at all. Browsers sniff the magic
+  # bytes and render it anyway; proxies, CDN edges and anything loading it
+  # through fetch() go by the header.
+  AddType image/webp                .webp
+  AddType text/javascript           .mjs
 </IfModule>
 
 # ── Compression ──────────────────────────────────────────────────────────
@@ -46,10 +51,21 @@
 # ── Fallback ─────────────────────────────────────────────────────────────
 # Everything that is not a real file goes to the app. Real files — the PDFs,
 # the guides, the NFC login page, the slideshow — are served as themselves.
+#
+# Except under /assets/, where a file that is not there is missing rather than
+# mistyped: those names are emitted by the build and nobody types one. Handing
+# back index.html there answers a request for a photograph with 200 and a web
+# page, and a 200 is a success — the service worker stores that HTML under the
+# image's own URL, and a CDN edge would serve it to every patient at once. It
+# is how a renamed asset takes the images down and keeps them down, which has
+# happened to this app twice. A 404 is cached by nobody and recovers on the
+# next load.
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
+  RewriteCond %{REQUEST_URI} ^/assets/
+  RewriteRule ^ - [L,R=404]
   RewriteRule ^ index.html [L]
 </IfModule>
