@@ -28,14 +28,12 @@ import {
   ConciergeBell,
   Pill,
   UtensilsCrossed,
-  Sparkles,
   Heart,
   Monitor,
   BookOpen,
   Headset,
   MapPin,
-  BedDouble,
-  Brush,
+  SprayCan,
   Users,
   Check,
 } from "lucide-react";
@@ -76,11 +74,11 @@ interface CallLogEntry {
 type CallState = "idle" | "incoming" | "outgoing" | "active";
 
 const EXTENSIONS: Extension[] = [
-  { id: "nurse",       nameKey: "call.nurseStation",     descKey: "call.nurseStation.desc",     ext: "1001", icon: BedDouble,       iconColor: "#E11D48", iconBg: "rgba(225,29,72,0.08)" },
+  { id: "nurse",       nameKey: "call.nurseStation",     descKey: "call.nurseStation.desc",     ext: "1001", icon: Stethoscope,     iconColor: "#E11D48", iconBg: "rgba(225,29,72,0.08)" },
   { id: "reception",   nameKey: "call.reception",        descKey: "call.reception.desc",        ext: "1000", icon: ConciergeBell,   iconColor: "#0891B2", iconBg: "rgba(8,145,178,0.08)" },
   { id: "pharmacy",    nameKey: "call.pharmacy",         descKey: "call.pharmacy.desc",         ext: "1050", icon: Pill,            iconColor: "#7C3AED", iconBg: "rgba(124,58,237,0.08)" },
   { id: "dietary",     nameKey: "call.dietary",          descKey: "call.dietary.desc",          ext: "1060", icon: UtensilsCrossed, iconColor: "#EA580C", iconBg: "rgba(234,88,12,0.08)" },
-  { id: "housekeep",   nameKey: "call.housekeeping",     descKey: "call.housekeeping.desc",     ext: "1070", icon: Brush,           iconColor: "#0D9488", iconBg: "rgba(13,148,136,0.08)" },
+  { id: "housekeep",   nameKey: "call.housekeeping",     descKey: "call.housekeeping.desc",     ext: "1070", icon: SprayCan,        iconColor: "#0D9488", iconBg: "rgba(13,148,136,0.08)" },
   { id: "relations",   nameKey: "call.patientRelations", descKey: "call.patientRelations.desc", ext: "1080", icon: Users,           iconColor: "#DB2777", iconBg: "rgba(219,39,119,0.08)" },
   { id: "it",          nameKey: "call.itSupport",        descKey: "call.itSupport.desc",        ext: "1090", icon: Monitor,         iconColor: "#4F46E5", iconBg: "rgba(79,70,229,0.08)" },
   { id: "religious",   nameKey: "call.religiousServices",descKey: "call.religiousServices.desc",ext: "1100", icon: BookOpen,        iconColor: "#059669", iconBg: "rgba(5,150,105,0.08)" },
