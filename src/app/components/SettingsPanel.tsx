@@ -56,7 +56,7 @@ import { useAuth } from "./AuthContext";
 import { clearAllDataAndReload, clearUserDataAndReload } from "../lib/clearAllData";
 import { NurseInterface } from "./nurse/NurseInterface";
 import type { Locale } from "./i18n";
-import imgMosque from "../../assets/b51acb5e2ec4a2c930572c53103b020b12e76ee2.png";
+import imgMosque from "../../assets/b51acb5e2ec4a2c930572c53103b020b12e76ee2.webp";
 import { getPrayerStatus, getCountdown, formatPrayerTime, PRAYER_NAMES } from "../utils/prayerUtils";
 import { MyPreferencesDialog } from "./MyAccountDialog";
 import { PinDialog } from "./PinDialog";

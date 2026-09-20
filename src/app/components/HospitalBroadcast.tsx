@@ -3,7 +3,7 @@ import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW } from "./ThemeContext
 import { useLocale } from "./i18n";
 import { ApiImage } from "./ApiImage";
 import { CheckCircle2, AlertTriangle, Info, Megaphone, ShieldCheck, ExternalLink, ClipboardList, FileText, Image as ImageIcon, Play, Clock } from "lucide-react";
-import imgMosque from "../../assets/b51acb5e2ec4a2c930572c53103b020b12e76ee2.png";
+import imgMosque from "../../assets/b51acb5e2ec4a2c930572c53103b020b12e76ee2.webp";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * HospitalBroadcast — Full-screen urgent notification overlay

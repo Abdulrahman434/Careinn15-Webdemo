@@ -1,5 +1,5 @@
-import imgFrame1410128055 from "../assets/cbc2945cb46a30e6e77e7c487cbbdc266e1f1f00.png";
-import imgFrame1000004914 from "../assets/b51acb5e2ec4a2c930572c53103b020b12e76ee2.png";
+import imgFrame1410128055 from "../assets/cbc2945cb46a30e6e77e7c487cbbdc266e1f1f00.webp";
+import imgFrame1000004914 from "../assets/b51acb5e2ec4a2c930572c53103b020b12e76ee2.webp";
 
 function Frame() {
   return (

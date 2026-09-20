@@ -110,7 +110,7 @@ const MEAL_BG_IMAGES: Record<MealId, string> = {
    gradient. */
 const MEAL_CARD_PHOTOS: Record<MealId, { src: string; menuBand: number; foodSide: "left" | "right"; alt: { en: string; ar: string } }> = {
   breakfast: {
-    src: "/assets/meals/breakfast.jpg",
+    src: "/assets/meals/breakfast.webp",
     /* Eggs and toast fill the right of the frame; the left is bare counter. */
     menuBand: 56, foodSide: "right",
     alt: {
@@ -119,7 +119,7 @@ const MEAL_CARD_PHOTOS: Record<MealId, { src: string; menuBand: number; foodSide
     },
   },
   lunch: {
-    src: "/assets/meals/lunch.jpg",
+    src: "/assets/meals/lunch.webp",
     /* Fruit bowl and plate sit right of centre, bare counter to the left. */
     menuBand: 72, foodSide: "right",
     alt: {
@@ -128,7 +128,7 @@ const MEAL_CARD_PHOTOS: Record<MealId, { src: string; menuBand: number; foodSide
     },
   },
   dinner: {
-    src: "/assets/meals/dinner.jpg",
+    src: "/assets/meals/dinner.webp",
     /* The plate is shot left of centre; the right is napkin and cutlery. */
     menuBand: 64, foodSide: "left",
     alt: {

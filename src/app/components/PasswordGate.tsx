@@ -19,9 +19,9 @@ import { translateWithLocale, type Locale } from "./i18n";
  * locale is read straight out of localStorage under the key ThemeContext uses.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-import fakeehLoginBg from "../../assets/bg/login-background-fakeeh.png";
-import careinnWallpaper from "../../assets/bg/wallpaper.png";
-import careinnLogo from "../../assets/logos/careinn-logo-lockup.png";
+import fakeehLoginBg from "../../assets/bg/login-background-fakeeh.webp";
+import careinnWallpaper from "../../assets/bg/wallpaper.webp";
+import careinnLogo from "../../assets/logos/careinn-logo-lockup.webp";
 
 /* ── CareInn brand ── */
 const NAVY = "#16274D";       // headings and primary text

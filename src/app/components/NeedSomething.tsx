@@ -20,27 +20,27 @@ import { ApiImage } from "./ApiImage";
 import { PatientServicesIcon } from "./appIcons";
 
 /* ── Housekeeping product photos (compressed JPEG — 12-31 KB each) ── */
-import imgBlanket from "../../assets/Housekeeping/blanket.jpg";
-import imgWater from "../../assets/Housekeeping/water.jpg";
-import imgPillow from "../../assets/Housekeeping/pillow.jpg";
-import imgTowel from "../../assets/Housekeeping/towels.jpg";
-import imgToiletries from "../../assets/Housekeeping/toiletries.jpg";
-import imgTissues from "../../assets/Housekeeping/tissues.jpg";
-import imgSheets from "../../assets/Housekeeping/bedsheets.jpg";
-import imgSlippers from "../../assets/Housekeeping/slippers.jpg";
-import imgEarplugs from "../../assets/Housekeeping/Earplugs.jpg";
-import imgSleepMask from "../../assets/Housekeeping/Sleep Mask.jpg";
-import imgWheelchair from "../../assets/Housekeeping/Wheelchair.jpg";
-import imgFaceMask from "../../assets/Housekeeping/face mask.jpg";
-import imgPrayerMat from "../../assets/Housekeeping/prayer matt.jpg";
-import imgQuran from "../../assets/Housekeeping/quran.jpg";
-import imgWalker from "../../assets/Housekeeping/walker.jpg";
-import imgWalkingStick from "../../assets/Housekeeping/walking stick.jpg";
-import imgCrutches from "../../assets/Housekeeping/crutches.jpg";
-import imgDentalKit from "../../assets/Housekeeping/dental kit.jpg";
-import imgComb from "../../assets/Housekeeping/comb.jpg";
-import imgWetWipes from "../../assets/Housekeeping/wet wipes.jpg";
-import imgNonSlipSocks from "../../assets/Housekeeping/non-slip socks.png";
+import imgBlanket from "../../assets/Housekeeping/blanket.webp";
+import imgWater from "../../assets/Housekeeping/water.webp";
+import imgPillow from "../../assets/Housekeeping/pillow.webp";
+import imgTowel from "../../assets/Housekeeping/towels.webp";
+import imgToiletries from "../../assets/Housekeeping/toiletries.webp";
+import imgTissues from "../../assets/Housekeeping/tissues.webp";
+import imgSheets from "../../assets/Housekeeping/bedsheets.webp";
+import imgSlippers from "../../assets/Housekeeping/slippers.webp";
+import imgEarplugs from "../../assets/Housekeeping/Earplugs.webp";
+import imgSleepMask from "../../assets/Housekeeping/Sleep Mask.webp";
+import imgWheelchair from "../../assets/Housekeeping/Wheelchair.webp";
+import imgFaceMask from "../../assets/Housekeeping/face mask.webp";
+import imgPrayerMat from "../../assets/Housekeeping/prayer matt.webp";
+import imgQuran from "../../assets/Housekeeping/quran.webp";
+import imgWalker from "../../assets/Housekeeping/walker.webp";
+import imgWalkingStick from "../../assets/Housekeeping/walking stick.webp";
+import imgCrutches from "../../assets/Housekeeping/crutches.webp";
+import imgDentalKit from "../../assets/Housekeeping/dental kit.webp";
+import imgComb from "../../assets/Housekeeping/comb.webp";
+import imgWetWipes from "../../assets/Housekeeping/wet wipes.webp";
+import imgNonSlipSocks from "../../assets/Housekeeping/non-slip socks.webp";
 
 /**
  * Patient Services — "I Need Something" flow.

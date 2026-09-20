@@ -4,7 +4,7 @@ import { ArrowLeft, RefreshCw, X, Globe, Shield, ExternalLink, Info } from "luci
 import { DemoControls } from "./DemoControls";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
-import edgeLogo from "../../assets/edge_logo.png";
+import edgeLogo from "../../assets/edge_logo.webp";
 
 interface InternetBrowserProps {
   initialUrl: string;
