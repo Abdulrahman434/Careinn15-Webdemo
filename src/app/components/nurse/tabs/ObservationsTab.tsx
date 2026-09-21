@@ -4,7 +4,7 @@ import {
   Clock, Trash2, ClipboardList, Eye
 } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
-import { useLocale } from "../../i18n";
+import { useLocale, toLatinDigits } from "../../i18n";
 import { useNurseStore, nurseActions, type ClinicalObservation } from "../../NurseDataStore";
 
 function fmtFull(d: any) {
@@ -35,7 +35,9 @@ function BloodPressureField({ value, onChange, unit }: {
   const [sys = "", dia = ""] = (value || "").split("/");
   const diaRef = useRef<HTMLInputElement | null>(null);
 
-  const digits = (raw: string) => raw.replace(/\D/g, "").slice(0, 3);
+  /* An Arabic keyboard types ٠١٢٣٤٥٦٧٨٩ and \d matches none of them, so a
+     nurse entering a blood pressure watched the field stay empty. */
+  const digits = (raw: string) => toLatinDigits(raw).replace(/\D/g, "").slice(0, 3);
   /* An empty diastolic is not "120/" — a half-entered reading is stored as
      just the number it has, so nothing downstream has to strip a stray slash. */
   const join = (a: string, b: string) => (b ? `${a}/${b}` : a);
@@ -186,7 +188,9 @@ export function ObservationsTab({ role, addNonce = 0 }: { role: "nurse" | "docto
                     <input dir="auto"
                       value={(form.vitals as any)[v.key]}
                       onChange={(e) => {
-                        let val = e.target.value;
+                        // Same reason as `digits` above: take the numerals the
+                        // keyboard actually produced before filtering them.
+                        let val = toLatinDigits(e.target.value);
                         
                         if (v.key === "hr") {
                           val = val.replace(/\D/g, "").slice(0, 3);

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Check, UserRound, AlertTriangle } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, LEADING, SHADOW } from "./ThemeContext";
-import { useLocale } from "./i18n";
+import { useLocale, toLatinDigits } from "./i18n";
 import { SignaturePad } from "./nurse/SignaturePad";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { CARE_PARTNER_ITEMS, type CarePartnerRecord } from "./carePartnerStore";
@@ -258,11 +258,20 @@ export function CarePartnerAgreement({
             </div>
             <div>
               <label style={label}>{tr("care.cp.field.mobile")} <span style={{ color: t.errorOn }}>*</span></label>
+              {/* The form's own direction, not a forced ltr. Forced, the
+                  Arabic placeholder was laid out as an English sentence and
+                  came apart: the example number ended up to the LEFT of the
+                  word introducing it. The digits inside still read left to
+                  right — a number is a number in both languages — but the
+                  line they sit on belongs to the form around them. */}
               <input
-                dir="ltr"
+                dir={isRTL ? "rtl" : "ltr"}
                 inputMode="tel"
                 value={mobile}
-                onChange={(e) => setMobile(e.target.value.replace(/[^\d+\s-]/g, ""))}
+                /* Arabic keyboards type ٠١٢٣٤٥٦٧٨٩, and \d matches none of
+                   them, so every keystroke was dropped in silence. Converted,
+                   then filtered: what is typed is what is stored. */
+                onChange={(e) => setMobile(toLatinDigits(e.target.value).replace(/[^\d+\s-]/g, ""))}
                 placeholder={tr("care.cp.mobilePlaceholder")}
                 className="cp-field"
                 style={{ ...field, textAlign: isRTL ? "right" : "left" }}

@@ -854,7 +854,9 @@ const translations: Record<string, TranslationEntry> = {
 "care.cp.field.mobile": { en: "Mobile No.", ar: "رقم الجوال", ur: "موبائل نمبر" },
 "care.cp.field.date": { en: "Date", ar: "التاريخ", ur: "تاریخ" },
 "care.cp.field.sign": { en: "Sign", ar: "التوقيع", ur: "دستخط" },
-"care.cp.mobilePlaceholder": { en: "e.g. 05X XXX XXXX", ar: "مثال: ٠٥X XXX XXXX", ur: "مثلاً 05X XXX XXXX" },
+/* Latin digits in the Arabic example too: the field stores 0-9, and an
+   example written in ٠١٢ promises a number the box will never show back. */
+"care.cp.mobilePlaceholder": { en: "e.g. 05X XXX XXXX", ar: "مثال: 05X XXX XXXX", ur: "مثلاً 05X XXX XXXX" },
 "care.cp.signHint": { en: "Sign with your finger in the box below", ar: "وقّع بإصبعك في المساحة أدناه", ur: "نیچے خانے میں اپنی انگلی سے دستخط کریں" },
 "care.cp.signClear": { en: "Clear signature", ar: "مسح التوقيع", ur: "دستخط مٹائیں" },
 "care.cp.signHere": { en: "Sign here", ar: "وقّع هنا", ur: "یہاں دستخط کریں" },
@@ -1765,6 +1767,21 @@ export function localizeNumber(n: number | string, locale: Locale): string {
     return s.replace(/[0-9]/g, w => "٠١٢٣٤٥٦٧٨٩"[+w]);
   }
   return s;
+}
+
+/**
+ * Arabic-Indic and Persian digits back to 0-9.
+ *
+ * An Arabic keyboard types ٠١٢٣٤٥٦٧٨٩, and JavaScript's \d matches none of
+ * them. A field that filters to \d therefore drops every keystroke and shows
+ * nothing, with no error and nothing to correct — the patient is simply left
+ * pressing keys at a box that will not fill in. Take what they typed and
+ * store the digits it means.
+ */
+export function toLatinDigits(input: string): string {
+  return input
+    .replace(/[\u0660-\u0669]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[\u06F0-\u06F9]/g, (d) => String(d.charCodeAt(0) - 0x06F0));
 }
 
 
