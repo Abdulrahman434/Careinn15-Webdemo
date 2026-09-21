@@ -700,7 +700,6 @@ const translations: Record<string, TranslationEntry> = {
   "care.plan.nutritionReview": { en: "Nutrition Review", ar: "مراجعة التغذية", ur: "غذائی جائزہ" },
   "care.plan.woundCare": { en: "Wound Care", ar: "العناية بالجرح", ur: "زخم کی دیکھ بھال" },
   "care.plan.dischargeTeaching": { en: "Discharge Teaching", ar: "تثقيف ما قبل الخروج", ur: "ڈسچارج سے پہلے رہنمائی" },
-  "care.plan.min": { en: "Min", ar: "دقيقة", ur: "منٹ" },
   "care.plan.done": { en: "Done", ar: "تم", ur: "ہو گیا" },
   "careplan.toggle.daily": { en: "Daily", ar: "يومي", ur: "روزانہ" },
   "careplan.toggle.overall": { en: "Overall", ar: "إجمالي", ur: "مجموعی" },

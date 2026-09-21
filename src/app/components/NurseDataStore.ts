@@ -98,7 +98,6 @@ export interface CarePlanItem {
   labelAr?: string; // custom arabic label
   done: boolean;
   active?: boolean;
-  minutes?: number;
   day?: number;
   date?: string; // YYYY-MM-DD
   timeKey?: string;
@@ -420,13 +419,13 @@ function createDefaultState(): NurseStoreState {
       { id: "cp-1", labelKey: "care.plan.initialAssessment", done: true, timeKey: "care.plan.done", day: 1, date: todayStr },
       { id: "cp-2", labelKey: "care.plan.bloodWork", done: true, timeKey: "care.plan.done", day: 1, date: todayStr },
       { id: "cp-3", labelKey: "care.plan.scansImaging", done: true, timeKey: "care.plan.done", day: 1, date: todayStr },
-      { id: "cp-4", labelKey: "care.plan.medicationRound", done: false, active: true, minutes: 45, day: 1, date: todayStr },
-      { id: "cp-5", labelKey: "care.plan.checkup", done: false, minutes: 15, day: 2, date: tomorrowStr },
-      { id: "cp-6", labelKey: "care.plan.physicalTherapy", done: false, minutes: 30, day: 3, date: day2Str },
-      { id: "cp-7", labelKey: "care.plan.nutritionReview", done: false, minutes: 20, day: 3, date: day2Str },
-      { id: "cp-8", labelKey: "care.plan.woundCare", done: false, minutes: 25, day: 4, date: day3Str },
-      { id: "cp-9", labelKey: "care.plan.doctorReview", done: false, minutes: 10, day: 4, date: day3Str },
-      { id: "cp-10", labelKey: "care.plan.dischargeTeaching", done: false, minutes: 30, day: 5, date: day3Str },
+      { id: "cp-4", labelKey: "care.plan.medicationRound", done: false, active: true, day: 1, date: todayStr },
+      { id: "cp-5", labelKey: "care.plan.checkup", done: false, day: 2, date: tomorrowStr },
+      { id: "cp-6", labelKey: "care.plan.physicalTherapy", done: false, day: 3, date: day2Str },
+      { id: "cp-7", labelKey: "care.plan.nutritionReview", done: false, day: 3, date: day2Str },
+      { id: "cp-8", labelKey: "care.plan.woundCare", done: false, day: 4, date: day3Str },
+      { id: "cp-9", labelKey: "care.plan.doctorReview", done: false, day: 4, date: day3Str },
+      { id: "cp-10", labelKey: "care.plan.dischargeTeaching", done: false, day: 5, date: day3Str },
     ],
     carePlanMode: "daily",
     carePlanSelectedDate: todayStr,

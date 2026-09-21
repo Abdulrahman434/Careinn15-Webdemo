@@ -106,10 +106,10 @@ const carePlan = [
   { labelKey: "care.plan.labTests", time: "Done", timeKey: "care.plan.done", done: true, day: 1 },
   { labelKey: "care.plan.scansImaging", time: "Done", timeKey: "care.plan.done", done: true, day: 1 },
   { labelKey: "care.plan.medicationPrep", time: "Done", timeKey: "care.plan.done", done: true, day: 1 },
-  { labelKey: "care.plan.laborMonitoring", minutes: 45, done: false, active: true, day: 1 },
-  { labelKey: "care.plan.delivery", minutes: 120, done: false, day: 2 },
-  { labelKey: "care.plan.recoveryObservation", minutes: 60, done: false, day: 3 },
-  { labelKey: "care.plan.motherBabyCheck", minutes: 30, done: false, day: 4 },
+  { labelKey: "care.plan.laborMonitoring", done: false, active: true, day: 1 },
+  { labelKey: "care.plan.delivery", done: false, day: 2 },
+  { labelKey: "care.plan.recoveryObservation", done: false, day: 3 },
+  { labelKey: "care.plan.motherBabyCheck", done: false, day: 4 },
 ];
 
 /** Maps patientDiet store values → human-readable display labels */
@@ -137,12 +137,12 @@ const allergies = [
 const dischargePlan = [
   { labelKey: "care.discharge.finalCheck", time: "Done", timeKey: "care.plan.done", done: true },
   { labelKey: "care.discharge.medicationPrep", time: "Done", timeKey: "care.plan.done", done: true },
-  { labelKey: "care.discharge.education", minutes: 45, done: false, active: true },
-  { labelKey: "care.discharge.homeCare", minutes: 20, done: false },
-  { labelKey: "care.discharge.followup", minutes: 15, done: false },
-  { labelKey: "care.discharge.billing", minutes: 30, done: false },
-  { labelKey: "care.discharge.docsReady", minutes: 25, done: false },
-  { labelKey: "care.discharge.confirm", minutes: 10, done: false },
+  { labelKey: "care.discharge.education", done: false, active: true },
+  { labelKey: "care.discharge.homeCare", done: false },
+  { labelKey: "care.discharge.followup", done: false },
+  { labelKey: "care.discharge.billing", done: false },
+  { labelKey: "care.discharge.docsReady", done: false },
+  { labelKey: "care.discharge.confirm", done: false },
 ];
 
 /* ─── Slide Definitions ─── */
