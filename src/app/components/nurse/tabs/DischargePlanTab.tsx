@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LogOut, Plus, Trash2, Check, GripVertical, Edit2, Save, Eye, CalendarDays, Phone } from "lucide-react";
+import { LogOut, Plus, Trash2, Check, GripVertical, Edit2, Save, Eye, CalendarDays } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
 import { DateField } from "../DateField";
 import { useLocale } from "../../i18n";
@@ -30,16 +30,11 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
     setNewLabelAr("");
   };
 
-  const info = store.dischargeInfo;
   const rowField = {
     padding: "10px 14px", borderRadius: 12, fontSize: "14px",
     color: t.textHeading, backgroundColor: t.surfaceInset,
     border: `1.5px solid ${t.borderDefault}`,
   };
-  const patchFollowUp = (id: string, updates: Partial<{ label: string; when: string }>) =>
-    nurseActions.setDischargeInfo({ followUps: info.followUps.map((f) => f.id === id ? { ...f, ...updates } : f) });
-  const patchContact = (id: string, updates: Partial<{ label: string; value: string }>) =>
-    nurseActions.setDischargeInfo({ contacts: info.contacts.map((c) => c.id === id ? { ...c, ...updates } : c) });
 
   const handleDragStart = (idx: number) => setDragIdx(idx);
   const handleDragOver = (e: React.DragEvent, idx: number) => {
@@ -167,71 +162,6 @@ export function DischargePlanTab({ role }: { role: "nurse" | "doctor" }) {
       )}
       </div>
 
-      {/* Follow-ups and contacts are recorded here for the ward's own use;
-          the bedside card that used to show them has been withdrawn. */}
-      <div className="nurse-card">
-        <h3 style={{ color: t.textHeading }}><CalendarDays size={18} style={{ color: t.primaryOn }} /> Follow-up Appointments</h3>
-        <div className="space-y-2">
-          {info.followUps.map((f) => (
-            <div key={f.id} className="flex items-center gap-2">
-              <input dir="auto" value={f.label} readOnly={!isNurse}
-                onChange={(e) => patchFollowUp(f.id, { label: e.target.value })}
-                placeholder="Clinic or specialty"
-                className="flex-1 outline-none" style={rowField} />
-              <DateField
-                value={f.when}
-                readOnly={!isNurse}
-                onChange={(v) => patchFollowUp(f.id, { when: v })}
-                withTime
-                className="flex-1"
-                placeholder="Date and time"
-              />
-              {isNurse && (
-                <button onClick={() => nurseActions.setDischargeInfo({ followUps: info.followUps.filter((x) => x.id !== f.id) })}
-                  className="p-2 cursor-pointer" style={{ color: t.errorOn, background: "none", border: "none" }}><Trash2 size={14} /></button>
-              )}
-            </div>
-          ))}
-        </div>
-        {isNurse && (
-          <button
-            onClick={() => nurseActions.setDischargeInfo({ followUps: [...info.followUps, { id: `fu-${Date.now().toString(36)}`, label: "", when: "" }] })}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all active:scale-95 mt-3"
-            style={{ backgroundColor: t.primary, color: t.brandOnPrimary, fontSize: "13px", fontWeight: 700, border: "none" }}>
-            <Plus size={16} /> Add appointment
-          </button>
-        )}
-      </div>
-
-      <div className="nurse-card">
-        <h3 style={{ color: t.textHeading }}><Phone size={18} style={{ color: t.primaryOn }} /> Post-Discharge Contacts</h3>
-        <div className="space-y-2">
-          {info.contacts.map((c) => (
-            <div key={c.id} className="flex items-center gap-2">
-              <input dir="auto" value={c.label} readOnly={!isNurse}
-                onChange={(e) => patchContact(c.id, { label: e.target.value })}
-                placeholder="Who to call"
-                className="flex-1 outline-none" style={rowField} />
-              <input dir="auto" value={c.value} readOnly={!isNurse}
-                onChange={(e) => patchContact(c.id, { value: e.target.value })}
-                placeholder="Number"
-                className="flex-1 outline-none" style={rowField} />
-              {isNurse && (
-                <button onClick={() => nurseActions.setDischargeInfo({ contacts: info.contacts.filter((x) => x.id !== c.id) })}
-                  className="p-2 cursor-pointer" style={{ color: t.errorOn, background: "none", border: "none" }}><Trash2 size={14} /></button>
-              )}
-            </div>
-          ))}
-        </div>
-        {isNurse && (
-          <button
-            onClick={() => nurseActions.setDischargeInfo({ contacts: [...info.contacts, { id: `pc-${Date.now().toString(36)}`, label: "", value: "" }] })}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer transition-all active:scale-95 mt-3"
-            style={{ backgroundColor: t.primary, color: t.brandOnPrimary, fontSize: "13px", fontWeight: 700, border: "none" }}>
-            <Plus size={16} /> Add contact
-          </button>
-        )}
-      </div>
 
     </div>
   );

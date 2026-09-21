@@ -200,27 +200,6 @@ export interface ClinicalObservation {
   otherRiskNotes?: string;
 }
 
-/** What the patient leaves with, alongside the discharge step list: where to
- *  come back to, who to call, and what to do at home. */
-export interface FollowUpAppointment {
-  id: string;
-  /** Clinic or specialty the appointment is with. */
-  label: string;
-  /** Free text — the HIS is not the source for this yet. */
-  when: string;
-}
-
-export interface PostDischargeContact {
-  id: string;
-  label: string;
-  value: string;
-}
-
-export interface DischargeInfo {
-  followUps: FollowUpAppointment[];
-  contacts: PostDischargeContact[];
-}
-
 /** Section keys matching CareMe slides + new nurse-only sections */
 export type SectionKey =
   | "profile"
@@ -285,7 +264,6 @@ export interface NurseStoreState {
   dischargePlan: CarePlanItem[];
 
   /** Follow-ups, contacts and take-home instructions. */
-  dischargeInfo: DischargeInfo;
 
   /** Clinical observations */
   observations: ClinicalObservation[];
@@ -468,18 +446,6 @@ function createDefaultState(): NurseStoreState {
       { id: "dp-4", labelKey: "care.discharge.financialClearance", done: false },
     ],
 
-    dischargeInfo: {
-      followUps: [
-        { id: "fu-1", label: "Cardiology clinic", when: formatPatientDate(shift(now, 9)) + " · 10:30" },
-        { id: "fu-2", label: "Wound review — day surgery", when: formatPatientDate(shift(now, 16)) + " · 09:00" },
-      ],
-      contacts: [
-        { id: "pc-1", label: "Ward nursing station", value: "+966 12 665 0000 ext. 1412" },
-        { id: "pc-2", label: "24/7 nurse advice line", value: "+966 12 665 0500" },
-        { id: "pc-3", label: "Pharmacy enquiries", value: "+966 12 665 0310" },
-      ],
-    },
-
     /* Oldest first — the card reverses them, so the newest round leads. Two
        earlier rounds are seeded so the repeating block is visible in the demo
        rather than only appearing once a nurse has recorded a second set. */
@@ -546,7 +512,6 @@ function loadCachedState(): Partial<NurseStoreState> {
     // added to or reordered is left alone.
     /* Instructions were withdrawn from the discharge section. Anything a
        stored record still carries for them is ignored on the way in. */
-    if (parsed.dischargeInfo) delete parsed.dischargeInfo.instructions;
 
     if (Array.isArray(parsed.dischargePlan)) {
       const legacyKeys = [
@@ -620,10 +585,6 @@ const nurseStore = (() => {
     alerts: {
       ...defaultState.alerts,
       ...(cachedState.alerts || {}),
-    },
-    dischargeInfo: {
-      ...defaultState.dischargeInfo,
-      ...(cachedState.dischargeInfo || {}),
     },
   };
   const listeners = new Set<StoreListener>();
@@ -1020,10 +981,6 @@ const nurseStore = (() => {
     },
 
     // ── Discharge Plan ──
-    setDischargeInfo: (updates: Partial<DischargeInfo>) => {
-      state = { ...state, dischargeInfo: { ...state.dischargeInfo, ...updates } };
-      notify();
-    },
 
     setDischargePlan: (items: CarePlanItem[]) => {
       state = { ...state, dischargePlan: items };
