@@ -400,7 +400,7 @@ function createDefaultState(): NurseStoreState {
       isolation: true,
       isolationType: "Contact",
       fallRisk: "high",
-      careGoal: "Sit out of bed for all three meals",
+      careGoal: "Manage pain effectively",
       isolationInstructions: [
         "Check with your nurse before leaving the room.",
         "Visitors: check with the nurse before entering.",

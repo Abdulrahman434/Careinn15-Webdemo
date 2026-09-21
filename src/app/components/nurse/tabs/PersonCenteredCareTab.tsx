@@ -2,19 +2,55 @@ import { useNurseStore, nurseActions } from "../../NurseDataStore";
 import { useTheme } from "../../ThemeContext";
 import { Target, Info } from "lucide-react";
 
-/* The goals a ward actually sets, in the words it uses on a round. Free text
-   is still allowed underneath, because no list survives contact with a real
-   patient — but the list is what makes this a two-second job at the bedside. */
+/* The ward's own Patient Goal of the Day list, in its order and its wording.
+   "Other, specify:" is the free-text field under the dropdown rather than an
+   option in it — picking it and then typing is two steps for one answer. */
 const CARE_GOALS = [
-  "Sit out of bed for all three meals",
-  "Walk to the end of the corridor and back",
-  "Keep pain at or below 3 out of 10",
-  "Finish today's antibiotics on time",
-  "Eat and drink without help",
-  "Breathing exercises every two hours",
-  "Rest between visitors",
-  "Ready for tomorrow's procedure",
-  "Understand the discharge plan",
+  "Relief of symptoms (e.g. fever, cough, diarrhea, cramps, others)",
+  "Manage pain effectively",
+  "Improve breathing comfort",
+  "Wean oxygen support when clinically appropriate",
+  "Maintain stable vital signs",
+  "Maintain safety (e.g. free from falls, pressure injury, hospital acquired infections)",
+  "Prevent postoperative complications",
+  "Complete procedure safely (e.g. comfort during procedure, no complications)",
+  "Improve/Maintain oral intake and hydration",
+  "Tolerate prescribed diet/ Advance diet as tolerated",
+  "Resume diet when medically appropriate",
+  "Participate in feeding with nurse support",
+  "Bottle feed effectively",
+  "Establish/ Initiate breastfeeding/ Breastfeed effectively",
+  "Monitor urine and stool output",
+  "Void without difficulty",
+  "Improve sleep/ Sleep with minimal interruption",
+  "Improve mobility/ Ambulate safely/ Ambulate with assistance",
+  "Prepare for discharge",
+  "Complete newborn screening/ Complete hearing screening/ Complete bilirubin screening",
+  "Participate in treatment plan",
+  "Attend group therapy",
+  "Verbalize feelings or concerns",
+  "Reduce anxiety",
+  "Improve mood",
+  "Use coping strategies",
+  "Take medications as prescribed",
+  "Continue skin-to-skin contact",
+  "Provide skin-to-skin care",
+  "Provide comfort measures during care",
+  "Provide verbal interaction for developmental support",
+  "Provide gentle touch as guided by nurse",
+  "Assist with diaper or clothing change",
+  "Maintain stable body temperature",
+  "Promote bonding with parent/ Bond with newborn",
+  "Rooming-in with mother/parents",
+  "Vaginal birth",
+  "Safe delivery",
+  "Manage labor pain/ Progress in labor",
+  "Maintain maternal safety/ Maintain fetal well-being",
+  "Effective pushing",
+  "Stable recovery after delivery",
+  "Control postpartum bleeding/vaginal bleeding",
+  "Manage incision or perineal discomfort",
+  "Learn postpartum self-care",
 ];
 
 export function PersonCenteredCareTab({ role }: { role: "nurse" | "doctor" }) {
@@ -64,7 +100,7 @@ export function PersonCenteredCareTab({ role }: { role: "nurse" | "doctor" }) {
           value={goal}
           readOnly={!isNurse}
           onChange={(e) => nurseActions.setAlerts({ careGoal: e.target.value })}
-          placeholder="e.g. Sit out of bed for all three meals"
+          placeholder="Other, specify:"
           className="w-full outline-none"
           style={{
             padding: "10px 12px", borderRadius: 10, fontSize: "14px",
