@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { FileText, Smartphone } from "lucide-react";
-import { apiUrl, rewriteImageUrl, withApiKey } from "./apiConfig";
+import { apiUrl, rewriteImageUrl, withApiKey, saveApiConfig } from "./apiConfig";
 import { ApiImage } from "../components/ApiImage";
 
 // ═══════════════════════════════════════════════════════════════════════════

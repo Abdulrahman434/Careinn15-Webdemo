@@ -288,7 +288,9 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
         /* This interface is used with a finger on a bedside touchscreen, not a
            mouse. 44px is the smallest target a fingertip hits reliably, so it
            is the floor for every field, option chip and button here — set once
-           rather than remembered at each of the ~40 call sites. `.ni-inline`
+           rather than remembered at each of the ~40 call sites. The class
+           .ni-inline (no backticks here — this comment lives inside a
+           template literal, and one would end it)
            opts out the small remove buttons that sit INSIDE a chip, which
            would otherwise stretch the chip around them. */
         .ni-root input:not([type="checkbox"]):not([type="radio"]),
