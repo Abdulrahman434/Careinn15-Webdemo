@@ -1268,7 +1268,12 @@ function BedsideScreen() {
       priority: "info"
     };
 
-    setBroadcastQueue(prev => [...prev, {
+    /* Shown, not queued — the same bypass the API branch above already makes.
+       The queue is for broadcasts that ARRIVE: one landing mid-tour waits its
+       turn, which is why draining it is gated on tourDismissed. A tap is not
+       an arrival. Queued, a patient who had not dismissed the tour pressed a
+       notification and nothing happened, so they pressed it again. */
+    setActiveBroadcast({
       id: "notif-popup-" + notif.id,
       title: details.title,
       body: details.body,
@@ -1279,9 +1284,13 @@ function BedsideScreen() {
       ctaAction: details.ctaAction,
       ctaUrl: details.ctaUrl,
       ctaSurveyId: details.ctaSurveyId
-    }]);
+    });
     setShowNotifications(false); // Close panel to focus on broadcast
-  }, []);
+    /* This closure reads apiNotifications and the active hospital's guide.
+       With [] it kept whichever it was handed on the first render, so a
+       hospital switched at runtime would have served the previous brand's
+       PDF and a freshly fetched alert would have opened empty. */
+  }, [apiNotifications, theme.patientGuidePdf]);
 
   const handleOpenCategory = (categoryKey: string) => {
     if (categoryKey === "About Us") {
