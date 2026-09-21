@@ -69,8 +69,6 @@ import { SlidersHorizontal,
   BedDouble,
   ContactRound,
   Pill,
-  PersonStanding,
-  ShieldAlert,
   Target,
   HeartHandshake,
 } from "lucide-react";
@@ -444,10 +442,6 @@ function CardEmptyState({
 }
 
 /** A row of badges. */
-function BadgeRow({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-wrap gap-2">{children}</div>;
-}
-
 /** A control with a comfortable hit area and a glyph that stays its own size. */
 function TapTarget({
   onClick, label, children, theme, style, size = 40,
@@ -697,6 +691,53 @@ function DetailCell({
           {label}
         </span>
         {value}
+      </div>
+    </div>
+  );
+}
+
+/** A row of the Care details list: what it is on the left, what it says on the
+ *  right, and a hairline above every row but the first — so the list never
+ *  ends in a rule against the panel's own edge.
+ *
+ *  The children ARE the badge row: one chip or six, they wrap toward the right
+ *  and the label sits level with the first of them rather than floating to the
+ *  middle of two lines of allergies. */
+function DetailRow({
+  theme, label, children, isExpanded = false, first = false,
+}: {
+  theme: any; label: string; children: React.ReactNode;
+  isExpanded?: boolean; first?: boolean;
+}) {
+  const pad = isExpanded ? 14 : 11;
+  // Matches a CardBadge: its padding, its line box and its border. Centering
+  // the label inside that height is what keeps it on the first chip's line.
+  const badgeHeight = isExpanded ? 27 : 24;
+  return (
+    <div
+      className="flex items-start justify-between gap-4"
+      style={{
+        paddingTop: first ? 0 : pad,
+        paddingBottom: pad,
+        borderTop: first ? undefined : `1px solid ${theme.borderSubtle}`,
+      }}
+    >
+      <span
+        className="flex items-center shrink-0"
+        style={{
+          fontFamily: theme.fontFamily,
+          ...roles(isExpanded).cellLabel,
+          color: theme.textMuted,
+          minHeight: `${badgeHeight}px`,
+        }}
+      >
+        {label}
+      </span>
+      <div
+        className="flex flex-wrap items-center justify-end min-w-0"
+        style={{ gap: "8px" }}
+      >
+        {children}
       </div>
     </div>
   );
@@ -1088,88 +1129,66 @@ function CareOverviewSlide({ theme, isExpanded = false }: { theme: any; isExpand
       {/* Stethoscope, not the fork and knife: this block covers diet, fall
           risk and allergies, and the diet row below already owns that glyph. */}
       <Section isExpanded={isExpanded} theme={theme} icon={Stethoscope} title={t("care.overview.details")}>
-        {/* The badges are the tallest thing in each row, so the gap has to
-            clear them rather than the label above them — at 12px the rows
-            read as one block. */}
-        <div className="flex flex-col" style={{ gap: isExpanded ? "22px" : "18px" }}>
-          <div className="grid grid-cols-2" style={{ columnGap: isExpanded ? "24px" : "16px", rowGap: isExpanded ? "22px" : "18px" }}>
-            <DetailCell
-              isExpanded={isExpanded}
-              icon={Utensils}
-              theme={theme}
-                            tone={isNpo ? "danger" : "brand"}
-              label={t("care.diet.title")}
-              value={
-                <CardBadge isExpanded={isExpanded} theme={theme} tone={isNpo ? "danger" : "brand"}>
-                  {patientDietLabel}
-                </CardBadge>
-              }
-            />
-            {fallRiskLabel && (
-              <DetailCell isExpanded={isExpanded}
-                icon={PersonStanding}
+        {/* A list, not a grid of cells. Four facts, each one a label and an
+            answer on the same line, separated by a hairline — the shape a
+            chart already uses, and the shape somebody scans when they want
+            one of the four and not the other three. The icons that used to
+            head each cell are gone: a column of glyphs down the left made
+            every row look like a card of its own. */}
+        <div className="flex flex-col">
+          <DetailRow first isExpanded={isExpanded} theme={theme} label={t("care.diet.title")}>
+            <CardBadge isExpanded={isExpanded} theme={theme} tone={isNpo ? "danger" : "brand"}>
+              {patientDietLabel}
+            </CardBadge>
+          </DetailRow>
+
+          {/* A fall risk is a risk at every level the ward records, and the
+              only reassuring answer is that there is not one. Red unless the
+              assessment came back none, which is green because it is good
+              news rather than merely neutral. */}
+          {fallRiskLabel && (
+            <DetailRow isExpanded={isExpanded} theme={theme} label={t("care.fallRisk")}>
+              <CardBadge
+                isExpanded={isExpanded}
                 theme={theme}
-                                tone="brand"
-                label={t("care.fallRisk")}
-                /* Brand-toned whatever the level: the ward reads the word,
-                   and a red chip here competed with the allergy chips. */
-                value={
-                  <CardBadge isExpanded={isExpanded} theme={theme} tone="brand">{fallRiskLabel}</CardBadge>
-                }
-              />
-            )}
-          </div>
+                tone={alerts.fallRisk === "none" ? "success" : "danger"}
+              >
+                {fallRiskLabel}
+              </CardBadge>
+            </DetailRow>
+          )}
 
           {/* What is in force right now. The name alert says only THAT it
               applies — the other patient it guards against is in a different
-              bed and is none of this screen's business. Both tones are
-              clinical, not brand. */}
+              bed and is none of this screen's business. */}
           {showAlertBar && (
-            <DetailCell
-              icon={ShieldAlert}
-              theme={theme}
-              isExpanded={isExpanded}
-              label={t("care.safety.title")}
-              value={
-                <BadgeRow>
-                  {alerts.similarName && (
-                    <CardBadge theme={theme} isExpanded={isExpanded} tone="warning">
-                      <Users size={14} />
-                      {t("care.alert.nameAlert")}
-                    </CardBadge>
-                  )}
-                  {alerts.isolation && (
-                    <CardBadge theme={theme} isExpanded={isExpanded} tone="info">
-                      <Shield size={14} />
-                      {isolationTypeLabel}
-                    </CardBadge>
-                  )}
-                </BadgeRow>
-              }
-            />
+            <DetailRow isExpanded={isExpanded} theme={theme} label={t("care.safety.title")}>
+              {alerts.similarName && (
+                <CardBadge theme={theme} isExpanded={isExpanded} tone="warning">
+                  <Users size={14} />
+                  {t("care.alert.nameAlert")}
+                </CardBadge>
+              )}
+              {alerts.isolation && (
+                <CardBadge theme={theme} isExpanded={isExpanded} tone="info">
+                  <Shield size={14} />
+                  {isolationTypeLabel}
+                </CardBadge>
+              )}
+            </DetailRow>
           )}
 
-          {/* The warning glyph appears only when there is something to warn
-              about — "No known allergies" is reassurance, not an alert. */}
-          <DetailCell isExpanded={isExpanded}
-            icon={hasAllergies ? AlertTriangle : undefined}
-            theme={theme}
-                        tone="danger"
-            label={t("care.allergies")}
-            value={
-              hasAllergies ? (
-                <BadgeRow>
-                  {storeAllergies.map(a => (
-                    <CardBadge isExpanded={isExpanded} key={a} theme={theme} tone="danger">{a}</CardBadge>
-                  ))}
-                </BadgeRow>
-              ) : (
+          <DetailRow isExpanded={isExpanded} theme={theme} label={t("care.allergies")}>
+            {hasAllergies
+              ? storeAllergies.map(a => (
+                  <CardBadge isExpanded={isExpanded} key={a} theme={theme} tone="danger">{a}</CardBadge>
+                ))
+              : (
                 <CardBadge isExpanded={isExpanded} theme={theme} tone="neutral">
                   {t("care.allergies.none")}
                 </CardBadge>
-              )
-            }
-          />
+              )}
+          </DetailRow>
         </div>
       </Section>
     </div>
