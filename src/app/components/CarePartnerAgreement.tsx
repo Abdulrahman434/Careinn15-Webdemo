@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Check, UserRound, AlertTriangle } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, LEADING, SHADOW } from "./ThemeContext";
-import { useLocale, toLatinDigits } from "./i18n";
+import { useLocale, toLatinDigits, textDirection } from "./i18n";
 import { SignaturePad } from "./nurse/SignaturePad";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { CARE_PARTNER_ITEMS, type CarePartnerRecord } from "./carePartnerStore";
@@ -236,8 +236,11 @@ export function CarePartnerAgreement({
           <div className="grid grid-cols-2" style={{ gap: "16px" }}>
             <div>
               <label style={label}>{tr("care.cp.field.name")} <span style={{ color: t.errorOn }}>*</span></label>
+              {/* auto reads the value, and an empty value reads as English —
+                  which put an Arabic example on the left of an Arabic form.
+                  Empty, it follows the hint; typed in, it follows the typing. */}
               <input
-                dir="auto"
+                dir={name ? "auto" : textDirection(tr("care.pcc.partner.namePlaceholder"))}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={tr("care.pcc.partner.namePlaceholder")}
@@ -248,7 +251,7 @@ export function CarePartnerAgreement({
             <div>
               <label style={label}>{tr("care.cp.field.relationship")} <span style={{ color: t.errorOn }}>*</span></label>
               <input
-                dir="auto"
+                dir={relationship ? "auto" : textDirection(tr("care.pcc.partner.relationshipPlaceholder"))}
                 value={relationship}
                 onChange={(e) => setRelationship(e.target.value)}
                 placeholder={tr("care.pcc.partner.relationshipPlaceholder")}

@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Check, Search, Target } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "./ThemeContext";
-import { useLocale } from "./i18n";
+import { useLocale, textDirection } from "./i18n";
 import { CARE_GOALS, isListedGoal, careGoalLabel } from "./careGoals";
 import { useReloadHold } from "../lib/reloadSafety";
 
@@ -202,7 +202,7 @@ export function CareGoalPicker({
             <textarea
               id="care-goal-own"
               ref={ownRef}
-              dir="auto"
+              dir={own ? "auto" : textDirection(tr("goal.picker.ownPlaceholder"))}
               rows={2}
               value={own}
               onChange={(e) => { setOwn(e.target.value); if (e.target.value.trim()) setSelected(""); }}

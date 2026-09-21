@@ -1,6 +1,6 @@
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, LEADING, primaryRgba, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { ApiImage } from "./ApiImage";
-import { useLocale, type Locale } from "./i18n";
+import { useLocale, type Locale, textDirection } from "./i18n";
 import { useNurseStore, type SectionKey, nurseActions } from "./NurseDataStore";
 import { useAuth } from "./AuthContext";
 import {
@@ -3005,7 +3005,7 @@ function BoardComposer({ theme, dir, onCancel, onSave }: {
             onChange={(e) => setText(e.target.value)}
             placeholder={t("care.pcc.board.placeholder")}
             rows={7}
-            dir="auto"
+            dir={text ? "auto" : textDirection(t("care.pcc.board.placeholder"))}
             autoFocus
             style={{
               width: "100%",

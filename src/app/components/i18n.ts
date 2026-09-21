@@ -1778,6 +1778,26 @@ export function localizeNumber(n: number | string, locale: Locale): string {
  * pressing keys at a box that will not fill in. Take what they typed and
  * store the digits it means.
  */
+/**
+ * Which way a line of text wants to sit.
+ *
+ * For a field that is still empty. `dir="auto"` reads the VALUE, and an empty
+ * value gives it nothing to read, so the browser falls back to left-to-right
+ * and an Arabic placeholder starts from the wrong edge — which is how a form
+ * that was otherwise laid out right to left had its examples beginning on the
+ * left. Handing it the placeholder's own direction fixes that without
+ * guessing from the locale: an English hint inside an Arabic session is still
+ * an English hint, and still belongs on the left.
+ *
+ * Arabic, its supplements and presentation forms, Hebrew — the Urdu here is
+ * Arabic script and is covered by the first range.
+ */
+export function textDirection(text: string): "rtl" | "ltr" {
+  return /[\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.test(text)
+    ? "rtl"
+    : "ltr";
+}
+
 export function toLatinDigits(input: string): string {
   return input
     .replace(/[\u0660-\u0669]/g, (d) => String(d.charCodeAt(0) - 0x0660))
