@@ -2521,14 +2521,27 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
   }
+  componentDidCatch(error: Error, info: any) {
+    // The screen is read off a kiosk by somebody standing next to it, and a
+    // photograph of it is usually all anyone gets. Put the whole thing where
+    // a developer console can be pasted from too.
+    console.error("[CareInn] interface error:", error, info?.componentStack);
+  }
   render() {
     if (this.state.hasError) {
+      const err = this.state.error;
       return (
         <div className="fixed inset-0 bg-slate-900 text-white flex flex-col items-center justify-center p-10 text-center font-sans">
           <h1 className="text-4xl font-black mb-4">System Recovered</h1>
           <p className="text-slate-400 mb-8 max-w-md">An unexpected interface error occurred. The system has automatically rebooted to a stable state.</p>
           <div className="bg-slate-800 p-4 rounded-lg text-left text-xs font-mono text-red-400 mb-8 select-all max-w-xl overflow-auto max-h-[300px]">
-            {this.state.error?.stack}
+            {/* Safari's error.stack carries the frames and NOT the message, so
+                a screenshot of this box used to say where it broke without
+                ever saying what broke. Name and message first, always. */}
+            <div className="text-red-300 font-bold mb-2 whitespace-pre-wrap">
+              {err?.name || "Error"}: {err?.message || "(no message)"}
+            </div>
+            <div className="whitespace-pre-wrap">{err?.stack}</div>
           </div>
           <button
             onClick={() => window.location.reload()}
