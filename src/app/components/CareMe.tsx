@@ -3215,7 +3215,7 @@ function CarePartnerBody({ theme, isExpanded = false }: { theme: any; isExpanded
   /* ── Named but not signed: the sheet is waiting to be handed over ── */
   if (record.status === "nominated") {
     return (
-      <div className="flex flex-col items-start gap-3">
+      <div className="flex flex-col gap-3">
         <p style={{ fontFamily, ...R.body, color: theme.textBody }} dir="auto">
           {t("care.pcc.partner.handover", record.name || t("care.pcc.partner.title"))}
         </p>
@@ -3229,7 +3229,7 @@ function CarePartnerBody({ theme, isExpanded = false }: { theme: any; isExpanded
   /* ── Declined: a standing answer, and a way back ── */
   if (record.status === "declined") {
     return (
-      <div className="flex flex-col items-start gap-3">
+      <div className="flex flex-col gap-3">
         <p style={{ fontFamily, ...R.body, color: theme.textBody }}>
           {t("care.pcc.partner.declined")}
         </p>
@@ -3549,7 +3549,10 @@ function PreferencesBody({ theme, isExpanded = false, onOpenForm }: {
           changes during a stay — a diet, a bathing time, who should be in the
           room — and the ward would rather have it updated than stale. Reopens
           the same form with the saved answers already in place. */}
-      <div style={{ marginTop: SPACE[2] }}>
+      {/* A column, so the button stretches — every action in this card is
+          full width with its label centred, and one that hugs its own text
+          reads as a lesser thing than the identical button one card up. */}
+      <div className="flex flex-col" style={{ marginTop: SPACE[2] }}>
         <CardButton
           theme={theme}
           isExpanded={isExpanded}
