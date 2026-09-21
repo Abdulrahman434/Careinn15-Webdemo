@@ -320,6 +320,7 @@ export function NotificationsPanel({
   acknowledgedBroadcasts = [],
   onNotificationClick,
   apiAlerts = [],
+  onClearAll,
   onNotifChange,
 }: { 
   onClose: () => void; 
@@ -399,6 +400,17 @@ export function NotificationsPanel({
     const seen = getHardcodedSeen();
     let filtered = initialNotifications.filter(n => !hidden.has(n.id));
 
+    /* A notice that has been acknowledged or put off is already above, under
+       HOSPITAL NOTICES, carrying what was done with it. Leaving the original
+       here showed the same notice twice on one screen — once answered, once
+       as though it had never been opened — and the unanswered copy is the
+       one that looks current. The API branch already drops its own; this is
+       the same filter for the ones raised by tapping, which take the id they
+       were opened with. */
+    filtered = filtered.filter(n =>
+      !acknowledgedBroadcasts.some(b => b.id === `notif-popup-${n.id}` || b.id === n.id)
+    );
+
     // Filter out anything not today if not historyMode
     if (!historyMode) {
       filtered = filtered.filter(n => {
@@ -411,7 +423,7 @@ export function NotificationsPanel({
       time:      formatNotificationTime(n.time),
       read:      seen.has(n.id),
     }));
-  }, [formatNotificationTime]);
+  }, [formatNotificationTime, acknowledgedBroadcasts]);
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
 

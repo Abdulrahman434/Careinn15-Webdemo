@@ -55,6 +55,10 @@ export function PatientGreeting({
   const rippleElements = useRipple(theme.primarySubtle).rippleElements;
   const { isGuest } = useGuestMode();
   const { logout } = useAuth();
+  // Read below by the name tap, which opens the care team. The import was
+  // here and the hook was never called, so tapping the patient's own name
+  // threw rather than showing who is looking after them.
+  const nurseStore = useNurseStore();
 
   const {
     patient: p,
