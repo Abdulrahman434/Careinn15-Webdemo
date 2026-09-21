@@ -1,7 +1,7 @@
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, LEADING, primaryRgba, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { ApiImage } from "./ApiImage";
 import { useLocale, type Locale } from "./i18n";
-import { useNurseStore, type SectionKey } from "./NurseDataStore";
+import { useNurseStore, type SectionKey, nurseActions } from "./NurseDataStore";
 import { useAuth } from "./AuthContext";
 import {
   PREFS_SAVED_EVENT, clearPreferenceRecord, preferenceAppName, preferenceSummaryRows,
@@ -79,6 +79,7 @@ import {
   type CarePartnerRecord,
 } from "./carePartnerStore";
 import { CarePartnerAgreement } from "./CarePartnerAgreement";
+import { CareGoalPicker } from "./CareGoalPicker";
 import { SIGNATURE_PAPER, SIGNATURE_PAPER_LINE } from "./nurse/SignaturePad";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { CareMePinDialog } from "./CareMePinDialog";
@@ -3322,22 +3323,53 @@ function PersonCenteredCareSlide({ theme, isExpanded = false, onOpenForm }: {
     record, t, preferenceAppName(t, activeConfigId, theme.hospitalName));
   const prefsFilled = !!record?.completedAt && prefRows.length > 0;
 
+  /* The goal belongs to the patient now, so the sheet that sets it opens from
+     this card rather than from a nurse's tab. */
+  const [goalOpen, setGoalOpen] = useState(false);
+
   return (
     <div className="flex flex-col">
       {/* 1 — Care Goal of the Day. Not collapsible: it is one line, it changes
           daily, and it is the reason the card opens on this section at all —
           a goal behind a chevron is a goal nobody reads. */}
-      <Section theme={theme} isExpanded={isExpanded} first icon={Target} title={t("care.pcc.goal.title")}>
-        {careGoal ? (
-          <p dir="auto" style={{ fontFamily, ...R.value, color: theme.textHeading, overflowWrap: "anywhere" }}>
-            {careGoal}
-          </p>
-        ) : (
-          <p style={{ fontFamily, ...R.body, color: theme.textMuted }}>
-            {t("care.pcc.goal.empty")}
-          </p>
-        )}
+      <Section
+        theme={theme}
+        isExpanded={isExpanded}
+        first
+        icon={Target}
+        title={t("care.pcc.goal.title")}
+        actions={
+          <CardBadge theme={theme} isExpanded={isExpanded} tone={careGoal ? "success" : "neutral"}>
+            {careGoal ? t("care.pcc.goal.status.chosen") : t("care.pcc.goal.status.notChosen")}
+          </CardBadge>
+        }
+      >
+        <div className="flex flex-col gap-3">
+          {careGoal ? (
+            <p dir="auto" style={{ fontFamily, ...R.value, color: theme.textHeading, overflowWrap: "anywhere" }}>
+              {careGoal}
+            </p>
+          ) : (
+            <p style={{ fontFamily, ...R.body, color: theme.textMuted }}>
+              {t("care.pcc.goal.prompt")}
+            </p>
+          )}
+          <CardButton
+            theme={theme}
+            isExpanded={isExpanded}
+            onClick={() => setGoalOpen(true)}
+            label={careGoal ? t("care.pcc.goal.change") : t("care.pcc.goal.choose")}
+          />
+        </div>
       </Section>
+
+      {goalOpen && (
+        <CareGoalPicker
+          initial={careGoal}
+          onSave={(goal) => nurseActions.setAlerts({ careGoal: goal })}
+          onClose={() => setGoalOpen(false)}
+        />
+      )}
 
       {/* 2 — the patient's own preferences */}
       <Section

@@ -779,7 +779,22 @@ const translations: Record<string, TranslationEntry> = {
 /* ─── Person-Centered Care ─── */
 "care.pcc.title": { en: "Person-Centered Care", ar: "الرعاية المتمحورة حول الإنسان", ur: "فرد پر مرکوز نگہداشت" },
 "care.pcc.goal.title": { en: "Care Goal of the Day", ar: "هدف الرعاية لليوم", ur: "آج کا نگہداشت مقصد" },
-"care.pcc.goal.empty": { en: "Your nursing team will set today's goal with you.", ar: "سيحدد فريق التمريض هدف اليوم معك.", ur: "آپ کی نرسنگ ٹیم آج کا مقصد آپ کے ساتھ طے کرے گی۔" },
+/* The goal is the patient's to choose now, so the empty state stopped being
+   a promise that somebody else would fill it in. */
+"care.pcc.goal.prompt": { en: "What would you like today to be about? Choose one and your care team will see it.", ar: "ما الذي تود أن يكون محور يومك؟ اختر هدفاً وسيطّلع عليه فريق الرعاية.", ur: "آپ چاہتے ہیں کہ آج کا دن کس بارے میں ہو؟ ایک مقصد چنیں، آپ کی کیئر ٹیم اسے دیکھ لے گی۔" },
+"care.pcc.goal.choose": { en: "Choose today's goal", ar: "اختر هدف اليوم", ur: "آج کا مقصد چنیں" },
+"care.pcc.goal.change": { en: "Change today's goal", ar: "تغيير هدف اليوم", ur: "آج کا مقصد تبدیل کریں" },
+"care.pcc.goal.status.chosen": { en: "Chosen", ar: "تم الاختيار", ur: "منتخب" },
+"care.pcc.goal.status.notChosen": { en: "Not chosen", ar: "لم يُختر بعد", ur: "ابھی منتخب نہیں" },
+"goal.picker.subtitle": { en: "Pick one for today. You can change it whenever you like.", ar: "اختر هدفاً واحداً لليوم، ويمكنك تغييره متى شئت.", ur: "آج کے لیے ایک چنیں۔ آپ اسے جب چاہیں بدل سکتے ہیں۔" },
+"goal.picker.search": { en: "Search goals", ar: "ابحث في الأهداف", ur: "مقاصد تلاش کریں" },
+"goal.picker.noMatch": { en: "Nothing matches that. Try fewer words, or write your own below.", ar: "لا توجد نتائج مطابقة. جرّب كلمات أقل أو اكتب هدفك أدناه.", ur: "کوئی نتیجہ نہیں ملا۔ کم الفاظ آزمائیں یا نیچے اپنا مقصد لکھیں۔" },
+"goal.picker.own": { en: "Something else", ar: "شيء آخر", ur: "کچھ اور" },
+"goal.picker.ownPlaceholder": { en: "Write today's goal in your own words", ar: "اكتب هدف اليوم بكلماتك", ur: "آج کا مقصد اپنے الفاظ میں لکھیں" },
+"goal.picker.save": { en: "Save goal", ar: "حفظ الهدف", ur: "مقصد محفوظ کریں" },
+"goal.picker.cancel": { en: "Cancel", ar: "إلغاء", ur: "منسوخ کریں" },
+"goal.picker.clear": { en: "Remove goal", ar: "إزالة الهدف", ur: "مقصد ہٹائیں" },
+
 "care.pcc.preferences.title": { en: "Patient Preferences", ar: "تفضيلات المريض", ur: "مریض کی ترجیحات" },
 "care.pcc.status.recorded": { en: "Recorded", ar: "مسجلة", ur: "درج شدہ" },
 "care.pcc.status.notFilled": { en: "Not filled in", ar: "لم تُعبأ", ur: "پُر نہیں کی گئی" },
