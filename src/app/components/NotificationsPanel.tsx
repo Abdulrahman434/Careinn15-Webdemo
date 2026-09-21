@@ -321,6 +321,7 @@ export function NotificationsPanel({
   onNotificationClick,
   apiAlerts = [],
   onClearAll,
+  onMarkAllRead,
   onNotifChange,
 }: { 
   onClose: () => void; 
@@ -328,6 +329,7 @@ export function NotificationsPanel({
   onNotificationClick: (notif: Notification) => void;
   apiAlerts?: DeviceAlert[];
   onClearAll?: () => void;
+  onMarkAllRead?: (notifs: Notification[]) => void;
   onNotifChange?: () => void;
 }) {
   const { theme } = useTheme();
@@ -446,6 +448,11 @@ export function NotificationsPanel({
       }
     });
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    /* Answered, not merely greyed. Every notice here opens a popup whose only
+       two replies are Acknowledge and Check Later, so "read" means the first
+       of them — each of these joins HOSPITAL NOTICES above with a tick, and
+       anything already put off is settled too. */
+    onMarkAllRead?.(notifications);
     onNotifChange?.();
   };
 

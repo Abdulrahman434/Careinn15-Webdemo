@@ -201,6 +201,84 @@ const getSavedLayoutMode = (): 1 | 2 | 3 => {
   }
 };
 
+/* The content behind each hospital notice, by textKey.
+ *
+ * Lifted out of the tap handler so that marking everything read can build the
+ * same acknowledged cards the popup would have. A notice the patient never
+ * opened still has a title and a body; it just had nobody to ask for them. */
+function hospitalNoticeContent(patientGuidePdf?: string) {
+  const map: Record<string, {
+    title: { en: string, ar: string },
+    body: { en: string, ar: string },
+    priority: "info" | "warning" | "urgent",
+    cta?: { en: string; ar: string },
+    ctaAction?: "open-url" | "open-survey" | "open-pdf" | "open-image" | "open-video",
+    ctaUrl?: string,
+    ctaSurveyId?: string
+  }> = {
+    "notif.ctaSurvey": {
+      title: { en: "Feedback Survey", ar: "استطلاع الرأي" },
+      body: {
+        en: "We would love to hear your feedback on our nursing care services. Please tap below to open the survey.",
+        ar: "يسعدنا معرفة رأيكم حول خدمات التمريض. يرجى الضغط أدناه لفتح الاستبيان."
+      },
+      priority: "info",
+      cta: { en: "Start Survey", ar: "بدء الاستبيان" },
+      ctaAction: "open-survey",
+      ctaSurveyId: "survey"
+    },
+    "notif.ctaPdf": {
+      title: { en: "Patient Guide PDF", ar: "دليل المريض PDF" },
+      body: {
+        en: "Learn more about our services, hospital rules, and your rights by reading our PDF guide.",
+        ar: "تعرف على المزيد حول خدماتنا وقواعد المستشفى وحقوقك من خلال قراءة دليل PDF."
+      },
+      priority: "info",
+      cta: { en: "Open Guide", ar: "افتح الدليل" },
+      ctaAction: "open-pdf",
+      /* The hospital's own guide, not CareInn's deck. This notice says
+         "our services, hospital rules, and your rights", which is the
+         patient guide the ward hands out — the same file the Patient
+         Guide shortcut opens. Brands without one keep the CareInn book. */
+      ctaUrl: patientGuidePdf || "/pdfs/CareInn15.pdf"
+    },
+    "notif.ctaImage": {
+      title: { en: "Healthy Meal Options", ar: "خيارات وجبات صحية" },
+      body: {
+        en: "Take a look at today's recommended healthy diet chart prepared by our nutritionists.",
+        ar: "ألقِ نظرة على مخطط النظام الغذائي الصحي الموصى به اليوم والمعد من قبل أخصائيي التغذية لدينا."
+      },
+      priority: "info",
+      cta: { en: "View Chart", ar: "عرض المخطط" },
+      ctaAction: "open-image",
+      ctaUrl: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&auto=format&fit=crop"
+    },
+    "notif.ctaVideo": {
+      title: { en: "CareInn Presentation", ar: "عرض كيرإن" },
+      body: {
+        en: "Watch our hospital introductory presentation video highlighting patient care standards.",
+        ar: "شاهد فيديو العرض التعريفي لمستشفانا الذي يسلط الضوء على معايير رعاية المرضى."
+      },
+      priority: "warning",
+      cta: { en: "Play Video", ar: "تشغيل الفيديو" },
+      ctaAction: "open-video",
+      ctaUrl: careinnliteVideo
+    },
+    "notif.ctaUrl": {
+      title: { en: "Hospital Website", ar: "موقع المستشفى الإلكتروني" },
+      body: {
+        en: "Visit our general medical resource hub on the web for detailed articles and health tips.",
+        ar: "قم بزيارة مركز الموارد الطبية العام الخاص بنا على الويب للحصول على مقالات مفصلة ونصائح صحية."
+      },
+      priority: "info",
+      cta: { en: "Visit Website", ar: "زيارة الموقع" },
+      ctaAction: "open-url",
+      ctaUrl: "https://www.google.com"
+    }
+  };
+  return map;
+}
+
 function BedsideScreen() {
   const { patientAdmitted, setPatientAdmitted, theme, darkMode, switchConfig, prayerAlarm, layout2Theme, setLocale, setDarkMode, setPrayerAlarm } = useTheme();
   const { isFullAccess, lockedHospitalId } = useAuth();
@@ -1136,6 +1214,69 @@ function BedsideScreen() {
     }]);
   }, []);
 
+  /* MARK ALL AS READ
+   *
+   * The popup a notice opens in offers exactly two answers — Acknowledge and
+   * Check Later — so those are the only two states a notice can end in, and
+   * the plain rows underneath are simply ones nobody has opened yet. This
+   * button answers all of them at once, with the first of the two.
+   *
+   * It settles Check Later as well. The bell counts those, so leaving them
+   * meant pressing a button labelled "mark ALL as read" and watching the
+   * badge stay lit — which teaches a patient to stop believing the badge,
+   * and the badge is how the ward reaches them. Nothing is discarded: every
+   * notice is still in the list, still readable, still re-openable. */
+  const handleMarkAllRead = useCallback((notifs: any[]) => {
+    const nowStr = new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+    const content = hospitalNoticeContent(theme.patientGuidePdf);
+
+    const answered: BroadcastNotification[] = notifs.map((n) => {
+      if (String(n.id).startsWith("api-")) {
+        const alertId = parseInt(String(n.id).replace("api-", ""));
+        const orig = apiNotifications.find(a => a.id === alertId);
+        return {
+          id: n.id,
+          type: "announcement",
+          priority: "warning",
+          title: { en: orig?.titleEn ?? n.titleText ?? "", ar: orig?.titleAr ?? n.titleText ?? "" },
+          body:  { en: orig?.bodyEn  ?? n.bodyText  ?? "", ar: orig?.bodyAr  ?? n.bodyText  ?? "" },
+          timestamp: n.time,
+          createdAt: Date.now(),
+          acknowledgedAt: nowStr,
+        };
+      }
+      const d = content[n.textKey] || {
+        title: { en: "Hospital Notification", ar: "إشعار من المستشفى" },
+        body: { en: "You have a new update from the medical staff.", ar: "لديك تحديث جديد من الطاقم الطبي." },
+        priority: "info" as const,
+      };
+      return {
+        id: "notif-popup-" + n.id,
+        title: d.title,
+        body: d.body,
+        priority: d.priority,
+        timestamp: n.time,
+        createdAt: Date.now(),
+        cta: d.cta,
+        ctaAction: d.ctaAction,
+        ctaUrl: d.ctaUrl,
+        ctaSurveyId: d.ctaSurveyId,
+        acknowledgedAt: nowStr,
+      };
+    });
+
+    setAcknowledgedBroadcasts((list) => {
+      const settled = list.map(b =>
+        b.isLater && !b.acknowledgedAt && !b.isMissed
+          ? { ...b, isLater: false, acknowledgedAt: nowStr }
+          : b);
+      const already = new Set(settled.map(b => b.id));
+      const fresh = answered.filter(b => !already.has(b.id));
+      return [...fresh, ...settled].slice(0, MAX_ACKNOWLEDGED_BROADCASTS);
+    });
+    setNotifTrigger(p => p + 1);
+  }, [apiNotifications, theme.patientGuidePdf]);
+
   const handleNotificationClick = useCallback((notif: any) => {
     // 0. Hospital Broadcast Notifications (acknowledged or read later)
     if (notif.priority && notif.title && notif.body) {
@@ -1192,75 +1333,7 @@ function BedsideScreen() {
       console.error(e);
     }
     // Map textKey to realistic broadcast content
-    const contentMap: Record<string, {
-      title: { en: string, ar: string },
-      body: { en: string, ar: string },
-      priority: "info" | "warning" | "urgent",
-      cta?: { en: string; ar: string },
-      ctaAction?: "open-url" | "open-survey" | "open-pdf" | "open-image" | "open-video",
-      ctaUrl?: string,
-      ctaSurveyId?: string
-    }> = {
-      "notif.ctaSurvey": {
-        title: { en: "Feedback Survey", ar: "استطلاع الرأي" },
-        body: {
-          en: "We would love to hear your feedback on our nursing care services. Please tap below to open the survey.",
-          ar: "يسعدنا معرفة رأيكم حول خدمات التمريض. يرجى الضغط أدناه لفتح الاستبيان."
-        },
-        priority: "info",
-        cta: { en: "Start Survey", ar: "بدء الاستبيان" },
-        ctaAction: "open-survey",
-        ctaSurveyId: "survey"
-      },
-      "notif.ctaPdf": {
-        title: { en: "Patient Guide PDF", ar: "دليل المريض PDF" },
-        body: {
-          en: "Learn more about our services, hospital rules, and your rights by reading our PDF guide.",
-          ar: "تعرف على المزيد حول خدماتنا وقواعد المستشفى وحقوقك من خلال قراءة دليل PDF."
-        },
-        priority: "info",
-        cta: { en: "Open Guide", ar: "افتح الدليل" },
-        ctaAction: "open-pdf",
-        /* The hospital's own guide, not CareInn's deck. This notice says
-           "our services, hospital rules, and your rights", which is the
-           patient guide the ward hands out — the same file the Patient
-           Guide shortcut opens. Brands without one keep the CareInn book. */
-        ctaUrl: theme.patientGuidePdf || "/pdfs/CareInn15.pdf"
-      },
-      "notif.ctaImage": {
-        title: { en: "Healthy Meal Options", ar: "خيارات وجبات صحية" },
-        body: {
-          en: "Take a look at today's recommended healthy diet chart prepared by our nutritionists.",
-          ar: "ألقِ نظرة على مخطط النظام الغذائي الصحي الموصى به اليوم والمعد من قبل أخصائيي التغذية لدينا."
-        },
-        priority: "info",
-        cta: { en: "View Chart", ar: "عرض المخطط" },
-        ctaAction: "open-image",
-        ctaUrl: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&auto=format&fit=crop"
-      },
-      "notif.ctaVideo": {
-        title: { en: "CareInn Presentation", ar: "عرض كيرإن" },
-        body: {
-          en: "Watch our hospital introductory presentation video highlighting patient care standards.",
-          ar: "شاهد فيديو العرض التعريفي لمستشفانا الذي يسلط الضوء على معايير رعاية المرضى."
-        },
-        priority: "warning",
-        cta: { en: "Play Video", ar: "تشغيل الفيديو" },
-        ctaAction: "open-video",
-        ctaUrl: careinnliteVideo
-      },
-      "notif.ctaUrl": {
-        title: { en: "Hospital Website", ar: "موقع المستشفى الإلكتروني" },
-        body: {
-          en: "Visit our general medical resource hub on the web for detailed articles and health tips.",
-          ar: "قم بزيارة مركز الموارد الطبية العام الخاص بنا على الويب للحصول على مقالات مفصلة ونصائح صحية."
-        },
-        priority: "info",
-        cta: { en: "Visit Website", ar: "زيارة الموقع" },
-        ctaAction: "open-url",
-        ctaUrl: "https://www.google.com"
-      }
-    };
+    const contentMap = hospitalNoticeContent(theme.patientGuidePdf);
 
     const details = contentMap[notif.textKey] || {
       title: { en: "Hospital Notification", ar: "إشعار من المستشفى" },
@@ -2088,6 +2161,7 @@ function BedsideScreen() {
             onNotificationClick={handleNotificationClick}
             apiAlerts={apiNotifications}
             onClearAll={() => setAcknowledgedBroadcasts([])}
+            onMarkAllRead={handleMarkAllRead}
             onNotifChange={() => setNotifTrigger(prev => prev + 1)}
           />
         )}
