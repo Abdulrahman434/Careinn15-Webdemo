@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { LazyScreenFallback } from "./LazyScreenFallback";
 import { useLocale } from "./i18n";
 
 const PdfReaderModal = lazy(() => import("./PdfReaderModal").then((m) => ({ default: m.PdfReaderModal })));
@@ -14,7 +15,7 @@ export function PatientGuideModal({ src, onClose }: { src: string; onClose: () =
   const { t } = useLocale();
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<LazyScreenFallback />}>
       <PdfReaderModal
         onClose={onClose}
         pdfSource={src}

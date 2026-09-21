@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { LazyScreenFallback } from "./LazyScreenFallback";
 import {
   ArrowLeft,
   Play,
@@ -2112,7 +2113,7 @@ export function AppLauncher({
 
       {/* PDF Reader Overlay */}
       {showPdf && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<LazyScreenFallback />}>
           <PdfReaderModal
             onClose={() => setShowPdf(false)}
             pdfSource={pdfSource}

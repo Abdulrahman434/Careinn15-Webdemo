@@ -35,6 +35,7 @@ import { ThemeAppearanceDialog } from "./components/ThemeAppearanceDialog";
 import { TasbihScreenSaver } from "./components/TasbihScreenSaver";
 import { VideoScreenSaver } from "./components/VideoScreenSaver";
 import { PatientGuideModal } from "./components/PatientGuideModal";
+import { LazyScreenFallback } from "./components/LazyScreenFallback";
 import { PatientPreferenceForm } from "./components/PatientPreferenceForm";
 import { FoodOrdering } from "./components/FoodOrdering";
 import { NeedSomething } from "./components/NeedSomething";
@@ -1220,7 +1221,11 @@ function BedsideScreen() {
         priority: "info",
         cta: { en: "Open Guide", ar: "افتح الدليل" },
         ctaAction: "open-pdf",
-        ctaUrl: "/pdfs/CareInn15.pdf"
+        /* The hospital's own guide, not CareInn's deck. This notice says
+           "our services, hospital rules, and your rights", which is the
+           patient guide the ward hands out — the same file the Patient
+           Guide shortcut opens. Brands without one keep the CareInn book. */
+        ctaUrl: theme.patientGuidePdf || "/pdfs/CareInn15.pdf"
       },
       "notif.ctaImage": {
         title: { en: "Healthy Meal Options", ar: "خيارات وجبات صحية" },
@@ -2142,7 +2147,7 @@ function BedsideScreen() {
 
         {/* Hospital Configurator */}
         {showConfigurator && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<LazyScreenFallback />}>
             <HospitalConfigurator onClose={() => setShowConfigurator(false)} />
           </Suspense>
         )}
@@ -2208,7 +2213,7 @@ function BedsideScreen() {
             The boundary sits here rather than higher up: only one game is ever
             active, and when none is the block renders nothing, so a null
             fallback shows nothing rather than blanking the screen behind it. */}
-        <Suspense fallback={null}>
+        <Suspense fallback={<LazyScreenFallback />}>
         {activeGame === "memory" && <MemoryGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "tictactoe" && <TicTacToeGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "puzzle" && <SlidingPuzzleGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
@@ -2230,7 +2235,7 @@ function BedsideScreen() {
         )}
 
         {/* Tools */}
-        <Suspense fallback={null}>
+        <Suspense fallback={<LazyScreenFallback />}>
         {activeTool === "calculator" && <CalculatorTool onClose={() => setActiveTool(null)} onBackToTools={() => { setActiveTool(null); setOpenCategory("Tools"); }} />}
         {activeTool === "notes" && <NotesTool onClose={() => setActiveTool(null)} onBackToTools={() => { setActiveTool(null); setOpenCategory("Tools"); }} />}
         {activeTool === "reminders" && <RemindersTool onClose={() => setActiveTool(null)} onBackToTools={() => { setActiveTool(null); setOpenCategory("Tools"); }} reminders={reminders} setReminders={setReminders} />}
@@ -2274,7 +2279,7 @@ function BedsideScreen() {
 
       {/* PDF Reader Modal from CTA */}
       {ctaPdfConfig && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<LazyScreenFallback />}>
           <PdfReaderModal
             onClose={() => setCtaPdfConfig(null)}
             pdfSource={ctaPdfConfig.url}
