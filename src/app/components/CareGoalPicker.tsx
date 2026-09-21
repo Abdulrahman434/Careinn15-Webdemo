@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { X, Check, Search, Target } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "./ThemeContext";
 import { useLocale } from "./i18n";
-import { CARE_GOALS, isListedGoal } from "./careGoals";
+import { CARE_GOALS, isListedGoal, careGoalLabel } from "./careGoals";
 import { useReloadHold } from "../lib/reloadSafety";
 
 /**
@@ -28,7 +28,7 @@ export function CareGoalPicker({
   const { theme: t, darkMode } = useTheme();
   // A form on screen is a form being filled in; do not replace it underneath.
   useReloadHold(true, "care-goal-picker", "care goal picker open");
-  const { t: tr, fontFamily, dir } = useLocale();
+  const { t: tr, fontFamily, dir, locale } = useLocale();
 
   const startedListed = isListedGoal(initial);
   const [selected, setSelected] = useState(startedListed ? initial : "");
@@ -36,10 +36,15 @@ export function CareGoalPicker({
   const [query, setQuery] = useState("");
   const ownRef = useRef<HTMLTextAreaElement>(null);
 
+  /* Searched in both languages whichever one is on screen: a ward member
+     helping in English should find the row an Arabic screen is showing, and
+     a patient typing Arabic should not have to match the English behind it. */
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return CARE_GOALS as readonly string[];
-    return (CARE_GOALS as readonly string[]).filter((g) => g.toLowerCase().includes(q));
+    if (!q) return CARE_GOALS;
+    return CARE_GOALS.filter(
+      (g) => g.en.toLowerCase().includes(q) || g.ar.includes(query.trim()),
+    );
   }, [query]);
 
   /* Whichever the patient touched last is the answer. Typing into the box
@@ -148,11 +153,12 @@ export function CareGoalPicker({
         <div className="flex-1 overflow-y-auto" style={{ padding: "16px 28px" }}>
           <div className="flex flex-col gap-2">
             {matches.map((goal) => {
-              const on = selected === goal && !own.trim();
+              /* The English is the answer; the label is only how it reads. */
+              const on = selected === goal.en && !own.trim();
               return (
                 <button
-                  key={goal}
-                  onClick={() => { setSelected(goal); setOwn(""); }}
+                  key={goal.en}
+                  onClick={() => { setSelected(goal.en); setOwn(""); }}
                   style={{
                     ...rowBase,
                     backgroundColor: on ? t.primarySubtle : t.surfaceInset,
@@ -171,7 +177,7 @@ export function CareGoalPicker({
                   >
                     {on && <Check size={15} style={{ color: t.brandOnPrimary }} />}
                   </span>
-                  <span style={{ overflowWrap: "anywhere" }}>{goal}</span>
+                  <span style={{ overflowWrap: "anywhere" }}>{careGoalLabel(goal.en, locale)}</span>
                 </button>
               );
             })}

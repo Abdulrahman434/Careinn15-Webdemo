@@ -80,6 +80,7 @@ import {
 } from "./carePartnerStore";
 import { CarePartnerAgreement } from "./CarePartnerAgreement";
 import { CareGoalPicker } from "./CareGoalPicker";
+import { careGoalLabel } from "./careGoals";
 import { SIGNATURE_PAPER, SIGNATURE_PAPER_LINE } from "./nurse/SignaturePad";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { CareMePinDialog } from "./CareMePinDialog";
@@ -3271,7 +3272,7 @@ function PersonCenteredCareSlide({ theme, isExpanded = false, onOpenForm }: {
   theme: any; isExpanded?: boolean; onOpenForm?: () => void;
 }) {
   const R = roles(isExpanded);
-  const { t, fontFamily } = useLocale();
+  const { t, fontFamily, locale } = useLocale();
   const { activeConfigId } = useTheme();
   const nurseStore = useNurseStore();
   const [record, setRecord] = useState(() => readPreferenceRecord());
@@ -3347,7 +3348,7 @@ function PersonCenteredCareSlide({ theme, isExpanded = false, onOpenForm }: {
         <div className="flex flex-col gap-3">
           {careGoal ? (
             <p dir="auto" style={{ fontFamily, ...R.value, color: theme.textHeading, overflowWrap: "anywhere" }}>
-              {careGoal}
+              {careGoalLabel(careGoal, locale)}
             </p>
           ) : (
             <p style={{ fontFamily, ...R.body, color: theme.textMuted }}>

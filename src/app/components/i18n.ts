@@ -789,7 +789,7 @@ const translations: Record<string, TranslationEntry> = {
 "goal.picker.subtitle": { en: "Pick one for today. You can change it whenever you like.", ar: "اختر هدفاً واحداً لليوم، ويمكنك تغييره متى شئت.", ur: "آج کے لیے ایک چنیں۔ آپ اسے جب چاہیں بدل سکتے ہیں۔" },
 "goal.picker.search": { en: "Search goals", ar: "ابحث في الأهداف", ur: "مقاصد تلاش کریں" },
 "goal.picker.noMatch": { en: "Nothing matches that. Try fewer words, or write your own below.", ar: "لا توجد نتائج مطابقة. جرّب كلمات أقل أو اكتب هدفك أدناه.", ur: "کوئی نتیجہ نہیں ملا۔ کم الفاظ آزمائیں یا نیچے اپنا مقصد لکھیں۔" },
-"goal.picker.own": { en: "Something else", ar: "شيء آخر", ur: "کچھ اور" },
+"goal.picker.own": { en: "Something else", ar: "هدف اخر، يرجى التحديد", ur: "کچھ اور" },
 "goal.picker.ownPlaceholder": { en: "Write today's goal in your own words", ar: "اكتب هدف اليوم بكلماتك", ur: "آج کا مقصد اپنے الفاظ میں لکھیں" },
 "goal.picker.save": { en: "Save goal", ar: "حفظ الهدف", ur: "مقصد محفوظ کریں" },
 "goal.picker.cancel": { en: "Cancel", ar: "إلغاء", ur: "منسوخ کریں" },
