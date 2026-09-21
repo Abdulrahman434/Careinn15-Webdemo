@@ -105,7 +105,10 @@ export default defineConfig({
     pdfjsWasm(),
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      // We register it ourselves in updateCheck.ts, which also watches for the
+      // handover. The injected script only registers, and registering twice
+      // is the smaller of the two problems with it.
+      injectRegister: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,svg,woff,woff2}'],
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB limit
