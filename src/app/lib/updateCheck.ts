@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { isSafeToReload, reloadBlockers, subscribeHolds } from "./reloadSafety";
 
 /**
  * Keeping a kiosk on the build that is actually deployed.
@@ -17,15 +18,39 @@ import { useState, useEffect } from "react";
  *
  * Now: the worker is asked for an update when the screen is looked at again
  * and every quarter of an hour, and when a new one takes over, the page
- * reloads — silently if nobody is looking, and otherwise by offering, because
- * a bedside screen that reloads itself under somebody halfway through a form
- * has traded one bad surprise for a worse one.
+ * reloads as soon as it is safe to.
+ *
+ * Safe is not "nobody is looking". A tab switched away from can be holding a
+ * half-built meal order or a half-typed form, and reloading it throws that
+ * away with nothing to undo. Safe is "no unsaved input, no unplaced order, no
+ * request in flight" — see reloadSafety.ts, which the forms and the meal
+ * ordering register with. Until that is true the update waits, the banner
+ * offers it, and the app takes it at a point it already knows is safe: on
+ * logout, where the screen is being handed on and nothing of theirs is left.
  */
 
 const UPDATE_READY_EVENT = "careinn-update-ready";
 const UPDATE_CHECK_MS = 15 * 60 * 1000;
 
 let updateReady = false;
+let applyPending: (() => void) | null = null;
+
+/**
+ * Take a waiting update now, if one is waiting and nothing is mid-flight.
+ *
+ * For the points the app knows are safe without being told — logging out is
+ * the obvious one: the screen is being handed to the next patient, whatever
+ * was on it is gone by design, and a kiosk that never goes hidden would
+ * otherwise carry the old build until somebody noticed the banner.
+ */
+export function applyPendingUpdate(): void {
+  applyPending?.();
+}
+
+/** Whether a newer build is installed and waiting on a safe moment. */
+export function isUpdatePending(): boolean {
+  return updateReady;
+}
 
 function canRegister(): boolean {
   return typeof window !== "undefined"
@@ -44,15 +69,29 @@ export function registerServiceWorker(): void {
   const hadController = !!navigator.serviceWorker.controller;
   let reloading = false;
 
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (!hadController || reloading) return;
-    if (document.visibilityState === "hidden") {
-      reloading = true;
-      window.location.reload();
+  const applyOrWait = () => {
+    if (!updateReady || reloading) return;
+    if (!isSafeToReload()) {
+      /* Announce it so the banner can offer, and try again the moment the
+         last piece of unsaved work is done with. */
+      window.dispatchEvent(new Event(UPDATE_READY_EVENT));
       return;
     }
+    reloading = true;
+    window.location.reload();
+  };
+
+  /* Every release of a hold is a chance the work just finished. */
+  subscribeHolds(applyOrWait);
+  applyPending = applyOrWait;
+
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController || reloading) return;
     updateReady = true;
-    window.dispatchEvent(new Event(UPDATE_READY_EVENT));
+    if (!isSafeToReload()) {
+      console.info("[SW] update held:", reloadBlockers().join(", "));
+    }
+    applyOrWait();
   });
 
   window.addEventListener("load", () => {

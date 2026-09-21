@@ -6,6 +6,7 @@ import { useLocale } from "./i18n";
 import { SignaturePad } from "./nurse/SignaturePad";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { CARE_PARTNER_ITEMS, type CarePartnerRecord } from "./carePartnerStore";
+import { useReloadHold } from "../lib/reloadSafety";
 
 /**
  * CarePartnerAgreement — the hospital's Care Partner Agreement Checklist, as a
@@ -27,6 +28,8 @@ export function CarePartnerAgreement({
   onClose: () => void;
 }) {
   const { theme: t, darkMode, locale } = useTheme();
+  // A form on screen is a form being filled in; do not replace it underneath.
+  useReloadHold(true, "care-partner-agreement", "care partner agreement open");
   const { t: tr, fontFamily, isRTL, dir } = useLocale();
 
   const [name, setName] = useState(initial.name);

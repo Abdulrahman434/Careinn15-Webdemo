@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "bash scripts/deploy-static.sh",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:reload": "esbuild src/app/lib/__tests__/reloadSafety.test.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/reloadSafety.test.mjs --log-level=error && node --input-type=module -e \"const t=new EventTarget();globalThis.window=t;window.addEventListener=t.addEventListener.bind(t);window.removeEventListener=t.removeEventListener.bind(t);window.dispatchEvent=t.dispatchEvent.bind(t);await import('./node_modules/.cache/reloadSafety.test.mjs')\""
   },
   "engines": {
     "node": ">=18.0.0"

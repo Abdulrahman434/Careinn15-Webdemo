@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react";
+import { applyPendingUpdate } from "../lib/updateCheck";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * AUTH CONTEXT — Password-based access control for hospital configurations
@@ -254,6 +255,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isFullAccess: false,
       isGuest: false,
     });
+    /* A safe point the app knows about without being told. The screen is
+       being handed on, whatever was on it is gone by design, and a bedside
+       screen that stays lit all day would otherwise carry the old build
+       until somebody happened to notice the banner. Does nothing unless an
+       update is already installed and waiting. */
+    applyPendingUpdate();
   }, []);
 
   return (

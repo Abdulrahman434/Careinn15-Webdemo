@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, MessageSquareHeart, MessageSquareWarning, Fi
 import { InternalPageHeader } from "./InternalPageHeader";
 import { ApiImage } from "./ApiImage";
 import thankYouImage from "../../assets/23db5e568918c9a319b272caa7a9e865d4fbd418.webp";
+import { useReloadHold } from "../lib/reloadSafety";
 
 /* ═══════════════════════════════════════════════════════════════
  * REAL VOICE RECORDER (uses MediaRecorder API)
@@ -290,6 +291,8 @@ const FAKEEH_OVR_URL = "https://e-ovr.fakeeh.care:173/cmsregisterarabic";
 type FeedbackPath = "hub" | "survey" | "concern" | "appreciation";
 
 export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) {
+  // A survey on screen is a survey being answered; do not replace it underneath.
+  useReloadHold(true, "survey", "survey open");
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
 

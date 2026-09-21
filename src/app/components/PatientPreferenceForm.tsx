@@ -13,6 +13,7 @@ import {
   ChevronLeft, ChevronRight, X,
 } from "lucide-react";
 import { QuestionProgress, QuestionProgressBar } from "./QuestionProgress";
+import { useReloadHold } from "../lib/reloadSafety";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * Patient Preferences Form (source: Patient Preference Form V12)
@@ -844,6 +845,8 @@ export function PatientPreferenceForm({
   variant?: "page" | "modal";
 }) {
   const { theme, activeConfigId, darkMode } = useTheme();
+  // A form on screen is a form being filled in; do not replace it underneath.
+  useReloadHold(true, "preference-form", "preferences form open");
   const { t, locale, isRTL, fontFamily } = useLocale();
 
   /* THE BRAND FOREGROUND of this form: content icons, their section labels,

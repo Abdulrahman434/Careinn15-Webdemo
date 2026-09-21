@@ -30,6 +30,7 @@ import {
   DIET_CONFIG, FOOD_PHOTOS,
   getMenuGroups, getKidsBreakfastGroups, MEAL_WINDOWS,
 } from "./menuData";
+import { useReloadHold } from "../lib/reloadSafety";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * TYPES
@@ -440,6 +441,15 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
   const [pendingMeals, setPendingMeals] = useState<PendingMeal[]>([]);
   /** Meals sent in the last submission — the confirmation screen lists them. */
   const [submittedSummary, setSubmittedSummary] = useState<PendingMeal[]>([]);
+
+  /* A half-built order is unsaved work. Meals chosen and not yet sent live
+     only in this component, so a reload drops them and the patient is never
+     told they were dropped — which is worse than waiting a day for a build. */
+  useReloadHold(
+    pendingMeals.length > 0 || Object.keys(selections).length > 0 || step !== "select-type",
+    "food-ordering",
+    "meal order in progress",
+  );
 
   /* Is the day on screen finished — every meal on it chosen and sent?
      `some` was wrong here: one placed breakfast made the notice call the whole

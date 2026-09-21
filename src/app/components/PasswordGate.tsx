@@ -22,6 +22,7 @@ import { translateWithLocale, type Locale } from "./i18n";
 import fakeehLoginBg from "../../assets/bg/login-background-fakeeh.webp";
 import careinnWallpaper from "../../assets/bg/wallpaper.webp";
 import careinnLogo from "../../assets/logos/careinn-logo-lockup.webp";
+import { useReloadHold } from "../lib/reloadSafety";
 
 /* ── CareInn brand ── */
 const NAVY = "#16274D";       // headings and primary text
@@ -191,6 +192,9 @@ function useLoginForm() {
   const [success, setSuccess] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // A request already sent, whose answer would be thrown away by a reload.
+  useReloadHold(submitting, "sign-in", "sign-in in progress");
 
   useEffect(() => {
     const timer = setTimeout(() => inputRef.current?.focus(), 500);

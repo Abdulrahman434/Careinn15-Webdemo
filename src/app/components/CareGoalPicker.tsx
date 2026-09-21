@@ -4,6 +4,7 @@ import { X, Check, Search, Target } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { CARE_GOALS, isListedGoal } from "./careGoals";
+import { useReloadHold } from "../lib/reloadSafety";
 
 /**
  * CareGoalPicker — the patient chooses what today is for.
@@ -25,6 +26,8 @@ export function CareGoalPicker({
   onClose: () => void;
 }) {
   const { theme: t, darkMode } = useTheme();
+  // A form on screen is a form being filled in; do not replace it underneath.
+  useReloadHold(true, "care-goal-picker", "care goal picker open");
   const { t: tr, fontFamily, dir } = useLocale();
 
   const startedListed = isListedGoal(initial);
