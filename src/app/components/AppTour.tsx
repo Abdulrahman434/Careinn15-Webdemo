@@ -403,11 +403,17 @@ export function AppTour({ onClose }: { onClose: () => void }) {
           <div
             className="flex flex-col"
             style={{
-              backgroundColor: "rgba(255,255,255,0.97)",
+              // The card takes the theme's raised surface. Its title, body
+              // and step counter are all theme.text* — on the white this used
+              // to be, a dark theme wrote them in near-white and the card came
+              // up blank.
+              backgroundColor: theme.surfaceElevated,
               backdropFilter: "blur(24px) saturate(1.6)",
               WebkitBackdropFilter: "blur(24px) saturate(1.6)",
               borderRadius: "32px",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.5)",
+              // The hairline was a white rim, which on a dark scrim over a
+              // dark card lit the edge rather than describing it.
+              boxShadow: `0 20px 60px rgba(0,0,0,0.35), 0 0 0 1px ${theme.borderSubtle}`,
               overflow: "hidden",
               direction: isRTL ? "rtl" : "ltr",
             }}
@@ -431,7 +437,9 @@ export function AppTour({ onClose }: { onClose: () => void }) {
                         fontFamily: theme.fontFamily,
                         fontSize: TYPE_SCALE.base,
                         fontWeight: WEIGHT.bold,
-                        color: "#FFFFFF",
+                        // Whatever reads on this brand, like the Next button
+                        // below — a pale primary and white is no contrast.
+                        color: theme.textInverse,
                         lineHeight: 1,
                       }}
                     >
@@ -543,7 +551,7 @@ export function AppTour({ onClose }: { onClose: () => void }) {
                     key={i}
                     animate={{
                       width: i === step ? 24 : 6,
-                      backgroundColor: i === step ? theme.primary : i < step ? theme.primaryLight : "#D4D4D4",
+                      backgroundColor: i === step ? theme.primary : i < step ? theme.primaryLight : theme.textMuted,
                       opacity: i === step ? 1 : i < step ? 0.7 : 0.4,
                     }}
                     transition={{ duration: 0.3 }}
