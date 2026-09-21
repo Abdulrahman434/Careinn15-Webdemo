@@ -30,7 +30,13 @@ import { isSafeToReload, reloadBlockers, subscribeHolds } from "./reloadSafety";
  */
 
 const UPDATE_READY_EVENT = "careinn-update-ready";
-const UPDATE_CHECK_MS = 15 * 60 * 1000;
+/* A minute. The browser only goes looking for a new worker when something
+   asks it to, so this interval IS how long a deployed change waits before a
+   screen that is already open notices it. Fifteen minutes was chosen to be
+   quiet; what it actually bought was a demo that looked like it had not
+   updated. The request is a conditional GET of one small file that the server
+   marks no-cache, so the cost of asking every minute is close to nothing. */
+const UPDATE_CHECK_MS = 60 * 1000;
 
 let updateReady = false;
 let applyPending: (() => void) | null = null;
@@ -101,10 +107,16 @@ export function registerServiceWorker(): void {
         const check = () => { reg.update().catch(() => {}); };
         /* A kiosk sits on one page for days, and the browser only looks for a
            new worker on navigation. Without these it would never find one. */
+        check();
         setInterval(check, UPDATE_CHECK_MS);
+        /* Coming back to the screen is the moment it most matters, and it is
+           the moment a deploy is most likely to have happened since. Both
+           events, because a tab switch fires one and a window switch the
+           other, and a kiosk in a browser can do either. */
         document.addEventListener("visibilitychange", () => {
           if (document.visibilityState === "visible") check();
         });
+        window.addEventListener("focus", check);
       })
       .catch((err) => {
         console.warn("[SW] Registration failed:", err);
