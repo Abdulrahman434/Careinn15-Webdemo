@@ -9,6 +9,49 @@ import { readFileSync } from 'fs'
 // Injected at build time as the global __APP_VERSION__.
 const pkg = JSON.parse(readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8'))
 
+/**
+ * The first screens a kiosk paints are the login and, behind it, onboarding.
+ * Their images live inside the JS bundle, so the browser cannot know they
+ * exist until it has fetched 434 KB, parsed a megabyte and a half of it,
+ * mounted React and resolved the theme — by which point several seconds have
+ * gone and the fetch has not started. Naming them in the head starts them
+ * alongside the JS instead of after it; they are small, and they are the two
+ * pictures somebody is actually waiting on.
+ *
+ * Matched by source stem, so a rebuild's new content hash is picked up on its
+ * own. A device already branded to a hospital with its own artwork pays for
+ * one unused wallpaper here; that is the trade, and it is a small one.
+ */
+const PRELOAD = ['wallpaper-', 'careinn-logo-lockup-', 'careinn-hospital-hero-']
+
+function preloadFirstPaint() {
+  return {
+    name: 'careinn-preload-first-paint',
+    apply: 'build' as const,
+    transformIndexHtml: {
+      order: 'post' as const,
+      handler(html: string, ctx: any) {
+        const files = Object.keys(ctx?.bundle ?? {}).filter((f) =>
+          PRELOAD.some((stem) => f.includes(stem))
+        )
+        return {
+          html,
+          tags: files.map((f) => ({
+            tag: 'link',
+            attrs: {
+              rel: 'preload',
+              as: 'image',
+              href: './' + f,
+              fetchpriority: 'high',
+            },
+            injectTo: 'head' as const,
+          })),
+        }
+      },
+    },
+  }
+}
+
 export default defineConfig({
   base: './',
   define: {
@@ -19,6 +62,7 @@ export default defineConfig({
     // Tailwind is not being actively used – do not remove them
     react(),
     tailwindcss(),
+    preloadFirstPaint(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
