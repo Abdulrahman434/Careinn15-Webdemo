@@ -52,6 +52,45 @@ function preloadFirstPaint() {
   }
 }
 
+/**
+ * pdf.js decodes JPEG 2000 and ICC colour through WebAssembly, and it will not
+ * guess where those binaries are: without a `wasmUrl` it gives up on every JPX
+ * image and renders the page with its pictures missing. The Fakeeh patient
+ * guide is 12,811 JPEG 2000 images, so it came out blank and read as corrupt.
+ *
+ * pdf.js appends the bare filename to `wasmUrl`, so these cannot be hashed.
+ * Emitted from node_modules at a fixed path rather than committed, so they
+ * cannot drift out of step with the pdfjs-dist the build actually resolves.
+ */
+const PDFJS_WASM_DIR = path.resolve(__dirname, 'node_modules/pdfjs-dist/wasm')
+const PDFJS_WASM_FILES = ['openjpeg.wasm', 'qcms_bg.wasm']
+export const PDFJS_WASM_URL = '/pdfjs-wasm/'
+
+function pdfjsWasm() {
+  return {
+    name: 'careinn-pdfjs-wasm',
+    // The dev server has no public/ copy to fall back on, so serve them here
+    // at the same path the build emits — one source of truth for both.
+    configureServer(server: any) {
+      server.middlewares.use((req: any, res: any, next: any) => {
+        const match = /^\/pdfjs-wasm\/([\w.-]+)$/.exec((req.url || '').split('?')[0])
+        if (!match || !PDFJS_WASM_FILES.includes(match[1])) return next()
+        res.setHeader('Content-Type', 'application/wasm')
+        res.end(readFileSync(path.join(PDFJS_WASM_DIR, match[1])))
+      })
+    },
+    generateBundle(this: any) {
+      for (const file of PDFJS_WASM_FILES) {
+        this.emitFile({
+          type: 'asset',
+          fileName: `pdfjs-wasm/${file}`,
+          source: readFileSync(path.join(PDFJS_WASM_DIR, file)),
+        })
+      }
+    },
+  }
+}
+
 export default defineConfig({
   base: './',
   define: {
@@ -63,6 +102,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     preloadFirstPaint(),
+    pdfjsWasm(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',

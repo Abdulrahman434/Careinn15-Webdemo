@@ -37,6 +37,9 @@
   # through fetch() go by the header.
   AddType image/webp                .webp
   AddType text/javascript           .mjs
+  # WebAssembly.instantiateStreaming refuses a response typed anything else,
+  # and pdf.js decodes JPEG 2000 through one of these.
+  AddType application/wasm          .wasm
 </IfModule>
 
 # ── Compression ──────────────────────────────────────────────────────────

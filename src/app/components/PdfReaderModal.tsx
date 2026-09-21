@@ -134,7 +134,14 @@ export function PdfReaderModal({ onClose, pdfSource, title }: Props) {
     setLoading(true);
     setError(null);
 
-    const task = pdfjsLib.getDocument(getResolvablePdfUrl(pdfSource));
+    // wasmUrl is not optional for this library: pdf.js decodes JPEG 2000 and
+    // ICC colour in WebAssembly, and without a path to those binaries it drops
+    // every such image and paints the page without them. Emitted at this fixed
+    // path by the pdfjsWasm plugin in vite.config.ts.
+    const task = pdfjsLib.getDocument({
+      url: getResolvablePdfUrl(pdfSource),
+      wasmUrl: "/pdfjs-wasm/",
+    });
     task.promise.then(async (pdf: any) => {
       if (dead) return;
       docRef.current = pdf;
