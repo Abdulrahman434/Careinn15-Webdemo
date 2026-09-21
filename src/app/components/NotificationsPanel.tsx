@@ -791,8 +791,38 @@ export function NotificationsPanel({
               </span>
               {acknowledgedBroadcasts.map((bc) => {
                 const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
-                const priorityColor = bc.priority === "urgent" ? "#D10044" : bc.priority === "warning" ? "#F59E0B" : "#3B82F6";
                 const isLater = bc.isLater && !bc.acknowledgedAt && !bc.isMissed;
+                /* This list is about what was DONE with a notice, not what it
+                   arrived as. The tint used to come from bc.priority, so an
+                   acknowledged warning came out amber — the same amber as
+                   Check Later, and a different card from the acknowledged
+                   info notice sitting directly under it. Two styles for one
+                   state, and one style for two states.
+
+                   Three states, three treatments, matching the status line
+                   below that already reads Clock/amber, X/red, Check/green. */
+                const chrome = isLater
+                  ? {
+                      bg: "rgba(245, 158, 11, 0.05)",
+                      border: "1px solid rgba(245, 158, 11, 0.25)",
+                      chip: "rgba(245, 158, 11, 0.1)",
+                      glyph: "#F59E0B",
+                    }
+                  : bc.isMissed
+                  ? {
+                      bg: "rgba(209, 0, 68, 0.04)",
+                      border: "1px dashed rgba(209, 0, 68, 0.25)",
+                      chip: "rgba(209, 0, 68, 0.1)",
+                      glyph: "#D10044",
+                    }
+                  : {
+                      // Answered, so it recedes — and green, because the tick
+                      // on its own status line is already green.
+                      bg: theme.surfaceInset,
+                      border: `1px solid ${theme.borderSubtle}`,
+                      chip: theme.successSubtle,
+                      glyph: theme.successOn,
+                    };
                 return (
                   <div
                     key={bc.id}
@@ -801,8 +831,8 @@ export function NotificationsPanel({
                     style={{
                       padding: "14px 16px",
                       borderRadius: "14px",
-                      backgroundColor: isLater ? "rgba(245, 158, 11, 0.05)" : bc.isMissed ? "rgba(209, 0, 68, 0.04)" : `${priorityColor}08`,
-                      border: isLater ? "1px solid rgba(245, 158, 11, 0.25)" : bc.isMissed ? "1px dashed rgba(209, 0, 68, 0.25)" : `1px solid ${priorityColor}20`,
+                      backgroundColor: chrome.bg,
+                      border: chrome.border,
                       position: "relative",
                     }}
                   >
@@ -821,14 +851,14 @@ export function NotificationsPanel({
                         width: "40px",
                         height: "40px",
                         borderRadius: "12px",
-                        backgroundColor: isLater ? "rgba(245, 158, 11, 0.1)" : bc.isMissed ? "rgba(209, 0, 68, 0.1)" : `${priorityColor}12`,
+                        backgroundColor: chrome.chip,
                         marginTop: "2px",
                       }}
                     >
                       {isLater ? (
                         <Clock size={20} style={{ color: "#F59E0B" }} />
                       ) : (
-                        <Megaphone size={20} style={{ color: bc.isMissed ? "#D10044" : priorityColor }} />
+                        <Megaphone size={20} style={{ color: chrome.glyph }} />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
