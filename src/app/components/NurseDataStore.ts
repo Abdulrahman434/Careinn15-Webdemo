@@ -1006,6 +1006,14 @@ const nurseStore = (() => {
       notify();
     },
 
+    // Procedures reached the bedside card from the first version and had no
+    // way to be turned off from this side, so a ward could see one it did not
+    // want shown and nothing to do about it.
+    setProcedureVisible: (id: string, visible: boolean) => {
+      state = { ...state, procedures: (state.procedures || []).map((p) => p.id === id ? { ...p, visible } : p) };
+      notify();
+    },
+
     // ── Baby Camera ──
     setBabyCameraVisible: (id: string, visible: boolean) => {
       state = { ...state, babyCameras: state.babyCameras.map((c) => c.id === id ? { ...c, visible } : c) };

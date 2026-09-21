@@ -1,9 +1,9 @@
 import { useState } from "react";
 import {
   X, ClipboardList, Stethoscope, User, Heart,
-  FlaskConical, Image as ImageIcon, LogOut, Activity,
+  ClipboardCheck, LogOut, Activity,
   Hash, DoorOpen, Clock, Plus, Bed, CreditCard, ExternalLink,
-  FileSignature, HeartHandshake,
+  HeartHandshake,
 } from "lucide-react";
 import { useTheme } from "../ThemeContext";
 import { useLocale } from "../i18n";
@@ -12,31 +12,35 @@ import { PatientProfileTab } from "./tabs/PatientProfileTab";
 import { CareOverviewTab } from "./tabs/CareOverviewTab";
 import { PersonCenteredCareTab } from "./tabs/PersonCenteredCareTab";
 import { CarePlanTab } from "./tabs/CarePlanTab";
-import { LabResultsTab } from "./tabs/LabResultsTab";
-import { ImagingTab } from "./tabs/ImagingTab";
+import { TestsAndProceduresTab } from "./tabs/TestsAndProceduresTab";
 import { DischargePlanTab } from "./tabs/DischargePlanTab";
 import { ObservationsTab } from "./tabs/ObservationsTab";
 import { NfcTab } from "./tabs/NfcTab";
-import { FormsTab } from "./tabs/FormsTab";
+
+/* "tests" is not a SectionKey: the store still keeps labs and imaging as the
+   two sections they are, and this tab is the one place that shows both. */
+type TabKey = SectionKey | "tests";
 
 interface TabDef {
-  key: SectionKey;
+  key: TabKey;
   label: string;
   icon: typeof User;
-  hasVisibility: boolean;
 }
 
+/* Same order, same names as ALL_SLIDES in CareMe — this is the ward's side of
+   the cards the patient swipes through, and a nurse looking for what somebody
+   is reading should not have to translate between two orders. Lab Results and
+   Imaging are folded into Tests and Procedures because that is already one
+   card on the bedside screen. Update Nurse Info has no card and sits last. */
 const TABS: TabDef[] = [
-  { key: "profile", label: "Patient Profile", icon: User, hasVisibility: false },
-  { key: "careOverview", label: "Care Overview", icon: Heart, hasVisibility: true },
-  { key: "carePlan", label: "My Care Plan", icon: ClipboardList, hasVisibility: true },
-  { key: "labs", label: "Lab Results", icon: FlaskConical, hasVisibility: true },
-  { key: "imaging", label: "Imaging", icon: ImageIcon, hasVisibility: true },
-  { key: "discharge", label: "Discharge Process", icon: LogOut, hasVisibility: true },
-  { key: "observations", label: "Vital Signs", icon: Activity, hasVisibility: true },
-  { key: "pcc", label: "Person-Centered Care", icon: HeartHandshake, hasVisibility: true },
-  { key: "forms", label: "Forms", icon: FileSignature, hasVisibility: false },
-  { key: "nfc", label: "Update Nurse Info", icon: CreditCard, hasVisibility: false },
+  { key: "profile", label: "Patient Profile", icon: User },
+  { key: "careOverview", label: "Care Overview", icon: Heart },
+  { key: "pcc", label: "Person-Centered Care", icon: HeartHandshake },
+  { key: "carePlan", label: "My Care Plan", icon: ClipboardList },
+  { key: "observations", label: "Vital Signs", icon: Activity },
+  { key: "tests", label: "Tests and Procedures", icon: ClipboardCheck },
+  { key: "discharge", label: "Discharge Process", icon: LogOut },
+  { key: "nfc", label: "Update Nurse Info", icon: CreditCard },
 ];
 
 interface NurseInterfaceProps {
@@ -48,7 +52,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
   const { theme: t } = useTheme();
   const { t: tr } = useLocale();
   const store = useNurseStore();
-  const [activeTab, setActiveTab] = useState<SectionKey>("profile");
+  const [activeTab, setActiveTab] = useState<TabKey>("profile");
   // Bumped by the header's "Add Vital Signs" so that tab opens its
   // form — switching tab alone did nothing when that tab was already active.
   const [addObsNonce, setAddObsNonce] = useState(0);
@@ -60,12 +64,10 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
       case "profile": return <PatientProfileTab role={role} />;
       case "careOverview": return <CareOverviewTab role={role} />;
       case "carePlan": return <CarePlanTab role={role} />;
-      case "labs": return <LabResultsTab role={role} />;
-      case "imaging": return <ImagingTab role={role} />;
+      case "tests": return <TestsAndProceduresTab role={role} />;
       case "discharge": return <DischargePlanTab role={role} />;
       case "observations": return <ObservationsTab role={role} addNonce={addObsNonce} />;
       case "pcc": return <PersonCenteredCareTab role={role} />;
-      case "forms": return <FormsTab />;
       case "nfc": return <NfcTab />;
       default: return null;
     }
@@ -170,7 +172,6 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
         {TABS.map((tab) => {
           const isActive = activeTab === tab.key;
           const Icon = tab.icon;
-          const isVisible = store.sectionVisibility[tab.key];
           return (
             <div key={tab.key} className="flex items-center shrink-0">
               <button
