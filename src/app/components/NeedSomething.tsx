@@ -623,38 +623,9 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
           <div className="ns-scroll flex-1 min-h-0 overflow-y-auto px-8 py-7 flex flex-col">
             {/* Section heading */}
             <div className="shrink-0 mb-4">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h3 style={{ ...TEXT_STYLE.pageTitle, fontFamily, color: theme.textHeading }}>
-                  {t(titleKey)}
-                </h3>
-                {/* Quick shortcut to the Report an Issue tab — inline pill next to the
-                    title. Hidden when already on that tab so it never points at itself. */}
-                {tab !== "report" && (
-                  <button
-                    onClick={() => setTab("report")}
-                    className="inline-flex items-center gap-1.5 cursor-pointer active:scale-95 transition-[transform,background-color]"
-                    style={{
-                      padding: "5px 12px",
-                      borderRadius: theme.radiusFull,
-                      backgroundColor: theme.errorSubtle,
-                      border: `1px solid color-mix(in srgb, ${theme.error} 35%, transparent)`,
-                      color: theme.errorOn,
-                      outline: "none",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = `color-mix(in srgb, ${theme.error} 14%, transparent)`;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = theme.errorSubtle;
-                    }}
-                  >
-                    <Wrench size={15} color={theme.errorOn} strokeWidth={2.4} />
-                    <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.errorOn }}>
-                      {t("need.tab.report")}
-                    </span>
-                  </button>
-                )}
-              </div>
+              <h3 style={{ ...TEXT_STYLE.pageTitle, fontFamily, color: theme.textHeading }}>
+                {t(titleKey)}
+              </h3>
               <p style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textMuted, marginTop: 4 }}>
                   {t(subKey)}
                 </p>
