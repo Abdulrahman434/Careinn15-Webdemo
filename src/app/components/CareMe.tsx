@@ -1040,6 +1040,34 @@ function PatientProfileSlide({ theme, isExpanded = false }: { theme: any; isExpa
 }
 
 /* ─── Care Overview Slide (Clinical Status) ─── */
+/* A photo that will not load leaves a bordered hole otherwise: ApiImage
+ * renders null on error, and a care team with no faces reads as a page that
+ * failed rather than as a person without a portrait. Initials say who it is. */
+function Initials({ name, theme }: { name: string; theme: any }) {
+  const letters = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("");
+  return (
+    <div
+      aria-hidden
+      className="w-full h-full flex items-center justify-center"
+      style={{
+        backgroundColor: theme.primarySubtle,
+        color: theme.primaryOn,
+        fontFamily: theme.fontFamily,
+        fontSize: TYPE_SCALE.sm,
+        fontWeight: WEIGHT.bold,
+        lineHeight: LEADING.none,
+      }}
+    >
+      {letters}
+    </div>
+  );
+}
+
 function CareOverviewSlide({ theme, isExpanded = false }: { theme: any; isExpanded?: boolean }) {
   const R = roles(isExpanded);
   const { t } = useLocale();
@@ -1105,7 +1133,13 @@ function CareOverviewSlide({ theme, isExpanded = false }: { theme: any; isExpand
                   border: `1px solid ${theme.borderCardColor}`,
                 }}
               >
-                <ApiImage src={m.img} alt={t(m.nameKey)} className="w-full h-full object-cover" />
+                <ApiImage
+                  src={m.img}
+                  alt={t(m.nameKey)}
+                  className="w-full h-full object-cover"
+                  showFallbackWhileLoading
+                  fallback={<Initials name={t(m.nameKey)} theme={theme} />}
+                />
               </div>
               <div className="flex flex-col min-w-0">
                 <span style={{ fontFamily: theme.fontFamily, ...R.label, color: theme.primaryOn, fontWeight: WEIGHT.bold }}>

@@ -558,6 +558,28 @@ function loadCachedState(): Partial<NurseStoreState> {
   } catch { return {}; }
 }
 
+/** A URL Vite emitted for a bundled asset: hashed name under /assets/.
+ *  These change with the build; nothing that points at one should survive it. */
+function isBuildAssetUrl(url: unknown): boolean {
+  return typeof url === "string" && url.includes("/assets/");
+}
+
+function reseedCareTeamImages(
+  cached: CareTeamMember[] | undefined,
+  defaults: CareTeamMember[],
+): CareTeamMember[] {
+  if (!Array.isArray(cached)) return defaults;
+  const byId = new Map(defaults.map((m) => [m.id, m]));
+  return cached.map((m) => {
+    if (!isBuildAssetUrl(m?.img)) return m;
+    const seed = byId.get(m?.id);
+    /* No seed to fall back on means this is somebody added later, not one of
+       ours. Leave it be — the avatar falls back to initials either way, and
+       blanking a member we do not own is worse than a stale URL. */
+    return seed ? { ...m, img: seed.img } : m;
+  });
+}
+
 const nurseStore = (() => {
   const defaultState = createDefaultState();
   const cachedState = loadCachedState();
@@ -586,6 +608,18 @@ const nurseStore = (() => {
       ...defaultState.alerts,
       ...(cachedState.alerts || {}),
     },
+    /* Bundled avatars are re-seeded from the defaults, never restored from
+       the cache. `img` for a seeded member is a build URL — hashed filename,
+       absolute origin — and the whole state is JSON.stringify'd to
+       localStorage, so that URL outlives the build that made it. A kiosk
+       carrying an old snapshot then asks for a file the server no longer
+       has, gets a 404, and draws an empty circle where the nurse and doctor
+       should be. A hard refresh never fixed it because a hard refresh does
+       not clear localStorage.
+
+       Anything that is not a build asset — a data: URI, a photo from the
+       hospital API — is the nurse's, not ours, and is left alone. */
+    careTeam: reseedCareTeamImages(cachedState.careTeam, defaultState.careTeam),
   };
   const listeners = new Set<StoreListener>();
 
