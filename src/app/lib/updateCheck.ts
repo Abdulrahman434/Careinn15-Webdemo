@@ -30,13 +30,23 @@ import { isSafeToReload, reloadBlockers, subscribeHolds } from "./reloadSafety";
  */
 
 const UPDATE_READY_EVENT = "careinn-update-ready";
-/* A minute. The browser only goes looking for a new worker when something
+/* Ten seconds. The browser only goes looking for a new worker when something
    asks it to, so this interval IS how long a deployed change waits before a
    screen that is already open notices it. Fifteen minutes was chosen to be
-   quiet; what it actually bought was a demo that looked like it had not
-   updated. The request is a conditional GET of one small file that the server
-   marks no-cache, so the cost of asking every minute is close to nothing. */
-const UPDATE_CHECK_MS = 60 * 1000;
+   quiet and bought a demo that looked like it had not updated; a minute was
+   still long enough to sit watching a screen wondering. The request is a
+   conditional GET of one small file the server marks no-cache, and the answer
+   is a 304 with no body, so asking six times a minute costs close to nothing.
+   Raise it if a ward ever runs enough screens for this to show up as load. */
+const UPDATE_CHECK_MS = 10 * 1000;
+
+/* How long the pill gets to be seen before the screen refreshes under it.
+   The old behaviour reloaded the instant a build landed, which is correct for
+   a kiosk and invisible to everyone: nobody could tell a deploy had arrived,
+   only that the screen had blinked. Announcing first and refreshing after
+   keeps the kiosk current without the update being a thing that happens to
+   you. A screen that is mid-order still waits for the order, as before. */
+const ANNOUNCE_GRACE_MS = 8 * 1000;
 
 let updateReady = false;
 let applyPending: (() => void) | null = null;
@@ -94,10 +104,15 @@ export function registerServiceWorker(): void {
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (!hadController || reloading) return;
     updateReady = true;
+    /* Announce before anything else, and unconditionally. The pill is the
+       only way anyone learns a new build arrived, and the branch below used
+       to skip it in exactly the common case — an idle screen, where it
+       reloaded on the spot instead. */
+    window.dispatchEvent(new Event(UPDATE_READY_EVENT));
     if (!isSafeToReload()) {
       console.info("[SW] update held:", reloadBlockers().join(", "));
     }
-    applyOrWait();
+    window.setTimeout(applyOrWait, ANNOUNCE_GRACE_MS);
   });
 
   window.addEventListener("load", () => {

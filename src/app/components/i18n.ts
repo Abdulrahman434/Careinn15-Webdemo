@@ -1668,7 +1668,7 @@ const translations: Record<string, TranslationEntry> = {
 
   /* ─── Updates ─── */
   "update.available": { en: "An update is available", ar: "يتوفر تحديث", ur: "ایک اپ ڈیٹ دستیاب ہے" },
-  "update.reload": { en: "Reload now", ar: "إعادة التحميل الآن", ur: "ابھی ری لوڈ کریں" },
+  "update.reload": { en: "Refresh", ar: "تحديث", ur: "ریفریش" },
 
   /* ─── First-run Onboarding Wizard ─── */
   "onboarding.header.title": { en: "Setup your Preferences", ar: "إعداد تفضيلاتك", ur: "اپنی ترجیحات ترتیب دیں" },
