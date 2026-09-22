@@ -136,14 +136,22 @@ export default defineConfig({
             // the next load. The refetch is nearly free: these responses carry
             // immutable/max-age=1y, so it comes from the HTTP cache.
             //
-            // They have to be kept out of the shell rule below, because the
-            // demo server answers a file it does not have with 200 and the
-            // index page rather than 404. Under NetworkFirst that HTML is a
-            // cacheable 200, and it gets stored under the image's own URL: the
-            // browser then renders a web page as a photograph, which is to say
-            // it renders nothing, for as long as the entry lives. CacheFirst on
-            // a hashed URL cannot go stale, so a rebuild simply asks for
-            // different names.
+            // They are kept out of the shell rule below. The reason used to be
+            // that the demo server answered a file it did not have with 200 and
+            // the index page: under NetworkFirst that HTML is a cacheable 200,
+            // it gets stored under the image's own URL, and the browser renders
+            // a web page as a photograph — which is to say it renders nothing —
+            // for as long as the entry lives.
+            //
+            // That is no longer true here. Checked against demo.careinn.com on
+            // 22 Sep 2026: a missing file under /assets/ returns a real 404, so
+            // cacheableResponse below rejects it and nothing poisons the cache.
+            //
+            // It is still true everywhere else on that server. A missing path
+            // outside /assets/ — anything shipped from public/, say — answers
+            // 200 with the index page, and the shell rule accepts 200. So the
+            // separation stays: /assets/ is the half that is safe, and it is
+            // safe because of the 404, not because of the handler.
             urlPattern: ({ url }) =>
               url.origin === self.location.origin && url.pathname.includes('/assets/'),
             handler: 'StaleWhileRevalidate',
@@ -177,6 +185,46 @@ export default defineConfig({
               cacheableResponse: {
                 statuses: [0, 200],
               },
+              plugins: [
+                {
+                  /* A URL that names a file type cannot honestly answer with a
+                     page. Outside /assets/ this server still returns 200 and
+                     the index page for a path it does not have, and
+                     NetworkFirst would write that HTML into the cache under
+                     the missing file's own URL — after which the browser
+                     renders a web page as a photograph, which is to say it
+                     renders nothing, until the entry expires a week later.
+                     One missing file becomes a week-long hole.
+
+                     Dropping the cache write is the whole fix. The response
+                     still reaches the page, so a genuinely missing file fails
+                     now and succeeds the moment it is deployed, instead of
+                     failing for as long as the entry lives.
+
+                     Extensions only, and .html is deliberately not among them:
+                     the shell, /reports/, /nfc-login/ and the slideshow are
+                     HTML and must keep caching. A path with no extension is a
+                     navigation and is left alone. */
+                  cacheWillUpdate: async ({ request, response }) => {
+                    if (!response) return null;
+                    /* request.url, not response.url: an opaque response carries
+                       an empty url and new URL('') throws, and the cache key is
+                       the request either way. */
+                    const path = new URL(request.url).pathname;
+                    const dot = path.lastIndexOf('.');
+                    const slash = path.lastIndexOf('/');
+                    const ext = dot > slash ? path.slice(dot + 1).toLowerCase() : '';
+                    const NEVER_HTML = [
+                      'png', 'jpg', 'jpeg', 'webp', 'gif', 'avif', 'svg', 'ico',
+                      'pdf', 'mp4', 'webm', 'mp3', 'woff', 'woff2', 'ttf', 'otf',
+                      'json', 'csv', 'js', 'css', 'wasm',
+                    ];
+                    if (NEVER_HTML.indexOf(ext) === -1) return response;
+                    const type = response.headers.get('content-type') || '';
+                    return type.indexOf('text/html') === -1 ? response : null;
+                  },
+                },
+              ],
             },
           },
         ],
