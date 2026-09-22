@@ -240,7 +240,11 @@ export default defineConfig({
         icons: [
           {
             src: '/favicon.ico',
-            sizes: '64x64',
+            /* Every frame the file actually carries, generated from
+               public/assets/logos/CI-icon-circle.png. It declared 64x64 alone
+               while no such file was deployed at all, so nothing ever checked
+               and the server answered the icon request with the index page. */
+            sizes: '16x16 32x32 48x48 64x64 128x128 256x256',
             type: 'image/x-icon',
           },
         ],
