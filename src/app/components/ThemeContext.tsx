@@ -220,6 +220,27 @@ export const TEXT_STYLE = {
   dialogHelper: { fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.normal, lineHeight: LEADING.compact, letterSpacing: "0px" },
 } as const;
 
+/* ── WEATHER — the top-bar weather pill, one entry per sky ───────────────────
+ * Not brand-variable: rain is blue in every hospital, so these sit with the
+ * scales rather than in a HospitalCoreConfig. `icon` strokes the glyph, `tint`
+ * fills the pill behind it — alpha, so it settles onto light and dark alike.
+ * `clearDay` is the amber the pill has always worn; the rest are its siblings.
+ * Keys are the WeatherKind union in TopBar.tsx. */
+export const WEATHER_TINT = {
+  clearDay:    { icon: "#E8A530", tint: "rgba(232,165,48,0.10)" },
+  clearNight:  { icon: "#7C8CDE", tint: "rgba(124,140,222,0.12)" },
+  partlyDay:   { icon: "#D99A38", tint: "rgba(217,154,56,0.10)" },
+  partlyNight: { icon: "#8892D8", tint: "rgba(136,146,216,0.12)" },
+  cloudy:      { icon: "#77848F", tint: "rgba(119,132,143,0.12)" },
+  drizzle:     { icon: "#4A9BD1", tint: "rgba(74,155,209,0.12)" },
+  rain:        { icon: "#3A86C8", tint: "rgba(58,134,200,0.12)" },
+  thunder:     { icon: "#7B61C9", tint: "rgba(123,97,201,0.12)" },
+  snow:        { icon: "#5FA8D3", tint: "rgba(95,168,211,0.12)" },
+  fog:         { icon: "#8A9099", tint: "rgba(138,144,153,0.12)" },
+  dust:        { icon: "#C08F4F", tint: "rgba(192,143,79,0.12)" },
+  wind:        { icon: "#5F9B8B", tint: "rgba(95,155,139,0.12)" },
+} as const;
+
 /* ═══════════════════════════════════════════════════════════════════════════
  * BRAND TOKENS — vary per hospital config
  * ═══════════════════════════════════════════════════════════════════════════ */

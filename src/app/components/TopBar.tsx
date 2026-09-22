@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ApiImage } from "./ApiImage";
-import { Settings, Globe, Bell, Cast, AlertTriangle, Moon, Sun } from "lucide-react";
-import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
+import { Settings, Globe, Bell, Cast, AlertTriangle, Moon, Sun, Cloud, CloudSun, CloudMoon,
+         CloudDrizzle, CloudRain, CloudLightning, CloudSnow, CloudFog, Haze, Wind } from "lucide-react";
+import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE, WEATHER_TINT } from "./ThemeContext";
 import { useLocale } from "./i18n";
-import svgPaths from "../../imports/svg-ca68x68c4i";
 import { getPrayerTimes, PRAYER_KEYS, PRAYER_NAMES, formatPrayerTime, getPrayerStatus } from "../utils/prayerUtils";
 import { Prayer } from "adhan";
 import { ConnectionStatus } from "./ConnectionStatus";
@@ -17,29 +17,59 @@ import { AdminGate, useAdminGateTap } from "./AdminGate";
 
 // Removed getNextPrayerIndex helper as we use prayerUtils now
 
-function SunIcon() {
-  return (
-    <div className="relative shrink-0 size-[22px]">
-      <svg className="block size-full" fill="none" viewBox="0 0 16 16">
-        <g clipPath="url(#clip_sun)">
-          <path d={svgPaths.p3adb3b00} stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          <path d="M8 1.33333V2.66667" stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          <path d="M8 13.3333V14.6667" stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          <path d={svgPaths.p11bc9dc0} stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          <path d={svgPaths.p191ca260} stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          <path d="M1.33333 8H2.66667" stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          <path d="M13.3333 8H14.6667" stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          <path d={svgPaths.pe73b76f} stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-          <path d={svgPaths.p1df25380} stroke="#E8A530" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-        </g>
-        <defs>
-          <clipPath id="clip_sun">
-            <rect fill="white" height="16" width="16" />
-          </clipPath>
-        </defs>
-      </svg>
-    </div>
-  );
+/* ── WEATHER ICON ──────────────────────────────────────────────────────────
+ * The pill used to be a sun in every weather. OpenWeatherMap already tells us
+ * what the sky is doing, so this reads its condition code and picks the glyph
+ * and the colour to match — see WEATHER_TINT in ThemeContext.
+ *
+ * Codes: https://openweathermap.org/weather-conditions. The API's own icon
+ * string ends in "d" or "n", which is how we know it is night there — the
+ * kiosk's clock can't tell us, the hospital's city might be elsewhere. */
+type WeatherKind = keyof typeof WEATHER_TINT;
+
+const WEATHER_GLYPH: Record<WeatherKind, typeof Sun> = {
+  clearDay: Sun,
+  clearNight: Moon,
+  partlyDay: CloudSun,
+  partlyNight: CloudMoon,
+  cloudy: Cloud,
+  drizzle: CloudDrizzle,
+  rain: CloudRain,
+  thunder: CloudLightning,
+  snow: CloudSnow,
+  fog: CloudFog,
+  dust: Haze,
+  wind: Wind,
+};
+
+function weatherKind(code: number, isNight: boolean): WeatherKind {
+  if (code >= 200 && code < 300) return "thunder";
+  if (code >= 300 && code < 400) return "drizzle";
+  if (code >= 500 && code < 600) return code === 511 ? "snow" : "rain";
+  if (code >= 600 && code < 700) return "snow";
+  if (code === 731 || code === 751 || code === 761 || code === 762) return "dust";
+  if (code === 771 || code === 781) return "wind";
+  if (code >= 700 && code < 800) return "fog";
+  if (code === 800) return isNight ? "clearNight" : "clearDay";
+  if (code === 801 || code === 802) return isNight ? "partlyNight" : "partlyDay";
+  return "cloudy";
+}
+
+/* ── WEATHER_DEMO ──────────────────────────────────────────────────────────
+ * Jeddah is clear most days, so the other eleven skies would never show up in
+ * a demo. Two URL switches stand in for the weather:
+ *
+ *   ?weather=demo   cycle all twelve, ~2.2s each, name shown beside the temp
+ *   ?weather=rain   hold one sky (any key of WEATHER_TINT)
+ *
+ * Either one only overrides the icon and the tint — the temperature stays the
+ * real reading. Drop the query string and the pill goes back to the live sky.
+ * Nothing persists, so a demo can't be left switched on by accident. */
+const WEATHER_KINDS = Object.keys(WEATHER_TINT) as WeatherKind[];
+
+function WeatherIcon({ kind }: { kind: WeatherKind }) {
+  const Glyph = WEATHER_GLYPH[kind];
+  return <Glyph size={22} strokeWidth={1.8} style={{ color: WEATHER_TINT[kind].icon, flexShrink: 0 }} />;
 }
 
 /* ── CONNECTION_INDICATORS ─────────────────────────────────────────────────
@@ -59,6 +89,7 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
   const [time, setTime] = useState(new Date());
   const [prayerData, setPrayerData] = useState(() => getPrayerStatus(new Date()));
   const [temperature, setTemperature] = useState<number | null>(null);
+  const [weather, setWeather] = useState<WeatherKind>("clearDay");
 
   const nurseStore = useNurseStore();
   const [showConnDetails, setShowConnDetails] = useState(false);
@@ -94,6 +125,28 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
     }
   };
 
+  const weatherDemo = useMemo(() => {
+    const p = new URLSearchParams(window.location.search).get("weather");
+    if (!p) return null;
+    if (p === "demo") return "cycle" as const;
+    return (WEATHER_KINDS as string[]).includes(p) ? (p as WeatherKind) : null;
+  }, []);
+
+  useEffect(() => {
+    if (!weatherDemo) return;
+    if (weatherDemo !== "cycle") {
+      setWeather(weatherDemo);
+      return;
+    }
+    let i = 0;
+    setWeather(WEATHER_KINDS[0]);
+    const id = setInterval(() => {
+      i = (i + 1) % WEATHER_KINDS.length;
+      setWeather(WEATHER_KINDS[i]);
+    }, 2200);
+    return () => clearInterval(id);
+  }, [weatherDemo]);
+
   const weatherLongPress = useLongPress(() => {
     window.location.reload();
   }, 1000);
@@ -112,6 +165,10 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
         if (data.main && data.main.temp !== undefined) {
           setTemperature(Math.round(data.main.temp));
         }
+        const sky = data.weather?.[0];
+        if (!weatherDemo && sky && typeof sky.id === "number") {
+          setWeather(weatherKind(sky.id, typeof sky.icon === "string" && sky.icon.endsWith("n")));
+        }
       } catch (error) {
         console.error("Weather fetch error:", error);
       }
@@ -120,7 +177,7 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
     fetchWeather();
     const weatherInterval = setInterval(fetchWeather, 30 * 60 * 1000);
     return () => clearInterval(weatherInterval);
-  }, [theme.location]);
+  }, [theme.location, weatherDemo]);
 
 
   useEffect(() => {
@@ -368,14 +425,15 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
           tabIndex={0}
           className="flex items-center gap-2 cursor-pointer rounded-full"
           style={{
-            backgroundColor: "rgba(232,165,48,0.10)",
+            backgroundColor: WEATHER_TINT[weather].tint,
             height: theme.touchTargetMin,
             padding: `0 ${SPACE[2]}`,
+            transition: "background-color 600ms ease",
           }}
           {...weatherLongPress.handlers}
           onClick={() => weatherLongPress.handleClick(onWeatherTap || (() => {}))}
         >
-          <SunIcon />
+          <WeatherIcon kind={weather} />
           <span
             style={{
               fontFamily: fontFamily,
@@ -386,6 +444,18 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
             {temperature !== null ? `${temperature}°C` : "38°C"}
 
           </span>
+          {weatherDemo && (
+            <span
+              style={{
+                fontFamily: fontFamily,
+                ...TEXT_STYLE.micro,
+                color: WEATHER_TINT[weather].icon,
+                opacity: 0.85,
+              }}
+            >
+              {weather}
+            </span>
+          )}
         </div>
 
         {/* Lang */}
