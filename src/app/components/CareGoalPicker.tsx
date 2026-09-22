@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Check, Search, Target } from "lucide-react";
+import { Check, Search, Target } from "lucide-react";
+import { ModalHeader } from "./primitives";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "./ThemeContext";
 import { useLocale, textDirection } from "./i18n";
 import { CARE_GOALS, isListedGoal, careGoalLabel } from "./careGoals";
@@ -94,34 +95,12 @@ export function CareGoalPicker({
           overflow: "hidden",
         }}
       >
-        {/* ── Header ── */}
-        <div
-          className="flex items-start gap-4 shrink-0"
-          style={{ padding: "28px 28px 20px", borderBottom: `1px solid ${t.borderSubtle}` }}
-        >
-          <div
-            className="flex items-center justify-center shrink-0"
-            style={{ width: 48, height: 48, borderRadius: t.radiusMd, backgroundColor: t.primarySubtle }}
-          >
-            <Target size={24} style={{ color: t.primaryOn }} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 style={{ fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.extrabold, color: t.textHeading, margin: 0 }}>
-              {tr("care.pcc.goal.title")}
-            </h2>
-            <p style={{ fontFamily, fontSize: TYPE_SCALE.sm, color: t.textMuted, margin: "4px 0 0" }}>
-              {tr("goal.picker.subtitle")}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            aria-label={tr("goal.picker.cancel")}
-            className="flex items-center justify-center shrink-0 cursor-pointer"
-            style={{ width: 44, height: 44, borderRadius: "50%", border: "none", backgroundColor: t.surfaceInset, color: t.textMuted }}
-          >
-            <X size={20} />
-          </button>
-        </div>
+        <ModalHeader
+          icon={Target}
+          title={tr("care.pcc.goal.title")}
+          subtitle={tr("goal.picker.subtitle")}
+          onClose={onClose}
+        />
 
         {/* ── Search ── */}
         <div className="shrink-0" style={{ padding: "18px 28px 0" }}>

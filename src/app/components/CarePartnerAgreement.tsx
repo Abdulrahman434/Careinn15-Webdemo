@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Check, UserRound, AlertTriangle } from "lucide-react";
+import { Check, UserRound, AlertTriangle } from "lucide-react";
+import { ModalHeader } from "./primitives";
 import { useTheme, TYPE_SCALE, WEIGHT, LEADING, SHADOW } from "./ThemeContext";
 import { useLocale, toLatinDigits, textDirection } from "./i18n";
 import { SignaturePad } from "./nurse/SignaturePad";
@@ -122,38 +123,11 @@ export function CarePartnerAgreement({
           overflow: "hidden",
         }}
       >
-        {/* Header */}
-        <div
-          className="shrink-0 flex items-center gap-4"
-          style={{ padding: "22px 28px", borderBottom: `1px solid ${t.borderDefault}` }}
-        >
-          <div
-            className="flex items-center justify-center shrink-0"
-            style={{ width: "48px", height: "48px", borderRadius: t.radiusLg, backgroundColor: t.primarySubtle }}
-          >
-            <UserRound size={24} style={{ color: t.primaryOn }} />
-          </div>
-          <h2
-            className="flex-1 min-w-0"
-            style={{
-              fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.bold,
-              color: t.textHeading, margin: 0, lineHeight: LEADING.snug,
-            }}
-          >
-            {tr("care.cp.title")}
-          </h2>
-          <button
-            onClick={requestClose}
-            aria-label={tr("care.pcc.partner.cancel")}
-            className="shrink-0 flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
-            style={{
-              width: "48px", height: "48px", borderRadius: t.radiusMd,
-              backgroundColor: t.tileInactiveBg, border: "none", outline: "none",
-            }}
-          >
-            <X size={22} style={{ color: t.textMuted }} strokeWidth={2.5} />
-          </button>
-        </div>
+        <ModalHeader
+          icon={UserRound}
+          title={tr("care.cp.title")}
+          onClose={requestClose}
+        />
 
         {/* The agreement itself */}
         <div className="flex-1 min-h-0 overflow-y-auto careme-scroll" style={{ padding: "24px 28px" }}>

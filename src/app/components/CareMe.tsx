@@ -1,3 +1,4 @@
+import { ModalHeader } from "./primitives";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, LEADING, primaryRgba, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { ApiImage } from "./ApiImage";
 import { useLocale, type Locale, textDirection } from "./i18n";
@@ -2947,26 +2948,12 @@ function BoardComposer({ theme, dir, onCancel, onSave }: {
           overflow: "hidden",
         }}
       >
-        <div className="shrink-0 flex items-center gap-4" style={{ padding: "20px 26px", borderBottom: `1px solid ${theme.borderDefault}` }}>
-          <div className="flex items-center justify-center shrink-0"
-            style={{ width: "44px", height: "44px", borderRadius: theme.radiusLg, backgroundColor: theme.primarySubtle }}>
-            <MessageCircleQuestion size={22} style={{ color: theme.primaryOn }} />
-          </div>
-          <h2 className="flex-1 min-w-0" style={{
-            fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.bold,
-            color: theme.textHeading, margin: 0,
-          }}>
-            {t("care.pcc.board.compose")}
-          </h2>
-          <button
-            onClick={onCancel}
-            aria-label={t("care.pcc.partner.cancel")}
-            className="shrink-0 flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
-            style={{ width: "44px", height: "44px", borderRadius: theme.radiusMd, backgroundColor: theme.tileInactiveBg, border: "none", outline: "none" }}
-          >
-            <X size={22} style={{ color: theme.textMuted }} strokeWidth={2.5} />
-          </button>
-        </div>
+        <ModalHeader
+          icon={MessageCircleQuestion}
+          title={t("care.pcc.board.compose")}
+          onClose={onCancel}
+          padX="26px"
+        />
 
         <div className="flex-1 min-h-0 overflow-y-auto careme-scroll" style={{ padding: "22px 26px" }}>
           {/* Pain first: it is the entry that needs nothing else. */}

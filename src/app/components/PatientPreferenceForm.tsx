@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ModalHeader } from "./primitives";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, LEADING, type ThemeConfig } from "./ThemeContext";
 import { useLocale, type Locale } from "./i18n";
 import {
@@ -10,7 +11,7 @@ import { CarePartnerAgreement } from "./CarePartnerAgreement";
 import {
   ClipboardList, UtensilsCrossed, Users, Clock, HeartHandshake,
   ShieldCheck, MessageSquarePlus, Check, CheckCircle2,
-  ChevronLeft, ChevronRight, X,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { QuestionProgress, QuestionProgressBar } from "./QuestionProgress";
 import { useReloadHold } from "../lib/reloadSafety";
@@ -1563,44 +1564,13 @@ export function PatientPreferenceForm({
               row on the card itself: at dialog size a full-bleed brand bar
               would take the top eighth of the card to repeat what the
               patient just tapped to open. */}
-          <div
-            className="shrink-0 flex items-center gap-3"
-            style={{ padding: `12px ${padX}`, borderBottom: `1px solid ${theme.borderSubtle}` }}
-            data-ppf="modal-header"
-          >
-            <div
-              className="flex items-center justify-center shrink-0"
-              style={{ width: "36px", height: "36px", borderRadius: theme.radiusSm, backgroundColor: theme.primarySubtle }}
-            >
-              <ClipboardList size={18} style={{ color: iconColor }} />
-            </div>
-            <div className="flex-1 min-w-0" style={{ textAlign: isRTL ? "right" : "left" }}>
-              <h2 style={{
-                fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.bold,
-                color: theme.textHeading, margin: 0, lineHeight: LEADING.tight,
-              }}>
-                {t("ppf.title")}
-              </h2>
-              <p style={{
-                fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.medium,
-                color: theme.textMuted, margin: "1px 0 0", lineHeight: LEADING.none,
-              }}>
-                {theme.hospitalName}
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              aria-label={t("general.close")}
-              data-ppf="close"
-              className="shrink-0 flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
-              style={{
-                width: "34px", height: "34px", borderRadius: theme.radiusSm,
-                backgroundColor: theme.tileInactiveBg, border: "none", outline: "none",
-              }}
-            >
-              <X size={18} style={{ color: theme.textMuted }} />
-            </button>
-          </div>
+          <ModalHeader
+            icon={ClipboardList}
+            title={t("ppf.title")}
+            subtitle={theme.hospitalName}
+            onClose={onClose}
+            padX={padX}
+          />
 
           {/* The form itself. "flex: 1 1 auto", not flex-1: the card's height
               is content-driven, and a zero flex-basis in an auto-height column

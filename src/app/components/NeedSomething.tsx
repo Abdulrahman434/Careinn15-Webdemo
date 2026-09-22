@@ -561,6 +561,10 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
               const TIcon = tb.Icon;
               const isReportTab = tb.key === "report";
               const activeBg = isReportTab ? theme.error : theme.primary;
+              /* Report stays red whether or not it is the tab you are on —
+                 it is the one tab that is not a request, and the colour is
+                 how the strip says so at a glance. */
+              const restTone = isReportTab ? theme.errorOn : theme.primaryOn;
               return (
                 <button
                   key={tb.key}
@@ -570,17 +574,22 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                     padding: "13px 22px",
                     borderRadius: theme.radiusFull,
                     backgroundColor: active ? activeBg : theme.surface,
-                    border: active ? `1px solid ${theme.borderCardSelected}` : theme.borderCard,
+                    /* The selected tab's border is its own fill: borderCardSelected
+                       is the brand glyph at 55%, which on the red Report fill read
+                       as a black ring drawn around the tab. An unselected tab
+                       carries its own tone as the stroke — neutral edges left the
+                       whole strip looking disabled until something was picked. */
+                    border: `1px solid ${active ? activeBg : restTone}`,
                     outline: "none",
                     boxShadow: active ? SHADOW.sm : "none",
                   }}
                 >
-                  <TIcon size={20} color={active ? theme.textInverse : theme.textMuted} strokeWidth={2.2} />
+                  <TIcon size={20} color={active ? theme.textInverse : restTone} strokeWidth={2.2} />
                   <span
                     style={{
                       ...TEXT_STYLE.buttonSm,
                       fontFamily,
-                      color: active ? theme.textInverse : theme.textMuted,
+                      color: active ? theme.textInverse : restTone,
                     }}
                   >
                     {tb.label}
