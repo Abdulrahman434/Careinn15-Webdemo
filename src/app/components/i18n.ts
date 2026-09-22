@@ -1721,6 +1721,7 @@ const translations: Record<string, TranslationEntry> = {
   "onboarding.screensaver.30s": { en: "30 seconds", ar: "٣٠ ثانية", ur: "30 سیکنڈ" },
   "onboarding.screensaver.1m": { en: "1 minute", ar: "دقيقة واحدة", ur: "1 منٹ" },
   "onboarding.screensaver.5m": { en: "5 minutes", ar: "٥ دقائق", ur: "5 منٹ" },
+  "onboarding.screensaver.10m": { en: "10 minutes", ar: "١٠ دقائق", ur: "10 منٹ" },
 
   "onboarding.consent.title": { en: "One last step", ar: "خطوة أخيرة", ur: "آخری مرحلہ" },
   "onboarding.consent.tour.before": { en: "I've watched the ", ar: "لقد شاهدت ", ur: "میں نے " },

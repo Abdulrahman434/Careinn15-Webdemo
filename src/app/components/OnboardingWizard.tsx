@@ -160,7 +160,7 @@ export function OnboardingWizard({
   const [selSound, setSelSound] = useState<"sound" | "silent" | null>(
     () => (readLS("careinn-notification-sound") as any) || null
   );
-  const [selSaver, setSelSaver] = useState<"30s" | "1m" | "5m" | null>(
+  const [selSaver, setSelSaver] = useState<"30s" | "1m" | "5m" | "10m" | null>(
     () => (readLS("careinn-screensaver-timeout") as any) || null
   );
   const [tourSeen, setTourSeen] = useState(() => !!readLS("careinn-consent-tour-seen"));
@@ -232,7 +232,7 @@ export function OnboardingWizard({
     }
   };
 
-  const saveSaver = (v: "30s" | "1m" | "5m") => {
+  const saveSaver = (v: "30s" | "1m" | "5m" | "10m") => {
     setSelSaver(v);
     localStorage.setItem("careinn-screensaver-timeout", v);
     // picked up by the existing idle timer in App.tsx
@@ -590,10 +590,11 @@ export function OnboardingWizard({
       case "screensaver":
         return (
           <>
-            <div className="grid grid-cols-3 gap-4 w-full" style={{ marginBottom: "8px" }}>
+            <div className="grid grid-cols-4 gap-4 w-full" style={{ marginBottom: "8px" }}>
               <OptionCard selected={selSaver === "30s"} onClick={() => saveSaver("30s")} label={tr("onboarding.screensaver.30s")} />
               <OptionCard selected={selSaver === "1m"} onClick={() => saveSaver("1m")} label={tr("onboarding.screensaver.1m")} />
               <OptionCard selected={selSaver === "5m"} onClick={() => saveSaver("5m")} label={tr("onboarding.screensaver.5m")} />
+              <OptionCard selected={selSaver === "10m"} onClick={() => saveSaver("10m")} label={tr("onboarding.screensaver.10m")} />
             </div>
             <PrimaryButton label={tr("onboarding.next")} disabled={!selSaver} onClick={() => goNext()} />
           </>

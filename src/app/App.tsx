@@ -177,18 +177,21 @@ const isBeforeToday = (dateStr: string | null | undefined): boolean => {
 };
 
 /** Screensaver idle delay — reads the onboarding preference, falls back to
- *  the historical 1-minute default when no choice was made. */
+ *  ten minutes when no choice was made. A minute was the old default and it
+ *  was short enough that the screen dimmed on a patient still reading it. */
+const SCREENSAVER_DEFAULT_MS = 600_000;
 const SCREENSAVER_TIMEOUT_MS: Record<string, number> = {
   "30s": 30_000,
   "1m": 60_000,
   "5m": 300_000,
+  "10m": 600_000,
 };
 const getScreensaverTimeoutMs = (): number => {
   try {
     const v = localStorage.getItem("careinn-screensaver-timeout");
-    return (v && SCREENSAVER_TIMEOUT_MS[v]) || 60_000;
+    return (v && SCREENSAVER_TIMEOUT_MS[v]) || SCREENSAVER_DEFAULT_MS;
   } catch {
-    return 60_000;
+    return SCREENSAVER_DEFAULT_MS;
   }
 };
 
@@ -918,7 +921,7 @@ function BedsideScreen() {
         if (!anyOtherOverlayOpen) {
           setShowTasbih(true);
         }
-      }, getScreensaverTimeoutMs()); // onboarding preference, default 1 min
+      }, getScreensaverTimeoutMs()); // onboarding preference, default 10 min
     };
 
     const handleUserActivity = () => {
