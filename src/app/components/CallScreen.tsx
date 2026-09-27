@@ -874,6 +874,12 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
 
         <div className="flex flex-col min-w-0 overflow-hidden" style={{
           backgroundColor: theme.surface,
+          /* In dark mode SHADOW.xl is a dark shadow on a dark ground and does
+             nothing: the border is the only thing holding the card off the
+             backdrop, which is why these three read as melted into it while
+             CareMe's identical columns did not. cardBorder is "none" in light
+             mode, so this costs nothing there. */
+          border: theme.cardBorder,
           borderRadius: theme.radiusXl, boxShadow: SHADOW.xl,
           /* The same fixed card as CareMe's expanded columns — 415 x 710 — so
              the two screens read as one system. Three of these do not fill the
@@ -961,6 +967,12 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
         {/* Column 2 — Keypad (center, takes remaining space) */}
         <div className="flex flex-col min-w-0 overflow-hidden" style={{
           backgroundColor: theme.surface,
+          /* In dark mode SHADOW.xl is a dark shadow on a dark ground and does
+             nothing: the border is the only thing holding the card off the
+             backdrop, which is why these three read as melted into it while
+             CareMe's identical columns did not. cardBorder is "none" in light
+             mode, so this costs nothing there. */
+          border: theme.cardBorder,
           borderRadius: theme.radiusXl, boxShadow: SHADOW.xl,
           /* The same fixed card as CareMe's expanded columns — 415 x 710 — so
              the two screens read as one system. Three of these do not fill the
@@ -1042,6 +1054,12 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
 
         <div className="flex flex-col min-w-0 overflow-hidden" style={{
           backgroundColor: theme.surface,
+          /* In dark mode SHADOW.xl is a dark shadow on a dark ground and does
+             nothing: the border is the only thing holding the card off the
+             backdrop, which is why these three read as melted into it while
+             CareMe's identical columns did not. cardBorder is "none" in light
+             mode, so this costs nothing there. */
+          border: theme.cardBorder,
           borderRadius: theme.radiusXl, boxShadow: SHADOW.xl,
           /* The same fixed card as CareMe's expanded columns — 415 x 710 — so
              the two screens read as one system. Three of these do not fill the

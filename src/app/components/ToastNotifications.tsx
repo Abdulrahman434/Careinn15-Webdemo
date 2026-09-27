@@ -371,6 +371,12 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => vo
   /* ── Standard variant (meal / housekeeping) ── */
   const isMeal = toast.variant === "meal";
   const discColor = isMeal ? theme.accent : theme.primary;
+  /* The eyebrow sits on the card, not on the disc, so it cannot borrow the
+     disc's fill: on a dark surface that is brand blue on near-black and the
+     line all but disappears. primaryOn/accentOn are the same brand colour
+     held to 4.5:1 against the backdrops of whichever mode is active, so this
+     stays legible in light and dark, in every brand. */
+  const eyebrowColor = isMeal ? theme.accentOn : theme.primaryOn;
   const badgeColor = toast.actionColor || discColor;
   const badgeBg = `color-mix(in srgb, ${badgeColor} 14%, transparent)`;
 
@@ -416,7 +422,7 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => vo
           fontWeight: WEIGHT.bold,
           letterSpacing: "0.6px",
           lineHeight: 1,
-          color: discColor,
+          color: eyebrowColor,
           textTransform: "uppercase",
           margin: `0 0 10px 0`,
         }}
