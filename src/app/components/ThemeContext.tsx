@@ -1054,6 +1054,7 @@ import imcLogo from "../../assets/imclogo.webp";
 import imcHero from "../../assets/IMC-e1556123324461.webp";
 
 import careinnLogo from "../../assets/careinn-hospital-logo.webp";
+import careinnLogoDark from "../../assets/logos/careinn-logo-dark.svg";
 import careinnHero from "../../assets/careinn-hospital-hero.webp";
 
 import primeLogo from "../../assets/prime-hospital-logo.webp";
@@ -1195,6 +1196,7 @@ export const CAREINN_CORE: HospitalCoreConfig = {
   fontFamily: "'Mulish', sans-serif",
   fontFamilyAr: "'Almarai', sans-serif",
   logoUrl: careinnLogo,
+  logoUrlDark: careinnLogoDark,
   hospitalWebsiteUrl: "",
   heroImageUrl: careinnHero,
   heroCropPosition: "50% 40%",
