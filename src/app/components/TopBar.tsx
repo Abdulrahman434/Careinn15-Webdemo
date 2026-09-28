@@ -4,7 +4,7 @@ import { Settings, Globe, Bell, Cast, AlertTriangle, Moon, Sun, Cloud, CloudSun,
          CloudDrizzle, CloudRain, CloudLightning, CloudSnow, CloudFog, Haze, Wind } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE, WEATHER_TINT } from "./ThemeContext";
 import { useLocale } from "./i18n";
-import { getPrayerTimes, PRAYER_KEYS, PRAYER_NAMES, formatPrayerTime, getPrayerStatus, localizeDigits } from "../utils/prayerUtils";
+import { getPrayerTimes, PRAYER_KEYS, PRAYER_NAMES, getPrayerStatus, localizeDigits, prayerTimeParts } from "../utils/prayerUtils";
 import { Prayer } from "adhan";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { useLongPress } from "../lib/useLongPress";
@@ -255,7 +255,7 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
           {PRAYER_KEYS.map((pKey) => {
             const isNext = pKey === prayerData.next;
             const prayerName = t(PRAYER_NAMES[pKey]);
-            const prayerTime = formatPrayerTime(prayerData.times.timeForPrayer(pKey), locale);
+            const prayerTime = prayerTimeParts(prayerData.times.timeForPrayer(pKey), locale, t);
             
             let onTap = undefined;
             if (pKey === Prayer.Fajr) onTap = onFajrTap;
@@ -292,7 +292,10 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
-                    {prayerTime}
+                    {prayerTime.time}
+                    <span style={{ ...TEXT_STYLE.micro, fontWeight: WEIGHT.normal, marginInlineStart: "3px" }}>
+                      {prayerTime.period}
+                    </span>
                   </span>
                 </div>
                 {pKey !== PRAYER_KEYS[PRAYER_KEYS.length - 1] && (

@@ -402,7 +402,7 @@ interface TasbihScreenSaverProps {
 /** Dark/light-themed tasbih screensaver. Exit via long-press (800ms) or swipe (>150px). */
 export function TasbihScreenSaver({ onClose }: TasbihScreenSaverProps) {
   const { theme, darkMode } = useTheme();
-  const { t, isRTL } = useLocale();
+  const { t, isRTL, locale } = useLocale();
   const [count, setCount] = useState(0);
   const [ripples, setRipples] = useState<Array<{ id: number; x: number; y: number }>>([]);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -428,7 +428,7 @@ export function TasbihScreenSaver({ onClose }: TasbihScreenSaverProps) {
 
   const prayerData = getPrayerStatus(now, theme.location);
   const nextPrayerKey = prayerData.next;
-  const nextPrayerTime = formatPrayerTime(prayerData.times.timeForPrayer(nextPrayerKey));
+  const nextPrayerTime = formatPrayerTime(prayerData.times.timeForPrayer(nextPrayerKey), locale, t);
   const nextPrayerNameKey = PRAYER_NAMES[nextPrayerKey];
 
   const PRAYER_NAME_MAP: Record<string, { en: string; ar: string }> = {

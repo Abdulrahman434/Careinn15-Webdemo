@@ -65,11 +65,21 @@ export const PRAYER_KEYS = [
 ];
 
 /**
- * Format prayer time as HH:mm
+ * A prayer time on the 12-hour clock, split so the period can be set smaller
+ * than the digits: { time: "6:14", period: "PM" } — in Arabic "٦:١٤" and "م".
  */
-export function formatPrayerTime(time: Date | null, locale: string = "en") {
-  if (!time) return "--:--";
-  return localizeDigits(format(time, "HH:mm"), locale);
+export function prayerTimeParts(time: Date | null, locale: string, t: (key: string) => string) {
+  if (!time) return { time: "--:--", period: "" };
+  return {
+    time: localizeDigits(format(time, "h:mm"), locale),
+    period: t(time.getHours() >= 12 ? "topbar.pm" : "topbar.am"),
+  };
+}
+
+/** A prayer time as one string on the 12-hour clock: "6:14 PM", "٦:١٤ م". */
+export function formatPrayerTime(time: Date | null, locale: string, t: (key: string) => string) {
+  const { time: hm, period } = prayerTimeParts(time, locale, t);
+  return period ? `${hm} ${period}` : hm;
 }
 
 /** Arabic reads its numbers in Arabic-Indic digits (٠١٢…); other locales keep 0-9. */
@@ -108,10 +118,10 @@ export function getRelativeTimeString(now: Date, target: Date, locale: string = 
     if (totalMinutes === 0) return "الآن";
     if (isPast) {
       if (hours === 0) return `منذ ${minutes} دقيقة`;
-      return `منذ ${hours} س و ${minutes} د`;
+      return minutes === 0 ? `منذ ${hours} س` : `منذ ${hours} س و ${minutes} د`;
     } else {
       if (hours === 0) return `خلال ${minutes} دقيقة`;
-      return `خلال ${hours} س و ${minutes} د`;
+      return minutes === 0 ? `خلال ${hours} س` : `خلال ${hours} س و ${minutes} د`;
     }
   }
 
@@ -119,20 +129,20 @@ export function getRelativeTimeString(now: Date, target: Date, locale: string = 
     if (totalMinutes === 0) return "ابھی";
     if (isPast) {
       if (hours === 0) return `${minutes} منٹ پہلے`;
-      return `${hours} گھنٹے ${minutes} منٹ پہلے`;
+      return minutes === 0 ? `${hours} گھنٹے پہلے` : `${hours} گھنٹے ${minutes} منٹ پہلے`;
     } else {
       if (hours === 0) return `${minutes} منٹ میں`;
-      return `${hours} گھنٹے ${minutes} منٹ میں`;
+      return minutes === 0 ? `${hours} گھنٹے میں` : `${hours} گھنٹے ${minutes} منٹ میں`;
     }
   }
 
   if (totalMinutes === 0) return "Just now";
   if (isPast) {
     if (hours === 0) return `${minutes}m ago`;
-    return `${hours}h ${minutes}m ago`;
+    return minutes === 0 ? `${hours}h ago` : `${hours}h ${minutes}m ago`;
   } else {
     if (hours === 0) return `in ${minutes}m`;
-    return `in ${hours}h ${minutes}m`;
+    return minutes === 0 ? `in ${hours}h` : `in ${hours}h ${minutes}m`;
   }
 }
 

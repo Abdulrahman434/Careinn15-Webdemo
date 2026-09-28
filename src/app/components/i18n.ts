@@ -363,6 +363,8 @@ const translations: Record<string, TranslationEntry> = {
   "tasbih.tapToCount": { en: "Tap anywhere to count", ar: "اضغط في أي مكان للعد", ur: "شمار کرنے کے لیے کہیں بھی تھپتھپائیں" },
   "tasbih.reset": { en: "Reset", ar: "إعادة تعيين", ur: "دوبارہ شروع کریں" },
   "tasbih.exit": { en: "Exit", ar: "خروج", ur: "باہر نکلیں" },
+  "screensaver.nextPrayer": { en: "Next prayer", ar: "الصلاة القادمة", ur: "اگلی نماز" },
+  "screensaver.tomorrow": { en: "Tomorrow", ar: "غداً", ur: "کل" },
   "tasbih.exitHint": { en: "Long press or swipe to exit", ar: "اضغط مطولاً أو اسحب للخروج", ur: "باہر نکلنے کے لیے دیر تک دبائیں یا سوائپ کریں" },
   "tasbih.milestone33": { en: "Subhan Allah! 33 reached ✨", ar: "!سبحان الله! وصلت إلى 33 ✨", ur: "سبحان اللہ! 33 مکمل ہو گئے ✨" },
   "tasbih.milestone99": { en: "Alhamdulillah! 99 reached 🌟", ar: "!الحمد لله! وصلت إلى 99 🌟", ur: "الحمد للہ! 99 مکمل ہو گئے 🌟" },

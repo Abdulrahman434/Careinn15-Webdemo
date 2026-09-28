@@ -34,6 +34,7 @@ const HospitalConfigurator = lazy(() => import("./components/HospitalConfigurato
 import { ThemeAppearanceDialog } from "./components/ThemeAppearanceDialog";
 import { TasbihScreenSaver } from "./components/TasbihScreenSaver";
 import { VideoScreenSaver } from "./components/VideoScreenSaver";
+import { AmbientScreenSaver } from "./components/AmbientScreenSaver";
 import { PatientGuideModal } from "./components/PatientGuideModal";
 import { LazyScreenFallback } from "./components/LazyScreenFallback";
 import { PatientPreferenceForm } from "./components/PatientPreferenceForm";
@@ -2288,7 +2289,8 @@ function BedsideScreen() {
               setShowTasbih(false);
             }
           };
-          // Brands that supply a screensaver video get it instead of the tasbih.
+          // A brand can choose the ambient clock or supply a video; otherwise the tasbih.
+          if (theme.screensaverStyle === "ambient") return <AmbientScreenSaver onClose={closeSaver} />;
           return theme.screensaverVideoUrl
             ? <VideoScreenSaver src={theme.screensaverVideoUrl} onClose={closeSaver} />
             : <TasbihScreenSaver onClose={closeSaver} />;
