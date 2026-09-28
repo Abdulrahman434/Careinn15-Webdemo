@@ -1667,8 +1667,9 @@ const translations: Record<string, TranslationEntry> = {
   "offline.cancel": { en: "Cancel", ar: "إلغاء", ur: "منسوخ" },
 
   /* ─── Updates ─── */
-  "update.available": { en: "An update is available", ar: "يتوفر تحديث", ur: "ایک اپ ڈیٹ دستیاب ہے" },
-  "update.reload": { en: "Refresh", ar: "تحديث", ur: "ریفریش" },
+  "update.available": { en: "New update available", ar: "تحديث جديد متاح", ur: "نیا اپ ڈیٹ دستیاب ہے" },
+  "update.body": { en: "Refresh to get the latest version.", ar: "حدّث للحصول على أحدث نسخة.", ur: "تازہ ترین ورژن حاصل کرنے کے لیے ریفریش کریں۔" },
+  "update.reload": { en: "Update now", ar: "حدث الآن", ur: "ابھی اپ ڈیٹ کریں" },
 
   /* ─── First-run Onboarding Wizard ─── */
   "onboarding.header.title": { en: "Setup your Preferences", ar: "إعداد تفضيلاتك", ur: "اپنی ترجیحات ترتیب دیں" },
