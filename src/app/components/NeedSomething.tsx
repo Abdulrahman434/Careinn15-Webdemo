@@ -189,6 +189,12 @@ function deriveStatus(createdAt: number, now: number): StatusKey {
   return "delivered";
 }
 
+/* An item is blocked while any request for it is still open. Reads the same
+   list and status derivation as "My Requests", so the grid and the list agree. */
+function hasOpenRequest(list: NeedRequest[], itemKey: string, now: number): boolean {
+  return list.some((r) => r.itemKey === itemKey && deriveStatus(r.createdAt, now) !== "delivered");
+}
+
 interface NeedSomethingProps {
   onClose: () => void;
   /** When provided, opens directly to this tab (e.g. "mine" for My Requests) */
@@ -247,7 +253,12 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
   });
   const [now, setNow] = useState(() => Date.now());
 
+  /* Written synchronously on send, so a double-tap in the same frame sees the
+     first tap's entries before React re-renders. */
+  const requestsRef = useRef(requests);
+
   useEffect(() => {
+    requestsRef.current = requests;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
     } catch {
@@ -296,6 +307,13 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
     if (!selected || selected.cards.length === 0) return;
     if (languageMissing) return;
     const at = Date.now();
+    /* Never open a second request for an item that already has one open. */
+    const cards = selected.cards.filter((card) => !hasOpenRequest(requestsRef.current, card.key, at));
+    if (cards.length === 0) {
+      closeSheet();
+      setPicked([]);
+      return;
+    }
     /* One entry per item, so each is tracked and delivered on its own — the
        shared note rides along with every one of them. Newest first, and the
        list the patient ticked keeps its order within that batch. */
@@ -303,7 +321,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
       asksLanguage && selectedChip ? t("need.support.interpreter.summary", t(selectedChip)) : "",
       note.trim(),
     ].filter(Boolean).join(" \u00b7 ");
-    const entries: NeedRequest[] = selected.cards.map((card, i) => ({
+    const entries: NeedRequest[] = cards.map((card, i) => ({
       id: `${at}-${i}-${Math.random().toString(36).slice(2, 7)}`,
       kind: selected.kind,
       itemKey: card.key,
@@ -311,7 +329,9 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
       note: noteText,
       createdAt: at,
     }));
-    setRequests((prev) => [...entries, ...prev]);
+    const next = [...entries, ...requestsRef.current];
+    requestsRef.current = next;
+    setRequests(next);
     const kind = selected.kind;
     setSelected(null);
     setPicked([]);
@@ -437,12 +457,14 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
 
       <style>{`
         .ns-card { transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
-        .ns-card:hover { border-color: var(--ns-primary); box-shadow: ${SHADOW.md}; transform: translateY(-4px); }
-        .ns-card:active { transform: scale(0.985); }
+        .ns-card:not(:disabled):hover { border-color: var(--ns-primary); box-shadow: ${SHADOW.md}; transform: translateY(-4px); }
+        .ns-card:not(:disabled):active { transform: scale(0.985); }
+        .ns-card:disabled { cursor: not-allowed; }
+        .ns-card:disabled > :not(.ns-blocked-badge) { opacity: 0.4; }
         .ns-card img { transition: transform .4s cubic-bezier(.25,.46,.45,.94); }
-        .ns-card:hover img { transform: scale(1.06); }
+        .ns-card:not(:disabled):hover img { transform: scale(1.06); }
         .ns-iconbox { transition: background-color .2s ease; }
-        .ns-card:hover .ns-iconbox { background-color: color-mix(in srgb, var(--ns-primary) 18%, #fff); }
+        .ns-card:not(:disabled):hover .ns-iconbox { background-color: color-mix(in srgb, var(--ns-primary) 18%, #fff); }
         .ns-textarea::placeholder { color: ${theme.textDisabled}; }
         .ns-textarea:focus { border-color: var(--ns-primary) !important; }
         .ns-scroll::-webkit-scrollbar { width: 10px; }
@@ -669,12 +691,19 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       /* Dynamic colour: red for report, brand primary for room care */
                       const accentColor = isReport ? theme.error : theme.primary;
                       const accentSubtle = isReport ? theme.errorSubtle : theme.primaryLight;
+                      const isBlocked = hasOpenRequest(requests, card.key, now);
 
                       return (
                         <button
                           key={card.key}
-                          onClick={() => (isMultiTab ? togglePick(card) : openSheet([card], gridKind))}
-                          className="ns-card flex flex-col items-stretch cursor-pointer relative"
+                          disabled={isBlocked}
+                          aria-disabled={isBlocked}
+                          onClick={() => {
+                            if (isBlocked) return;
+                            if (isMultiTab) togglePick(card);
+                            else openSheet([card], gridKind);
+                          }}
+                          className={`ns-card flex flex-col items-stretch relative${isBlocked ? "" : " cursor-pointer"}`}
                           style={{
                             backgroundColor: theme.surface,
                             borderRadius: theme.radiusCard,
@@ -705,6 +734,36 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                               }}
                             >
                               <Check size={18} color={theme.textInverse} strokeWidth={3} />
+                            </div>
+                          )}
+                          {isBlocked && (
+                            <div
+                              className="ns-blocked-badge absolute z-10 flex items-center gap-1.5"
+                              style={{
+                                top: 10,
+                                insetInlineStart: 10,
+                                insetInlineEnd: 10,
+                                width: "fit-content",
+                                marginInline: "auto",
+                                padding: "5px 12px",
+                                borderRadius: theme.radiusFull,
+                                backgroundColor: theme.surface,
+                                border: theme.borderCard,
+                                boxShadow: SHADOW.sm,
+                              }}
+                            >
+                              <Clock size={14} color={theme.textMuted} strokeWidth={2.4} />
+                              <span
+                                style={{
+                                  fontFamily,
+                                  fontSize: TYPE_SCALE.sm,
+                                  fontWeight: WEIGHT.bold,
+                                  color: theme.textHeading,
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {t("need.alreadyRequested")}
+                              </span>
                             </div>
                           )}
                           {card.image ? (
