@@ -762,7 +762,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                                   whiteSpace: "nowrap",
                                 }}
                               >
-                                {t("need.alreadyRequested")}
+                                {t("need.pending")}
                               </span>
                             </div>
                           )}
