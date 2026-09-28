@@ -379,7 +379,7 @@ function HeroCropPicker({
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <Crosshair size={13} style={{ color: t.primary }} />
+          <Crosshair size={13} style={{ color: t.primaryOn }} />
           <span
             style={{
               fontSize: "11px",
@@ -590,7 +590,7 @@ function ConfigCard({
             fontFamily: t.fontFamily,
             fontSize: "14px",
             fontWeight: 700,
-            color: isActive ? t.primary : t.textHeading,
+            color: isActive ? t.primaryOn : t.textHeading,
           }}
         >
           {config.hospitalName || "Untitled"}
@@ -601,7 +601,7 @@ function ConfigCard({
             fontFamily: t.fontFamily,
             fontSize: "11px",
             fontWeight: 500,
-            color: isActive ? t.primary : t.textMuted,
+            color: isActive ? t.primaryOn : t.textMuted,
             marginTop: "1px",
           }}
         >
@@ -650,7 +650,7 @@ function ConfigCard({
               border: "none",
             }}
           >
-            <Trash2 size={14} style={{ color: t.accent }} />
+            <Trash2 size={14} style={{ color: t.accentOn }} />
           </button>
         )}
       </div>
@@ -790,7 +790,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                     backgroundColor: t.primarySubtle,
                   }}
                 >
-                  <Building2 size={22} style={{ color: t.primary }} />
+                  <Building2 size={22} style={{ color: t.primaryOn }} />
                 </div>
                 <div>
                   <span
@@ -924,7 +924,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                     fontFamily: t.fontFamily,
                     fontSize: "13px",
                     fontWeight: 600,
-                    color: t.primary,
+                    color: t.primaryOn,
                   }}
                 >
                   Token Gallery
@@ -1079,7 +1079,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                         className="absolute top-3 right-3 cursor-pointer p-1.5 flex items-center justify-center transition-transform active:scale-95 z-20"
                         style={{
                           background: t.accentSubtle,
-                          color: t.accent,
+                          color: t.accentOn,
                           borderRadius: "6px",
                           border: "none",
                         }}
@@ -1099,7 +1099,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                       borderRadius: "10px",
                       border: `1.5px dashed ${t.primary}`,
                       backgroundColor: "transparent",
-                      color: t.primary,
+                      color: t.primaryOn,
                       fontSize: "13px",
                       fontWeight: 600,
                     }}
@@ -1179,7 +1179,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                     style={{
                       fontSize: "11px",
                       fontWeight: 600,
-                      color: t.primary,
+                      color: t.primaryOn,
                       background: "none",
                       border: "none",
                       padding: 0,
@@ -1240,7 +1240,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                     >
                       Background Image Opacity
                     </span>
-                    <span style={{ fontSize: "12px", fontWeight: 700, color: t.primary }}>
+                    <span style={{ fontSize: "12px", fontWeight: 700, color: t.primaryOn }}>
                       {editingConfig.heroOpacity ?? 40}%
                     </span>
                   </div>
