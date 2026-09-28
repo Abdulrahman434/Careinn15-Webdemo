@@ -69,7 +69,12 @@ export const PRAYER_KEYS = [
  */
 export function formatPrayerTime(time: Date | null, locale: string = "en") {
   if (!time) return "--:--";
-  return format(time, "HH:mm");
+  return localizeDigits(format(time, "HH:mm"), locale);
+}
+
+/** Arabic reads its numbers in Arabic-Indic digits (٠١٢…); other locales keep 0-9. */
+export function localizeDigits(text: string, locale: string): string {
+  return locale === "ar" ? text.replace(/[0-9]/g, (d) => "٠١٢٣٤٥٦٧٨٩"[+d]) : text;
 }
 
 /**

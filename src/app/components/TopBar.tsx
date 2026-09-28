@@ -4,7 +4,7 @@ import { Settings, Globe, Bell, Cast, AlertTriangle, Moon, Sun, Cloud, CloudSun,
          CloudDrizzle, CloudRain, CloudLightning, CloudSnow, CloudFog, Haze, Wind } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE, WEATHER_TINT } from "./ThemeContext";
 import { useLocale } from "./i18n";
-import { getPrayerTimes, PRAYER_KEYS, PRAYER_NAMES, formatPrayerTime, getPrayerStatus } from "../utils/prayerUtils";
+import { getPrayerTimes, PRAYER_KEYS, PRAYER_NAMES, formatPrayerTime, getPrayerStatus, localizeDigits } from "../utils/prayerUtils";
 import { Prayer } from "adhan";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { useLongPress } from "../lib/useLongPress";
@@ -393,16 +393,31 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
           )}
 
           <div className="flex flex-col items-end">
-            <span
-              style={{
-                fontFamily: fontFamily,
-                ...TEXT_STYLE.pageTitle,
-                color: theme.textHeading,
-                lineHeight: "25px",
-                textAlign: "end",
-              }}
-            >
-              {displayHours}:{minutes} {ampm}
+            {/* The period is its own small word on the digits' baseline. Set
+                inline at full size, the Arabic "م" hangs below the line and
+                into the date under it. */}
+            <span className="flex items-baseline" style={{ gap: "4px", lineHeight: "25px" }}>
+              <span
+                style={{
+                  fontFamily: fontFamily,
+                  ...TEXT_STYLE.pageTitle,
+                  color: theme.textHeading,
+                  lineHeight: "25px",
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {localizeDigits(`${displayHours}:${minutes}`, locale)}
+              </span>
+              <span
+                style={{
+                  fontFamily: fontFamily,
+                  ...TEXT_STYLE.caption,
+                  color: theme.textMuted,
+                  lineHeight: 1,
+                }}
+              >
+                {ampm}
+              </span>
             </span>
             <span
               style={{
