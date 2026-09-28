@@ -1468,25 +1468,9 @@ function TimelineSlide({
                 >
                   {isRTL && step.labelAr ? step.labelAr : (step.label || (step.labelKey ? t(step.labelKey) : ""))}
                 </span>
-                {/* Status and duration were dropped from both plans: the
-                    timeline marker already carries progress, and a predicted
-                    "45 min" on a ward step reads as a promise nobody made.
-                    The day label survives — it groups, it does not estimate. */}
-                {type === "care" && mode === "overall" && (
-                  step.active ? (
-                    <CardBadge isExpanded={isExpanded} theme={theme}>{`${t("careplan.dayLabel")} ${step.day || 1}`}</CardBadge>
-                  ) : (
-                    <span
-                      className="shrink-0"
-                      style={{
-                        fontFamily: theme.fontFamily, ...R.label,
-                        color: theme.textMuted, padding: "3px 10px",
-                      }}
-                    >
-                      {`${t("careplan.dayLabel")} ${step.day || 1}`}
-                    </span>
-                  )
-                )}
+                {/* No status, duration or day label on either plan: the
+                    timeline marker already carries progress, and a "45 min" or
+                    "Day 3" on a ward step reads as a promise nobody made. */}
               </div>
             </div>
           );
