@@ -9,7 +9,6 @@ import {
   prayerTimeParts,
   PRAYER_NAMES,
 } from "../utils/prayerUtils";
-import { brightness } from "../utils/androidBridge";
 
 /**
  * The dark clock screensaver: logo, time, Gregorian and Hijri date, and the
@@ -18,13 +17,11 @@ import { brightness } from "../utils/androidBridge";
  * Built for bedside screens left on for days. Nothing is white, and the whole
  * group drifts slowly around the screen so no pixel holds the same thing for
  * hours — the burn-in protection a still image never has. It holds still for
- * the first minute, so the screen settles before it starts to move, and it
- * always moves after that: there is no switch, and it ignores the system's
- * reduce-motion setting, which on a kiosk would quietly turn the protection off.
- *
- * Night (22:00–06:00) goes to true black and dimmer text, and on the kiosk
- * lowers the backlight too — on an LCD panel the backlight, not the picture,
- * is what glows into a sleeping patient's room.
+ * the first minute, so the screen settles before it starts to move, then
+ * glides at a constant speed: linear, because easing each leg of the path
+ * brought it to a halt at every corner and read as stopping and starting.
+ * There is no switch, and it ignores the system's reduce-motion setting,
+ * which on a kiosk would quietly turn the protection off.
  *
  * Any hospital can use it by setting `screensaverStyle: "ambient"`; it takes
  * the brand's light-on-dark logo when there is one. Exit gestures match the
@@ -32,13 +29,7 @@ import { brightness } from "../utils/androidBridge";
  */
 
 const STILL_FOR_S = 60;
-const DRIFT_LOOP_S = 360;
-const NIGHT_BRIGHTNESS = 0.15;
-
-function isNight(date: Date) {
-  const h = date.getHours();
-  return h >= 22 || h < 6;
-}
+const DRIFT_LOOP_S = 90;
 
 export function AmbientScreenSaver({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
@@ -50,23 +41,7 @@ export function AmbientScreenSaver({ onClose }: { onClose: () => void }) {
     return () => clearInterval(id);
   }, []);
 
-  const night = isNight(now);
-  const palette = night ? AMBIENT.night : AMBIENT.day;
-
-  /* Backlight: dimmed at night, and put back exactly as it was on the way out. */
-  const savedBrightness = useRef<number | null>(null);
-  useEffect(() => {
-    if (night && savedBrightness.current === null) {
-      savedBrightness.current = brightness.get();
-      brightness.set(Math.min(savedBrightness.current, NIGHT_BRIGHTNESS));
-    } else if (!night && savedBrightness.current !== null) {
-      brightness.set(savedBrightness.current);
-      savedBrightness.current = null;
-    }
-  }, [night]);
-  useEffect(() => () => {
-    if (savedBrightness.current !== null) brightness.set(savedBrightness.current);
-  }, []);
+  const palette = AMBIENT.palette;
 
   /* Exit: long-press or swipe, as on the tasbih and video screensavers. */
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -113,7 +88,7 @@ export function AmbientScreenSaver({ onClose }: { onClose: () => void }) {
   return (
     <div
       className="fixed inset-0 z-[9999] overflow-hidden flex items-center justify-center select-none"
-      style={{ background: palette.background, fontFamily, transition: "background 2s ease" }}
+      style={{ background: palette.background, fontFamily }}
       onPointerDown={startPress}
       onPointerUp={endPress}
       onPointerLeave={endPress}
@@ -132,9 +107,8 @@ export function AmbientScreenSaver({ onClose }: { onClose: () => void }) {
       <div
         className="flex flex-col items-center text-center"
         style={{
-          animation: `ambient-drift ${DRIFT_LOOP_S}s ease-in-out ${STILL_FOR_S}s infinite`,
+          animation: `ambient-drift ${DRIFT_LOOP_S}s linear ${STILL_FOR_S}s infinite`,
           color: palette.body,
-          transition: "color 2s ease",
         }}
       >
         {logo && (

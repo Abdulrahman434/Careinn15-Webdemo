@@ -138,24 +138,16 @@ export const SHADOW = {
  * mode — it is what a bedside screen shows while nobody is using it, often
  * with the lights off — so it has its own palette rather than theme.*.
  * Nothing is white: grey text on near-black keeps the panel calm and the
- * pixels cool. Night is darker still, down to true black.
+ * pixels cool.
  */
 export const AMBIENT = {
-  day: {
+  palette: {
     background: "#040709",
     clock: "#C5CED1",
     body: "#9FA9AD",
     subtle: "#839196",
     accent: "#85A7AD",
     logoOpacity: 0.74,
-  },
-  night: {
-    background: "#000000",
-    clock: "#969EA2",
-    body: "#808B90",
-    subtle: "#798287",
-    accent: "#7F9297",
-    logoOpacity: 0.47,
   },
   /** Display sizes, read from across a room — larger than anything in TYPE_SCALE. */
   size: {

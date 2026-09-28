@@ -177,24 +177,11 @@ const isBeforeToday = (dateStr: string | null | undefined): boolean => {
   return d.getTime() < today.getTime();
 };
 
-/** Screensaver idle delay — reads the onboarding preference, falls back to
- *  ten minutes when no choice was made. A minute was the old default and it
- *  was short enough that the screen dimmed on a patient still reading it. */
-const SCREENSAVER_DEFAULT_MS = 600_000;
-const SCREENSAVER_TIMEOUT_MS: Record<string, number> = {
-  "30s": 30_000,
-  "1m": 60_000,
-  "5m": 300_000,
-  "10m": 600_000,
-};
-const getScreensaverTimeoutMs = (): number => {
-  try {
-    const v = localStorage.getItem("careinn-screensaver-timeout");
-    return (v && SCREENSAVER_TIMEOUT_MS[v]) || SCREENSAVER_DEFAULT_MS;
-  } catch {
-    return SCREENSAVER_DEFAULT_MS;
-  }
-};
+/** Screensaver idle delay: thirty seconds, for every screen. The onboarding
+ *  and settings choice is no longer read — the delay is set here, not per
+ *  device. */
+const SCREENSAVER_TIMEOUT_MS = 30_000;
+const getScreensaverTimeoutMs = (): number => SCREENSAVER_TIMEOUT_MS;
 
 const getSavedLayoutMode = (): 1 | 2 | 3 => {
   try {
