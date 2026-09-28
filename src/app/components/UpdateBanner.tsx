@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { RefreshCw, X } from "lucide-react";
 import { useTheme, TEXT_STYLE, SHADOW, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
-import { applyPendingUpdate, useUpdateAvailable } from "../lib/updateCheck";
+import { applyPendingUpdate, checkForUpdate, useUpdateAvailable } from "../lib/updateCheck";
 
 /**
  * The notice that says a newer build is waiting.
@@ -28,6 +28,15 @@ export function UpdateBanner({ screenKey, idle }: { screenKey: string; idle: boo
     lastScreen.current = screenKey;
     if (dismissed) applyPendingUpdate();
   }, [screenKey, dismissed]);
+
+  /* The screensaver coming on or going off is a moment to ask: on, because
+     nobody is watching and a newer build can be taken quietly; off, because
+     somebody has just come back to the screen. */
+  const wasIdle = useRef(idle);
+  useEffect(() => {
+    if (idle !== wasIdle.current) checkForUpdate();
+    wasIdle.current = idle;
+  }, [idle]);
 
   useEffect(() => {
     if (idle && available) applyPendingUpdate();

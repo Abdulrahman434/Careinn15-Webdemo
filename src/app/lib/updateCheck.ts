@@ -17,7 +17,7 @@ import { isSafeToReload, reloadBlockers, subscribeHolds } from "./reloadSafety";
  * and never appeared.
  *
  * Now: the worker is asked for an update when the screen is looked at again
- * and every quarter of an hour, and when a new one takes over, a notice says
+ * and every half hour, and when a new one takes over, a notice says
  * so. The page reloads when the patient taps Refresh, or — once they have
  * closed the notice — when they next move to another screen, and then only
  * if it is safe to.
@@ -32,15 +32,12 @@ import { isSafeToReload, reloadBlockers, subscribeHolds } from "./reloadSafety";
  */
 
 const UPDATE_READY_EVENT = "careinn-update-ready";
-/* Ten seconds. The browser only goes looking for a new worker when something
-   asks it to, so this interval IS how long a deployed change waits before a
-   screen that is already open notices it. Fifteen minutes was chosen to be
-   quiet and bought a demo that looked like it had not updated; a minute was
-   still long enough to sit watching a screen wondering. The request is a
-   conditional GET of one small file the server marks no-cache, and the answer
-   is a 304 with no body, so asking six times a minute costs close to nothing.
-   Raise it if a ward ever runs enough screens for this to show up as load. */
-const UPDATE_CHECK_MS = 10 * 1000;
+/* Half an hour, as a safety net only. The checks that matter happen at
+   moments: the app opening, the screen being looked at again, the screensaver
+   coming on and going off. Ten seconds was tried and sent the whole worker
+   script back every time — Apache answered 200, not the hoped-for 304 — so
+   each tablet fetched it thousands of times a day to learn nothing. */
+const UPDATE_CHECK_MS = 30 * 60 * 1000;
 
 let updateReady = false;
 /* Set once the screen may reload — the notice was closed and the patient has
@@ -49,6 +46,12 @@ let updateReady = false;
    reading the screen, is the surprise the notice exists to prevent. */
 let applyRequested = false;
 let applyPending: (() => void) | null = null;
+let checkNow: (() => void) | null = null;
+
+/** Ask the server for a newer build now, at a moment worth asking. */
+export function checkForUpdate(): void {
+  checkNow?.();
+}
 
 /**
  * Take a waiting update now, if one is waiting and nothing is mid-flight.
@@ -113,6 +116,7 @@ export function registerServiceWorker(): void {
       .register("/sw.js")
       .then((reg) => {
         const check = () => { reg.update().catch(() => {}); };
+        checkNow = check;
         /* A kiosk sits on one page for days, and the browser only looks for a
            new worker on navigation. Without these it would never find one. */
         check();
