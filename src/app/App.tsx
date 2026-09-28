@@ -800,6 +800,13 @@ function BedsideScreen() {
     ctaPdfConfig || ctaMediaConfig || activeGame || activeTool
   );
   const anyOverlayOpen = anyOtherOverlayOpen || showTasbih;
+  /* The screen the patient is on, as one value. A closed update notice waits
+     for this to change before it reloads. */
+  const screenKey = JSON.stringify([
+    openCategory, activeGame, activeTool, lockMenuApp, showSurvey, showAboutUs,
+    showSettings, showNotifications, showCareMeExpanded, showCall, showFoodOrder,
+    showNeedSomething, showIptv, showPreferenceForm, !!ctaPdfConfig, !!ctaMediaConfig,
+  ]);
 
   const [iptvOsd, setIptvOsd] = useState<{
     name: string;
@@ -2347,6 +2354,7 @@ function BedsideScreen() {
             </div>
           </div>
         )}
+        <UpdateBanner screenKey={screenKey} idle={showTasbih} />
         </ToastProvider>
       </div>
 
@@ -2661,7 +2669,6 @@ function AuthenticatedApp() {
           <BedsideScreen />
         </ErrorBoundary>
       </OrderProvider>
-      <UpdateBanner />
     </ThemeProvider>
   );
 }
