@@ -24,12 +24,15 @@ import {
  * which on a kiosk would quietly turn the protection off.
  *
  * Any hospital can use it by setting `screensaverStyle: "ambient"`; it takes
- * the brand's light-on-dark logo when there is one. Exit gestures match the
- * other screensavers — long-press or swipe — so a stray tap cannot wake it.
+ * the brand's light-on-dark logo when there is one. It exits on a double tap
+ * (a double click with a mouse) or a swipe, so a single stray touch cannot
+ * wake it.
  */
 
 const STILL_FOR_S = 60;
 const DRIFT_LOOP_S = 90;
+const DOUBLE_TAP_MS = 400;
+const SWIPE_PX = 150;
 
 export function AmbientScreenSaver({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
@@ -43,21 +46,33 @@ export function AmbientScreenSaver({ onClose }: { onClose: () => void }) {
 
   const palette = AMBIENT.palette;
 
-  /* Exit: long-press or swipe, as on the tasbih and video screensavers. */
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /* Exit: a second tap within DOUBLE_TAP_MS, or a swipe. The close waits a
+     turn on the second tap, so the click that follows its pointerup lands on
+     the screensaver and not on whatever is underneath it. */
+  const lastTapAt = useRef(0);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const closing = useRef(false);
+  const close = () => {
+    if (closing.current) return;
+    closing.current = true;
+    setTimeout(onClose, 0);
+  };
   const startPress = (e: React.PointerEvent) => {
     touchStart.current = { x: e.clientX, y: e.clientY };
-    longPressTimer.current = setTimeout(() => onClose(), 800);
   };
   const endPress = () => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-    longPressTimer.current = null;
+    if (!touchStart.current) return;
+    touchStart.current = null;
+    const at = Date.now();
+    if (at - lastTapAt.current < DOUBLE_TAP_MS) close();
+    else lastTapAt.current = at;
+  };
+  const cancelPress = () => {
     touchStart.current = null;
   };
   const movePress = (e: React.PointerEvent) => {
     if (!touchStart.current) return;
-    if (Math.hypot(e.clientX - touchStart.current.x, e.clientY - touchStart.current.y) > 150) onClose();
+    if (Math.hypot(e.clientX - touchStart.current.x, e.clientY - touchStart.current.y) > SWIPE_PX) close();
   };
 
   const hours12 = now.getHours() % 12 || 12;
@@ -91,7 +106,7 @@ export function AmbientScreenSaver({ onClose }: { onClose: () => void }) {
       style={{ background: palette.background, fontFamily }}
       onPointerDown={startPress}
       onPointerUp={endPress}
-      onPointerLeave={endPress}
+      onPointerLeave={cancelPress}
       onPointerMove={movePress}
     >
       <style>{`
@@ -174,7 +189,7 @@ export function AmbientScreenSaver({ onClose }: { onClose: () => void }) {
         </div>
 
         <div style={{ marginTop: SPACE[8], fontSize: TYPE_SCALE.md, color: palette.subtle }}>
-          {t("tasbih.exitHint")}
+          {t("screensaver.exitHint")}
         </div>
       </div>
     </div>

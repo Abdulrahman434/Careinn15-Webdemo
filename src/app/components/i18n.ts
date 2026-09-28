@@ -364,6 +364,7 @@ const translations: Record<string, TranslationEntry> = {
   "tasbih.reset": { en: "Reset", ar: "إعادة تعيين", ur: "دوبارہ شروع کریں" },
   "tasbih.exit": { en: "Exit", ar: "خروج", ur: "باہر نکلیں" },
   "screensaver.nextPrayer": { en: "Next prayer", ar: "الصلاة القادمة", ur: "اگلی نماز" },
+  "screensaver.exitHint": { en: "Double-tap or swipe to exit", ar: "انقر مرتين أو اسحب للخروج", ur: "باہر نکلنے کے لیے دو بار ٹیپ کریں یا سوائپ کریں" },
   "screensaver.tomorrow": { en: "Tomorrow", ar: "غداً", ur: "کل" },
   "tasbih.exitHint": { en: "Long press or swipe to exit", ar: "اضغط مطولاً أو اسحب للخروج", ur: "باہر نکلنے کے لیے دیر تک دبائیں یا سوائپ کریں" },
   "tasbih.milestone33": { en: "Subhan Allah! 33 reached ✨", ar: "!سبحان الله! وصلت إلى 33 ✨", ur: "سبحان اللہ! 33 مکمل ہو گئے ✨" },
