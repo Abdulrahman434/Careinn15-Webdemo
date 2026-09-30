@@ -3,6 +3,7 @@ import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./Theme
 import { useLocale } from "./i18n";
 import separatorIcon from "../../imports/Asset_2_white.svg";
 import { ApiImage } from "./ApiImage";
+import { isLowRamDevice } from "../lib/deviceCapability";
 
 interface NewsTickerProps {
   items?: string[];
@@ -19,10 +20,14 @@ const SPEED_PX_PER_S = 30;
 const TICKER_FPS = 30;
 /** With no touch for this long the ticker stops; the next touch restarts it. */
 const IDLE_PAUSE_MS = 3 * 60 * 1000;
+/** Devices under 2 GB of RAM: how long each headline stays. */
+const FLIP_MS = 5000;
 
 export function NewsTicker({ items, paused = false }: NewsTickerProps = {}) {
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
+  const lowRam = isLowRamDevice();
+  const [index, setIndex] = useState(0);
   const textRef = useRef<HTMLDivElement>(null);
   const [durationS, setDurationS] = useState<number | null>(null);
   const [idle, setIdle] = useState(false);
@@ -136,6 +141,15 @@ export function NewsTicker({ items, paused = false }: NewsTickerProps = {}) {
 
   const running = !paused && !idle && !hidden;
 
+  // Under 2 GB there is no scrolling at all: one headline at a time, centred,
+  // five seconds each, so the screen is redrawn once per change and not at all
+  // in between.
+  useEffect(() => {
+    if (!lowRam || !running || newsItems.length < 2) return;
+    const id = setInterval(() => setIndex((i) => i + 1), FLIP_MS);
+    return () => clearInterval(id);
+  }, [lowRam, running, newsItems.length]);
+
   const separator = "        ·        ";
   const tickerText = newsItems.join(separator);
 
@@ -177,29 +191,44 @@ export function NewsTicker({ items, paused = false }: NewsTickerProps = {}) {
       <div
         className="relative overflow-hidden h-full flex items-center w-full"
       >
-        <style>{`
-          @keyframes news-ticker-ltr { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-          @keyframes news-ticker-rtl { from { transform: translateX(0); } to { transform: translateX(50%); } }
-        `}</style>
-        <div
-          ref={textRef}
-          className="absolute whitespace-nowrap will-change-transform flex items-center"
-          style={{
-            animation:
-              durationS === null
-                ? undefined
-                : `${isRTL ? "news-ticker-rtl" : "news-ticker-ltr"} ${durationS}s steps(${Math.max(
-                    1,
-                    Math.round(durationS * TICKER_FPS),
-                  )}) infinite`,
-            animationPlayState: running ? "running" : "paused",
-            fontFamily: fontFamily,
-            color: theme.brandOnPrimary,
-            ...TEXT_STYLE.body,
-          }}
-        >
-          {renderTickerContent()}{renderTickerContent()}
-        </div>
+        {lowRam ? (
+          <div
+            className="w-full px-6 text-center whitespace-nowrap overflow-hidden text-ellipsis"
+            style={{
+              fontFamily: fontFamily,
+              color: theme.brandOnPrimary,
+              ...TEXT_STYLE.body,
+            }}
+          >
+            {newsItems[index % newsItems.length]}
+          </div>
+        ) : (
+          <>
+            <style>{`
+              @keyframes news-ticker-ltr { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+              @keyframes news-ticker-rtl { from { transform: translateX(0); } to { transform: translateX(50%); } }
+            `}</style>
+            <div
+              ref={textRef}
+              className="absolute whitespace-nowrap will-change-transform flex items-center"
+              style={{
+                animation:
+                  durationS === null
+                    ? undefined
+                    : `${isRTL ? "news-ticker-rtl" : "news-ticker-ltr"} ${durationS}s steps(${Math.max(
+                        1,
+                        Math.round(durationS * TICKER_FPS),
+                      )}) infinite`,
+                animationPlayState: running ? "running" : "paused",
+                fontFamily: fontFamily,
+                color: theme.brandOnPrimary,
+                ...TEXT_STYLE.body,
+              }}
+            >
+              {renderTickerContent()}{renderTickerContent()}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
