@@ -12,6 +12,11 @@ interface NewsTickerProps {
 
 /** Scroll speed, px per second. */
 const SPEED_PX_PER_S = 30;
+/** Redraws per second while scrolling. At 30 px/s this is exactly 1 px per
+ *  step, so it reads as smooth, but it halves the frames the screen has to
+ *  composite — measured on a bedside tablet, 60 fps cost ~35 points of CPU
+ *  over a paused ticker, 30 fps ~12. */
+const TICKER_FPS = 30;
 /** With no touch for this long the ticker stops; the next touch restarts it. */
 const IDLE_PAUSE_MS = 3 * 60 * 1000;
 
@@ -184,7 +189,10 @@ export function NewsTicker({ items, paused = false }: NewsTickerProps = {}) {
             animation:
               durationS === null
                 ? undefined
-                : `${isRTL ? "news-ticker-rtl" : "news-ticker-ltr"} ${durationS}s linear infinite`,
+                : `${isRTL ? "news-ticker-rtl" : "news-ticker-ltr"} ${durationS}s steps(${Math.max(
+                    1,
+                    Math.round(durationS * TICKER_FPS),
+                  )}) infinite`,
             animationPlayState: running ? "running" : "paused",
             fontFamily: fontFamily,
             color: theme.brandOnPrimary,
