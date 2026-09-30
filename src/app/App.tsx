@@ -1841,8 +1841,8 @@ function BedsideScreen() {
               unreadCount={getUnreadCount()}
             />
 
-            {/* News Ticker */}
-            <NewsTicker />
+            {/* News Ticker — paused while a full-screen saver or lock covers it */}
+            <NewsTicker paused={showTasbih || isLocked} />
 
             {/* Main Content — 32px gap below ticker */}
             <div className="flex-1 flex flex-row gap-[40px] px-8 pt-8 pb-6 min-h-0" style={{ position: "relative", zIndex: 1 }}>

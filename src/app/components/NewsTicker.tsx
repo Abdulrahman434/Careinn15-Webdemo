@@ -6,9 +6,11 @@ import { ApiImage } from "./ApiImage";
 
 interface NewsTickerProps {
   items?: string[];
+  /** Stop scrolling, e.g. while a full-screen screensaver covers the ticker. */
+  paused?: boolean;
 }
 
-export function NewsTicker({ items }: NewsTickerProps = {}) {
+export function NewsTicker({ items, paused = false }: NewsTickerProps = {}) {
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
   // Offset lives in a ref, not React state — this animates every rAF tick
@@ -92,6 +94,9 @@ export function NewsTicker({ items }: NewsTickerProps = {}) {
       ]);
 
   useEffect(() => {
+    // A covered ticker was still painting a ~7,800px strip 60 times a second
+    // under the screensaver — measured at ~15% CPU on a bedside tablet.
+    if (paused) return;
     let animFrame: number;
     let lastTime = performance.now();
     // For RTL: scroll left-to-right (positive direction)
@@ -118,7 +123,7 @@ export function NewsTicker({ items }: NewsTickerProps = {}) {
 
     animFrame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animFrame);
-  }, [isRTL]);
+  }, [isRTL, paused]);
 
   const separator = "        ·        ";
   const tickerText = newsItems.join(separator);
