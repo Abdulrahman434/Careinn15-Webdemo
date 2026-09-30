@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import separatorIcon from "../../imports/Asset_2_white.svg";
@@ -10,18 +10,18 @@ interface NewsTickerProps {
   paused?: boolean;
 }
 
+/** Scroll speed, px per second. */
+const SPEED_PX_PER_S = 30;
+/** With no touch for this long the ticker stops; the next touch restarts it. */
+const IDLE_PAUSE_MS = 3 * 60 * 1000;
+
 export function NewsTicker({ items, paused = false }: NewsTickerProps = {}) {
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
-  // Offset lives in a ref, not React state — this animates every rAF tick
-  // (30-60x/sec) for as long as the ticker is mounted, and driving that
-  // through setState was forcing a full React re-render every frame,
-  // forever. Mutating the DOM style directly here is the standard pattern
-  // for continuous animations in React: the transform still moves an
-  // already-GPU-composited layer (will-change-transform below), but without
-  // going through React's render/commit machinery on every frame.
-  const offsetRef = useRef(0);
   const textRef = useRef<HTMLDivElement>(null);
+  const [durationS, setDurationS] = useState<number | null>(null);
+  const [idle, setIdle] = useState(false);
+  const [hidden, setHidden] = useState(() => typeof document !== "undefined" && document.hidden);
 
   const newsItems = items ?? (theme.id === "dallah"
     ? [
@@ -93,37 +93,44 @@ export function NewsTicker({ items, paused = false }: NewsTickerProps = {}) {
         `🔬  ${t("news.menu")}`,
       ]);
 
+  // The browser scrolls the strip itself (CSS animation), so no JavaScript runs
+  // per frame. The strip holds two identical copies; one loop is half its width.
+  useLayoutEffect(() => {
+    const el = textRef.current;
+    if (!el) return;
+    const measure = () =>
+      setDurationS(Math.round((el.scrollWidth / 2 / SPEED_PX_PER_S) * 10) / 10);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Nothing about a ticker needs to move while nobody is looking at it.
   useEffect(() => {
-    // A covered ticker was still painting a ~7,800px strip 60 times a second
-    // under the screensaver — measured at ~15% CPU on a bedside tablet.
-    if (paused) return;
-    let animFrame: number;
-    let lastTime = performance.now();
-    // For RTL: scroll left-to-right (positive direction)
-    // For LTR: scroll right-to-left (negative direction)
-    const direction = isRTL ? 1 : -1;
-
-    const animate = (now: number) => {
-      const delta = now - lastTime;
-      lastTime = now;
-      const textWidth = textRef.current?.scrollWidth ?? 4000;
-      const half = textWidth / 2;
-      let next = offsetRef.current + delta * 0.03 * direction;
-      if (isRTL) {
-        next = next > half ? next - half : next;
-      } else {
-        next = next < -half ? next + half : next;
-      }
-      offsetRef.current = next;
-      if (textRef.current) {
-        textRef.current.style.transform = `translateX(${next}px)`;
-      }
-      animFrame = requestAnimationFrame(animate);
+    let timer: ReturnType<typeof setTimeout>;
+    const arm = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => setIdle(true), IDLE_PAUSE_MS);
     };
+    const wake = () => {
+      setIdle(false);
+      arm();
+    };
+    const onVisibility = () => setHidden(document.hidden);
+    arm();
+    window.addEventListener("pointerdown", wake, { capture: true, passive: true });
+    window.addEventListener("keydown", wake, { capture: true, passive: true });
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("pointerdown", wake, { capture: true });
+      window.removeEventListener("keydown", wake, { capture: true });
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
 
-    animFrame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animFrame);
-  }, [isRTL, paused]);
+  const running = !paused && !idle && !hidden;
 
   const separator = "        ·        ";
   const tickerText = newsItems.join(separator);
@@ -166,13 +173,19 @@ export function NewsTicker({ items, paused = false }: NewsTickerProps = {}) {
       <div
         className="relative overflow-hidden h-full flex items-center w-full"
       >
+        <style>{`
+          @keyframes news-ticker-ltr { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+          @keyframes news-ticker-rtl { from { transform: translateX(0); } to { transform: translateX(50%); } }
+        `}</style>
         <div
           ref={textRef}
           className="absolute whitespace-nowrap will-change-transform flex items-center"
           style={{
-            // Initial position only — the running offset is written directly
-            // to this element's style in the rAF loop above, not via React.
-            transform: `translateX(${offsetRef.current}px)`,
+            animation:
+              durationS === null
+                ? undefined
+                : `${isRTL ? "news-ticker-rtl" : "news-ticker-ltr"} ${durationS}s linear infinite`,
+            animationPlayState: running ? "running" : "paused",
             fontFamily: fontFamily,
             color: theme.brandOnPrimary,
             ...TEXT_STYLE.body,
