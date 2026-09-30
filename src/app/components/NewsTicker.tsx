@@ -30,37 +30,38 @@ export function NewsTicker({ items, paused = false }: NewsTickerProps = {}) {
 
   const newsItems = items ?? (theme.id === "dallah"
     ? [
-        `🏆  ${t("news.dallah.1")}`,
+        `🏥  ${t("news.dallah.1")}`,
         `🌍  ${t("news.dallah.2")}`,
-        `🔬  ${t("news.dallah.3")}`,
+        `🤝  ${t("news.dallah.3")}`,
+        `🏆  ${t("news.dallah.4")}`,
+        `🔬  ${t("news.dallah.5")}`,
       ]
     : theme.id === "dsfh"
     ? [
-        `🤝  ${t("news.dsfh.jeddah.6")}`,
-        `🏆  ${t("news.dsfh.jeddah.2")}`,
-        `🌍  ${t("news.dsfh.jeddah.1")}`,
-        `🧠  ${t("news.dsfh.jeddah.5")}`,
-        `🚀  ${t("news.dsfh.jeddah.4")}`,
-        `🏗️  ${t("news.dsfh.jeddah.3")}`,
-        `🇩🇪  ${t("news.dsfh.1")}`,
-        `⭐  ${t("news.dsfh.2")}`,
-        `🏆  ${t("news.dsfh.3")}`,
+        `🏆  ${t("news.dsfh.1")}`,
+        `🤝  ${t("news.dsfh.2")}`,
+        `🏥  ${t("news.dsfh.3")}`,
+        `🔬  ${t("news.dsfh.4")}`,
+        `⭐  ${t("news.dsfh.5")}`,
+        `❤️  ${t("news.dsfh.6")}`,
       ]
     : theme.id === "imc"
     ? [
+        `🏥  ${t("news.imc.6")}`,
+        `🏆  ${t("news.imc.7")}`,
         `🎓  ${t("news.imc.1")}`,
-        `🏥  ${t("news.imc.2")}`,
+        `🌍  ${t("news.imc.2")}`,
         `🏗️  ${t("news.imc.3")}`,
         `🤝  ${t("news.imc.4")}`,
-        `📱  ${t("news.imc.5")}`,
       ]
     : theme.id === "burjeel"
     ? [
-        `🏆  ${t("news.burjeel.1")}`,
+        `💹  ${t("news.burjeel.1")}`,
         `🌍  ${t("news.burjeel.2")}`,
-        `🔬  ${t("news.burjeel.3")}`,
-        `💹  ${t("news.burjeel.4")}`,
-        `🏥  ${t("news.burjeel.5")}`,
+        `🧠  ${t("news.burjeel.3")}`,
+        `🏥  ${t("news.burjeel.4")}`,
+        `❤️  ${t("news.burjeel.5")}`,
+        `👁️  ${t("news.burjeel.6")}`,
       ]
     : theme.id === "prime"
     ? [
@@ -84,13 +85,11 @@ export function NewsTicker({ items, paused = false }: NewsTickerProps = {}) {
     : theme.id === "careinn"
     ? [
         `🏆  ${t("news.careinn.1")}`,
-        `🌍  ${t("news.careinn.2")}`,
         `🤝  ${t("news.careinn.3")}`,
         `🏥  ${t("news.careinn.4")}`,
         `⭐  ${t("news.careinn.5")}`,
         `🚀  ${t("news.careinn.6")}`,
         `📺  ${t("news.careinn.7")}`,
-        `🔬  ${t("news.careinn.8")}`,
       ]
     : [
         `🏆  ${t("news.wifi")}`,
