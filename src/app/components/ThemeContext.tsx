@@ -134,6 +134,34 @@ export const SHADOW = {
 } as const;
 
 /**
+ * Ambient screensaver palette. The screensaver is dark in every theme and
+ * mode — it is what a bedside screen shows while nobody is using it, often
+ * with the lights off — so it has its own palette rather than theme.*.
+ * Nothing is white: grey text on near-black keeps the panel calm and the
+ * pixels cool.
+ */
+export const AMBIENT = {
+  palette: {
+    background: "#040709",
+    clock: "#C5CED1",
+    body: "#9FA9AD",
+    subtle: "#839196",
+    accent: "#85A7AD",
+    logoOpacity: 0.74,
+  },
+  /** Display sizes, read from across a room — larger than anything in TYPE_SCALE. */
+  size: {
+    logo: "280px",
+    clock: "200px",
+    period: "30px",
+    date: "32px",
+    prayer: "34px",
+  },
+  /** A light clock face: at 200px, regular weight reads heavy on black. */
+  clockWeight: 300,
+} as const;
+
+/**
  * Spacing scale — consistent gaps and padding.
  * Based on an 8px unit — the unified base for all spatial measurements.
  *
@@ -261,6 +289,11 @@ export interface ThemeConfig {
   logoUrl: string;           // hospital logo (360×190 recommended)
   /** Looping video screensaver for this brand, when supplied */
   screensaverVideoUrl?: string;
+  /** "ambient" gives this brand the dark clock screensaver instead of the tasbih */
+  screensaverStyle?: "ambient";
+  /** The brand's light-on-dark logo whatever the mode, for surfaces that are
+   *  always dark. Empty when the brand has none. */
+  logoUrlOnDark: string;
   /** Bundled patient-guide PDF. The Patient Guide shortcut only appears for
    *  brands that supply one, so this is the whole opt-in. */
   patientGuidePdf?: string;
@@ -488,6 +521,8 @@ function buildTheme(core: {
 
     // Dark mode prefers a light-on-dark mark when the brand supplies one.
     screensaverVideoUrl: c.screensaverVideoUrl,
+    screensaverStyle: c.screensaverStyle,
+    logoUrlOnDark: c.logoUrlDark || "",
     patientGuidePdf: c.patientGuidePdf,
     logoUrl: (dark && c.logoUrlDark) || c.logoUrl || (c.id === "dsfh" ? DSFH_LOGO : c.id === "burjeel" ? burjeelLogo : c.id === "slh" ? slhLogo : c.id === "dallah" ? dallahLogo : c.id === "caremed" ? caremedLogo : c.id === "imc" ? imcLogo : c.id === "careinn" ? careinnLogo : c.id === "prime" ? primeLogo : c.id === "kauh" ? kauhLogo : c.id === "andalusia" ? andalusiaLogo : ""),
     heroImageUrl: c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : c.id === "kauh" ? kauhHero : c.id === "andalusia" ? andalusiaHero : ""),
@@ -1036,7 +1071,6 @@ export function primaryRgba(theme: ThemeConfig, alpha: number): string {
 // Confirmed marks supplied by the Fakeeh brand team (cropped to content).
 import logoImage from "../../assets/logos/fakeeh-logo-light.webp";
 import logoImageDark from "../../assets/logos/fakeeh-logo-dark.webp";
-import fakeehScreensaver from "../../assets/fakeeh-screensaver.mp4";
 import hospitalImg from "../../assets/fakeeh-jeddah-hero.webp";
 
 import burjeelLogo from "../../assets/c8626cd3ed1ce90e9b3bab4a5f97a7315203f204.webp";
@@ -1054,6 +1088,7 @@ import imcLogo from "../../assets/imclogo.webp";
 import imcHero from "../../assets/IMC-e1556123324461.webp";
 
 import careinnLogo from "../../assets/careinn-hospital-logo.webp";
+import careinnLogoDark from "../../assets/logos/careinn-logo-dark.svg";
 import careinnHero from "../../assets/careinn-hospital-hero.webp";
 
 import primeLogo from "../../assets/prime-hospital-logo.webp";
@@ -1082,7 +1117,7 @@ export const DSFH_CORE: HospitalCoreConfig = {
   fontFamilyAr: "'Almarai', sans-serif",
   logoUrl: logoImage,
   logoUrlDark: logoImageDark,
-  screensaverVideoUrl: fakeehScreensaver,
+  screensaverStyle: "ambient",
   patientGuidePdf: "/guides/fakeeh-patient-guide.pdf",
   hospitalWebsiteUrl: "https://en.dsfhriyadh.fakeeh.care/",
   heroImageUrl: hospitalImg,
@@ -1195,6 +1230,7 @@ export const CAREINN_CORE: HospitalCoreConfig = {
   fontFamily: "'Mulish', sans-serif",
   fontFamilyAr: "'Almarai', sans-serif",
   logoUrl: careinnLogo,
+  logoUrlDark: careinnLogoDark,
   hospitalWebsiteUrl: "",
   heroImageUrl: careinnHero,
   heroCropPosition: "50% 40%",
@@ -1296,6 +1332,10 @@ export interface HospitalCoreConfig {
   /** Optional looping video screensaver. When set, it replaces the tasbih
    *  screensaver for that hospital. */
   screensaverVideoUrl?: string;
+  /** Optional screensaver style. "ambient" is the dark clock, date and next
+   *  prayer, drifting slowly — no video, next to nothing to download. Any
+   *  brand can take it by setting this; its dark logo is used when it has one. */
+  screensaverStyle?: "ambient";
   /** Optional patient-guide PDF (public path) */
   patientGuidePdf?: string;
   heroImageUrl: string;

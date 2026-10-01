@@ -232,8 +232,28 @@ export function rewriteImageUrl(imageUrl: string): string {
 
 // ── Write ──────────────────────────────────────────────────────────────────
 
+/* True when the native shell already holds exactly this config (or there is
+   no native shell to keep in sync). */
+function nativeHasConfig(next: ApiConfigData): boolean {
+  const sys = (window as any).AndroidSystem;
+  if (!sys?.getApiConfig) return true;
+  try {
+    const n = JSON.parse(sys.getApiConfig());
+    return n.serverIp === next.serverIp && n.apiKey === next.apiKey;
+  } catch {
+    return false;
+  }
+}
+
 export function saveApiConfig(cfg: ApiConfigData): void {
   if (!cfg.serverIp?.trim() || !cfg.apiKey?.trim()) return;
+
+  /* Saving the config that is already in force must be a no-op. The patient
+     sync re-saves the resolved server on every run, and the event below
+     re-runs that sync — so without this, Fakeeh/DSFH and Burjeel kiosks
+     loop forever, and every lap makes native re-download and re-register SIP. */
+  const next = { serverIp: cfg.serverIp.trim(), apiKey: cfg.apiKey.trim() };
+  if (localStorage.getItem(STORAGE_KEY) === JSON.stringify(next) && nativeHasConfig(next)) return;
 
   const previous = getApiConfig();
   localStorage.setItem(STORAGE_KEY, JSON.stringify({

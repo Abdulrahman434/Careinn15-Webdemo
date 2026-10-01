@@ -1445,7 +1445,7 @@ function PrayerCard({
                 marginLeft: "4px",
               }}
             >
-              {formatPrayerTime(prayerData.targetTime, locale)}
+              {formatPrayerTime(prayerData.targetTime, locale, tr)}
             </span>
           </div>
         </div>

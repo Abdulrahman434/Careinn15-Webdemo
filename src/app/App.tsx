@@ -34,6 +34,7 @@ const HospitalConfigurator = lazy(() => import("./components/HospitalConfigurato
 import { ThemeAppearanceDialog } from "./components/ThemeAppearanceDialog";
 import { TasbihScreenSaver } from "./components/TasbihScreenSaver";
 import { VideoScreenSaver } from "./components/VideoScreenSaver";
+import { AmbientScreenSaver } from "./components/AmbientScreenSaver";
 import { PatientGuideModal } from "./components/PatientGuideModal";
 import { LazyScreenFallback } from "./components/LazyScreenFallback";
 import { PatientPreferenceForm } from "./components/PatientPreferenceForm";
@@ -176,24 +177,11 @@ const isBeforeToday = (dateStr: string | null | undefined): boolean => {
   return d.getTime() < today.getTime();
 };
 
-/** Screensaver idle delay — reads the onboarding preference, falls back to
- *  ten minutes when no choice was made. A minute was the old default and it
- *  was short enough that the screen dimmed on a patient still reading it. */
-const SCREENSAVER_DEFAULT_MS = 600_000;
-const SCREENSAVER_TIMEOUT_MS: Record<string, number> = {
-  "30s": 30_000,
-  "1m": 60_000,
-  "5m": 300_000,
-  "10m": 600_000,
-};
-const getScreensaverTimeoutMs = (): number => {
-  try {
-    const v = localStorage.getItem("careinn-screensaver-timeout");
-    return (v && SCREENSAVER_TIMEOUT_MS[v]) || SCREENSAVER_DEFAULT_MS;
-  } catch {
-    return SCREENSAVER_DEFAULT_MS;
-  }
-};
+/** Screensaver idle delay: thirty seconds, for every screen. The onboarding
+ *  and settings choice is no longer read — the delay is set here, not per
+ *  device. */
+const SCREENSAVER_TIMEOUT_MS = 30_000;
+const getScreensaverTimeoutMs = (): number => SCREENSAVER_TIMEOUT_MS;
 
 const getSavedLayoutMode = (): 1 | 2 | 3 => {
   try {
@@ -800,6 +788,13 @@ function BedsideScreen() {
     ctaPdfConfig || ctaMediaConfig || activeGame || activeTool
   );
   const anyOverlayOpen = anyOtherOverlayOpen || showTasbih;
+  /* The screen the patient is on, as one value. A closed update notice waits
+     for this to change before it reloads. */
+  const screenKey = JSON.stringify([
+    openCategory, activeGame, activeTool, lockMenuApp, showSurvey, showAboutUs,
+    showSettings, showNotifications, showCareMeExpanded, showCall, showFoodOrder,
+    showNeedSomething, showIptv, showPreferenceForm, !!ctaPdfConfig, !!ctaMediaConfig,
+  ]);
 
   const [iptvOsd, setIptvOsd] = useState<{
     name: string;
@@ -1846,8 +1841,8 @@ function BedsideScreen() {
               unreadCount={getUnreadCount()}
             />
 
-            {/* News Ticker */}
-            <NewsTicker />
+            {/* News Ticker — paused while a full-screen saver or lock covers it */}
+            <NewsTicker paused={showTasbih || isLocked} />
 
             {/* Main Content — 32px gap below ticker */}
             <div className="flex-1 flex flex-row gap-[40px] px-8 pt-8 pb-6 min-h-0" style={{ position: "relative", zIndex: 1 }}>
@@ -2281,7 +2276,8 @@ function BedsideScreen() {
               setShowTasbih(false);
             }
           };
-          // Brands that supply a screensaver video get it instead of the tasbih.
+          // A brand can choose the ambient clock or supply a video; otherwise the tasbih.
+          if (theme.screensaverStyle === "ambient") return <AmbientScreenSaver onClose={closeSaver} />;
           return theme.screensaverVideoUrl
             ? <VideoScreenSaver src={theme.screensaverVideoUrl} onClose={closeSaver} />
             : <TasbihScreenSaver onClose={closeSaver} />;
@@ -2347,6 +2343,7 @@ function BedsideScreen() {
             </div>
           </div>
         )}
+        <UpdateBanner screenKey={screenKey} idle={showTasbih} />
         </ToastProvider>
       </div>
 
@@ -2661,7 +2658,6 @@ function AuthenticatedApp() {
           <BedsideScreen />
         </ErrorBoundary>
       </OrderProvider>
-      <UpdateBanner />
     </ThemeProvider>
   );
 }

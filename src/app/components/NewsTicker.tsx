@@ -1,59 +1,72 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import separatorIcon from "../../imports/Asset_2_white.svg";
 import { ApiImage } from "./ApiImage";
+import { isLowRamDevice } from "../lib/deviceCapability";
 
 interface NewsTickerProps {
   items?: string[];
+  /** Stop scrolling, e.g. while a full-screen screensaver covers the ticker. */
+  paused?: boolean;
 }
 
-export function NewsTicker({ items }: NewsTickerProps = {}) {
+/** Scroll speed, px per second. */
+const SPEED_PX_PER_S = 30;
+/** Redraws per second while scrolling. At 30 px/s this is exactly 1 px per
+ *  step, so it reads as smooth, but it halves the frames the screen has to
+ *  composite — measured on a bedside tablet, 60 fps cost ~35 points of CPU
+ *  over a paused ticker, 30 fps ~12. */
+const TICKER_FPS = 30;
+/** With no touch for this long the ticker stops; the next touch restarts it. */
+const IDLE_PAUSE_MS = 3 * 60 * 1000;
+/** Devices under 2 GB of RAM: how long each headline stays. */
+const FLIP_MS = 5000;
+
+export function NewsTicker({ items, paused = false }: NewsTickerProps = {}) {
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
-  // Offset lives in a ref, not React state — this animates every rAF tick
-  // (30-60x/sec) for as long as the ticker is mounted, and driving that
-  // through setState was forcing a full React re-render every frame,
-  // forever. Mutating the DOM style directly here is the standard pattern
-  // for continuous animations in React: the transform still moves an
-  // already-GPU-composited layer (will-change-transform below), but without
-  // going through React's render/commit machinery on every frame.
-  const offsetRef = useRef(0);
+  const lowRam = isLowRamDevice();
+  const [index, setIndex] = useState(0);
   const textRef = useRef<HTMLDivElement>(null);
+  const [durationS, setDurationS] = useState<number | null>(null);
+  const [idle, setIdle] = useState(false);
+  const [hidden, setHidden] = useState(() => typeof document !== "undefined" && document.hidden);
 
   const newsItems = items ?? (theme.id === "dallah"
     ? [
-        `🏆  ${t("news.dallah.1")}`,
+        `🏥  ${t("news.dallah.1")}`,
         `🌍  ${t("news.dallah.2")}`,
-        `🔬  ${t("news.dallah.3")}`,
+        `🤝  ${t("news.dallah.3")}`,
+        `🏆  ${t("news.dallah.4")}`,
+        `🔬  ${t("news.dallah.5")}`,
       ]
     : theme.id === "dsfh"
     ? [
-        `🤝  ${t("news.dsfh.jeddah.6")}`,
-        `🏆  ${t("news.dsfh.jeddah.2")}`,
-        `🌍  ${t("news.dsfh.jeddah.1")}`,
-        `🧠  ${t("news.dsfh.jeddah.5")}`,
-        `🚀  ${t("news.dsfh.jeddah.4")}`,
-        `🏗️  ${t("news.dsfh.jeddah.3")}`,
-        `🇩🇪  ${t("news.dsfh.1")}`,
-        `⭐  ${t("news.dsfh.2")}`,
-        `🏆  ${t("news.dsfh.3")}`,
+        `🏆  ${t("news.dsfh.1")}`,
+        `🤝  ${t("news.dsfh.2")}`,
+        `🏥  ${t("news.dsfh.3")}`,
+        `🔬  ${t("news.dsfh.4")}`,
+        `⭐  ${t("news.dsfh.5")}`,
+        `❤️  ${t("news.dsfh.6")}`,
       ]
     : theme.id === "imc"
     ? [
+        `🏥  ${t("news.imc.6")}`,
+        `🏆  ${t("news.imc.7")}`,
         `🎓  ${t("news.imc.1")}`,
-        `🏥  ${t("news.imc.2")}`,
+        `🌍  ${t("news.imc.2")}`,
         `🏗️  ${t("news.imc.3")}`,
         `🤝  ${t("news.imc.4")}`,
-        `📱  ${t("news.imc.5")}`,
       ]
     : theme.id === "burjeel"
     ? [
-        `🏆  ${t("news.burjeel.1")}`,
+        `💹  ${t("news.burjeel.1")}`,
         `🌍  ${t("news.burjeel.2")}`,
-        `🔬  ${t("news.burjeel.3")}`,
-        `💹  ${t("news.burjeel.4")}`,
-        `🏥  ${t("news.burjeel.5")}`,
+        `🧠  ${t("news.burjeel.3")}`,
+        `🏥  ${t("news.burjeel.4")}`,
+        `❤️  ${t("news.burjeel.5")}`,
+        `👁️  ${t("news.burjeel.6")}`,
       ]
     : theme.id === "prime"
     ? [
@@ -77,13 +90,11 @@ export function NewsTicker({ items }: NewsTickerProps = {}) {
     : theme.id === "careinn"
     ? [
         `🏆  ${t("news.careinn.1")}`,
-        `🌍  ${t("news.careinn.2")}`,
         `🤝  ${t("news.careinn.3")}`,
         `🏥  ${t("news.careinn.4")}`,
         `⭐  ${t("news.careinn.5")}`,
         `🚀  ${t("news.careinn.6")}`,
         `📺  ${t("news.careinn.7")}`,
-        `🔬  ${t("news.careinn.8")}`,
       ]
     : [
         `🏆  ${t("news.wifi")}`,
@@ -91,34 +102,53 @@ export function NewsTicker({ items }: NewsTickerProps = {}) {
         `🔬  ${t("news.menu")}`,
       ]);
 
+  // The browser scrolls the strip itself (CSS animation), so no JavaScript runs
+  // per frame. The strip holds two identical copies; one loop is half its width.
+  useLayoutEffect(() => {
+    const el = textRef.current;
+    if (!el) return;
+    const measure = () =>
+      setDurationS(Math.round((el.scrollWidth / 2 / SPEED_PX_PER_S) * 10) / 10);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Nothing about a ticker needs to move while nobody is looking at it.
   useEffect(() => {
-    let animFrame: number;
-    let lastTime = performance.now();
-    // For RTL: scroll left-to-right (positive direction)
-    // For LTR: scroll right-to-left (negative direction)
-    const direction = isRTL ? 1 : -1;
-
-    const animate = (now: number) => {
-      const delta = now - lastTime;
-      lastTime = now;
-      const textWidth = textRef.current?.scrollWidth ?? 4000;
-      const half = textWidth / 2;
-      let next = offsetRef.current + delta * 0.03 * direction;
-      if (isRTL) {
-        next = next > half ? next - half : next;
-      } else {
-        next = next < -half ? next + half : next;
-      }
-      offsetRef.current = next;
-      if (textRef.current) {
-        textRef.current.style.transform = `translateX(${next}px)`;
-      }
-      animFrame = requestAnimationFrame(animate);
+    let timer: ReturnType<typeof setTimeout>;
+    const arm = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => setIdle(true), IDLE_PAUSE_MS);
     };
+    const wake = () => {
+      setIdle(false);
+      arm();
+    };
+    const onVisibility = () => setHidden(document.hidden);
+    arm();
+    window.addEventListener("pointerdown", wake, { capture: true, passive: true });
+    window.addEventListener("keydown", wake, { capture: true, passive: true });
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("pointerdown", wake, { capture: true });
+      window.removeEventListener("keydown", wake, { capture: true });
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
 
-    animFrame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animFrame);
-  }, [isRTL]);
+  const running = !paused && !idle && !hidden;
+
+  // Under 2 GB there is no scrolling at all: one headline at a time, centred,
+  // five seconds each, so the screen is redrawn once per change and not at all
+  // in between.
+  useEffect(() => {
+    if (!lowRam || !running || newsItems.length < 2) return;
+    const id = setInterval(() => setIndex((i) => i + 1), FLIP_MS);
+    return () => clearInterval(id);
+  }, [lowRam, running, newsItems.length]);
 
   const separator = "        ·        ";
   const tickerText = newsItems.join(separator);
@@ -161,20 +191,44 @@ export function NewsTicker({ items }: NewsTickerProps = {}) {
       <div
         className="relative overflow-hidden h-full flex items-center w-full"
       >
-        <div
-          ref={textRef}
-          className="absolute whitespace-nowrap will-change-transform flex items-center"
-          style={{
-            // Initial position only — the running offset is written directly
-            // to this element's style in the rAF loop above, not via React.
-            transform: `translateX(${offsetRef.current}px)`,
-            fontFamily: fontFamily,
-            color: theme.brandOnPrimary,
-            ...TEXT_STYLE.body,
-          }}
-        >
-          {renderTickerContent()}{renderTickerContent()}
-        </div>
+        {lowRam ? (
+          <div
+            className="w-full px-6 text-center whitespace-nowrap overflow-hidden text-ellipsis"
+            style={{
+              fontFamily: fontFamily,
+              color: theme.brandOnPrimary,
+              ...TEXT_STYLE.body,
+            }}
+          >
+            {newsItems[index % newsItems.length]}
+          </div>
+        ) : (
+          <>
+            <style>{`
+              @keyframes news-ticker-ltr { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+              @keyframes news-ticker-rtl { from { transform: translateX(0); } to { transform: translateX(50%); } }
+            `}</style>
+            <div
+              ref={textRef}
+              className="absolute whitespace-nowrap will-change-transform flex items-center"
+              style={{
+                animation:
+                  durationS === null
+                    ? undefined
+                    : `${isRTL ? "news-ticker-rtl" : "news-ticker-ltr"} ${durationS}s steps(${Math.max(
+                        1,
+                        Math.round(durationS * TICKER_FPS),
+                      )}) infinite`,
+                animationPlayState: running ? "running" : "paused",
+                fontFamily: fontFamily,
+                color: theme.brandOnPrimary,
+                ...TEXT_STYLE.body,
+              }}
+            >
+              {renderTickerContent()}{renderTickerContent()}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

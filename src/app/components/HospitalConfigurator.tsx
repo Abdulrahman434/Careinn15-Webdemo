@@ -73,6 +73,7 @@ function ColorField({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const { theme: t } = useTheme();
   const inputRef = useRef<HTMLInputElement>(null);
   return (
     <div className="flex flex-col gap-1.5">
@@ -80,7 +81,7 @@ function ColorField({
         style={{
           fontSize: "11px",
           fontWeight: 600,
-          color: "#95A3AD",
+          color: t.textMuted,
           textTransform: "uppercase",
           letterSpacing: "0.5px",
         }}
@@ -96,7 +97,7 @@ function ColorField({
             height: "36px",
             borderRadius: "10px",
             backgroundColor: value,
-            border: "2px solid rgba(0,0,0,0.08)",
+            border: `2px solid ${t.borderDefault}`,
           }}
         />
         <input
@@ -114,13 +115,13 @@ function ColorField({
           style={{
             height: "36px",
             borderRadius: "10px",
-            border: "1.5px solid rgba(0,0,0,0.08)",
+            border: t.borderInset,
             padding: "0 12px",
             fontSize: "13px",
             fontWeight: 600,
             fontFamily: "monospace",
-            color: "#1B2A32",
-            backgroundColor: "rgba(0,0,0,0.02)",
+            color: t.textHeading,
+            backgroundColor: t.surfaceInset,
             outline: "none",
           }}
         />
@@ -143,13 +144,14 @@ function TextField({
   placeholder?: string;
   hint?: string;
 }) {
+  const { theme: t } = useTheme();
   return (
     <div className="flex flex-col gap-1.5">
       <span
         style={{
           fontSize: "11px",
           fontWeight: 600,
-          color: "#95A3AD",
+          color: t.textMuted,
           textTransform: "uppercase",
           letterSpacing: "0.5px",
         }}
@@ -164,17 +166,17 @@ function TextField({
         style={{
           height: "40px",
           borderRadius: "10px",
-          border: "1.5px solid rgba(0,0,0,0.08)",
+          border: t.borderInset,
           padding: "0 14px",
           fontSize: "14px",
           fontWeight: 500,
-          color: "#1B2A32",
-          backgroundColor: "rgba(0,0,0,0.02)",
+          color: t.textHeading,
+          backgroundColor: t.surfaceInset,
           outline: "none",
         }}
       />
       {hint && (
-        <span style={{ fontSize: "11px", fontWeight: 500, color: "#C0CAD0", lineHeight: "16px" }}>
+        <span style={{ fontSize: "11px", fontWeight: 500, color: t.textDisabled, lineHeight: "16px" }}>
           {hint}
         </span>
       )}
@@ -218,7 +220,7 @@ function ImageUploadField({
           style={{
             fontSize: "11px",
             fontWeight: 600,
-            color: "#95A3AD",
+            color: t.textMuted,
             textTransform: "uppercase",
             letterSpacing: "0.5px",
           }}
@@ -231,7 +233,7 @@ function ImageUploadField({
           style={{
             fontSize: "11px",
             fontWeight: 600,
-            color: t.primary,
+            color: t.primaryOn,
             background: "none",
             border: "none",
             padding: 0,
@@ -250,12 +252,12 @@ function ImageUploadField({
           style={{
             height: "40px",
             borderRadius: "10px",
-            border: "1.5px solid rgba(0,0,0,0.08)",
+            border: t.borderInset,
             padding: "0 14px",
             fontSize: "14px",
             fontWeight: 500,
-            color: "#1B2A32",
-            backgroundColor: "rgba(0,0,0,0.02)",
+            color: t.textHeading,
+            backgroundColor: t.surfaceInset,
             outline: "none",
           }}
         />
@@ -274,9 +276,9 @@ function ImageUploadField({
             style={{
               height: "44px",
               borderRadius: "10px",
-              border: `1.5px dashed ${t.primary}`,
+              border: `1.5px dashed ${t.primaryOn}`,
               backgroundColor: t.primarySubtle,
-              color: t.primary,
+              color: t.primaryOn,
               fontSize: "13px",
               fontWeight: 600,
             }}
@@ -287,7 +289,7 @@ function ImageUploadField({
         </>
       )}
 
-      <span style={{ fontSize: "11px", fontWeight: 500, color: "#C0CAD0", lineHeight: "16px" }}>
+      <span style={{ fontSize: "11px", fontWeight: 500, color: t.textDisabled, lineHeight: "16px" }}>
         {hint}
       </span>
 
@@ -298,7 +300,7 @@ function ImageUploadField({
           style={{
             height: previewHeight,
             borderRadius: "10px",
-            backgroundColor: "rgba(0,0,0,0.03)",
+            backgroundColor: t.surfaceInset,
             padding: previewHeight === "60px" ? "8px" : "0",
           }}
         >
@@ -377,12 +379,12 @@ function HeroCropPicker({
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <Crosshair size={13} style={{ color: t.primary }} />
+          <Crosshair size={13} style={{ color: t.primaryOn }} />
           <span
             style={{
               fontSize: "11px",
               fontWeight: 600,
-              color: "#95A3AD",
+              color: t.textMuted,
               textTransform: "uppercase",
               letterSpacing: "0.5px",
             }}
@@ -402,7 +404,7 @@ function HeroCropPicker({
         </span>
       </div>
 
-      <span style={{ fontSize: "11px", fontWeight: 500, color: "#C0CAD0", lineHeight: "16px" }}>
+      <span style={{ fontSize: "11px", fontWeight: 500, color: t.textDisabled, lineHeight: "16px" }}>
         Click or drag on the image to set the focal point for the greeting card crop
       </span>
 
@@ -412,7 +414,7 @@ function HeroCropPicker({
         className="relative overflow-hidden select-none"
         style={{
           borderRadius: "12px",
-          border: `2px solid ${dragging ? t.primary : "rgba(0,0,0,0.08)"}`,
+          border: `2px solid ${dragging ? t.primary : t.borderDefault}`,
           cursor: "crosshair",
           transition: "border-color 0.15s",
         }}
@@ -510,7 +512,7 @@ function HeroCropPicker({
           style={{
             height: "52px",
             borderRadius: "8px",
-            backgroundColor: "rgba(0,0,0,0.03)",
+            backgroundColor: t.surfaceInset,
           }}
         >
           <ApiImage
@@ -552,7 +554,7 @@ function ConfigCard({
       style={{
         padding: "14px 16px",
         borderRadius: "16px",
-        backgroundColor: isActive ? t.primarySubtle : "rgba(0,0,0,0.02)",
+        backgroundColor: isActive ? t.primarySubtle : t.surfaceInset,
         border: isActive ? `1.5px solid ${t.borderActive}` : "1.5px solid transparent",
       }}
     >
@@ -588,7 +590,7 @@ function ConfigCard({
             fontFamily: t.fontFamily,
             fontSize: "14px",
             fontWeight: 700,
-            color: isActive ? t.primary : t.textHeading,
+            color: isActive ? t.primaryOn : t.textHeading,
           }}
         >
           {config.hospitalName || "Untitled"}
@@ -599,7 +601,7 @@ function ConfigCard({
             fontFamily: t.fontFamily,
             fontSize: "11px",
             fontWeight: 500,
-            color: isActive ? t.primary : t.textMuted,
+            color: isActive ? t.primaryOn : t.textMuted,
             marginTop: "1px",
           }}
         >
@@ -630,7 +632,7 @@ function ConfigCard({
             width: "32px",
             height: "32px",
             borderRadius: "8px",
-            backgroundColor: "rgba(0,0,0,0.04)",
+            backgroundColor: t.surfaceInset,
             border: "none",
           }}
         >
@@ -648,7 +650,7 @@ function ConfigCard({
               border: "none",
             }}
           >
-            <Trash2 size={14} style={{ color: t.accent }} />
+            <Trash2 size={14} style={{ color: t.accentOn }} />
           </button>
         )}
       </div>
@@ -788,7 +790,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                     backgroundColor: t.primarySubtle,
                   }}
                 >
-                  <Building2 size={22} style={{ color: t.primary }} />
+                  <Building2 size={22} style={{ color: t.primaryOn }} />
                 </div>
                 <div>
                   <span
@@ -821,7 +823,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                   width: "44px",
                   height: "44px",
                   borderRadius: "12px",
-                  backgroundColor: "rgba(0,0,0,0.05)",
+                  backgroundColor: t.surfaceInset,
                   border: "none",
                 }}
               >
@@ -859,7 +861,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                   style={{
                     height: "44px",
                     borderRadius: "12px",
-                    backgroundColor: "rgba(0,0,0,0.04)",
+                    backgroundColor: t.surfaceInset,
                     border: "none",
                   }}
                 >
@@ -922,7 +924,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                     fontFamily: t.fontFamily,
                     fontSize: "13px",
                     fontWeight: 600,
-                    color: t.primary,
+                    color: t.primaryOn,
                   }}
                 >
                   Token Gallery
@@ -948,7 +950,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                   width: "40px",
                   height: "40px",
                   borderRadius: "10px",
-                  backgroundColor: "rgba(0,0,0,0.05)",
+                  backgroundColor: t.surfaceInset,
                   border: "none",
                 }}
               >
@@ -1021,7 +1023,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                   previewHeight="60px"
                 />
                 
-                <div style={{ height: "1px", backgroundColor: "rgba(0,0,0,0.06)", margin: "8px 0" }} />
+                <div style={{ height: "1px", backgroundColor: t.borderDefault, margin: "8px 0" }} />
 
                 <ImageUploadField
                   label="Hospital Background (Hero Image)"
@@ -1037,7 +1039,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                   onChange={(pos) => updateField("heroCropPosition", pos)}
                 />
 
-                <div style={{ height: "1px", backgroundColor: "rgba(0,0,0,0.06)", margin: "8px 0" }} />
+                <div style={{ height: "1px", backgroundColor: t.borderDefault, margin: "8px 0" }} />
 
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
@@ -1045,7 +1047,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                       style={{
                         fontSize: "11px",
                         fontWeight: 600,
-                        color: "#95A3AD",
+                        color: t.textMuted,
                         textTransform: "uppercase",
                         letterSpacing: "0.5px",
                       }}
@@ -1053,11 +1055,11 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                       Greeting Card Slideshow Images
                     </span>
                   </div>
-                  <span style={{ fontSize: "11px", fontWeight: 500, color: "#C0CAD0", lineHeight: "16px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 500, color: t.textDisabled, lineHeight: "16px" }}>
                     These appear ONLY in the Patient Greeting card auto-carousel.
                   </span>
                   {(editingConfig.heroImageUrls || []).map((url, i, arr) => (
-                    <div key={i} className="flex flex-col gap-2 relative" style={{ padding: "12px", border: "1px solid rgba(0,0,0,0.05)", borderRadius: "12px" }}>
+                    <div key={i} className="flex flex-col gap-2 relative" style={{ padding: "12px", border: `1px solid ${t.borderDefault}`, borderRadius: "12px" }}>
                       <ImageUploadField
                         label={`Slide Image ${i + 1}`}
                         value={url}
@@ -1077,7 +1079,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                         className="absolute top-3 right-3 cursor-pointer p-1.5 flex items-center justify-center transition-transform active:scale-95 z-20"
                         style={{
                           background: t.accentSubtle,
-                          color: t.accent,
+                          color: t.accentOn,
                           borderRadius: "6px",
                           border: "none",
                         }}
@@ -1097,7 +1099,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                       borderRadius: "10px",
                       border: `1.5px dashed ${t.primary}`,
                       backgroundColor: "transparent",
-                      color: t.primary,
+                      color: t.primaryOn,
                       fontSize: "13px",
                       fontWeight: 600,
                     }}
@@ -1112,7 +1114,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                         style={{
                           fontSize: "11px",
                           fontWeight: 600,
-                          color: "#95A3AD",
+                          color: t.textMuted,
                           textTransform: "uppercase",
                           letterSpacing: "0.5px",
                         }}
@@ -1128,16 +1130,16 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                         style={{
                           height: "40px",
                           borderRadius: "10px",
-                          border: "1.5px solid rgba(0,0,0,0.08)",
+                          border: t.borderInset,
                           padding: "0 14px",
                           fontSize: "14px",
                           fontWeight: 500,
-                          color: "#1B2A32",
-                          backgroundColor: "rgba(0,0,0,0.02)",
+                          color: t.textHeading,
+                          backgroundColor: t.surfaceInset,
                           outline: "none",
                         }}
                       />
-                      <span style={{ fontSize: "11px", fontWeight: 500, color: "#C0CAD0", lineHeight: "16px" }}>
+                      <span style={{ fontSize: "11px", fontWeight: 500, color: t.textDisabled, lineHeight: "16px" }}>
                         Time between slide transitions. Default is 5 seconds.
                       </span>
                     </div>
@@ -1177,7 +1179,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                     style={{
                       fontSize: "11px",
                       fontWeight: 600,
-                      color: t.primary,
+                      color: t.primaryOn,
                       background: "none",
                       border: "none",
                       padding: 0,
@@ -1231,14 +1233,14 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                       style={{
                         fontSize: "11px",
                         fontWeight: 600,
-                        color: "#95A3AD",
+                        color: t.textMuted,
                         textTransform: "uppercase",
                         letterSpacing: "0.5px",
                       }}
                     >
                       Background Image Opacity
                     </span>
-                    <span style={{ fontSize: "12px", fontWeight: 700, color: t.primary }}>
+                    <span style={{ fontSize: "12px", fontWeight: 700, color: t.primaryOn }}>
                       {editingConfig.heroOpacity ?? 40}%
                     </span>
                   </div>
@@ -1251,7 +1253,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                     onChange={(e) => updateField("heroOpacity", parseInt(e.target.value))}
                     style={{ width: "100%", accentColor: t.primary, cursor: "pointer" }}
                   />
-                  <span style={{ fontSize: "11px", fontWeight: 500, color: "#C0CAD0", lineHeight: "16px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 500, color: t.textDisabled, lineHeight: "16px" }}>
                     How visible the hospital background photo appears. 0% is fully transparent,
                     100% fully visible. Default is 40%.
                   </span>
@@ -1264,7 +1266,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                   style={{
                     padding: "16px",
                     borderRadius: "14px",
-                    border: "1px solid rgba(0,0,0,0.06)",
+                    border: `1px solid ${t.borderDefault}`,
                   }}
                 >
                   <div className="flex gap-2">
@@ -1338,7 +1340,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                       fontFamily: editingConfig.fontFamily,
                       fontSize: "16px",
                       fontWeight: 700,
-                      color: "#1B2A32",
+                      color: t.textHeading,
                     }}
                   >
                     {editingConfig.hospitalName || "Hospital Name"}
@@ -1348,7 +1350,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                       fontFamily: editingConfig.fontFamilyAr,
                       fontSize: "16px",
                       fontWeight: 700,
-                      color: "#1B2A32",
+                      color: t.textHeading,
                       direction: "rtl",
                     }}
                   >

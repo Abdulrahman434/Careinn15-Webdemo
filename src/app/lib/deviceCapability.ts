@@ -51,3 +51,18 @@ export function totalMemoryMb(): number {
   } catch {}
   return 0;
 }
+
+/**
+ * True on devices with under 2 GB of RAM in total, as Android reports it (that
+ * is after the system's own share is taken out, so a "2 GB" panel reports
+ * about 1.9 GB). Unknown (no native bridge) is false, so a device that cannot
+ * be classified keeps the full experience. Cached: RAM cannot change at runtime.
+ */
+let lowRamCached: boolean | null = null;
+export function isLowRamDevice(): boolean {
+  if (lowRamCached === null) {
+    const mb = totalMemoryMb();
+    lowRamCached = mb > 0 && mb < 2048;
+  }
+  return lowRamCached;
+}

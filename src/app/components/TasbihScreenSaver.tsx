@@ -402,7 +402,7 @@ interface TasbihScreenSaverProps {
 /** Dark/light-themed tasbih screensaver. Exit via long-press (800ms) or swipe (>150px). */
 export function TasbihScreenSaver({ onClose }: TasbihScreenSaverProps) {
   const { theme, darkMode } = useTheme();
-  const { t, isRTL } = useLocale();
+  const { t, isRTL, locale } = useLocale();
   const [count, setCount] = useState(0);
   const [ripples, setRipples] = useState<Array<{ id: number; x: number; y: number }>>([]);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -428,7 +428,7 @@ export function TasbihScreenSaver({ onClose }: TasbihScreenSaverProps) {
 
   const prayerData = getPrayerStatus(now, theme.location);
   const nextPrayerKey = prayerData.next;
-  const nextPrayerTime = formatPrayerTime(prayerData.times.timeForPrayer(nextPrayerKey));
+  const nextPrayerTime = formatPrayerTime(prayerData.times.timeForPrayer(nextPrayerKey), locale, t);
   const nextPrayerNameKey = PRAYER_NAMES[nextPrayerKey];
 
   const PRAYER_NAME_MAP: Record<string, { en: string; ar: string }> = {
@@ -940,12 +940,11 @@ export function TasbihScreenSaver({ onClose }: TasbihScreenSaverProps) {
                 )}
               </svg>
               {/* Inner counter */}
+              {/* No idle "breathing": scaling an element with backdrop-filter
+                  re-blurs the screen behind it every frame, forever, while the
+                  saver sits untouched — measured at ~20% CPU on a bedside tablet. */}
               <motion.div
                 whileTap={{ scale: 0.96 }}
-                animate={{
-                  scale: count === 0 ? [1, 1.04, 1] : 1,
-                }}
-                transition={count === 0 ? { duration: 2, repeat: Infinity, ease: "easeInOut" } : undefined}
                 className="relative flex flex-col items-center justify-center"
                 style={{
                   width: "260px", height: "260px", borderRadius: "50%",

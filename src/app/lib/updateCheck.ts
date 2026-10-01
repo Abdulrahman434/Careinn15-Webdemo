@@ -17,8 +17,10 @@ import { isSafeToReload, reloadBlockers, subscribeHolds } from "./reloadSafety";
  * and never appeared.
  *
  * Now: the worker is asked for an update when the screen is looked at again
- * and every quarter of an hour, and when a new one takes over, the page
- * reloads as soon as it is safe to.
+ * and every half hour, and when a new one takes over, a notice says
+ * so. The page reloads when the patient taps Refresh, or — once they have
+ * closed the notice — when they next move to another screen, and then only
+ * if it is safe to.
  *
  * Safe is not "nobody is looking". A tab switched away from can be holding a
  * half-built meal order or a half-typed form, and reloading it throws that
@@ -30,26 +32,26 @@ import { isSafeToReload, reloadBlockers, subscribeHolds } from "./reloadSafety";
  */
 
 const UPDATE_READY_EVENT = "careinn-update-ready";
-/* Ten seconds. The browser only goes looking for a new worker when something
-   asks it to, so this interval IS how long a deployed change waits before a
-   screen that is already open notices it. Fifteen minutes was chosen to be
-   quiet and bought a demo that looked like it had not updated; a minute was
-   still long enough to sit watching a screen wondering. The request is a
-   conditional GET of one small file the server marks no-cache, and the answer
-   is a 304 with no body, so asking six times a minute costs close to nothing.
-   Raise it if a ward ever runs enough screens for this to show up as load. */
-const UPDATE_CHECK_MS = 10 * 1000;
-
-/* How long the pill gets to be seen before the screen refreshes under it.
-   The old behaviour reloaded the instant a build landed, which is correct for
-   a kiosk and invisible to everyone: nobody could tell a deploy had arrived,
-   only that the screen had blinked. Announcing first and refreshing after
-   keeps the kiosk current without the update being a thing that happens to
-   you. A screen that is mid-order still waits for the order, as before. */
-const ANNOUNCE_GRACE_MS = 8 * 1000;
+/* Half an hour, as a safety net only. The checks that matter happen at
+   moments: the app opening, the screen being looked at again, the screensaver
+   coming on and going off. Ten seconds was tried and sent the whole worker
+   script back every time — Apache answered 200, not the hoped-for 304 — so
+   each tablet fetched it thousands of times a day to learn nothing. */
+const UPDATE_CHECK_MS = 30 * 60 * 1000;
 
 let updateReady = false;
+/* Set once the screen may reload — the notice was closed and the patient has
+   moved on, or the app reached a point it knows is safe. Until then a newer
+   build only announces itself: a reload nobody asked for, under someone
+   reading the screen, is the surprise the notice exists to prevent. */
+let applyRequested = false;
 let applyPending: (() => void) | null = null;
+let checkNow: (() => void) | null = null;
+
+/** Ask the server for a newer build now, at a moment worth asking. */
+export function checkForUpdate(): void {
+  checkNow?.();
+}
 
 /**
  * Take a waiting update now, if one is waiting and nothing is mid-flight.
@@ -60,6 +62,8 @@ let applyPending: (() => void) | null = null;
  * otherwise carry the old build until somebody noticed the banner.
  */
 export function applyPendingUpdate(): void {
+  if (!updateReady) return;
+  applyRequested = true;
   applyPending?.();
 }
 
@@ -86,13 +90,9 @@ export function registerServiceWorker(): void {
   let reloading = false;
 
   const applyOrWait = () => {
-    if (!updateReady || reloading) return;
-    if (!isSafeToReload()) {
-      /* Announce it so the banner can offer, and try again the moment the
-         last piece of unsaved work is done with. */
-      window.dispatchEvent(new Event(UPDATE_READY_EVENT));
-      return;
-    }
+    if (!updateReady || !applyRequested || reloading) return;
+    /* Tried again the moment the last piece of unsaved work is done with. */
+    if (!isSafeToReload()) return;
     reloading = true;
     window.location.reload();
   };
@@ -104,15 +104,11 @@ export function registerServiceWorker(): void {
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (!hadController || reloading) return;
     updateReady = true;
-    /* Announce before anything else, and unconditionally. The pill is the
-       only way anyone learns a new build arrived, and the branch below used
-       to skip it in exactly the common case — an idle screen, where it
-       reloaded on the spot instead. */
     window.dispatchEvent(new Event(UPDATE_READY_EVENT));
     if (!isSafeToReload()) {
       console.info("[SW] update held:", reloadBlockers().join(", "));
     }
-    window.setTimeout(applyOrWait, ANNOUNCE_GRACE_MS);
+    applyOrWait();
   });
 
   window.addEventListener("load", () => {
@@ -120,6 +116,7 @@ export function registerServiceWorker(): void {
       .register("/sw.js")
       .then((reg) => {
         const check = () => { reg.update().catch(() => {}); };
+        checkNow = check;
         /* A kiosk sits on one page for days, and the browser only looks for a
            new worker on navigation. Without these it would never find one. */
         check();
