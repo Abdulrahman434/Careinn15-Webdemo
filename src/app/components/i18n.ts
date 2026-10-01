@@ -246,7 +246,7 @@ const translations: Record<string, TranslationEntry> = {
   "need.status.onway": { en: "On the way", ar: "في الطريق", ur: "راستے میں" },
   "need.status.delivered": { en: "Delivered", ar: "تم التوصيل", ur: "پہنچا دیا" },
   "need.status.fixed": { en: "Fixed", ar: "تم الإصلاح", ur: "ٹھیک ہو گیا" },
-  "need.pending": { en: "Pending", ar: "قيد الانتظار", ur: "زیر التواء" },
+  "need.pending": { en: "In Progress", ar: "قيد التنفيذ", ur: "جاری ہے" },
   "need.empty.title": { en: "No requests yet", ar: "لا توجد طلبات بعد", ur: "ابھی کوئی درخواست نہیں" },
   "need.empty.body": { en: "Tap a card to ask for something! 😊", ar: "اضغط على بطاقة لتطلب شيئاً! 😊", ur: "کچھ مانگنے کے لیے کارڈ پر ٹیپ کریں! 😊" },
   "need.rel.now": { en: "Just now", ar: "الآن", ur: "ابھی" },
