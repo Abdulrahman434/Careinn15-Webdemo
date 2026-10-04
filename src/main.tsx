@@ -1,12 +1,17 @@
 
 import { createRoot } from "react-dom/client";
-import App from "./app/App.tsx";
+import GamesRouter from "./app/GamesRouter.tsx";
+import { ThemeProvider } from "./app/components/ThemeContext";
 import "./styles/index.css";
 
 // Back button logic moved to App.tsx for better control
 
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <ThemeProvider>
+    <GamesRouter />
+  </ThemeProvider>
+);
 
 // Register service worker for offline caching
 if ('serviceWorker' in navigator) {
