@@ -834,6 +834,10 @@ function BedsideScreen() {
     setShowCareMeExpanded(false);
     setShowCall(false);
     setShowFoodOrder(false);
+    setShowNeedSomething(false);
+    setNeedSomethingInitialTab(undefined);
+    setCtaPdfConfig(null);
+    setCtaMediaConfig(null);
     setActiveBroadcast(null);
     setActiveGame(null);
     setActiveTool(null);
