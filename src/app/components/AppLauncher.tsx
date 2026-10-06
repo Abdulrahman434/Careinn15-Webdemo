@@ -42,7 +42,7 @@ import { InternalPageHeader } from "./InternalPageHeader";
 /* pdf.js is ~128 KB gzipped. Every boot paid it so that a patient who
    opens a document does not wait; almost none of them open one. */
 const PdfReaderModal = lazy(() => import("./PdfReaderModal").then((m) => ({ default: m.PdfReaderModal })));
-import { apps, isAndroidApp, KNOWN_APPS } from "../utils/androidBridge";
+import { apps, isAndroidApp, KNOWN_APPS, iptv } from "../utils/androidBridge";
 import { useApiPdfApps, API_CATEGORY_MAP, getPackagesCache } from "../lib/hospitalApi";
 import edgeLogo from "../../assets/edge_logo.webp";
 import chromeIcon from "../../assets/272d9a4c809b16af18cfbe153fa4edc5816536b3.webp";
@@ -84,6 +84,26 @@ import harryPotterIcon from "../../assets/c502247a276d2cebaac1f14a6f97e58877c0aa
 import theSecretIcon from "../../assets/0020d69d075db3cf35e4a115636a15027a1101fe.webp";
 
 // PDF Assets are now served from the public/pdfs/ directory
+
+/* TV channels shown as icons in the Media grid. One line per channel:
+   `logo` is a file name in public/channels/, `stream` plays in the kiosk TV player.
+   e.g. { id: "alarabiya", name: "Al Arabiya", nameAr: "العربية", logo: "alarabiya.png", stream: "https://…/index.m3u8" }, */
+const TV_CHANNELS: { id: string; name: string; nameAr?: string; logo: string; stream: string }[] = [
+  { id: "mbc1",          name: "MBC1",          nameAr: "إم بي سي 1",       logo: "mbc1.jpg",          stream: "udp://@224.2.2.6:3052" },
+  { id: "mbc-drama",     name: "MBC Drama",     nameAr: "إم بي سي دراما",   logo: "mbc-drama.png",     stream: "udp://@224.2.2.18:3052" },
+  { id: "mbc-bollywood", name: "MBC Bollywood", nameAr: "إم بي سي بوليوود", logo: "mbc-bollywood.jpg", stream: "udp://@224.2.2.19:3052" },
+  { id: "mbc-2",         name: "MBC 2",         nameAr: "إم بي سي 2",       logo: "mbc-2.png",         stream: "udp://@224.2.2.20:3052" },
+  { id: "mbc-action",    name: "MBC Action",    nameAr: "إم بي سي أكشن",    logo: "mbc-action.png",    stream: "udp://@224.2.2.21:3052" },
+  { id: "mbc-3",         name: "MBC 3",         nameAr: "إم بي سي 3",       logo: "mbc-3.png",         stream: "udp://@224.2.2.22:3052" },
+  { id: "al-ekhbaria",   name: "Al Ekhbaria",         nameAr: "الإخبارية",             logo: "al-ekhbaria.png",  stream: "udp://@224.2.2.7:3052" },
+  { id: "saudi-quran",   name: "Saudi CH For Quran",  nameAr: "القناة السعودية للقرآن", logo: "saudi-quran.png",  stream: "udp://@224.2.2.9:3052" },
+  { id: "saudi-sunnah",  name: "Saudi CH For Sunnah", nameAr: "القناة السعودية للسنة",  logo: "saudi-sunnah.jpg", stream: "udp://@224.2.2.10:3052" },
+  { id: "ksa-sports-1",  name: "KSA SPORTS 1",        nameAr: "السعودية الرياضية 1",    logo: "ksa-sports-1.jpg", stream: "udp://@224.2.2.11:3052" },
+  { id: "ksa-sports-2",  name: "KSA SPORTS 2",        nameAr: "السعودية الرياضية 2",    logo: "ksa-sports-2.jpg", stream: "udp://@224.2.2.12:3052" },
+  { id: "abu-dhabi-tv",  name: "Abu Dhabi TV HD",     nameAr: "أبوظبي HD",              logo: "abu-dhabi-tv.jpg", stream: "udp://@224.2.2.27:3052" },
+  { id: "al-emarat-tv",  name: "Al Emarat TV HD",     nameAr: "الإمارات HD",            logo: "al-emarat-tv.jpg", stream: "udp://@224.2.2.28:3052" },
+  { id: "majd-kids-tv",  name: "Majd Kids TV HD",     nameAr: "مجد للأطفال HD",         logo: "majd-kids-tv.png", stream: "udp://@224.2.2.29:3052" },
+];
 
 interface AppItem {
   id: string;
@@ -263,6 +283,17 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
             </div>
           ),
         },
+        ...TV_CHANNELS.map((ch) => ({
+          id: `tv-${ch.id}`,
+          name: ch.name,
+          nameAr: ch.nameAr,
+          bg: "#fff",
+          mark: "",
+          textColor: "#333",
+          customRender: () => (
+            <ApiImage src={`/channels/${ch.logo}`} alt={ch.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: 14 }} />
+          ),
+        })),
       ],
     },
     Reading: {
@@ -1809,6 +1840,23 @@ export function AppLauncher({
     // Special case for the standalone URL Browser app
     if (app.id === "url-browser") {
       setShowUrlNavigator(true);
+      return;
+    }
+
+    // TV channel tiles — hand the whole list to the native player so
+    // next/previous channel works from inside it.
+    const channelIndex = TV_CHANNELS.findIndex((ch) => `tv-${ch.id}` === app.id);
+    if (channelIndex !== -1) {
+      iptv.playList(
+        TV_CHANNELS.map((ch, i) => ({
+          id: i,
+          name: ch.name,
+          nameAr: ch.nameAr,
+          url: ch.stream,
+          logo: `${window.location.origin}/channels/${ch.logo}`,
+        })),
+        channelIndex,
+      );
       return;
     }
 
