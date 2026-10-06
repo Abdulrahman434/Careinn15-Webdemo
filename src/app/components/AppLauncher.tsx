@@ -102,7 +102,7 @@ const TV_CHANNELS: { id: string; name: string; nameAr?: string; logo: string; st
   { id: "ksa-sports-2",  name: "KSA SPORTS 2",        nameAr: "السعودية الرياضية 2",    logo: "ksa-sports-2.jpg", stream: "udp://@224.2.2.12:3052" },
   { id: "abu-dhabi-tv",  name: "Abu Dhabi TV HD",     nameAr: "أبوظبي HD",              logo: "abu-dhabi-tv.jpg", stream: "udp://@224.2.2.27:3052" },
   { id: "al-emarat-tv",  name: "Al Emarat TV HD",     nameAr: "الإمارات HD",            logo: "al-emarat-tv.jpg", stream: "udp://@224.2.2.28:3052" },
-  { id: "majd-kids-tv",  name: "Majd Kids TV HD",     nameAr: "مجد للأطفال HD",         logo: "majd-kids-tv.png", stream: "udp://@224.2.2.29:3052" },
+  { id: "majd-kids-tv",  name: "Majid Kids TV HD",    nameAr: "ماجد للأطفال HD",        logo: "majd-kids-tv.png", stream: "udp://@224.2.2.29:3052" },
 ];
 
 interface AppItem {
