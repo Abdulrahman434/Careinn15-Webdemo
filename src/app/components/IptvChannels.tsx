@@ -284,7 +284,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
                 color: selected ? theme.primary : "#fff",
               }}
             >
-              {`${locale === "ar" ? f.ar : f.en} (${count})`}
+              {locale === "ar" ? f.ar : f.en}
             </button>
           );
         })}
