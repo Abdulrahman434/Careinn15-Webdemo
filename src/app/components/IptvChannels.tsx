@@ -1,13 +1,24 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { InternalPageHeader } from "./InternalPageHeader";
-import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "./ThemeContext";
+import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { Tv, ArrowLeft, ArrowRight, RefreshCw, Square } from "lucide-react";
 import { useIptvChannels, iptv, isAndroidApp, useAndroidEvent, IptvChannel, _setIptvPlayingId } from "../utils/androidBridge";
 import { ApiImage } from "./ApiImage";
-import { TV_CHANNELS, TvChannel } from "../data/tvChannels";
+import { TV_CHANNELS, TvChannel, TvChannelCategory } from "../data/tvChannels";
 
 const CHANNELS_PER_PAGE = 28; // 7 columns x 4 rows on a large screen
+
+type ChannelFilter = "all" | TvChannelCategory;
+
+const CHANNEL_FILTERS: { id: ChannelFilter; en: string; ar: string }[] = [
+  { id: "all",       en: "All",       ar: "الكل" },
+  { id: "general",   en: "General",   ar: "عام" },
+  { id: "news",      en: "News",      ar: "أخبار" },
+  { id: "sports",    en: "Sports",    ar: "رياضة" },
+  { id: "kids",      en: "Kids",      ar: "أطفال" },
+  { id: "religious", en: "Religious", ar: "دينية" },
+];
 
 export function IptvChannels({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
@@ -50,9 +61,22 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
 
   const isAndroid = isAndroidApp();
 
+  const [filter, setFilter] = useState<ChannelFilter>("all");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const visibleChannels = filter === "all" ? TV_CHANNELS : TV_CHANNELS.filter(c => c.category === filter);
+  const filterCounts = (id: ChannelFilter) =>
+    id === "all" ? TV_CHANNELS.length : TV_CHANNELS.filter(c => c.category === id).length;
+
   // Paging + swipe mirror the launcher grid (AppLauncher); only kicks in past 18 channels.
-  const numPages = Math.ceil(TV_CHANNELS.length / CHANNELS_PER_PAGE);
+  const numPages = Math.ceil(visibleChannels.length / CHANNELS_PER_PAGE);
   const [pageIndex, setPageIndex] = useState(0);
+
+  const selectFilter = (id: ChannelFilter) => {
+    setFilter(id);
+    setPageIndex(0);
+    // "instant" overrides the container's scroll-smooth so the new list starts at the top.
+    scrollRef.current?.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+  };
   const [dragOffset, setDragOffset] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
   const swipeStartX = useRef<number | null>(null);
@@ -230,8 +254,44 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
         }
       />
 
+      {/* Category filter — stays put while the grid below scrolls */}
+      <div
+        role="tablist"
+        dir={isRTL ? "rtl" : "ltr"}
+        className="relative z-10 flex-shrink-0 flex items-center gap-3 overflow-x-auto px-16 pt-2 pb-3"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {CHANNEL_FILTERS.map(f => {
+          const count = filterCounts(f.id);
+          if (count === 0) return null;
+          const selected = filter === f.id;
+          return (
+            <button
+              key={f.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              onClick={() => selectFilter(f.id)}
+              className="flex-shrink-0 flex items-center px-6 cursor-pointer active:scale-95 transition-all whitespace-nowrap focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-white"
+              style={{
+                height: SPACE[6],
+                borderRadius: "12px",
+                backgroundColor: selected ? "#fff" : "rgba(255,255,255,0.12)",
+                border: selected ? "1px solid #fff" : "1px solid rgba(255,255,255,0.15)",
+                fontFamily: fontFamily,
+                fontSize: TYPE_SCALE.base,
+                fontWeight: selected ? WEIGHT.bold : WEIGHT.semibold,
+                color: selected ? theme.primary : "#fff",
+              }}
+            >
+              {`${locale === "ar" ? f.ar : f.en} (${count})`}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Main Content */}
-      <div className="@container relative z-10 flex-1 min-h-0 overflow-y-auto px-16 pt-2 pb-16 scroll-smooth">
+      <div ref={scrollRef} className="@container relative z-10 flex-1 min-h-0 overflow-y-auto px-16 pt-2 pb-16 scroll-smooth">
         {numPages > 1 ? (
           <>
             <div
@@ -252,7 +312,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
               >
                 {Array.from({ length: numPages }).map((_, pIdx) => (
                   <div key={pIdx} className="flex-shrink-0" style={{ width: `${100 / numPages}%` }}>
-                    {renderGrid(TV_CHANNELS.slice(pIdx * CHANNELS_PER_PAGE, (pIdx + 1) * CHANNELS_PER_PAGE), pIdx * CHANNELS_PER_PAGE + 1)}
+                    {renderGrid(visibleChannels.slice(pIdx * CHANNELS_PER_PAGE, (pIdx + 1) * CHANNELS_PER_PAGE), pIdx * CHANNELS_PER_PAGE + 1)}
                   </div>
                 ))}
               </div>
@@ -278,7 +338,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
             </div>
           </>
         ) : (
-          renderGrid(TV_CHANNELS, 1)
+          renderGrid(visibleChannels, 1)
         )}
       </div>
 
