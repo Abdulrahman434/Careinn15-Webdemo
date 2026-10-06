@@ -2128,7 +2128,7 @@ function BedsideScreen() {
 
         {/* IPTV Channels Overlay */}
         {showIptv && (
-          <IptvChannels onClose={() => setShowIptv(false)} />
+          <IptvChannels onClose={() => { setShowIptv(false); handleOpenCategory("Media"); }} />
         )}
 
         {/* About Us Modal — inside scaled container for consistent sizing */}
@@ -2317,7 +2317,7 @@ function BedsideScreen() {
 
         {/* IPTV Channels Overlay */}
         {showIptv && (
-          <IptvChannels onClose={() => setShowIptv(false)} />
+          <IptvChannels onClose={() => { setShowIptv(false); handleOpenCategory("Media"); }} />
         )}
 
         {/* Tools */}

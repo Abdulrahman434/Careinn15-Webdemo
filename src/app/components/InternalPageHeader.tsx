@@ -12,9 +12,12 @@ interface InternalPageHeaderProps {
   /** Off only where the trio cannot work — a screen that owns the whole
    *  display, say. Every internal page shows them by default. */
   demoControls?: boolean;
+  /** Replaces the Home icon on the leading button — a sub-page that returns
+   *  to its parent (not Home) passes a back arrow. */
+  leadingIcon?: React.ReactNode;
 }
 
-export function InternalPageHeader({ title, subtitle, icon, onClose, rightAction, demoControls = true }: InternalPageHeaderProps) {
+export function InternalPageHeader({ title, subtitle, icon, onClose, rightAction, demoControls = true, leadingIcon }: InternalPageHeaderProps) {
   const { theme } = useTheme();
   const { isRTL, fontFamily } = useLocale();
   return (
@@ -34,7 +37,7 @@ export function InternalPageHeader({ title, subtitle, icon, onClose, rightAction
           WebkitTapHighlightColor: 'transparent',
         }}
       >
-        <Home size={22} style={{ color: "#fff" }} />
+        {leadingIcon ?? <Home size={22} style={{ color: "#fff" }} />}
       </button>
       {/* Divider */}
       <div style={{ width: "1.5px", height: "32px", backgroundColor: "rgba(255,255,255,0.18)", borderRadius: "1px" }} />

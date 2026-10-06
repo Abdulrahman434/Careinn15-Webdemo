@@ -1,14 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
-import { DemoControls } from "./DemoControls";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { InternalPageHeader } from "./InternalPageHeader";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "./ThemeContext";
 import { useLocale } from "./i18n";
-import { Tv, ArrowLeft, RefreshCw, AlertCircle, Square } from "lucide-react";
+import { Tv, ArrowLeft, ArrowRight, RefreshCw, Square } from "lucide-react";
 import { useIptvChannels, iptv, isAndroidApp, useAndroidEvent, IptvChannel, _setIptvPlayingId } from "../utils/androidBridge";
 import { ApiImage } from "./ApiImage";
+import { TV_CHANNELS, TvChannel } from "../data/tvChannels";
+
+const CHANNELS_PER_PAGE = 28; // 7 columns x 4 rows on a large screen
 
 export function IptvChannels({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
-  const { t, fontFamily, locale } = useLocale();
+  const { t, fontFamily, locale, isRTL } = useLocale();
   const { channels, loading, error, reload } = useIptvChannels();
   const [playingId, setPlayingId] = useState<number | null>(null);
 
@@ -47,254 +50,236 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
 
   const isAndroid = isAndroidApp();
 
+  // Paging + swipe mirror the launcher grid (AppLauncher); only kicks in past 18 channels.
+  const numPages = Math.ceil(TV_CHANNELS.length / CHANNELS_PER_PAGE);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+  const swipeStartX = useRef<number | null>(null);
+  const touchOffset = useRef(0);
+
+  const handleSwipeStart = (e: React.PointerEvent) => {
+    if (numPages <= 1) return;
+    swipeStartX.current = e.clientX;
+    setIsSwiping(true);
+    touchOffset.current = 0;
+  };
+
+  const handleSwipeMove = (e: React.PointerEvent) => {
+    if (swipeStartX.current === null) return;
+    const deltaX = e.clientX - swipeStartX.current;
+    const isOut = isRTL
+      ? (pageIndex === 0 && deltaX < 0) || (pageIndex === numPages - 1 && deltaX > 0)
+      : (pageIndex === 0 && deltaX > 0) || (pageIndex === numPages - 1 && deltaX < 0);
+    setDragOffset(isOut ? deltaX * 0.3 : deltaX);
+    touchOffset.current = deltaX;
+  };
+
+  const handleSwipeEnd = () => {
+    if (swipeStartX.current === null) return;
+    const deltaX = touchOffset.current;
+    const threshold = 100;
+    setIsSwiping(false);
+    setDragOffset(0);
+    swipeStartX.current = null;
+    const forward = isRTL ? deltaX > threshold : deltaX < -threshold;
+    const back = isRTL ? deltaX < -threshold : deltaX > threshold;
+    if (forward && pageIndex < numPages - 1) setPageIndex(pageIndex + 1);
+    else if (back && pageIndex > 0) setPageIndex(pageIndex - 1);
+  };
+
+  const renderGrid = (list: TvChannel[], firstNumber: number) => (
+    // Container query, not a media query: the app scales a fixed 1920px canvas,
+    // so the viewport width says nothing about how wide this grid really is.
+    <div className="grid gap-3.5 grid-cols-4 @4xl:grid-cols-5 @6xl:grid-cols-6 @7xl:grid-cols-7">
+      {list.map((channel, i) => (
+        <button
+          key={channel.logo}
+          type="button"
+          className="group relative flex flex-col items-center px-2.5 pt-2 pb-2.5 transition-all duration-300 active:scale-95"
+          style={{
+            backgroundColor: theme.surface,
+            borderRadius: theme.radiusCard,
+            border: theme.cardBorder,
+            boxShadow: SHADOW.md,
+            outline: "none",
+          }}
+        >
+          {/* Channel Number — on its own line so it never sits on a logo */}
+          <span
+            className="self-start ms-2.5 mt-1 mb-1 tabular-nums"
+            style={{
+              fontFamily: fontFamily,
+              fontSize: TYPE_SCALE.sm,
+              lineHeight: 1,
+              fontWeight: WEIGHT.semibold,
+              color: theme.textMuted,
+              letterSpacing: "0.04em",
+            }}
+          >
+            {String(firstNumber + i).padStart(2, "0")}
+          </span>
+
+          {/* Logo Container */}
+          <div
+            className="w-full aspect-video rounded-xl mb-1.5 overflow-hidden flex items-center justify-center p-1"
+            style={{ backgroundColor: "#fff" }}
+          >
+            <ApiImage
+              src={channel.logo}
+              alt={channel.name}
+              loading="lazy"
+              draggable={false}
+              className="w-full h-full object-contain"
+              fallback={
+                <div className="flex items-center justify-center">
+                  <Tv size={48} color={theme.textMuted} strokeWidth={1} />
+                </div>
+              }
+            />
+          </div>
+
+          {/* Channel Name */}
+          <span
+            className="line-clamp-2"
+            style={{
+              fontFamily: fontFamily,
+              fontSize: "16px",
+              lineHeight: 1.3,
+              fontWeight: WEIGHT.bold,
+              color: theme.textHeading,
+              textAlign: "center"
+            }}
+          >
+            {locale === "ar" ? channel.nameAr : channel.name}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div
       className="absolute inset-0 z-50 flex flex-col"
       style={{
-        backgroundColor: theme.background,
+        background: theme.pageGradient,
         animation: "appLauncherIn 0.2s ease-out",
       }}
     >
-      {/* Header */}
-      <div
-        className="shrink-0 flex items-center justify-between px-8"
-        style={{
-          height: "88px",
-          backgroundColor: theme.surface,
-          borderBottom: theme.cardBorder,
-          boxShadow: SHADOW.lg,
-        }}
-      >
-        <div className="flex items-center gap-4">
-          <button
-            onClick={onClose}
-            className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
-            style={{
-              width: "56px",
-              height: "56px",
-              backgroundColor: theme.surfaceElevated,
-              borderRadius: theme.radiusMd,
-              border: "none",
-              outline: "none",
-            }}
-          >
-            <ArrowLeft size={24} color={theme.textHeading} />
-          </button>
-          <div className="flex items-center gap-3">
-            <Tv size={28} color={theme.primaryOn} strokeWidth={2.5} />
-            <h1
-              style={{
-                fontFamily: fontFamily,
-                fontSize: TYPE_SCALE.xl,
-                fontWeight: WEIGHT.bold,
-                color: theme.textHeading,
-              }}
-            >
-              {t("hub.media")} - {locale === "ar" ? "البث المباشر" : "Live TV"}
-            </h1>
-          </div>
-        </div>
+      {/* Hospital background image — same treatment as the Media page (AppLauncher) */}
+      <ApiImage
+        src={theme.heroImageUrl}
+        alt=""
+        aria-hidden
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+        style={{ opacity: 0.08, mixBlendMode: "luminosity", userSelect: "none" }}
+      />
 
-        <div className="flex items-center gap-4">
-          {playingId !== null && (
-            <button
-              onClick={() => iptv.stop()}
-              className="flex items-center gap-2 px-6 py-3 cursor-pointer active:scale-95 transition-transform"
-              style={{
-                backgroundColor: "#ef4444",
-                borderRadius: theme.radiusMd,
-                border: "none",
-                outline: "none",
-              }}
-            >
-              <Square size={20} color="#fff" fill="#fff" />
-              <span
-                style={{
-                  fontFamily: fontFamily,
-                  fontSize: TYPE_SCALE.base,
-                  fontWeight: WEIGHT.semibold,
-                  color: "#fff",
-                }}
-              >
-                {t("tv.stop") || (locale === "ar" ? "إيقاف البث" : "Stop TV")}
-              </span>
-            </button>
-          )}
-
-          <button
-            onClick={reload}
-            disabled={loading}
-            className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform disabled:opacity-50"
-            style={{
-              width: "56px",
-              height: "56px",
-              backgroundColor: theme.surfaceElevated,
-              borderRadius: theme.radiusMd,
-              border: "none",
-              outline: "none",
-            }}
-          >
-            <RefreshCw size={24} color={theme.textHeading} className={loading ? "animate-spin" : ""} />
-          </button>
-
-          {/* Language, dark mode, fullscreen — last in the row, as on every
-              other internal screen. */}
-          <DemoControls variant="onSurface" />
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto px-16 py-12 scroll-smooth">
-        {!isAndroid && (
-          <div 
-            className="mb-10 p-6 flex items-center gap-4"
-            style={{ 
-              backgroundColor: theme.primarySubtle, 
-              borderRadius: theme.radiusLg,
-              border: `1px solid ${theme.primary}30`
-            }}
-          >
-            <AlertCircle size={28} color={theme.primaryOn} />
-            <span style={{ 
-              fontFamily: fontFamily, 
-              fontSize: TYPE_SCALE.lg, 
-              fontWeight: WEIGHT.medium, 
-              color: theme.primaryOn 
-            }}>
-              {t("tv.onlyOnKiosk") || "TV is only available on the kiosk"}
-            </span>
-          </div>
-        )}
-
-        {error && (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <AlertCircle size={64} color="#ef4444" opacity={0.5} />
-            <p style={{ 
-              fontFamily: fontFamily, 
-              fontSize: TYPE_SCALE.xl, 
-              fontWeight: WEIGHT.semibold, 
-              color: "#ef4444" 
-            }}>
-              {error}
-            </p>
-            <button
-              onClick={reload}
-              className="mt-4 px-8 py-3"
-              style={{
-                backgroundColor: theme.primary,
-                color: theme.textInverse,
-                borderRadius: theme.radiusMd,
-                fontWeight: WEIGHT.bold
-              }}
-            >
-              {locale === "ar" ? "إعادة المحاولة" : "Retry"}
-            </button>
-          </div>
-        )}
-
-        {loading && channels.length === 0 && (
-          <div className="grid gap-8" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
-            {[1, 2, 3, 4, 5, 6].map(i => (
-              <div 
-                key={i} 
-                className="animate-pulse"
-                style={{ 
-                  height: "220px", 
-                  backgroundColor: theme.surfaceElevated, 
-                  borderRadius: theme.radiusCard 
-                }}
-              />
-            ))}
-          </div>
-        )}
-
-        {!loading && channels.length === 0 && !error && (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Tv size={64} color={theme.textMuted} opacity={0.5} />
-            <p style={{ 
-              fontFamily: fontFamily, 
-              fontSize: TYPE_SCALE.xl, 
-              fontWeight: WEIGHT.semibold, 
-              color: theme.textMuted 
-            }}>
-              {t("tv.noChannels") || "No channels available"}
-            </p>
-          </div>
-        )}
-
-        <div 
-          className="grid gap-8" 
-          style={{ 
-            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-            opacity: isAndroid ? 1 : 0.4,
-            pointerEvents: isAndroid ? "auto" : "none"
-          }}
-        >
-          {channels.map((channel, i) => {
-            const isPlaying = playingId === channel.id;
-            return (
+      {/* Header — the Media page's header; the leading arrow returns to Media */}
+      <InternalPageHeader
+        title={`${t("hub.media")} - ${locale === "ar" ? "البث المباشر" : "Live TV"}`}
+        icon={<Tv size={26} strokeWidth={2} />}
+        onClose={onClose}
+        leadingIcon={isRTL
+          ? <ArrowRight size={22} style={{ color: "#fff" }} />
+          : <ArrowLeft size={22} style={{ color: "#fff" }} />}
+        rightAction={
+          <>
+            {playingId !== null && (
               <button
-                key={channel.id}
-                onClick={() => handlePlayList(i)}
-                className="group relative flex flex-col items-center p-6 transition-all duration-300 active:scale-95"
+                onClick={() => iptv.stop()}
+                className="flex items-center gap-2 px-6 cursor-pointer active:scale-95 transition-transform"
                 style={{
-                  backgroundColor: theme.surface,
-                  borderRadius: theme.radiusCard,
-                  border: isPlaying ? `4px solid ${theme.primary}` : theme.cardBorder,
-                  boxShadow: isPlaying ? SHADOW.xl : SHADOW.md,
+                  height: "52px",
+                  backgroundColor: "#ef4444",
+                  borderRadius: "12px",
+                  border: "none",
                   outline: "none",
                 }}
               >
-                {/* Logo Container */}
-                <div 
-                  className="w-full aspect-video rounded-xl mb-4 overflow-hidden flex items-center justify-center p-4"
-                  style={{ backgroundColor: "#f8fafc" }}
-                >
-                  {channel.logo ? (
-                    <ApiImage 
-                      src={channel.logo} 
-                      alt={channel.name} 
-                      className="max-w-full max-h-full object-contain"
-                      fallback={
-                        <div className="flex items-center justify-center">
-                          <Tv size={48} color={theme.textMuted} strokeWidth={1} />
-                        </div>
-                      }
-                    />
-                  ) : (
-                    <div 
-                      className="w-full h-full flex items-center justify-center rounded-lg"
-                      style={{ backgroundColor: theme.surfaceElevated }}
-                    >
-                      <Tv size={64} color={theme.textMuted} strokeWidth={1} />
-                    </div>
-                  )}
-                </div>
-
-                {/* Channel Name */}
+                <Square size={20} color="#fff" fill="#fff" />
                 <span
                   style={{
                     fontFamily: fontFamily,
-                    fontSize: TYPE_SCALE.lg,
-                    fontWeight: WEIGHT.bold,
-                    color: theme.textHeading,
-                    textAlign: "center"
+                    fontSize: TYPE_SCALE.base,
+                    fontWeight: WEIGHT.semibold,
+                    color: "#fff",
                   }}
                 >
-                  {locale === "ar" ? channel.nameAr : channel.name}
+                  {t("tv.stop") || (locale === "ar" ? "إيقاف البث" : "Stop TV")}
                 </span>
-
-                {/* Playing Indicator */}
-                {isPlaying && (
-                  <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1 bg-green-500 rounded-full">
-                    <div className="w-2 h-2 rounded-full bg-white animate-ping" />
-                    <span className="text-[10px] font-bold text-white uppercase tracking-wider">Live</span>
-                  </div>
-                )}
               </button>
-            );
-          })}
-        </div>
+            )}
+
+            <button
+              onClick={reload}
+              disabled={loading}
+              className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform disabled:opacity-50"
+              style={{
+                width: "52px",
+                height: "52px",
+                borderRadius: "12px",
+                backgroundColor: "rgba(255,255,255,0.12)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                outline: "none",
+              }}
+            >
+              <RefreshCw size={22} style={{ color: "#fff" }} className={loading ? "animate-spin" : ""} />
+            </button>
+          </>
+        }
+      />
+
+      {/* Main Content */}
+      <div className="@container relative z-10 flex-1 min-h-0 overflow-y-auto px-16 pt-2 pb-16 scroll-smooth">
+        {numPages > 1 ? (
+          <>
+            <div
+              className="overflow-hidden pb-3"
+              style={{ touchAction: "pan-y" }}
+              onPointerDown={handleSwipeStart}
+              onPointerMove={handleSwipeMove}
+              onPointerUp={handleSwipeEnd}
+              onPointerCancel={handleSwipeEnd}
+            >
+              <div
+                className="flex"
+                style={{
+                  width: `${numPages * 100}%`,
+                  transform: `translateX(calc(${(isRTL ? 1 : -1) * (pageIndex / numPages) * 100}% + ${dragOffset}px))`,
+                  transition: isSwiping ? "none" : "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+                }}
+              >
+                {Array.from({ length: numPages }).map((_, pIdx) => (
+                  <div key={pIdx} className="flex-shrink-0" style={{ width: `${100 / numPages}%` }}>
+                    {renderGrid(TV_CHANNELS.slice(pIdx * CHANNELS_PER_PAGE, (pIdx + 1) * CHANNELS_PER_PAGE), pIdx * CHANNELS_PER_PAGE + 1)}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-3 py-6 w-full">
+              {Array.from({ length: numPages }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPageIndex(i)}
+                  className="transition-transform duration-300"
+                  style={{
+                    width: i === pageIndex ? 24 : 10,
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: i === pageIndex ? "#fff" : "rgba(255,255,255,0.3)",
+                    cursor: "pointer",
+                    border: "none",
+                    outline: "none",
+                  }}
+                />
+              ))}
+            </div>
+          </>
+        ) : (
+          renderGrid(TV_CHANNELS, 1)
+        )}
       </div>
 
       <style>{`
