@@ -137,7 +137,46 @@
 
   let key, room, ws, done = false, retries = 0, outbound = Promise.resolve();
 
+  // ── Direct link: a WebRTC data channel to the terminal, offered through
+  // the relay. Only the Android app answers; until (or unless) it opens,
+  // everything goes through the relay. DTLS secures the channel, and it can
+  // only be set up through the sealed relay messages.
+  let pc = null, ch = null;
+  const direct = () => ch && ch.readyState === "open";
+  function closeRtc() {
+    try { ch && ch.close(); } catch {}
+    try { pc && pc.close(); } catch {}
+    pc = ch = null;
+  }
+  async function startRtc() {
+    if (!window.RTCPeerConnection) return;
+    closeRtc();
+    const peer = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+    pc = peer;
+    const channel = peer.createDataChannel("remote", { ordered: true });
+    ch = channel;
+    channel.onmessage = (e) => { try { onTerminal(JSON.parse(e.data)); } catch {} };
+    peer.onicecandidate = (e) => { if (e.candidate && pc === peer) sendRelay({ t: "rtc", c: e.candidate.toJSON() }); };
+    try {
+      const offer = await peer.createOffer();
+      await peer.setLocalDescription(offer);
+      if (pc === peer) sendRelay({ t: "rtc", type: "offer", sdp: offer.sdp });
+    } catch { closeRtc(); }
+  }
+  async function onRtc(m) {
+    if (!pc) return;
+    try {
+      if (m.type === "answer" && m.sdp) await pc.setRemoteDescription({ type: "answer", sdp: m.sdp });
+      else if (m.c && m.c.candidate) await pc.addIceCandidate(m.c);
+    } catch {}
+  }
+
   function send(msg) {
+    if (direct()) { try { ch.send(JSON.stringify(msg)); return; } catch {} }
+    sendRelay(msg);
+  }
+
+  function sendRelay(msg) {
     outbound = outbound.then(async () => {
       if (!ws || ws.readyState !== 1) return;
       const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -152,10 +191,18 @@
     } catch { return null; }
   }
 
+  function onTerminal(m) {
+    if (m.t === "rtc") onRtc(m);
+    else if (m.t === "blocked") toast(tr.blocked);
+    else if (m.t === "focus") showKeys(m);
+    else if (m.t === "blur") hideKeys();
+  }
+
   function finish(kind) {
     if (done) return;
     done = true;
     releaseWake();
+    closeRtc();
     try { ws && ws.close(1000); } catch {}
     over(kind);
   }
@@ -169,15 +216,15 @@
       const raw = String(e.data);
       if (raw.startsWith("{")) {
         let m; try { m = JSON.parse(raw); } catch { return; }
-        if (m.t === "peer") setStatus(!!m.on, m.on ? tr.connected : tr.reconnecting);
+        if (m.t === "peer") {
+          setStatus(!!m.on, m.on ? tr.connected : tr.reconnecting);
+          if (m.on) startRtc(); else closeRtc();
+        }
         else if (m.t === "end") finish(m.reason === "expired" ? "expired" : "ended");
         return;
       }
       const m = await open(raw);
-      if (!m) return;
-      if (m.t === "blocked") toast(tr.blocked);
-      else if (m.t === "focus") showKeys(m);
-      else if (m.t === "blur") hideKeys();
+      if (m) onTerminal(m);
     };
     sock.onopen = () => { retries = 0; setStatus(true, tr.connected); };
     sock.onclose = (e) => {
@@ -268,7 +315,7 @@
   $("btnLeft").addEventListener("click", () => send({ t: "scroll", x: -500, y: 0 }));
   $("btnRight").addEventListener("click", () => send({ t: "scroll", x: 500, y: 0 }));
   $("btnScrollDown").addEventListener("click", () => send({ t: "scroll", y: 500 }));
-  $("end").addEventListener("click", () => { send({ t: "bye" }); outbound.then(() => finish("ended")); });
+  $("end").addEventListener("click", () => { send({ t: "bye" }); outbound.then(() => setTimeout(() => finish("ended"), 150)); });
 
   // ── Typing into the field the pointer tapped ──
   const field = $("field");
