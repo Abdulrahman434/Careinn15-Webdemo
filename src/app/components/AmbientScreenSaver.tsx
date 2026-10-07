@@ -103,10 +103,13 @@ export function AmbientScreenSaver({ onClose }: { onClose: () => void }) {
   return (
     <div
       className="fixed inset-0 z-[9999] overflow-hidden flex items-center justify-center select-none"
-      style={{ background: palette.background, fontFamily }}
+      // touch-action none: otherwise a touch screen takes the swipe as a scroll
+      // and cancels the pointer stream before it reaches SWIPE_PX.
+      style={{ background: palette.background, fontFamily, touchAction: "none" }}
       onPointerDown={startPress}
       onPointerUp={endPress}
       onPointerLeave={cancelPress}
+      onPointerCancel={cancelPress}
       onPointerMove={movePress}
     >
       <style>{`
@@ -130,6 +133,7 @@ export function AmbientScreenSaver({ onClose }: { onClose: () => void }) {
           <img
             src={logo}
             alt={theme.hospitalName}
+            draggable={false}
             style={{
               width: AMBIENT.size.logo,
               height: "auto",
