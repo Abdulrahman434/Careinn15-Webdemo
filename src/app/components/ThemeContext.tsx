@@ -1076,7 +1076,7 @@ import logoImage from "../../assets/logos/fakeeh-logo-light.webp";
 import logoImageDark from "../../assets/logos/fakeeh-logo-dark.webp";
 import hospitalImg from "../../assets/fakeeh-jeddah-hero.webp";
 
-import burjeelLogo from "../../assets/c8626cd3ed1ce90e9b3bab4a5f97a7315203f204.webp";
+import burjeelLogo from "../../assets/logos/burjeel-logo.png";
 import burjeelHero from "../../assets/6c870dc0bd960be4275cdbc07d5394bb50ec781e.webp";
 import slhLogo from "../../assets/000bda4db783fe15cbd489d69579eb6e0e831a8a.webp";
 import slhHero from "../../assets/e956f98cfa0d9f06f0dd2befe535fed91ed51d1e.webp";
