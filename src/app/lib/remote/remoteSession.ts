@@ -9,9 +9,11 @@
  */
 import { keyFor, newSecret, roomIdFor, seal, unseal } from "./remoteCrypto";
 import {
-  longPress, moveBy, onFieldLeft, pressEnter, resetRemoteInput, scrollBy, setText, tap,
+  adoptFocusedField, blockedAt, hasPageField, longPress, moveBy, noteActivity, onFieldLeft,
+  pressEnter, resetRemoteInput, scrollBy, setText, tap,
   type TapOutcome,
 } from "./remoteInput";
+import { nativeRemote, type NativeRemote } from "./nativeRemote";
 
 export const DEFAULT_RELAY_URL = "wss://careinn-remote.abalfaqih.workers.dev";
 const RELAY_URL: string = (import.meta.env.VITE_REMOTE_RELAY_URL as string | undefined) || DEFAULT_RELAY_URL;
@@ -30,6 +32,8 @@ export interface RemoteState {
   pairExpiresAt?: number;
   /** A phone has paired during this session (so "waiting" means it dropped). */
   phoneSeen: boolean;
+  /** The Android app's finger is driving (pointer drawn natively, reaches other apps). */
+  native?: boolean;
   /** Why the last session ended, until the next one starts. */
   endReason?: RemoteEndReason;
 }
@@ -38,7 +42,7 @@ type PhoneMessage =
   | { t: "m"; x: number; y: number }
   | { t: "tap" }
   | { t: "long" }
-  | { t: "scroll"; y: number }
+  | { t: "scroll"; x?: number; y: number }
   | { t: "text"; v: string }
   | { t: "enter" }
   | { t: "bye" };
@@ -86,13 +90,65 @@ function report(outcome: TapOutcome) {
   else if (outcome.kind === "field") send({ t: "focus", v: outcome.value, type: outcome.type, max: outcome.max });
 }
 
+/** Where the native pointer is: on this page (with its spot), or elsewhere. */
+function where(n: NativeRemote): { self: boolean; x: number; y: number } {
+  try {
+    const w = JSON.parse(n.where() || "{}");
+    return { self: w.self !== false, x: Number(w.x) || 0, y: Number(w.y) || 0 };
+  } catch {
+    return { self: true, x: 0, y: 0 };
+  }
+}
+
+const later = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** A press by the Android finger; on this page, [data-no-remote] still holds. */
+async function nativePress(n: NativeRemote, long: boolean): Promise<TapOutcome> {
+  const w = where(n);
+  if (w.self && blockedAt(w.x, w.y)) return { kind: "blocked" };
+  if (long) n.longPress(); else n.tap();
+  await later(long ? 1100 : 400);
+  if (w.self) return adoptFocusedField();
+  try {
+    const f = JSON.parse(n.field() || "null");
+    if (f) return { kind: "field", value: String(f.v ?? ""), type: String(f.type ?? "text"), max: Number(f.max) || 0 };
+  } catch { /* no field */ }
+  return { kind: "pressed" };
+}
+
+function handleNative(n: NativeRemote, m: PhoneMessage) {
+  switch (m.t) {
+    case "m": if (Number.isFinite(m.x) && Number.isFinite(m.y)) { n.move(m.x, m.y); noteActivity(); } break;
+    case "tap": void nativePress(n, false).then(report); break;
+    case "long": void nativePress(n, true).then(report); break;
+    case "scroll": {
+      const dx = Number.isFinite(m.x) ? Number(m.x) : 0;
+      if (!Number.isFinite(m.y)) break;
+      const w = where(n);
+      if (w.self && blockedAt(w.x, w.y)) { report({ kind: "blocked" }); break; }
+      n.scroll(dx, m.y);
+      noteActivity();
+      break;
+    }
+    case "text": {
+      const v = String(m.v ?? "").slice(0, 500);
+      if (hasPageField()) setText(v); else n.text(v);
+      break;
+    }
+    case "enter": if (hasPageField()) pressEnter(); else { n.enter(); send({ t: "blur" }); } break;
+    case "bye": stopRemote("ended"); break;
+  }
+}
+
 function handle(m: PhoneMessage) {
   bumpIdle();
+  const n = state.native ? nativeRemote() : null;
+  if (n) return handleNative(n, m);
   switch (m.t) {
     case "m": if (Number.isFinite(m.x) && Number.isFinite(m.y)) moveBy(m.x, m.y); break;
     case "tap": report(tap()); break;
     case "long": void longPress().then(report); break;
-    case "scroll": if (Number.isFinite(m.y)) report(scrollBy(m.y)); break;
+    case "scroll": if (Number.isFinite(m.y)) report(scrollBy(Number.isFinite(m.x) ? Number(m.x) : 0, m.y)); break;
     case "text": setText(String(m.v ?? "").slice(0, 500)); break;
     case "enter": pressEnter(); break;
     case "bye": stopRemote("ended"); break;
@@ -106,7 +162,11 @@ function onRelayMessage(raw: string) {
     try { m = JSON.parse(raw); } catch { return; }
     if (m.t === "peer" && m.on) {
       clearTimeout(timers.pair);
-      update({ phase: "connected", phoneSeen: true });
+      let native = !!state.native;
+      if (!native) {
+        try { native = !!nativeRemote()?.begin(); } catch { native = false; }
+      }
+      update({ phase: "connected", phoneSeen: true, native });
       bumpIdle();
     } else if (m.t === "peer") {
       update({ phase: "waiting" });
@@ -167,6 +227,9 @@ export function stopRemote(reason: RemoteEndReason = "cancelled"): void {
   clearTimeout(timers.max);
   onFieldLeft(null);
   resetRemoteInput();
+  if (state.native) {
+    try { nativeRemote()?.end(); } catch { /* app gone */ }
+  }
   try { sock?.close(1000, reason); } catch { /* already closed */ }
-  update({ phase: "off", phoneSeen: false, pairUrl: undefined, pairExpiresAt: undefined, endReason: reason });
+  update({ phase: "off", phoneSeen: false, native: false, pairUrl: undefined, pairExpiresAt: undefined, endReason: reason });
 }

@@ -23,6 +23,11 @@
     display: flex; align-items: center; justify-content: center; text-align: center; position: relative; }
   #pad.flash { background: #334155; }
   #hint { color: var(--muted); font-size: 15px; line-height: 1.7; padding: 24px; pointer-events: none; }
+  .side { position: absolute; top: 50%; transform: translateY(-50%); width: 56px; height: 96px;
+    background: rgba(255,255,255,.08); color: var(--text); font-size: 22px; border-radius: 16px; touch-action: manipulation; }
+  .side:active { background: rgba(255,255,255,.2); }
+  #btnLeft { left: 8px; }
+  #btnRight { right: 8px; }
   #toast { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); background: rgba(0,0,0,.75);
     padding: 8px 14px; border-radius: 999px; font-size: 13px; opacity: 0; transition: opacity .2s; white-space: nowrap; }
   #toast.show { opacity: 1; }
@@ -47,7 +52,7 @@
   <span id="status"></span>
   <button id="end"></button>
 </header>
-<div id="pad"><div id="hint"></div><div id="toast"></div></div>
+<div id="pad"><div id="hint"></div><button id="btnLeft" class="side" aria-label="Scroll left">◀</button><button id="btnRight" class="side" aria-label="Scroll right">▶</button><div id="toast"></div></div>
 <div id="keys"><input id="field" autocomplete="off" autocapitalize="off" spellcheck="false"><button id="enter"></button></div>
 <div class="bar"><button id="btnScrollUp">▲</button><button id="btnTap" class="primary"></button><button id="btnScrollDown">▼</button></div>
 <div id="over"><h1 id="overTitle"></h1><p id="overText"></p></div>
@@ -58,7 +63,7 @@
   const T = {
     en: { connecting: "Connecting…", connected: "Connected to your screen", reconnecting: "Reconnecting…",
       end: "Disconnect", tap: "Tap", enter: "Enter",
-      hint: "Slide one finger to move the pointer.<br>Tap to select. Hold to long-press.<br>Slide two fingers to scroll.",
+      hint: "Slide one finger to move the pointer.<br>Tap to select. Hold to long-press.<br>Slide two fingers to scroll; ◀ ▶ scroll sideways.",
       blocked: "Please use the screen itself for this",
       endedTitle: "Disconnected", endedText: "You can close this page. To connect again, open Settings on the screen.",
       expiredTitle: "Session ended", expiredText: "To connect again, open Settings on the screen and scan the new code.",
@@ -67,7 +72,7 @@
       badTitle: "Invalid code", badText: "Please scan the code shown on the screen again." },
     ar: { connecting: "جارٍ الاتصال…", connected: "متصل بالشاشة", reconnecting: "جارٍ إعادة الاتصال…",
       end: "قطع الاتصال", tap: "اضغط", enter: "إدخال",
-      hint: "حرّك إصبعاً واحداً لتحريك المؤشر.<br>اضغط للاختيار، واضغط مطولاً للخيارات.<br>حرّك إصبعين للتمرير.",
+      hint: "حرّك إصبعاً واحداً لتحريك المؤشر.<br>اضغط للاختيار، واضغط مطولاً للخيارات.<br>حرّك إصبعين للتمرير، و◀ ▶ للتمرير جانبياً.",
       blocked: "يرجى استخدام الشاشة نفسها لهذا الإجراء",
       endedTitle: "تم قطع الاتصال", endedText: "يمكنك إغلاق هذه الصفحة. للاتصال مجدداً افتح الإعدادات على الشاشة.",
       expiredTitle: "انتهت الجلسة", expiredText: "للاتصال مجدداً افتح الإعدادات على الشاشة وامسح الرمز الجديد.",
@@ -76,7 +81,7 @@
       badTitle: "رمز غير صالح", badText: "يرجى مسح الرمز الظاهر على الشاشة مجدداً." },
     ur: { connecting: "منسلک ہو رہا ہے…", connected: "آپ کی اسکرین سے منسلک", reconnecting: "دوبارہ منسلک ہو رہا ہے…",
       end: "منقطع کریں", tap: "ٹیپ", enter: "انٹر",
-      hint: "پوائنٹر ہلانے کے لیے ایک انگلی پھیریں۔<br>منتخب کرنے کے لیے ٹیپ کریں، دیر تک دبانے کے لیے روکے رکھیں۔<br>اسکرول کے لیے دو انگلیاں پھیریں۔",
+      hint: "پوائنٹر ہلانے کے لیے ایک انگلی پھیریں۔<br>منتخب کرنے کے لیے ٹیپ کریں، دیر تک دبانے کے لیے روکے رکھیں۔<br>اسکرول کے لیے دو انگلیاں پھیریں، ◀ ▶ سے دائیں بائیں۔",
       blocked: "براہ کرم اس کے لیے اسکرین ہی استعمال کریں",
       endedTitle: "منقطع ہو گیا", endedText: "آپ یہ صفحہ بند کر سکتے ہیں۔ دوبارہ منسلک ہونے کے لیے اسکرین پر سیٹنگز کھولیں۔",
       expiredTitle: "سیشن ختم", expiredText: "دوبارہ منسلک ہونے کے لیے اسکرین پر سیٹنگز کھولیں اور نیا کوڈ اسکین کریں۔",
@@ -207,17 +212,18 @@
   const TAP_MS = 250, TAP_SLOP = 10, HOLD_MS = 600;
   const touches = new Map();
   let start = null, moved = false, maxFingers = 0, holdTimer = null, held = false;
-  let accX = 0, accY = 0, accScroll = 0, flushQueued = false;
+  let accX = 0, accY = 0, accScrollX = 0, accScroll = 0, flushQueued = false;
 
   function flush() {
     flushQueued = false;
     if (accX || accY) { send({ t: "m", x: Math.round(accX), y: Math.round(accY) }); accX = accY = 0; }
-    if (accScroll) { send({ t: "scroll", y: Math.round(accScroll) }); accScroll = 0; }
+    if (accScroll || accScrollX) { send({ t: "scroll", x: Math.round(accScrollX), y: Math.round(accScroll) }); accScroll = accScrollX = 0; }
   }
   function queueFlush() { if (!flushQueued) { flushQueued = true; requestAnimationFrame(flush); } }
   function flash() { pad.classList.add("flash"); setTimeout(() => pad.classList.remove("flash"), 120); if (navigator.vibrate) navigator.vibrate(15); }
 
   pad.addEventListener("pointerdown", (e) => {
+    if (e.target.closest && e.target.closest(".side")) return;
     try { pad.setPointerCapture(e.pointerId); } catch {}
     touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
     maxFingers = Math.max(maxFingers, touches.size);
@@ -240,6 +246,7 @@
     if (touches.size >= 2) {
       // Two fingers scroll: content follows the fingers, like on the phone.
       accScroll += (-dy * SENS) / touches.size;
+      accScrollX += (-dx * SENS) / touches.size;
     } else if (maxFingers === 1 && !held) {
       accX += dx * SENS; accY += dy * SENS;
     }
@@ -257,6 +264,9 @@
 
   $("btnTap").addEventListener("click", () => { flush(); send({ t: "tap" }); flash(); });
   $("btnScrollUp").addEventListener("click", () => send({ t: "scroll", y: -500 }));
+  // Physical left/right on the screen, whatever the phone's language.
+  $("btnLeft").addEventListener("click", () => send({ t: "scroll", x: -500, y: 0 }));
+  $("btnRight").addEventListener("click", () => send({ t: "scroll", x: 500, y: 0 }));
   $("btnScrollDown").addEventListener("click", () => send({ t: "scroll", y: 500 }));
   $("end").addEventListener("click", () => { send({ t: "bye" }); outbound.then(() => finish("ended")); });
 

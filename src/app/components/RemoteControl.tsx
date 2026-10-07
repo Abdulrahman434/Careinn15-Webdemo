@@ -160,7 +160,8 @@ export function RemoteControl() {
         </div>
       )}
 
-      {s.phase === "connected" && (
+      {/* With the Android finger the app draws the pointer, above every app. */}
+      {s.phase === "connected" && !s.native && (
         <div
           ref={attachCursor}
           aria-hidden="true"

@@ -197,21 +197,58 @@ export function longPress(): Promise<TapOutcome> {
   });
 }
 
-export function scrollBy(dy: number): TapOutcome {
+const scrolls = (overflow: string) => overflow === "auto" || overflow === "scroll" || overflow === "overlay";
+
+/** Scrolls the nearest thing under the pointer that scrolls that way. */
+export function scrollBy(dx: number, dy: number): TapOutcome {
   const el = hit();
   if (el && blocked(el)) return { kind: "blocked" };
-  const amount = clamp(dy, -800, 800) * scale();
+  const left = clamp(dx, -800, 800) * scale();
+  const top = clamp(dy, -800, 800) * scale();
+  const across = Math.abs(left) > Math.abs(top);
   for (let n: HTMLElement | null = el; n && n !== document.body; n = n.parentElement) {
-    const oy = getComputedStyle(n).overflowY;
-    if ((oy === "auto" || oy === "scroll" || oy === "overlay") && n.scrollHeight > n.clientHeight + 1) {
-      n.scrollBy({ top: amount });
+    const cs = getComputedStyle(n);
+    const ok = across
+      ? scrolls(cs.overflowX) && n.scrollWidth > n.clientWidth + 1
+      : scrolls(cs.overflowY) && n.scrollHeight > n.clientHeight + 1;
+    if (ok) {
+      n.scrollBy(across ? { left } : { top });
       nudgeIdle();
       return { kind: "pressed" };
     }
   }
-  (document.scrollingElement || document.documentElement).scrollBy({ top: amount });
+  (document.scrollingElement || document.documentElement).scrollBy(across ? { left } : { top });
   nudgeIdle();
   return { kind: "pressed" };
+}
+
+// ── For the native finger (see nativeRemote): the page only vets the spot. ──
+
+/** Whether a page point (CSS px) lands in a [data-no-remote] zone. */
+export function blockedAt(px: number, py: number): boolean {
+  const el = document.elementFromPoint(px, py);
+  return !!el && blocked(el);
+}
+
+/** Pointer movement counts as use for the screensaver. */
+export function noteActivity(): void {
+  nudgeIdle();
+}
+
+/** After a native tap on this page: adopt the field it focused, if any. */
+export function adoptFocusedField(): TapOutcome {
+  const a = document.activeElement;
+  const f = a ? editable(a) : null;
+  if (!f) {
+    releaseField();
+    return { kind: "pressed" };
+  }
+  return focusField(f);
+}
+
+/** Whether typing should go to a field on this page. */
+export function hasPageField(): boolean {
+  return !!field && field.isConnected && document.activeElement === field;
 }
 
 /** Writes the phone's text into the focused field the way typing would. */
