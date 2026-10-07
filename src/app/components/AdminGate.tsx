@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { X, ShieldCheck, RotateCcw } from "lucide-react";
+import { nativeRemote, nativeRemoteStatus } from "../lib/remote/nativeRemote";
 import {
   verifyAdminCode,
   getContentStatus,
@@ -106,6 +107,7 @@ export function AdminGate({ open, onClose }: { open: boolean; onClose: () => voi
 
   return (
     <div
+      data-no-remote
       className="fixed inset-0 flex items-center justify-center"
       style={{ zIndex: 9999, backgroundColor: "rgba(0,0,0,0.55)" }}
       onClick={onClose}
@@ -230,6 +232,35 @@ export function AdminGate({ open, onClose }: { open: boolean; onClose: () => voi
             {status?.defaultBaseUrl && (
               <div style={{ fontSize: 11, color: "#666", marginTop: -12, marginBottom: 18 }}>
                 Default: {status.defaultBaseUrl}
+              </div>
+            )}
+
+            {/* Phone remote outside this page needs the app's accessibility service. */}
+            {nativeRemoteStatus() !== "absent" && (
+              <div style={{ borderTop: "1px solid #2A2A2A", paddingTop: 14, marginBottom: 14 }}>
+                <div style={{ fontSize: 13, color: "#ccc", marginBottom: 8 }}>
+                  Phone remote in other apps & websites:{" "}
+                  <b style={{ color: nativeRemoteStatus() === "ready" ? "#4ADE80" : "#F59E0B" }}>
+                    {nativeRemoteStatus() === "ready" ? "On" : "Off"}
+                  </b>
+                </div>
+                {nativeRemoteStatus() !== "ready" && (
+                  <>
+                    <button
+                      onClick={() => nativeRemote()?.openSettings()}
+                      style={{
+                        width: "100%", padding: "10px 0", borderRadius: 8,
+                        border: "1px solid #3A3A3A", backgroundColor: "#2A2A2A",
+                        color: "#fff", fontWeight: 600, cursor: "pointer", fontSize: 13,
+                      }}
+                    >
+                      Open Accessibility Settings
+                    </button>
+                    <div style={{ fontSize: 11, color: "#666", marginTop: 6 }}>
+                      Turn on “CareInn phone remote”, then press Back. Needed once per terminal.
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

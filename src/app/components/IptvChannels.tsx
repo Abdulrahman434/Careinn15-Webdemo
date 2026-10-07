@@ -2,22 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { DemoControls } from "./DemoControls";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "./ThemeContext";
 import { useLocale } from "./i18n";
-import { Tv, ArrowLeft, RefreshCw, Square, Wifi, WifiOff } from "lucide-react";
+import { Tv, ArrowLeft, RefreshCw, AlertCircle, Square } from "lucide-react";
 import { useIptvChannels, iptv, isAndroidApp, useAndroidEvent, IptvChannel, _setIptvPlayingId } from "../utils/androidBridge";
 import { ApiImage } from "./ApiImage";
-
-// Shown when the channel list can't be loaded (browser, server down) so the
-// screen's design is still visible. Not playable.
-const PREVIEW_CHANNELS: IptvChannel[] = [
-  { id: -1, name: "News 24", nameAr: "الأخبار ٢٤", url: "", logo: "" },
-  { id: -2, name: "Sports HD", nameAr: "الرياضة", url: "", logo: "" },
-  { id: -3, name: "Kids", nameAr: "الأطفال", url: "", logo: "" },
-  { id: -4, name: "Movies", nameAr: "الأفلام", url: "", logo: "" },
-  { id: -5, name: "Documentary", nameAr: "الوثائقية", url: "", logo: "" },
-  { id: -6, name: "Quran", nameAr: "القرآن الكريم", url: "", logo: "" },
-  { id: -7, name: "Music", nameAr: "الموسيقى", url: "", logo: "" },
-  { id: -8, name: "Weather", nameAr: "الطقس", url: "", logo: "" },
-];
 
 export function IptvChannels({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
@@ -59,9 +46,6 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
   };
 
   const isAndroid = isAndroidApp();
-  const connected = channels.length > 0 && !error;
-  const preview = !loading && !connected;
-  const shown = preview ? PREVIEW_CHANNELS : channels;
 
   return (
     <div
@@ -112,32 +96,6 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="flex items-center gap-4">
-          {!loading && (
-            <div
-              title={connected ? t("conn.connected") : (!isAndroid ? t("tv.onlyOnKiosk") : t("conn.offline"))}
-              className="flex items-center gap-2 px-4"
-              style={{
-                height: "56px",
-                backgroundColor: connected ? theme.successSubtle : theme.errorSubtle,
-                borderRadius: theme.radiusMd,
-              }}
-            >
-              {connected
-                ? <Wifi size={22} color={theme.successOn} strokeWidth={2.5} />
-                : <WifiOff size={22} color={theme.errorOn} strokeWidth={2.5} />}
-              <span
-                style={{
-                  fontFamily: fontFamily,
-                  fontSize: TYPE_SCALE.base,
-                  fontWeight: WEIGHT.semibold,
-                  color: connected ? theme.successOn : theme.errorOn,
-                }}
-              >
-                {connected ? t("conn.connected") : t("conn.offline")}
-              </span>
-            </div>
-          )}
-
           {playingId !== null && (
             <button
               onClick={() => iptv.stop()}
@@ -187,6 +145,53 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto px-16 py-12 scroll-smooth">
+        {!isAndroid && (
+          <div 
+            className="mb-10 p-6 flex items-center gap-4"
+            style={{ 
+              backgroundColor: theme.primarySubtle, 
+              borderRadius: theme.radiusLg,
+              border: `1px solid ${theme.primary}30`
+            }}
+          >
+            <AlertCircle size={28} color={theme.primaryOn} />
+            <span style={{ 
+              fontFamily: fontFamily, 
+              fontSize: TYPE_SCALE.lg, 
+              fontWeight: WEIGHT.medium, 
+              color: theme.primaryOn 
+            }}>
+              {t("tv.onlyOnKiosk") || "TV is only available on the kiosk"}
+            </span>
+          </div>
+        )}
+
+        {error && (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <AlertCircle size={64} color="#ef4444" opacity={0.5} />
+            <p style={{ 
+              fontFamily: fontFamily, 
+              fontSize: TYPE_SCALE.xl, 
+              fontWeight: WEIGHT.semibold, 
+              color: "#ef4444" 
+            }}>
+              {error}
+            </p>
+            <button
+              onClick={reload}
+              className="mt-4 px-8 py-3"
+              style={{
+                backgroundColor: theme.primary,
+                color: theme.textInverse,
+                borderRadius: theme.radiusMd,
+                fontWeight: WEIGHT.bold
+              }}
+            >
+              {locale === "ar" ? "إعادة المحاولة" : "Retry"}
+            </button>
+          </div>
+        )}
+
         {loading && channels.length === 0 && (
           <div className="grid gap-8" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
             {[1, 2, 3, 4, 5, 6].map(i => (
@@ -203,14 +208,29 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
+        {!loading && channels.length === 0 && !error && (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Tv size={64} color={theme.textMuted} opacity={0.5} />
+            <p style={{ 
+              fontFamily: fontFamily, 
+              fontSize: TYPE_SCALE.xl, 
+              fontWeight: WEIGHT.semibold, 
+              color: theme.textMuted 
+            }}>
+              {t("tv.noChannels") || "No channels available"}
+            </p>
+          </div>
+        )}
+
         <div 
           className="grid gap-8" 
           style={{ 
             gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-            pointerEvents: isAndroid && !preview ? "auto" : "none"
+            opacity: isAndroid ? 1 : 0.4,
+            pointerEvents: isAndroid ? "auto" : "none"
           }}
         >
-          {shown.map((channel, i) => {
+          {channels.map((channel, i) => {
             const isPlaying = playingId === channel.id;
             return (
               <button

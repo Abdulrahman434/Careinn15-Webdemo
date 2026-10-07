@@ -2038,6 +2038,15 @@ export function SettingsPanel({
               variant="primary"
               onClick={() => setShowAccountDialog(true)}
             />
+            {t.remoteControl && (
+              <ActionButton
+                icon={<Smartphone size={20} style={{ color: t.primaryOn }} />}
+                label={tr("remote.settings.title")}
+                subtitle={tr("remote.settings.subtitle")}
+                variant="primary"
+                onClick={() => window.dispatchEvent(new Event("careinn-remote-start"))}
+              />
+            )}
           </div>
 
           {/* Clear Data — no flex-1 spacer above it. A filler in a scrolling
@@ -2046,6 +2055,7 @@ export function SettingsPanel({
               edge: a panel with room for all of it still had to be scrolled to
               read its last line. */}
           <button
+            data-no-remote
             onClick={() => setShowClearConfirm(true)}
             className="flex items-center justify-center gap-3 w-full cursor-pointer active:scale-[0.96] transition-transform"
             style={{

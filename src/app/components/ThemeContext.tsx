@@ -291,6 +291,8 @@ export interface ThemeConfig {
   screensaverVideoUrl?: string;
   /** "ambient" gives this brand the dark clock screensaver instead of the tasbih */
   screensaverStyle?: "ambient";
+  /** Patients may pair their own phone as a touchpad for this screen */
+  remoteControl?: boolean;
   /** The brand's light-on-dark logo whatever the mode, for surfaces that are
    *  always dark. Empty when the brand has none. */
   logoUrlOnDark: string;
@@ -522,6 +524,7 @@ function buildTheme(core: {
     // Dark mode prefers a light-on-dark mark when the brand supplies one.
     screensaverVideoUrl: c.screensaverVideoUrl,
     screensaverStyle: c.screensaverStyle,
+    remoteControl: c.remoteControl,
     logoUrlOnDark: c.logoUrlDark || "",
     patientGuidePdf: c.patientGuidePdf,
     logoUrl: (dark && c.logoUrlDark) || c.logoUrl || (c.id === "dsfh" ? DSFH_LOGO : c.id === "burjeel" ? burjeelLogo : c.id === "slh" ? slhLogo : c.id === "dallah" ? dallahLogo : c.id === "caremed" ? caremedLogo : c.id === "imc" ? imcLogo : c.id === "careinn" ? careinnLogo : c.id === "prime" ? primeLogo : c.id === "kauh" ? kauhLogo : c.id === "andalusia" ? andalusiaLogo : ""),
@@ -1118,6 +1121,7 @@ export const DSFH_CORE: HospitalCoreConfig = {
   logoUrl: logoImage,
   logoUrlDark: logoImageDark,
   screensaverStyle: "ambient",
+  remoteControl: true,
   patientGuidePdf: "/guides/fakeeh-patient-guide.pdf",
   hospitalWebsiteUrl: "https://en.dsfhriyadh.fakeeh.care/",
   heroImageUrl: hospitalImg,
@@ -1334,6 +1338,9 @@ export interface HospitalCoreConfig {
    *  prayer, drifting slowly — no video, next to nothing to download. Any
    *  brand can take it by setting this; its dark logo is used when it has one. */
   screensaverStyle?: "ambient";
+  /** Optional: let patients pair their own phone as a touchpad (QR from
+   *  Settings). Off unless a brand turns it on. */
+  remoteControl?: boolean;
   /** Optional patient-guide PDF (public path) */
   patientGuidePdf?: string;
   heroImageUrl: string;

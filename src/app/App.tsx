@@ -23,6 +23,7 @@ import { UpdateBanner } from "./components/UpdateBanner";
 import { MediaViewerModal } from "./components/MediaViewerModal";
 import { AboutUs } from "./components/AboutUs";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { RemoteControl } from "./components/RemoteControl";
 import { NotificationsPanel } from "./components/NotificationsPanel";
 import { AppTour } from "./components/AppTour";
 import { CallScreen } from "./components/CallScreen";
@@ -2286,6 +2287,8 @@ function BedsideScreen() {
             ? <VideoScreenSaver src={theme.screensaverVideoUrl} onClose={closeSaver} />
             : <TasbihScreenSaver onClose={closeSaver} />;
         })()}
+
+        <RemoteControl />
 
         {/* Hospital Broadcast Overlay */}
         {activeBroadcast && (
