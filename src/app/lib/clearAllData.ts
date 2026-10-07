@@ -109,8 +109,73 @@ export async function clearUserDataAndReload(): Promise<void> {
 }
 
 /**
+ * Hand-off wipe, run automatically when a patient signs out so the next
+ * patient at this bed inherits nothing of theirs. Reuses the same "light"
+ * primitives as the Clear My Data button: clears the previous patient's
+ * browser traces (cookies, sessionStorage, IndexedDB, Cache Storage) and
+ * localStorage preferences, and on Android logs them out of the third-party
+ * apps the kiosk launches (Netflix, WhatsApp, YouTube, …) via
+ * clearAppData's device-owner/root path. It deliberately preserves what
+ * makes this device this device — PIN, device login, onboarding answers,
+ * server config — and does NOT reload: the caller (sign-out) already
+ * re-renders to the login gate, and the phone remote is ended by
+ * RemoteControl the moment authentication drops.
+ *
+ * Fire-and-forget: a slow third-party wipe must never stall sign-out, so
+ * failures are swallowed and the UI never waits on it.
+ */
+export async function wipeForNextPatient(): Promise<void> {
+  try {
+    clearUserData();          // patient prefs; keeps device/PIN/onboarding keys
+    clearImageCache();
+    sessionStorage.clear();
+  } catch (e) {
+    console.warn("wipeForNextPatient storage:", e);
+  }
+
+  try {
+    const dbs = await indexedDB.databases();
+    await Promise.all(dbs.map(db => new Promise<void>((resolve) => {
+      if (!db.name) { resolve(); return; }
+      const req = indexedDB.deleteDatabase(db.name);
+      req.onsuccess = req.onerror = req.onblocked = () => resolve();
+    })));
+  } catch (e) {
+    console.warn("wipeForNextPatient idb:", e);
+  }
+
+  try {
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  } catch (e) {
+    console.warn("wipeForNextPatient caches:", e);
+  }
+
+  try {
+    document.cookie.split(";").forEach(cookie => {
+      const name = cookie.split("=")[0].trim();
+      if (name) document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+    });
+  } catch (e) {
+    console.warn("wipeForNextPatient cookies:", e);
+  }
+
+  // Log the previous patient out of the launched native apps. The same
+  // tiered (device-owner → root) wipe the Clear My Data button uses.
+  if (isAndroidApp()) {
+    try {
+      window.AndroidSystem?.clearAppData?.(JSON.stringify(patientAppPackages()));
+    } catch (e) {
+      console.warn("wipeForNextPatient clearAppData:", e);
+    }
+  }
+}
+
+/**
  * Performs a full data wipe of all stored kiosk data, then
- * reloads the page. On Android, also clears the native WebView 
+ * reloads the page. On Android, also clears the native WebView
  * cache, cookies, and app data before reloading.
  *
  * This function does not return — the page reloads.

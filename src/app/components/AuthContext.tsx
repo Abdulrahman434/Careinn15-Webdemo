@@ -255,6 +255,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isFullAccess: false,
       isGuest: false,
     });
+    /* Hand the bed on clean: log the previous patient out of the launched
+       apps (Netflix, YouTube, …) and wipe their browser traces, keeping the
+       device's own PIN/config. Fire-and-forget so a slow native wipe can
+       never stall sign-out; the phone remote is ended by RemoteControl as
+       soon as isAuthenticated drops above. */
+    void import("../lib/clearAllData")
+      .then(m => m.wipeForNextPatient())
+      .catch(e => console.warn("sign-out wipe:", e));
     /* A safe point the app knows about without being told. The screen is
        being handed on, whatever was on it is gone by design, and a bedside
        screen that stays lit all day would otherwise carry the old build
