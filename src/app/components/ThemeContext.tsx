@@ -1140,12 +1140,10 @@ export const BURJEEL_CORE: HospitalCoreConfig = {
   logoUrl: burjeelLogo,
   hospitalWebsiteUrl: "https://burjeel.com/abu-dhabi/",
   heroImageUrl: burjeelHero,
-  primary: "#8C124B",
-  primaryDark: "#6D0E3B",
-  primaryLight: "#F0E0E8",
-  accent: "#C8A951",
-  accentDark: "#9C843F",
-  accentLight: "#F8F4E8",
+  // Brand book: Pantone 235 C and "Burjeel One" Pantone 7562 C. The tonal
+  // variants are left to buildTheme so they follow these two.
+  primary: "#871C55",
+  accent: "#C5A571",
   location: "Abu Dhabi",
 };
 
