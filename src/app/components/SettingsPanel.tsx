@@ -49,12 +49,14 @@ import {
   Stethoscope,
   Users,
   UserCircle,
+  ShieldCheck,
 } from "lucide-react";
 import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useAuth } from "./AuthContext";
 import { clearAllDataAndReload, clearUserDataAndReload } from "../lib/clearAllData";
 import { NurseInterface } from "./nurse/NurseInterface";
+import { SignInHelper } from "./SignInHelper";
 import type { Locale } from "./i18n";
 import imgMosque from "../../assets/b51acb5e2ec4a2c930572c53103b020b12e76ee2.webp";
 import { getPrayerStatus, getCountdown, formatPrayerTime, PRAYER_NAMES } from "../utils/prayerUtils";
@@ -1749,6 +1751,7 @@ export function SettingsPanel({
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showLangDialog, setShowLangDialog] = useState(false);
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
   const [replayToast, setReplayToast] = useState<string | null>(null);
 
@@ -2049,6 +2052,16 @@ export function SettingsPanel({
             )}
           </div>
 
+          <div className="flex items-center gap-2.5">
+            <ActionButton
+              icon={<ShieldCheck size={20} style={{ color: t.primaryOn }} />}
+              label={tr("signin.title")}
+              subtitle={tr("signin.subtitle")}
+              variant="primary"
+              onClick={() => setShowSignIn(true)}
+            />
+          </div>
+
           {/* Clear Data — no flex-1 spacer above it. A filler in a scrolling
               column takes every pixel of slack for itself, which pushed this
               button down and shoved the room and device lines past the bottom
@@ -2235,11 +2248,13 @@ export function SettingsPanel({
       )}
 
       {showCareTeamDialog && (
-        <CareTeamAccessDialog 
-          onClose={() => setShowCareTeamDialog(false)} 
+        <CareTeamAccessDialog
+          onClose={() => setShowCareTeamDialog(false)}
           onSuccess={(role) => setActiveCareRole(role)}
         />
       )}
+
+      {showSignIn && <SignInHelper onClose={() => setShowSignIn(false)} />}
 
       {activeCareRole && (
         <NurseInterface 
