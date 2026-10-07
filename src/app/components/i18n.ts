@@ -1657,6 +1657,10 @@ const translations: Record<string, TranslationEntry> = {
   "remote.end.codeExpired": { en: "The code expired. Open Settings to get a new one.", ar: "انتهت صلاحية الرمز. افتح الإعدادات للحصول على رمز جديد.", ur: "کوڈ کی میعاد ختم ہو گئی۔ نیا کوڈ لینے کے لیے سیٹنگز کھولیں۔" },
   "remote.end.unreachable": { en: "Phone remote isn't available right now. Try again later.", ar: "التحكم بالجوال غير متاح حالياً. حاول لاحقاً.", ur: "فون ریموٹ ابھی دستیاب نہیں ہے۔ بعد میں دوبارہ کوشش کریں۔" },
   "remote.end.lost": { en: "The phone remote lost its connection.", ar: "انقطع اتصال التحكم بالجوال.", ur: "فون ریموٹ کا کنکشن ٹوٹ گیا۔" },
+  "remote.access.title": { en: "Control other apps too?", ar: "التحكم بالتطبيقات الأخرى أيضاً؟", ur: "دوسری ایپس بھی کنٹرول کریں؟" },
+  "remote.access.body": { en: "To use your phone in websites and other apps, turn on “CareInn phone remote” on the next screen, then press Back.", ar: "لاستخدام جوالك في المواقع والتطبيقات الأخرى، فعّل «CareInn phone remote» في الشاشة التالية ثم اضغط رجوع.", ur: "ویب سائٹس اور دوسری ایپس میں فون استعمال کرنے کے لیے اگلی اسکرین پر “CareInn phone remote” آن کریں، پھر واپس دبائیں۔" },
+  "remote.access.open": { en: "Turn it on", ar: "تفعيل", ur: "آن کریں" },
+  "remote.access.skip": { en: "CareInn only", ar: "داخل CareInn فقط", ur: "صرف CareInn میں" },
   "settings.preferences.subtitle.set": { en: "PIN & server configured", ar: "تم ضبط الرمز والخادم", ur: "PIN اور سرور ترتیب دیا گیا" },
   "settings.preferences.subtitle.unset": { en: "Set up your preferences", ar: "اضبط تفضيلاتك", ur: "اپنی ترجیحات ترتیب دیں" },
 

@@ -5,6 +5,7 @@ import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useNurseStore } from "./NurseDataStore";
 import { attachCursor } from "../lib/remote/remoteInput";
+import { nativeRemote, nativeRemoteStatus } from "../lib/remote/nativeRemote";
 import {
   getRemoteState, startRemote, stopRemote, subscribeRemote,
   type RemoteEndReason, type RemoteState,
@@ -35,9 +36,15 @@ export function RemoteControl() {
 
   useEffect(() => subscribeRemote(setS), []);
 
+  // On the kiosk app with its accessibility service off, offer to turn it on
+  // first so the phone can reach other apps and websites too.
+  const [askAccess, setAskAccess] = useState(false);
+
   useEffect(() => {
     const start = () => {
-      if (theme.remoteControl) void startRemote({ locale, color: theme.primary });
+      if (!theme.remoteControl) return;
+      if (nativeRemoteStatus() === "off") setAskAccess(true);
+      else void startRemote({ locale, color: theme.primary });
     };
     window.addEventListener("careinn-remote-start", start);
     return () => window.removeEventListener("careinn-remote-start", start);
@@ -99,6 +106,54 @@ export function RemoteControl() {
 
   return createPortal(
     <>
+      {askAccess && (
+        <div
+          className="fixed inset-0 flex items-center justify-center"
+          style={{ zIndex: Z_TOP, backgroundColor: "rgba(0,0,0,0.55)", fontFamily, direction: dir }}
+        >
+          <div
+            className="flex flex-col items-center text-center"
+            style={{
+              width: "520px", maxWidth: "calc(100vw - 48px)", padding: "32px",
+              backgroundColor: "#FFFFFF", borderRadius: theme.radiusLg, color: "#1A2B3C",
+              gap: "18px", boxShadow: "0 12px 40px rgba(0,0,0,0.25)",
+            }}
+          >
+            <div
+              className="flex items-center justify-center"
+              style={{ width: "56px", height: "56px", borderRadius: "16px", backgroundColor: theme.primary }}
+            >
+              <Smartphone size={30} color="#FFFFFF" />
+            </div>
+            <div style={{ fontSize: "24px", fontWeight: 700 }}>{t("remote.access.title")}</div>
+            <div style={{ fontSize: "17px", lineHeight: 1.6 }}>{t("remote.access.body")}</div>
+            <div className="flex" style={{ gap: "12px" }}>
+              <button
+                onClick={() => { setAskAccess(false); void startRemote({ locale, color: theme.primary }); }}
+                className="cursor-pointer active:scale-[0.97] transition-transform"
+                style={{
+                  height: "52px", padding: "0 28px", borderRadius: theme.radiusFull,
+                  border: `1.5px solid ${theme.primary}`, color: theme.primary, backgroundColor: "transparent",
+                  fontSize: "17px", fontWeight: 600, fontFamily,
+                }}
+              >
+                {t("remote.access.skip")}
+              </button>
+              <button
+                onClick={() => { setAskAccess(false); nativeRemote()?.openSettings(); }}
+                className="cursor-pointer active:scale-[0.97] transition-transform"
+                style={{
+                  height: "52px", padding: "0 28px", borderRadius: theme.radiusFull, border: "none",
+                  backgroundColor: theme.primary, color: "#FFFFFF", fontSize: "17px", fontWeight: 600, fontFamily,
+                }}
+              >
+                {t("remote.access.open")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {pairing && (
         <div
           className="fixed inset-0 flex items-center justify-center"
