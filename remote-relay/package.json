@@ -1,0 +1,12 @@
+{
+  "name": "careinn-remote-relay",
+  "private": true,
+  "description": "WebSocket relay pairing a bedside terminal with a patient's phone (Cloudflare Worker).",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}

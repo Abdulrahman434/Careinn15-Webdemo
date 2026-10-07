@@ -106,6 +106,7 @@ export function AdminGate({ open, onClose }: { open: boolean; onClose: () => voi
 
   return (
     <div
+      data-no-remote
       className="fixed inset-0 flex items-center justify-center"
       style={{ zIndex: 9999, backgroundColor: "rgba(0,0,0,0.55)" }}
       onClick={onClose}

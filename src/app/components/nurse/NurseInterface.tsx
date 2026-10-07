@@ -75,6 +75,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
 
   return (
     <div
+      data-no-remote
       className="ni-root absolute inset-0 z-[900] flex flex-col"
       style={{
         backgroundColor: t.background,

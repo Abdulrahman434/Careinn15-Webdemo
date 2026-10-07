@@ -72,6 +72,7 @@ export function AppLockSetupModal({
 
   return (
     <div
+      data-no-remote
       className="fixed inset-0 z-[10000] flex items-center justify-center select-none"
       style={{
         backgroundColor: "rgba(15, 23, 42, 0.55)",

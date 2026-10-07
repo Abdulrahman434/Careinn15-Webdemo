@@ -69,6 +69,7 @@ export function AccountLockScreen({ visible, onUnlock, onClose, onSkipAsGuest }:
 
   return (
     <div
+      data-no-remote
       className="fixed inset-0 z-[9999] flex items-center justify-center"
       style={{
         backgroundColor: t.overlay,
