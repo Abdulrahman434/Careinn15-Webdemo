@@ -11,6 +11,8 @@ export interface NativeRemote {
   /** Starts the session for this pairing secret; progress arrives as `careinn-remote-native` events. */
   startSession(secret: string, relayUrl: string): boolean;
   stopSession(reason: string): void;
+  /** "off" | "waiting" | "connected": a session still running from before this page loaded. */
+  currentPhase?(): string;
   /** The page field the phone was typing into lost focus. */
   fieldLeft(): void;
 }

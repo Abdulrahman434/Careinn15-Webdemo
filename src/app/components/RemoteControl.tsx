@@ -7,7 +7,7 @@ import { useNurseStore } from "./NurseDataStore";
 import { attachCursor } from "../lib/remote/remoteInput";
 import { nativeRemote, nativeRemoteStatus } from "../lib/remote/nativeRemote";
 import {
-  getRemoteState, startRemote, stopRemote, subscribeRemote,
+  getRemoteState, rejoinNativeSession, startRemote, stopRemote, subscribeRemote,
   type RemoteEndReason, type RemoteState,
 } from "../lib/remote/remoteSession";
 
@@ -34,7 +34,11 @@ export function RemoteControl() {
   const mrn = useNurseStore().patient?.mrn ?? "";
   const [s, setS] = useState<RemoteState>(getRemoteState);
 
-  useEffect(() => subscribeRemote(setS), []);
+  useEffect(() => {
+    const off = subscribeRemote(setS);
+    rejoinNativeSession();
+    return off;
+  }, []);
 
   // On the kiosk app with its accessibility service off, offer to turn it on
   // first so the phone can reach other apps and websites too.

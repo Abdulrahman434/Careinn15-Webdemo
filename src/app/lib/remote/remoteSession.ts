@@ -189,15 +189,33 @@ const pageHelpers = {
   activity: () => noteActivity(),
 };
 
+function attachNative() {
+  (window as unknown as { __careinnRemote?: typeof pageHelpers }).__careinnRemote = pageHelpers;
+  window.addEventListener("careinn-remote-native", onNativeEvent);
+  onFieldLeft(() => { try { nativeRemote()?.fieldLeft(); } catch { /* app gone */ } });
+}
+
+/**
+ * Picks up a session the app kept running while this page was away — a
+ * tile like YouTube opens its site in the same WebView, and coming back
+ * reloads this page.
+ */
+export function rejoinNativeSession(): void {
+  if (state.phase !== "off") return;
+  let phase = "off";
+  try { phase = nativeRemote()?.currentPhase?.() ?? "off"; } catch { phase = "off"; }
+  if (phase !== "waiting" && phase !== "connected") return;
+  attachNative();
+  update({ phase, native: true, phoneSeen: true, endReason: undefined });
+}
+
 function startNative(secret: string, pairUrl: string): boolean {
   const n = nativeRemote();
   if (!n || typeof n.startSession !== "function") return false;
   let ok = false;
   try { ok = n.startSession(secret, RELAY_URL); } catch { ok = false; }
   if (!ok) return false;
-  (window as unknown as { __careinnRemote?: typeof pageHelpers }).__careinnRemote = pageHelpers;
-  window.addEventListener("careinn-remote-native", onNativeEvent);
-  onFieldLeft(() => { try { nativeRemote()?.fieldLeft(); } catch { /* app gone */ } });
+  attachNative();
   update({ native: true, pairUrl });
   return true;
 }
