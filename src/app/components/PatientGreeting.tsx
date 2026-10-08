@@ -110,11 +110,28 @@ export function PatientGreeting({
     >
       {rippleElements}
 
-      {/* Logout + Help / App Tour buttons */}
+      {/* Help / App Tour + Logout buttons */}
       <div
         className="absolute flex items-center z-10"
         style={{ [isRTL ? "left" : "right"]: SPACE[2], top: SPACE[2], gap: SPACE[1] }}
       >
+      <button
+        className="flex items-center justify-center rounded-full cursor-pointer active:scale-90 transition-transform"
+        style={{
+          width: theme.touchTargetMin,
+          height: theme.touchTargetMin,
+          backgroundColor: theme.primarySubtle,
+          border: "none",
+          outline: "none",
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenTour?.();
+        }}
+        aria-label="Application Tour"
+      >
+        <HelpCircle size={20} style={{ color: theme.primaryOn }} strokeWidth={2} />
+      </button>
       {!isGuest && (
         <button
           className="flex items-center justify-center rounded-full cursor-pointer active:scale-90 transition-transform"
@@ -135,23 +152,6 @@ export function PatientGreeting({
           <LogOut size={20} style={{ color: theme.errorOn }} strokeWidth={2} />
         </button>
       )}
-      <button
-        className="flex items-center justify-center rounded-full cursor-pointer active:scale-90 transition-transform"
-        style={{
-          width: theme.touchTargetMin,
-          height: theme.touchTargetMin,
-          backgroundColor: theme.primarySubtle,
-          border: "none",
-          outline: "none",
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          onOpenTour?.();
-        }}
-        aria-label="Application Tour"
-      >
-        <HelpCircle size={20} style={{ color: theme.primaryOn }} strokeWidth={2} />
-      </button>
       </div>
 
       {/* Text content */}
