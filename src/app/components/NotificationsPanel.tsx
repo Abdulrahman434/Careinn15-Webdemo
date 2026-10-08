@@ -18,6 +18,8 @@ import {
   AlertTriangle,
   Info,
   Clock,
+  MailCheck,
+  History,
 } from "lucide-react";
 import { orderRef, useOrders } from "./OrderStore";
 import type { OrderStatus } from "./OrderStore";
@@ -335,6 +337,13 @@ export function NotificationsPanel({
   const { theme } = useTheme();
   const { t, locale, isRTL, fontFamily } = useLocale();
   const { activeOrders } = useOrders();
+  /* Only meals due today. Orders that never reached "delivered" — the
+     kitchen's standing orders, or a demo order whose timers died with a
+     reload — otherwise pile up here day after day. */
+  const todayStr = new Date().toDateString();
+  const trackedOrders = activeOrders.filter((o) =>
+    new Date(o.deliveryDate ?? o.placedAt).toDateString() === todayStr
+  );
   const [showHistory, setShowHistory] = useState(false);
 
   const formatNotificationTime = useCallback((dateInput: Date | string | number | null | undefined): string => {
@@ -369,7 +378,8 @@ export function NotificationsPanel({
   const mapApiAlerts = useCallback((alerts: DeviceAlert[], historyMode: boolean): Notification[] => {
     const hidden = getHiddenAlertIds();
     const seen = getSeenAlertIds();
-    let filtered = alerts.filter(a => !hidden.has(a.id));
+    // Cleared or swiped away leaves the main list only; history keeps it.
+    let filtered = historyMode ? [...alerts] : alerts.filter(a => !hidden.has(a.id));
 
     // Filter out any alert that is already in acknowledgedBroadcasts history to avoid duplicates
     filtered = filtered.filter(a => {
@@ -400,7 +410,7 @@ export function NotificationsPanel({
   const mapHardcodedAlerts = useCallback((historyMode: boolean): Notification[] => {
     const hidden = getHardcodedHidden();
     const seen = getHardcodedSeen();
-    let filtered = initialNotifications.filter(n => !hidden.has(n.id));
+    let filtered = historyMode ? [...initialNotifications] : initialNotifications.filter(n => !hidden.has(n.id));
 
     /* A notice that has been acknowledged or put off is already above, under
        HOSPITAL NOTICES, carrying what was done with it. Leaving the original
@@ -428,6 +438,9 @@ export function NotificationsPanel({
   }, [formatNotificationTime, acknowledgedBroadcasts]);
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const shownBroadcasts = showHistory
+    ? acknowledgedBroadcasts
+    : acknowledgedBroadcasts.filter((b) => !b.clearedAt);
 
   // Sync when API alerts, locale or history mode change
   useEffect(() => {
@@ -578,89 +591,81 @@ export function NotificationsPanel({
           </button>
         </div>
 
-        {/* View Toggle (New vs All) */}
-        <div style={{ padding: "0 16px 12px 16px" }}>
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center gap-2 cursor-pointer transition-all active:scale-95"
-            style={{
-              padding: "4px 10px",
-              borderRadius: "8px",
-              backgroundColor: showHistory ? theme.primary : `${theme.primary}12`,
-              border: "none",
-              outline: "none",
-            }}
-          >
-            <div 
-              style={{ 
-                width: "6px", 
-                height: "6px", 
-                borderRadius: "50%", 
-                backgroundColor: showHistory ? theme.textInverse : theme.primary 
-              }} 
-            />
-            <span
-              style={{
-                fontFamily,
-                ...TEXT_STYLE.micro,
-                fontWeight: WEIGHT.bold,
-                color: showHistory ? theme.textInverse : theme.primaryOn,
-                letterSpacing: "0.5px",
-              }}
-            >
-              {showHistory 
-                ? (isRTL ? "عرض الإشعارات الجديدة" : "BACK TO NEW") 
-                : (isRTL ? "عرض كل الإشعارات" : "VIEW ALL HISTORY")
-              }
-            </span>
-          </button>
+        {/* Actions — three equal tiles, icon over label, sized for a finger */}
+        <div
+          className="shrink-0 grid grid-cols-3"
+          style={{ gap: "8px", padding: "0 16px 8px 16px" }}
+        >
+          {([
+            {
+              key: "read",
+              Icon: MailCheck,
+              label: t("notif.markAllRead"),
+              onClick: markAllRead,
+              enabled: unreadCount > 0,
+              tone: "brand" as const,
+            },
+            {
+              key: "history",
+              Icon: History,
+              label: showHistory
+                ? (isRTL ? "عرض الإشعارات الجديدة" : "Back to new")
+                : (isRTL ? "عرض السجل" : "View history"),
+              onClick: () => setShowHistory(!showHistory),
+              enabled: true,
+              tone: showHistory ? ("active" as const) : ("brand" as const),
+            },
+            {
+              key: "clear",
+              Icon: Trash2,
+              label: t("notif.clearAll"),
+              onClick: clearAll,
+              // History already holds everything; there is nothing to clear there.
+              enabled: !showHistory && (notifications.length > 0 || shownBroadcasts.length > 0),
+              tone: "neutral" as const,
+            },
+          ]).map(({ key, Icon, label, onClick, enabled, tone }) => {
+            const look = !enabled
+              ? { bg: theme.tileInactiveBg, border: "transparent", fg: theme.textDisabled }
+              : tone === "active"
+              ? { bg: theme.primary, border: theme.primary, fg: theme.textInverse }
+              : tone === "brand"
+              ? { bg: theme.primarySubtle, border: theme.primaryBorder, fg: theme.primaryOn }
+              : { bg: theme.tileInactiveBg, border: theme.borderSubtle, fg: theme.textMuted };
+            return (
+              <button
+                key={key}
+                onClick={onClick}
+                disabled={!enabled}
+                className="flex flex-col items-center justify-center cursor-pointer active:scale-[0.96] transition-transform disabled:cursor-default"
+                style={{
+                  gap: "4px",
+                  minHeight: "64px",
+                  padding: "8px 6px",
+                  borderRadius: theme.radiusSm,
+                  backgroundColor: look.bg,
+                  border: `1px solid ${look.border}`,
+                  outline: "none",
+                }}
+              >
+                <Icon size={20} strokeWidth={2} style={{ color: look.fg }} />
+                <span
+                  style={{
+                    fontFamily,
+                    ...TEXT_STYLE.label,
+                    fontSize: TYPE_SCALE.sm,
+                    fontWeight: WEIGHT.bold,
+                    color: look.fg,
+                    lineHeight: 1.2,
+                    textAlign: "center",
+                  }}
+                >
+                  {label}
+                </span>
+              </button>
+            );
+          })}
         </div>
-
-        {/* Action bar */}
-        {notifications.length > 0 && (
-          <div
-            className="shrink-0 flex items-center justify-between"
-            style={{ padding: "0 16px 8px 16px" }}
-          >
-            <button
-              onClick={markAllRead}
-              className="cursor-pointer active:scale-[0.96] transition-transform flex items-center justify-center"
-              style={{
-                fontFamily: theme.fontFamily,
-                ...TEXT_STYLE.label,
-                fontSize: "13.5px",
-                fontWeight: WEIGHT.bold,
-                color: unreadCount > 0 ? theme.primaryOn : theme.textDisabled,
-                border: "none",
-                background: unreadCount > 0 ? theme.primarySubtle : "none",
-                padding: "10px 16px",
-                borderRadius: "12px",
-                minHeight: "44px",
-              }}
-            >
-              {t("notif.markAllRead")}
-            </button>
-            <button
-              onClick={clearAll}
-              className="flex items-center gap-2 cursor-pointer active:scale-[0.96] transition-transform"
-              style={{
-                fontFamily: fontFamily,
-                ...TEXT_STYLE.label,
-                fontSize: "13.5px",
-                fontWeight: WEIGHT.bold,
-                color: theme.textMuted,
-                border: "none",
-                background: theme.tileInactiveBg,
-                padding: "10px 16px",
-                borderRadius: "12px",
-                minHeight: "44px",
-              }}
-            >
-              <Trash2 size={14} />
-              {t("notif.clearAll")}
-            </button>
-          </div>
-        )}
 
         {/* Swipe hint */}
         {notifications.length > 0 && (
@@ -683,104 +688,105 @@ export function NotificationsPanel({
           </div>
         )}
 
-        {/* Active Order Tracking */}
-        {activeOrders.length > 0 && (
-          <div className="shrink-0 flex flex-col gap-2" style={{ padding: "0 12px 8px 12px" }}>
-            <span
-              style={{
-                fontFamily: theme.fontFamily,
-                ...TEXT_STYLE.label,
-                fontSize: "12px",
-                fontWeight: WEIGHT.bold,
-                color: theme.textMuted,
-                letterSpacing: "0.5px",
-                textTransform: "uppercase" as const,
-                padding: "0 4px",
-              }}
-            >
-              {isRTL ? "تتبع الطلبات" : "ORDER TRACKING"}
-            </span>
-            {activeOrders.map((order) => {
-              const cfg = ORDER_STATUS_NOTIF[order.status];
-              const StatusIcon = cfg.icon;
-              const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
-              return (
-                <div
-                  key={order.id}
-                  className="flex items-center gap-3"
-                  style={{
-                    padding: "14px 16px",
-                    borderRadius: "14px",
-                    backgroundColor: `${cfg.color}10`,
-                    border: `1px solid ${cfg.color}25`,
-                  }}
-                >
-                  <div
-                    className="shrink-0 flex items-center justify-center"
-                    style={{
-                      width: "40px",
-                      height: "40px",
-                      borderRadius: "12px",
-                      backgroundColor: `${cfg.color}18`,
-                    }}
-                  >
-                    <StatusIcon size={20} style={{ color: cfg.color }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span
-                      style={{
-                        fontFamily: fontFamily,
-                        ...TEXT_STYLE.body,
-                        fontSize: "14.5px",
-                        fontWeight: WEIGHT.semibold,
-                        color: theme.textHeading,
-                        lineHeight: "20px",
-                        display: "block",
-                      }}
-                    >
-                      {loc(cfg.textKey)}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: fontFamily,
-                        ...TEXT_STYLE.caption,
-                        fontSize: "12px",
-                        color: theme.textMuted,
-                        display: "block",
-                        marginTop: "2px",
-                      }}
-                    >
-                      {orderRef(order.orderNumber)} · {order.items.map((it) => `${it.quantity}x ${loc(it.name)}`).join(", ")}
-                    </span>
-                  </div>
-                  <span
-                    className="shrink-0"
-                    style={{
-                      fontFamily: theme.fontFamily,
-                      ...TEXT_STYLE.caption,
-                      fontSize: "12px",
-                      fontWeight: WEIGHT.bold,
-                      color: cfg.color,
-                      padding: "4px 10px",
-                      borderRadius: "8px",
-                      backgroundColor: `${cfg.color}12`,
-                    }}
-                  >
-                    {order.estimatedDelivery}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
 
         {/* Notifications list */}
         <div
           className="flex-1 overflow-y-auto flex flex-col gap-1.5"
           style={{ padding: "4px 12px 24px 12px", scrollbarWidth: "none" }}
         >
+          {/* Active Order Tracking */}
+          {trackedOrders.length > 0 && (
+            <div className="shrink-0 flex flex-col gap-2" style={{ paddingBottom: "8px" }}>
+              <span
+                style={{
+                  fontFamily: theme.fontFamily,
+                  ...TEXT_STYLE.label,
+                  fontSize: "12px",
+                  fontWeight: WEIGHT.bold,
+                  color: theme.textMuted,
+                  letterSpacing: "0.5px",
+                  textTransform: "uppercase" as const,
+                  padding: "0 4px",
+                }}
+              >
+                {isRTL ? "تتبع الطلبات" : "ORDER TRACKING"}
+              </span>
+              {trackedOrders.map((order) => {
+                const cfg = ORDER_STATUS_NOTIF[order.status];
+                const StatusIcon = cfg.icon;
+                const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
+                return (
+                  <div
+                    key={order.id}
+                    className="flex items-center gap-3"
+                    style={{
+                      padding: "14px 16px",
+                      borderRadius: "14px",
+                      backgroundColor: `${cfg.color}10`,
+                      border: `1px solid ${cfg.color}25`,
+                    }}
+                  >
+                    <div
+                      className="shrink-0 flex items-center justify-center"
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        borderRadius: "12px",
+                        backgroundColor: `${cfg.color}18`,
+                      }}
+                    >
+                      <StatusIcon size={20} style={{ color: cfg.color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span
+                        style={{
+                          fontFamily: fontFamily,
+                          ...TEXT_STYLE.body,
+                          fontSize: "14.5px",
+                          fontWeight: WEIGHT.semibold,
+                          color: theme.textHeading,
+                          lineHeight: "20px",
+                          display: "block",
+                        }}
+                      >
+                        {loc(cfg.textKey)}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: fontFamily,
+                          ...TEXT_STYLE.caption,
+                          fontSize: "12px",
+                          color: theme.textMuted,
+                          display: "block",
+                          marginTop: "2px",
+                        }}
+                      >
+                        {orderRef(order.orderNumber)} · {order.items.map((it) => `${it.quantity}x ${loc(it.name)}`).join(", ")}
+                      </span>
+                    </div>
+                    <span
+                      className="shrink-0"
+                      style={{
+                        fontFamily: theme.fontFamily,
+                        ...TEXT_STYLE.caption,
+                        fontSize: "12px",
+                        fontWeight: WEIGHT.bold,
+                        color: cfg.color,
+                        padding: "4px 10px",
+                        borderRadius: "8px",
+                        backgroundColor: `${cfg.color}12`,
+                      }}
+                    >
+                      {order.estimatedDelivery}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {/* Hospital Broadcasts Section */}
-          {acknowledgedBroadcasts.length > 0 && (
+          {shownBroadcasts.length > 0 && (
             <div className="flex flex-col gap-2 shrink-0" style={{ marginBottom: "8px" }}>
               <span
                 style={{
@@ -796,7 +802,7 @@ export function NotificationsPanel({
               >
                 {isRTL ? "إشعارات المستشفى" : "HOSPITAL NOTICES"}
               </span>
-              {acknowledgedBroadcasts.map((bc) => {
+              {shownBroadcasts.map((bc) => {
                 const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
                 const isLater = bc.isLater && !bc.acknowledgedAt && !bc.isMissed;
                 /* This list is about what was DONE with a notice, not what it
@@ -949,7 +955,7 @@ export function NotificationsPanel({
             </div>
           )}
 
-          {notifications.length === 0 && activeOrders.length === 0 && acknowledgedBroadcasts.length === 0 ? (
+          {notifications.length === 0 && trackedOrders.length === 0 && shownBroadcasts.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4">
               <div
                 className="flex items-center justify-center"

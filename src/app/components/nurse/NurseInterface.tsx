@@ -3,8 +3,9 @@ import {
   X, ClipboardList, Stethoscope, User, Heart,
   ClipboardCheck, LogOut, Activity,
   Hash, DoorOpen, Clock, Plus, Bed, CreditCard, ExternalLink,
-  HeartHandshake,
+  HeartHandshake, ShieldCheck,
 } from "lucide-react";
+import { SignInHelper } from "../SignInHelper";
 import { useTheme } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { useNurseStore, nurseActions, type SectionKey } from "../NurseDataStore";
@@ -56,6 +57,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
   // Bumped by the header's "Add Vital Signs" so that tab opens its
   // form — switching tab alone did nothing when that tab was already active.
   const [addObsNonce, setAddObsNonce] = useState(0);
+  const [showSignIn, setShowSignIn] = useState(false);
 
   const patient = store.patient;
 
@@ -75,6 +77,7 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
 
   return (
     <div
+      data-no-remote
       className="ni-root absolute inset-0 z-[900] flex flex-col"
       style={{
         backgroundColor: t.background,
@@ -114,14 +117,25 @@ export function NurseInterface({ role, onClose }: NurseInterfaceProps) {
             </p>
           </div>
         </div>
-        <button
-          onClick={onClose}
-          className="w-10 h-10 flex items-center justify-center rounded-full transition-all cursor-pointer"
-          style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
-        >
-          <X size={20} color="rgba(255,255,255,0.9)" />
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setShowSignIn(true)}
+            className="h-10 px-4 flex items-center gap-2 rounded-full transition-all cursor-pointer"
+            style={{ backgroundColor: "rgba(255,255,255,0.15)", color: "#fff", fontSize: "14px", fontWeight: 600 }}
+          >
+            <ShieldCheck size={18} color="#fff" /> {tr("signin.title")}
+          </button>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 flex items-center justify-center rounded-full transition-all cursor-pointer"
+            style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+          >
+            <X size={20} color="rgba(255,255,255,0.9)" />
+          </button>
+        </div>
       </div>
+
+      {showSignIn && <SignInHelper onClose={() => setShowSignIn(false)} />}
 
       {/* ── Patient Summary Bar ── */}
       <div

@@ -43,6 +43,7 @@ export function PinDialog({
 
   return (
     <div
+      data-no-remote
       className="absolute inset-0 z-[100] flex items-center justify-center"
       style={{ animation: "pinDialogFade 0.15s ease-out" }}
     >

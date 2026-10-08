@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0F172A">
+<title>CareInn Remote</title>
+<style>
+  :root { --accent: #2563EB; --bg: #0F172A; --pad: #1E293B; --text: #F8FAFC; --muted: #94A3B8; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Arabic", sans-serif;
+    overscroll-behavior: none; -webkit-user-select: none; user-select: none; }
+  body { display: flex; flex-direction: column; padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom); }
+  header { display: flex; align-items: center; gap: 10px; padding: 14px 0; }
+  #dot { width: 10px; height: 10px; border-radius: 50%; background: #F59E0B; flex: none; }
+  #dot.on { background: #22C55E; }
+  #status { flex: 1; min-width: 0; font-size: 15px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button { font: inherit; border: 0; border-radius: 999px; cursor: pointer; }
+  .nav { display: none; background: #334155; color: var(--text); padding: 8px 12px; font-size: 14px; }
+  body.nav-on .nav { display: inline-block; }
+  #end { background: transparent; color: var(--text); border: 1px solid #475569; padding: 8px 16px; font-size: 14px; }
+  #pad { flex: 1; min-height: 240px; border-radius: 22px; background: var(--pad); touch-action: none;
+    display: flex; align-items: center; justify-content: center; text-align: center; position: relative; }
+  #pad.flash { background: #334155; }
+  #hint { color: var(--muted); font-size: 15px; line-height: 1.7; padding: 24px; pointer-events: none; }
+  .side { position: absolute; top: 50%; transform: translateY(-50%); width: 56px; height: 96px;
+    background: rgba(255,255,255,.08); color: var(--text); font-size: 22px; border-radius: 16px; touch-action: manipulation; }
+  .side:active { background: rgba(255,255,255,.2); }
+  #btnLeft { left: 8px; }
+  #btnRight { right: 8px; }
+  #toast { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); background: rgba(0,0,0,.75);
+    padding: 8px 14px; border-radius: 999px; font-size: 13px; opacity: 0; transition: opacity .2s; white-space: nowrap; }
+  #toast.show { opacity: 1; }
+  #keys { display: none; gap: 8px; padding: 12px 0; }
+  #keys.show { display: flex; }
+  #field { flex: 1; min-width: 0; font: inherit; font-size: 17px; padding: 12px 16px; border-radius: 14px;
+    border: 1px solid #475569; background: #0B1220; color: var(--text); -webkit-user-select: text; user-select: text; }
+  #enter { background: var(--accent); color: #fff; padding: 0 18px; font-weight: 600; }
+  .bar { display: flex; gap: 8px; padding: 12px 0 16px; }
+  .bar button { flex: 1; height: 54px; background: #334155; color: var(--text); font-size: 16px; font-weight: 600; }
+  .bar button.primary { background: var(--accent); }
+  /* TV remote: replaces the touchpad while a TV channel plays. */
+  #tv { display: none; flex: 1; flex-direction: column; gap: 10px; min-height: 240px; }
+  body.tv-on #tv { display: flex; }
+  body.tv-on #pad, body.tv-on .bar, body.tv-on #media { display: none; }
+  #tvName { font-size: 22px; font-weight: 700; text-align: center; padding-top: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #tvNum { color: var(--muted); font-size: 14px; text-align: center; margin-top: -6px; }
+  .tvgrid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tvgrid button, .tvrow button { background: #334155; color: var(--text); font-size: 20px; font-weight: 700; border-radius: 22px; }
+  .tvgrid button:active, .tvrow button:active, #media button:active { background: #475569; }
+  .tvrow { display: flex; gap: 10px; padding-bottom: 16px; }
+  .tvrow button { flex: 1; height: 54px; font-size: 15px; }
+  #tvVol { color: var(--muted); font-size: 13px; text-align: center; }
+  #tvChip { display: none; margin: 0 auto 8px; background: var(--accent); color: #fff; padding: 8px 16px; font-size: 14px; font-weight: 600; }
+  body.tv-avail:not(.tv-on) #tvChip { display: block; }
+  /* Video controls: a strip above the bar while something plays. */
+  #media { display: none; gap: 8px; padding-top: 12px; }
+  body.media-on #media { display: flex; }
+  #media button { flex: 1; height: 50px; background: #334155; color: var(--text); font-size: 17px; font-weight: 600; }
+  #mToggle { background: var(--accent) !important; color: #fff !important; }
+  #voiceHint { display: none; color: var(--muted); font-size: 13px; padding-bottom: 4px; }
+  #keys.show + #voiceHint { display: block; }
+  #chList { display: none; position: fixed; inset: 0; background: var(--bg); flex-direction: column; padding: 16px; z-index: 5; }
+  #chList.show { display: flex; }
+  #chItems { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 12px 0; }
+  #chItems button { text-align: start; background: #1E293B; color: var(--text); padding: 14px 16px; border-radius: 14px; font-size: 16px; }
+  #chItems button.cur { background: var(--accent); color: #fff; }
+  #chClose { background: #334155; color: var(--text); height: 50px; font-size: 16px; font-weight: 600; }
+  /* Share: photo, video or link to the screen (Android terminals only). */
+  #shareBtn { display: none; width: 100%; height: 46px; margin-bottom: 14px; background: transparent; color: var(--text);
+    border: 1px solid #475569; font-size: 15px; font-weight: 600; }
+  body.share-on:not(.tv-on) #shareBtn { display: block; }
+  #share { display: none; position: fixed; inset: 0; background: var(--bg); flex-direction: column; gap: 14px;
+    padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px); z-index: 5; overflow-y: auto; }
+  #share.show { display: flex; }
+  #share h2 { margin: 0; font-size: 20px; }
+  .card { background: var(--pad); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .card .t { font-weight: 700; }
+  .card .d { color: var(--muted); font-size: 13px; line-height: 1.5; }
+  .card button { height: 50px; background: var(--accent); color: #fff; font-size: 16px; font-weight: 600; }
+  .card button.ghost { background: #334155; color: var(--text); }
+  #linkIn { font: inherit; font-size: 16px; padding: 12px 14px; border-radius: 14px; border: 1px solid #475569;
+    background: #0B1220; color: var(--text); -webkit-user-select: text; user-select: text; direction: ltr; }
+  #prog { height: 8px; border-radius: 4px; background: #334155; overflow: hidden; display: none; }
+  #prog.show { display: block; }
+  #progBar { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  #shareMsg { font-size: 14px; color: var(--muted); min-height: 1em; }
+  #shareClose { height: 50px; background: #334155; color: var(--text); font-size: 16px; font-weight: 600; }
+  #over { display: none; position: fixed; inset: 0; background: var(--bg); flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; padding: 32px; gap: 12px; }
+  #over.show { display: flex; }
+  #over h1 { font-size: 22px; margin: 0; }
+  #over p { color: var(--muted); margin: 0; font-size: 16px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<header>
+  <span id="dot"></span>
+  <span id="status"></span>
+  <button id="navBack" class="nav"></button>
+  <button id="navHome" class="nav" aria-label="CareInn">⌂</button>
+  <button id="end"></button>
+</header>
+<button id="tvChip"></button>
+<div id="tv">
+  <div id="tvName"></div>
+  <div id="tvNum"></div>
+  <div class="tvgrid">
+    <button id="chUp">CH ▲</button><button id="volUp">VOL ＋</button>
+    <button id="chDown">CH ▼</button><button id="volDown">VOL −</button>
+  </div>
+  <div id="tvVol"></div>
+  <div class="tvrow"><button id="tvList"></button><button id="tvMute"></button><button id="tvPad"></button></div>
+</div>
+<div id="chList"><div id="chTitle" style="font-size:20px;font-weight:700"></div><div id="chItems"></div><button id="chClose"></button></div>
+<div id="pad"><div id="hint"></div><button id="btnLeft" class="side" aria-label="Scroll left">◀</button><button id="btnRight" class="side" aria-label="Scroll right">▶</button><div id="toast"></div></div>
+<div id="media"><button id="mBack">⏪ 10</button><button id="mToggle">⏯</button><button id="mFwd">10 ⏩</button></div>
+<div id="keys"><input id="field" autocomplete="off" autocapitalize="off" spellcheck="false"><button id="enter"></button></div>
+<div id="voiceHint"></div>
+<button id="shareBtn"></button>
+<div class="bar"><button id="btnScrollUp">▲</button><button id="btnTap" class="primary"></button><button id="btnScrollDown">▼</button></div>
+<div id="share">
+  <h2 id="shTitle"></h2>
+  <div class="card">
+    <div class="t" id="shMediaT"></div>
+    <div class="d" id="shMediaD"></div>
+    <input id="pick" type="file" accept="image/*,video/*" hidden>
+    <button id="pickBtn"></button>
+    <div id="prog"><div id="progBar"></div></div>
+    <div id="shareMsg"></div>
+    <button id="removeBtn" class="ghost"></button>
+  </div>
+  <div class="card">
+    <div class="t" id="shLinkT"></div>
+    <input id="linkIn" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://">
+    <button id="pasteBtn" class="ghost"></button>
+    <button id="openBtn"></button>
+  </div>
+  <button id="shareClose"></button>
+</div>
+<div id="over"><h1 id="overTitle"></h1><p id="overText"></p></div>
+<script>
+(() => {
+  "use strict";
+  // ── Strings ──
+  const T = {
+    en: { connecting: "Connecting…", connected: "Connected to your screen", reconnecting: "Reconnecting…",
+      end: "Disconnect", share: "＋ Share to the screen", shTitle: "Share to the screen", shMediaT: "Photo or video", shMediaD: "Shown full screen on the bedside screen. Nothing is saved there; it is removed when closed.", pick: "Choose photo or video", remove: "Remove from screen", shLinkT: "Open a link", paste: "Paste", open: "Open on screen", sending: "Sending… ", shown: "Shown on the screen.", failed: "Couldn't send. Please try again.", needWifi: "Connect your phone to the hospital Wi-Fi to share photos and videos.", tooBig: "That file is too large (photos up to 25 MB, videos up to 200 MB).", badLink: "Please enter a web link (https://…).", tvRemote: "📺 TV remote", channels: "Channels", touchpad: "Touchpad", mute: "Mute", unmute: "Unmute", close: "Close", volume: "Volume", voice: "🎤 Tip: tap the microphone on your keyboard to speak instead of typing.", back: "Back", tap: "Tap", enter: "Enter",
+      hint: "Slide one finger to move the pointer.<br>Tap to select. Hold to long-press.<br>Slide two fingers to scroll; ◀ ▶ scroll sideways.",
+      blocked: "Please use the screen itself for this",
+      endedTitle: "Disconnected", endedText: "You can close this page. To connect again, open Settings on the screen.",
+      expiredTitle: "Session ended", expiredText: "To connect again, open Settings on the screen and scan the new code.",
+      noRoomTitle: "Code not active", noRoomText: "This code has expired or was cancelled. Open Settings on the screen to get a new one.",
+      busyTitle: "Already connected", busyText: "Another phone is already controlling this screen.",
+      badTitle: "Invalid code", badText: "Please scan the code shown on the screen again." },
+    ar: { connecting: "جارٍ الاتصال…", connected: "متصل بالشاشة", reconnecting: "جارٍ إعادة الاتصال…",
+      end: "قطع الاتصال", share: "＋ مشاركة على الشاشة", shTitle: "مشاركة على الشاشة", shMediaT: "صورة أو فيديو", shMediaD: "تُعرض بملء شاشة السرير. لا يُحفظ شيء هناك، وتُحذف عند الإغلاق.", pick: "اختر صورة أو فيديو", remove: "إزالة من الشاشة", shLinkT: "فتح رابط", paste: "لصق", open: "افتح على الشاشة", sending: "جارٍ الإرسال… ", shown: "تم العرض على الشاشة.", failed: "تعذّر الإرسال. حاول مجدداً.", needWifi: "اتصل بشبكة Wi-Fi المستشفى لمشاركة الصور والفيديو.", tooBig: "الملف كبير جداً (الصور حتى 25 ميجابايت، والفيديو حتى 200 ميجابايت).", badLink: "يرجى إدخال رابط ويب (https://…).", tvRemote: "📺 ريموت التلفاز", channels: "القنوات", touchpad: "لوحة اللمس", mute: "كتم", unmute: "إلغاء الكتم", close: "إغلاق", volume: "الصوت", voice: "🎤 نصيحة: اضغط على الميكروفون في لوحة المفاتيح لتتحدث بدلاً من الكتابة.", back: "رجوع", tap: "اضغط", enter: "إدخال",
+      hint: "حرّك إصبعاً واحداً لتحريك المؤشر.<br>اضغط للاختيار، واضغط مطولاً للخيارات.<br>حرّك إصبعين للتمرير، و◀ ▶ للتمرير جانبياً.",
+      blocked: "يرجى استخدام الشاشة نفسها لهذا الإجراء",
+      endedTitle: "تم قطع الاتصال", endedText: "يمكنك إغلاق هذه الصفحة. للاتصال مجدداً افتح الإعدادات على الشاشة.",
+      expiredTitle: "انتهت الجلسة", expiredText: "للاتصال مجدداً افتح الإعدادات على الشاشة وامسح الرمز الجديد.",
+      noRoomTitle: "الرمز غير فعّال", noRoomText: "انتهت صلاحية هذا الرمز أو أُلغي. افتح الإعدادات على الشاشة للحصول على رمز جديد.",
+      busyTitle: "متصل بالفعل", busyText: "هناك جوال آخر يتحكم بهذه الشاشة.",
+      badTitle: "رمز غير صالح", badText: "يرجى مسح الرمز الظاهر على الشاشة مجدداً." },
+    ur: { connecting: "منسلک ہو رہا ہے…", connected: "آپ کی اسکرین سے منسلک", reconnecting: "دوبارہ منسلک ہو رہا ہے…",
+      end: "منقطع کریں", share: "＋ اسکرین پر شیئر کریں", shTitle: "اسکرین پر شیئر کریں", shMediaT: "تصویر یا ویڈیو", shMediaD: "بیڈ سائیڈ اسکرین پر پوری اسکرین میں دکھائی جائے گی۔ وہاں کچھ محفوظ نہیں ہوتا، بند کرنے پر ہٹ جاتی ہے۔", pick: "تصویر یا ویڈیو منتخب کریں", remove: "اسکرین سے ہٹائیں", shLinkT: "لنک کھولیں", paste: "پیسٹ", open: "اسکرین پر کھولیں", sending: "بھیجا جا رہا ہے… ", shown: "اسکرین پر دکھایا گیا۔", failed: "بھیجا نہیں جا سکا۔ دوبارہ کوشش کریں۔", needWifi: "تصاویر اور ویڈیو شیئر کرنے کے لیے فون کو ہسپتال کے Wi-Fi سے جوڑیں۔", tooBig: "فائل بہت بڑی ہے (تصاویر 25 MB تک، ویڈیو 200 MB تک)۔", badLink: "براہ کرم ویب لنک درج کریں (https://…)۔", tvRemote: "📺 ٹی وی ریموٹ", channels: "چینلز", touchpad: "ٹچ پیڈ", mute: "خاموش", unmute: "آواز کھولیں", close: "بند کریں", volume: "آواز", voice: "🎤 مشورہ: لکھنے کے بجائے بولنے کے لیے کی بورڈ پر مائیکروفون دبائیں۔", back: "واپس", tap: "ٹیپ", enter: "انٹر",
+      hint: "پوائنٹر ہلانے کے لیے ایک انگلی پھیریں۔<br>منتخب کرنے کے لیے ٹیپ کریں، دیر تک دبانے کے لیے روکے رکھیں۔<br>اسکرول کے لیے دو انگلیاں پھیریں، ◀ ▶ سے دائیں بائیں۔",
+      blocked: "براہ کرم اس کے لیے اسکرین ہی استعمال کریں",
+      endedTitle: "منقطع ہو گیا", endedText: "آپ یہ صفحہ بند کر سکتے ہیں۔ دوبارہ منسلک ہونے کے لیے اسکرین پر سیٹنگز کھولیں۔",
+      expiredTitle: "سیشن ختم", expiredText: "دوبارہ منسلک ہونے کے لیے اسکرین پر سیٹنگز کھولیں اور نیا کوڈ اسکین کریں۔",
+      noRoomTitle: "کوڈ فعال نہیں", noRoomText: "اس کوڈ کی میعاد ختم ہو گئی یا منسوخ ہو گیا۔ نیا کوڈ لینے کے لیے اسکرین پر سیٹنگز کھولیں۔",
+      busyTitle: "پہلے سے منسلک", busyText: "ایک اور فون پہلے ہی اس اسکرین کو کنٹرول کر رہا ہے۔",
+      badTitle: "غلط کوڈ", badText: "براہ کرم اسکرین پر دکھایا گیا کوڈ دوبارہ اسکین کریں۔" },
+  };
+
+  const params = new URLSearchParams(location.hash.slice(1));
+  const secret = params.get("s") || "";
+  const lang = T[params.get("l")] ? params.get("l") : "en";
+  const tr = T[lang];
+  const color = params.get("c") || "";
+  const relay = params.get("relay") || "wss://careinn-remote.abalfaqih.workers.dev";
+  // Keep the secret out of history and anything the page might share.
+  history.replaceState(null, "", location.pathname);
+
+  const $ = (id) => document.getElementById(id);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === "en" ? "ltr" : "rtl";
+  if (/^[0-9a-fA-F]{6}$/.test(color)) document.documentElement.style.setProperty("--accent", "#" + color);
+  $("end").textContent = tr.end;
+  $("shareBtn").textContent = tr.share;
+  $("shTitle").textContent = tr.shTitle;
+  $("shMediaT").textContent = tr.shMediaT;
+  $("shMediaD").textContent = tr.shMediaD;
+  $("pickBtn").textContent = tr.pick;
+  $("removeBtn").textContent = tr.remove;
+  $("shLinkT").textContent = tr.shLinkT;
+  $("pasteBtn").textContent = tr.paste;
+  $("openBtn").textContent = tr.open;
+  $("shareClose").textContent = tr.close;
+  $("tvChip").textContent = tr.tvRemote;
+  $("tvList").textContent = tr.channels;
+  $("tvPad").textContent = tr.touchpad;
+  $("chTitle").textContent = tr.channels;
+  $("chClose").textContent = tr.close;
+  $("voiceHint").textContent = tr.voice;
+  $("navBack").textContent = "◀ " + tr.back;
+  $("btnTap").textContent = tr.tap;
+  $("enter").textContent = tr.enter;
+  $("hint").innerHTML = tr.hint;
+
+  function over(kind) {
+    $("overTitle").textContent = tr[kind + "Title"];
+    $("overText").textContent = tr[kind + "Text"];
+    $("over").classList.add("show");
+  }
+  let toastTimer;
+  function toast(text) {
+    $("toast").textContent = text;
+    $("toast").classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => $("toast").classList.remove("show"), 2200);
+  }
+  function setStatus(on, text) {
+    $("dot").classList.toggle("on", on);
+    $("status").textContent = text;
+  }
+
+  if (!/^[A-Za-z0-9_-]{40,}$/.test(secret) || !window.crypto || !crypto.subtle) { over("bad"); return; }
+
+  // ── Crypto (must match src/app/lib/remote/remoteCrypto.ts) ──
+  const enc = new TextEncoder(), dec = new TextDecoder();
+  const b64 = (bytes) => { let s = ""; for (const b of bytes) s += String.fromCharCode(b);
+    return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); };
+  const unb64 = (s) => { const b = atob(s.replace(/-/g, "+").replace(/_/g, "/"));
+    const o = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) o[i] = b.charCodeAt(i); return o; };
+  const sha = async (t) => new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(t)));
+
+  let key, room, ws, done = false, retries = 0, outbound = Promise.resolve();
+
+  // ── Direct link: a WebRTC data channel to the terminal, offered through
+  // the relay. Only the Android app answers; until (or unless) it opens,
+  // everything goes through the relay. DTLS secures the channel, and it can
+  // only be set up through the sealed relay messages.
+  let pc = null, ch = null;
+  const direct = () => ch && ch.readyState === "open";
+  function closeRtc() {
+    try { ch && ch.close(); } catch {}
+    try { pc && pc.close(); } catch {}
+    pc = ch = null;
+  }
+  async function startRtc() {
+    if (!window.RTCPeerConnection) return;
+    closeRtc();
+    const peer = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+    pc = peer;
+    const channel = peer.createDataChannel("remote", { ordered: true });
+    ch = channel;
+    channel.onmessage = (e) => { try { onTerminal(JSON.parse(e.data)); } catch {} };
+    peer.onicecandidate = (e) => { if (e.candidate && pc === peer) sendRelay({ t: "rtc", c: e.candidate.toJSON() }); };
+    try {
+      const offer = await peer.createOffer();
+      await peer.setLocalDescription(offer);
+      if (pc === peer) sendRelay({ t: "rtc", type: "offer", sdp: offer.sdp });
+    } catch { closeRtc(); }
+  }
+  async function onRtc(m) {
+    if (!pc) return;
+    try {
+      if (m.type === "answer" && m.sdp) await pc.setRemoteDescription({ type: "answer", sdp: m.sdp });
+      else if (m.c && m.c.candidate) await pc.addIceCandidate(m.c);
+    } catch {}
+  }
+
+  function send(msg) {
+    if (direct()) { try { ch.send(JSON.stringify(msg)); return; } catch {} }
+    sendRelay(msg);
+  }
+
+  function sendRelay(msg) {
+    outbound = outbound.then(async () => {
+      if (!ws || ws.readyState !== 1) return;
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(JSON.stringify(msg)));
+      if (ws && ws.readyState === 1) ws.send(b64(iv) + "." + b64(new Uint8Array(ct)));
+    }).catch(() => {});
+  }
+  async function open(raw) {
+    try {
+      const [iv, ct] = raw.split(".");
+      return JSON.parse(dec.decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(iv) }, key, unb64(ct))));
+    } catch { return null; }
+  }
+
+  // ── What's on the screen (from the Android app): TV remote, video strip ──
+  let ctx = { mode: "none" }, padWanted = false, chNames = [];
+  function renderCtx() {
+    const tv = ctx.mode === "tv";
+    if (!tv) padWanted = false;
+    document.body.classList.toggle("tv-avail", tv);
+    document.body.classList.toggle("tv-on", tv && !padWanted);
+    document.body.classList.toggle("media-on", ctx.mode === "video" || ctx.mode === "media");
+    if (tv) {
+      $("tvName").textContent = ctx.ch || "";
+      $("tvNum").textContent = ctx.n ? (ctx.i + 1) + " / " + ctx.n : "";
+      $("tvVol").textContent = tr.volume + " " + (ctx.mute ? "—" : (ctx.vol ?? "") + "%");
+      $("tvMute").textContent = ctx.mute ? tr.unmute : tr.mute;
+      markCurrent();
+    }
+    $("mToggle").textContent = ctx.mode === "video" ? (ctx.p ? "⏸" : "▶") : "⏯";
+  }
+  function markCurrent() {
+    [...$("chItems").children].forEach((b, i) => b.classList.toggle("cur", i === ctx.i));
+  }
+  function onChannels(m) {
+    if (!Array.isArray(m.names)) return;
+    if (m.from === 0) chNames = [];
+    m.names.forEach((name, k) => { chNames[m.from + k] = String(name); });
+    const items = $("chItems");
+    items.textContent = "";
+    chNames.forEach((name, i) => {
+      const b = document.createElement("button");
+      b.textContent = (i + 1) + "  " + name;
+      b.addEventListener("click", () => { send({ t: "tv", a: "pick", i }); $("chList").classList.remove("show"); });
+      items.appendChild(b);
+    });
+    markCurrent();
+  }
+
+  function onTerminal(m) {
+    if (m.t === "ctx") { ctx = m; renderCtx(); return; }
+    if (m.t === "channels") { onChannels(m); return; }
+    if (m.t === "rtc") onRtc(m);
+    else if (m.t === "caps") {
+      document.body.classList.toggle("nav-on", !!m.nav);
+      document.body.classList.toggle("share-on", !!m.share);
+    }
+    else if (m.t === "fileOk") shareDone(m.id, true);
+    else if (m.t === "fileErr") shareDone(m.id, false);
+    else if (m.t === "linkErr") shareNote(tr.badLink);
+    else if (m.t === "blocked") toast(tr.blocked);
+    else if (m.t === "focus") showKeys(m);
+    else if (m.t === "blur") hideKeys();
+  }
+
+  function finish(kind) {
+    if (done) return;
+    done = true;
+    releaseWake();
+    closeRtc();
+    try { ws && ws.close(1000); } catch {}
+    over(kind);
+  }
+
+  function connect() {
+    if (done) return;
+    setStatus(false, retries ? tr.reconnecting : tr.connecting);
+    const sock = new WebSocket(`${relay}/ws?room=${room}&role=phone`);
+    ws = sock;
+    sock.onmessage = async (e) => {
+      const raw = String(e.data);
+      if (raw.startsWith("{")) {
+        let m; try { m = JSON.parse(raw); } catch { return; }
+        if (m.t === "peer") {
+          setStatus(!!m.on, m.on ? tr.connected : tr.reconnecting);
+          if (m.on) startRtc(); else closeRtc();
+        }
+        else if (m.t === "end") finish(m.reason === "expired" ? "expired" : "ended");
+        return;
+      }
+      const m = await open(raw);
+      if (m) onTerminal(m);
+    };
+    sock.onopen = () => { retries = 0; setStatus(true, tr.connected); };
+    sock.onclose = (e) => {
+      if (ws !== sock || done) return;
+      if (e.code === 4004) return finish(retries ? "expired" : "noRoom");
+      if (e.code === 4009) return finish("busy");
+      if (e.code === 4000) return finish("ended");
+      if (e.code === 4001) return finish("expired");
+      retries++;
+      setStatus(false, tr.reconnecting);
+      setTimeout(connect, Math.min(8000, 500 * 2 ** Math.min(retries, 4)));
+    };
+  }
+
+  // Phones drop the socket when locked; come straight back when visible.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible" || done) return;
+    requestWake();
+    if (!ws || ws.readyState > 1) { retries = Math.max(retries, 1); connect(); }
+  });
+
+  // ── Screen wake lock ──
+  let wake = null;
+  async function requestWake() {
+    try { if (navigator.wakeLock && !wake) { wake = await navigator.wakeLock.request("screen"); wake.onrelease = () => { wake = null; }; } } catch {}
+  }
+  function releaseWake() { try { wake && wake.release(); } catch {} wake = null; }
+
+  // ── Gestures ──
+  const pad = $("pad");
+  const SENS = 2.6;          // phone px → 1920-wide screen px
+  const TAP_MS = 250, TAP_SLOP = 10, HOLD_MS = 600;
+  const touches = new Map();
+  let start = null, moved = false, maxFingers = 0, holdTimer = null, held = false;
+  let accX = 0, accY = 0, accScrollX = 0, accScroll = 0, flushQueued = false;
+
+  function flush() {
+    flushQueued = false;
+    if (accX || accY) { send({ t: "m", x: Math.round(accX), y: Math.round(accY) }); accX = accY = 0; }
+    if (accScroll || accScrollX) { send({ t: "scroll", x: Math.round(accScrollX), y: Math.round(accScroll) }); accScroll = accScrollX = 0; }
+  }
+  function queueFlush() { if (!flushQueued) { flushQueued = true; requestAnimationFrame(flush); } }
+  function flash() { pad.classList.add("flash"); setTimeout(() => pad.classList.remove("flash"), 120); if (navigator.vibrate) navigator.vibrate(15); }
+
+  pad.addEventListener("pointerdown", (e) => {
+    if (e.target.closest && e.target.closest(".side")) return;
+    try { pad.setPointerCapture(e.pointerId); } catch {}
+    touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    maxFingers = Math.max(maxFingers, touches.size);
+    if (touches.size === 1) {
+      start = { x: e.clientX, y: e.clientY, t: Date.now() };
+      moved = false; held = false; maxFingers = 1;
+      clearTimeout(holdTimer);
+      holdTimer = setTimeout(() => { if (!moved && touches.size === 1) { held = true; flush(); send({ t: "long" }); flash(); } }, HOLD_MS);
+    } else {
+      clearTimeout(holdTimer);
+    }
+    requestWake();
+  });
+  pad.addEventListener("pointermove", (e) => {
+    const p = touches.get(e.pointerId);
+    if (!p) return;
+    const dx = e.clientX - p.x, dy = e.clientY - p.y;
+    p.x = e.clientX; p.y = e.clientY;
+    if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > TAP_SLOP) { moved = true; clearTimeout(holdTimer); }
+    if (touches.size >= 2) {
+      // Two fingers scroll: content follows the fingers, like on the phone.
+      accScroll += (-dy * SENS) / touches.size;
+      accScrollX += (-dx * SENS) / touches.size;
+    } else if (maxFingers === 1 && !held) {
+      accX += dx * SENS; accY += dy * SENS;
+    }
+    queueFlush();
+  });
+  function up(e) {
+    if (!touches.delete(e.pointerId)) return;
+    if (touches.size) return;
+    clearTimeout(holdTimer);
+    if (!moved && !held && maxFingers === 1 && start && Date.now() - start.t < TAP_MS + HOLD_MS) { flush(); send({ t: "tap" }); flash(); }
+    start = null;
+  }
+  pad.addEventListener("pointerup", up);
+  pad.addEventListener("pointercancel", (e) => { moved = true; up(e); });
+
+  $("btnTap").addEventListener("click", () => { flush(); send({ t: "tap" }); flash(); });
+  $("btnScrollUp").addEventListener("click", () => send({ t: "scroll", y: -500 }));
+  // Physical left/right on the screen, whatever the phone's language.
+  $("btnLeft").addEventListener("click", () => send({ t: "scroll", x: -500, y: 0 }));
+  $("btnRight").addEventListener("click", () => send({ t: "scroll", x: 500, y: 0 }));
+  $("btnScrollDown").addEventListener("click", () => send({ t: "scroll", y: 500 }));
+  $("chUp").addEventListener("click", () => send({ t: "tv", a: "next" }));
+  $("chDown").addEventListener("click", () => send({ t: "tv", a: "prev" }));
+  $("volUp").addEventListener("click", () => send({ t: "vol", a: "up" }));
+  $("volDown").addEventListener("click", () => send({ t: "vol", a: "down" }));
+  $("tvMute").addEventListener("click", () => send({ t: "vol", a: "mute" }));
+  $("tvList").addEventListener("click", () => { $("chList").classList.add("show"); send({ t: "tv", a: "list" }); });
+  $("chClose").addEventListener("click", () => $("chList").classList.remove("show"));
+  $("tvPad").addEventListener("click", () => { padWanted = true; renderCtx(); });
+  $("tvChip").addEventListener("click", () => { padWanted = false; renderCtx(); });
+  $("mBack").addEventListener("click", () => send({ t: "media", a: "back10" }));
+  $("mToggle").addEventListener("click", () => send({ t: "media", a: "toggle" }));
+  $("mFwd").addEventListener("click", () => send({ t: "media", a: "fwd10" }));
+
+  // ── Share: files go only over the direct link (the relay is for small messages) ──
+  const MAX_PHOTO = 25 * 1024 * 1024, MAX_VIDEO = 200 * 1024 * 1024, CHUNK = 16 * 1024;
+  let sendingId = null;
+  function shareNote(text) { $("shareMsg").textContent = text || ""; }
+  function progress(frac) {
+    $("prog").classList.toggle("show", frac != null);
+    $("progBar").style.width = Math.round((frac || 0) * 100) + "%";
+  }
+  function shareDone(id, ok) {
+    if (id !== sendingId) return;
+    sendingId = null;
+    progress(null);
+    shareNote(ok ? tr.shown : tr.failed);
+  }
+  /** Photos are re-encoded to a 2560 px JPEG first: quick to send, and HEIC from iPhones becomes viewable. */
+  async function preparePhoto(file) {
+    try {
+      const bmp = await createImageBitmap(file);
+      const k = Math.min(1, 2560 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+      c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+      const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.88));
+      return blob || file;
+    } catch { return file; }
+  }
+  async function sendFile(file) {
+    if (!direct()) { shareNote(tr.needWifi); return; }
+    const isVideo = file.type.startsWith("video/");
+    const blob = isVideo ? file : await preparePhoto(file);
+    if (blob.size > (isVideo ? MAX_VIDEO : MAX_PHOTO)) { shareNote(tr.tooBig); return; }
+    const id = Math.random().toString(36).slice(2);
+    sendingId = id;
+    const mime = isVideo ? (file.type || "video/mp4") : (blob.type || "image/jpeg");
+    ch.send(JSON.stringify({ t: "file", id, mime, size: blob.size }));
+    ch.bufferedAmountLowThreshold = 1024 * 1024;
+    progress(0);
+    shareNote(tr.sending + "0%");
+    for (let off = 0; off < blob.size; off += CHUNK) {
+      if (sendingId !== id || !direct()) { if (sendingId === id) shareDone(id, false); return; }
+      if (ch.bufferedAmount > 4 * 1024 * 1024) {
+        await new Promise((r) => { ch.onbufferedamountlow = () => { ch.onbufferedamountlow = null; r(); }; });
+      }
+      ch.send(await blob.slice(off, off + CHUNK).arrayBuffer());
+      const frac = Math.min(1, (off + CHUNK) / blob.size);
+      progress(frac);
+      shareNote(tr.sending + Math.round(frac * 100) + "%");
+    }
+    ch.send(JSON.stringify({ t: "fileEnd", id }));
+  }
+  $("shareBtn").addEventListener("click", () => { shareNote(""); $("share").classList.add("show"); });
+  $("shareClose").addEventListener("click", () => $("share").classList.remove("show"));
+  $("pickBtn").addEventListener("click", () => $("pick").click());
+  $("pick").addEventListener("change", () => {
+    const file = $("pick").files && $("pick").files[0];
+    $("pick").value = "";
+    if (file) sendFile(file).catch(() => shareDone(sendingId, false));
+  });
+  $("removeBtn").addEventListener("click", () => { sendingId = null; progress(null); shareNote(""); send({ t: "share", a: "close" }); });
+  $("pasteBtn").addEventListener("click", async () => {
+    try { $("linkIn").value = (await navigator.clipboard.readText()).trim(); } catch {}
+  });
+  $("openBtn").addEventListener("click", () => {
+    let url = $("linkIn").value.trim();
+    if (url && !/^https?:\/\//i.test(url) && /^[\w-]+(\.[\w-]+)+/.test(url)) url = "https://" + url;
+    if (!/^https?:\/\/[^\s]+$/i.test(url)) { shareNote(tr.badLink); return; }
+    send({ t: "link", url });
+    $("share").classList.remove("show");
+  });
+
+  // Only screens that can leave CareInn (the Android app) offer these.
+  $("navBack").addEventListener("click", () => send({ t: "back" }));
+  $("navHome").addEventListener("click", () => send({ t: "home" }));
+  $("end").addEventListener("click", () => { send({ t: "bye" }); outbound.then(() => setTimeout(() => finish("ended"), 150)); });
+
+  // ── Typing into the field the pointer tapped ──
+  const field = $("field");
+  function showKeys(m) {
+    field.type = ["email", "tel", "number", "url", "password", "search"].includes(m.type) ? m.type : "text";
+    field.value = String(m.v || "");
+    if (m.max > 0) field.maxLength = m.max; else field.removeAttribute("maxlength");
+    $("keys").classList.add("show");
+    field.focus();
+  }
+  function hideKeys() { $("keys").classList.remove("show"); field.blur(); }
+  field.addEventListener("input", () => send({ t: "text", v: field.value }));
+  field.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); send({ t: "enter" }); hideKeys(); } });
+  $("enter").addEventListener("click", () => { send({ t: "enter" }); hideKeys(); });
+
+  (async () => {
+    const h = await sha("careinn-remote-room:" + secret);
+    room = Array.from(h, (b) => b.toString(16).padStart(2, "0")).join("");
+    key = await crypto.subtle.importKey("raw", await sha("careinn-remote-key:" + secret), "AES-GCM", false, ["encrypt", "decrypt"]);
+    requestWake();
+    connect();
+  })();
+})();
+</script>
+</body>
+</html>

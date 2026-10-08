@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW } from "./ThemeContext";
 import { useLocale } from "./i18n";
-import { ApiImage } from "./ApiImage";
 import { CheckCircle2, AlertTriangle, Info, Megaphone, ShieldCheck, ExternalLink, ClipboardList, FileText, Image as ImageIcon, Play, Clock } from "lucide-react";
-import imgMosque from "../../assets/b51acb5e2ec4a2c930572c53103b020b12e76ee2.webp";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * HospitalBroadcast — Full-screen urgent notification overlay
@@ -43,6 +41,8 @@ export interface BroadcastNotification {
   ctaUrl?: string;
   ctaSurveyId?: string;
   isLater?: boolean;
+  /** Set by Clear All: off the main list, still shown in history. */
+  clearedAt?: number;
 }
 
 const PRIORITY_CONFIG: Record<BroadcastPriority, {
@@ -83,20 +83,14 @@ const PRIORITY_CONFIG: Record<BroadcastPriority, {
   },
 };
 
-function PriorityIcon({ priority, type, size = 28, color }: { priority: BroadcastPriority; type?: string; size?: number; color?: string }) {
+/* One header icon for every notice — the megaphone. Only an urgent alert
+   keeps its warning triangle. "warning" is the priority most ordinary
+   notices are raised with, so it no longer picks the icon. */
+function PriorityIcon({ priority, size = 28, color }: { priority: BroadcastPriority; type?: string; size?: number; color?: string }) {
   const c = color || PRIORITY_CONFIG[priority].iconColor;
-  if (type === "prayer") {
-    return (
-      <div style={{ width: size + 4, height: size + 4, borderRadius: "50%", overflow: "hidden" }}>
-        <ApiImage src={imgMosque} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-      </div>
-    );
-  }
-  switch (priority) {
-    case "urgent":  return <AlertTriangle size={size} style={{ color: c }} />;
-    case "warning": return <AlertTriangle size={size} style={{ color: c }} />;
-    default:        return <Megaphone size={size} style={{ color: c }} />;
-  }
+  return priority === "urgent"
+    ? <AlertTriangle size={size} style={{ color: c }} />
+    : <Megaphone size={size} style={{ color: c }} />;
 }
 
 /* Keyframe injection for pulse ring animation */
@@ -129,7 +123,10 @@ export function HospitalBroadcast({
   const [acknowledging, setAcknowledging] = useState(false);
 
   const loc = (v: { en: string; ar: string }) => (locale === "ar" ? v.ar : v.en);
-  const cfg = PRIORITY_CONFIG[notification.priority];
+  /* Amber means "put off for later" in the notifications list, and most
+     ordinary notices are raised as "warning" — so only urgent gets its own
+     colours here; everything else wears the standard notice look. */
+  const cfg = PRIORITY_CONFIG[notification.priority === "urgent" ? "urgent" : "info"];
 
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));

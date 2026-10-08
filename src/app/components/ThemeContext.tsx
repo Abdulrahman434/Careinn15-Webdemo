@@ -291,6 +291,8 @@ export interface ThemeConfig {
   screensaverVideoUrl?: string;
   /** "ambient" gives this brand the dark clock screensaver instead of the tasbih */
   screensaverStyle?: "ambient";
+  /** Patients may pair their own phone as a touchpad for this screen */
+  remoteControl?: boolean;
   /** The brand's light-on-dark logo whatever the mode, for surfaces that are
    *  always dark. Empty when the brand has none. */
   logoUrlOnDark: string;
@@ -522,6 +524,7 @@ function buildTheme(core: {
     // Dark mode prefers a light-on-dark mark when the brand supplies one.
     screensaverVideoUrl: c.screensaverVideoUrl,
     screensaverStyle: c.screensaverStyle,
+    remoteControl: c.remoteControl,
     logoUrlOnDark: c.logoUrlDark || "",
     patientGuidePdf: c.patientGuidePdf,
     logoUrl: (dark && c.logoUrlDark) || c.logoUrl || (c.id === "dsfh" ? DSFH_LOGO : c.id === "burjeel" ? burjeelLogo : c.id === "slh" ? slhLogo : c.id === "dallah" ? dallahLogo : c.id === "caremed" ? caremedLogo : c.id === "imc" ? imcLogo : c.id === "careinn" ? careinnLogo : c.id === "prime" ? primeLogo : c.id === "kauh" ? kauhLogo : c.id === "andalusia" ? andalusiaLogo : c.id === "qumc" ? qumcLogo : c.id === "ksumc" ? ksumcLogo : ""),
@@ -1073,7 +1076,7 @@ import logoImage from "../../assets/logos/fakeeh-logo-light.webp";
 import logoImageDark from "../../assets/logos/fakeeh-logo-dark.webp";
 import hospitalImg from "../../assets/fakeeh-jeddah-hero.webp";
 
-import burjeelLogo from "../../assets/c8626cd3ed1ce90e9b3bab4a5f97a7315203f204.webp";
+import burjeelLogo from "../../assets/logos/burjeel-logo.png";
 import burjeelHero from "../../assets/6c870dc0bd960be4275cdbc07d5394bb50ec781e.webp";
 import slhLogo from "../../assets/000bda4db783fe15cbd489d69579eb6e0e831a8a.webp";
 import slhHero from "../../assets/e956f98cfa0d9f06f0dd2befe535fed91ed51d1e.webp";
@@ -1125,6 +1128,7 @@ export const DSFH_CORE: HospitalCoreConfig = {
   logoUrl: logoImage,
   logoUrlDark: logoImageDark,
   screensaverStyle: "ambient",
+  remoteControl: true,
   patientGuidePdf: "/guides/fakeeh-patient-guide.pdf",
   hospitalWebsiteUrl: "https://en.dsfhriyadh.fakeeh.care/",
   heroImageUrl: hospitalImg,
@@ -1147,12 +1151,10 @@ export const BURJEEL_CORE: HospitalCoreConfig = {
   logoUrl: burjeelLogo,
   hospitalWebsiteUrl: "https://burjeel.com/abu-dhabi/",
   heroImageUrl: burjeelHero,
-  primary: "#8C124B",
-  primaryDark: "#6D0E3B",
-  primaryLight: "#F0E0E8",
-  accent: "#C8A951",
-  accentDark: "#9C843F",
-  accentLight: "#F8F4E8",
+  // Brand book: Pantone 235 C and "Burjeel One" Pantone 7562 C. The tonal
+  // variants are left to buildTheme so they follow these two.
+  primary: "#871C55",
+  accent: "#C5A571",
   location: "Abu Dhabi",
 };
 
@@ -1388,6 +1390,9 @@ export interface HospitalCoreConfig {
    *  prayer, drifting slowly — no video, next to nothing to download. Any
    *  brand can take it by setting this; its dark logo is used when it has one. */
   screensaverStyle?: "ambient";
+  /** Optional: let patients pair their own phone as a touchpad (QR from
+   *  Settings). Off unless a brand turns it on. */
+  remoteControl?: boolean;
   /** Optional patient-guide PDF (public path) */
   patientGuidePdf?: string;
   heroImageUrl: string;

@@ -23,6 +23,7 @@ import { UpdateBanner } from "./components/UpdateBanner";
 import { MediaViewerModal } from "./components/MediaViewerModal";
 import { AboutUs } from "./components/AboutUs";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { RemoteControl } from "./components/RemoteControl";
 import { NotificationsPanel } from "./components/NotificationsPanel";
 import { AppTour } from "./components/AppTour";
 import { CallScreen } from "./components/CallScreen";
@@ -612,7 +613,7 @@ function BedsideScreen() {
       return !(createdBeforeToday && !modifiedToday);
     }).length;
 
-    const laterCount = acknowledgedBroadcasts.filter(b => b.isLater && !b.acknowledgedAt && !b.isMissed).length;
+    const laterCount = acknowledgedBroadcasts.filter(b => b.isLater && !b.acknowledgedAt && !b.isMissed && !b.clearedAt).length;
 
     return getHardcodedUnreadCount() + activeApiCount + laterCount;
   }, [apiNotifications, notifTrigger, getHardcodedUnreadCount, acknowledgedBroadcasts]);
@@ -1146,6 +1147,8 @@ function BedsideScreen() {
           ...prev,
           isLater: actionType === "later",
           acknowledgedAt: actionType === "later" ? undefined : nowStr,
+          // Answered again from history — it belongs on the main list again.
+          clearedAt: undefined,
         };
         // Schedule outside state updater
         setTimeout(() => {
@@ -2162,7 +2165,11 @@ function BedsideScreen() {
             acknowledgedBroadcasts={acknowledgedBroadcasts}
             onNotificationClick={handleNotificationClick}
             apiAlerts={apiNotifications}
-            onClearAll={() => setAcknowledgedBroadcasts([])}
+            onClearAll={() => {
+              // Cleared, not deleted — history still lists them.
+              const at = Date.now();
+              setAcknowledgedBroadcasts(list => list.map(b => b.clearedAt ? b : { ...b, clearedAt: at }));
+            }}
             onMarkAllRead={handleMarkAllRead}
             onNotifChange={() => setNotifTrigger(prev => prev + 1)}
           />
@@ -2286,6 +2293,8 @@ function BedsideScreen() {
             ? <VideoScreenSaver src={theme.screensaverVideoUrl} onClose={closeSaver} />
             : <TasbihScreenSaver onClose={closeSaver} />;
         })()}
+
+        <RemoteControl />
 
         {/* Hospital Broadcast Overlay */}
         {activeBroadcast && (
