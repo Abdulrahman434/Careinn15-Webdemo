@@ -335,6 +335,13 @@ export function NotificationsPanel({
   const { theme } = useTheme();
   const { t, locale, isRTL, fontFamily } = useLocale();
   const { activeOrders } = useOrders();
+  /* Only meals due today. Orders that never reached "delivered" — the
+     kitchen's standing orders, or a demo order whose timers died with a
+     reload — otherwise pile up here day after day. */
+  const todayStr = new Date().toDateString();
+  const trackedOrders = activeOrders.filter((o) =>
+    new Date(o.deliveryDate ?? o.placedAt).toDateString() === todayStr
+  );
   const [showHistory, setShowHistory] = useState(false);
 
   const formatNotificationTime = useCallback((dateInput: Date | string | number | null | undefined): string => {
@@ -683,102 +690,103 @@ export function NotificationsPanel({
           </div>
         )}
 
-        {/* Active Order Tracking */}
-        {activeOrders.length > 0 && (
-          <div className="shrink-0 flex flex-col gap-2" style={{ padding: "0 12px 8px 12px" }}>
-            <span
-              style={{
-                fontFamily: theme.fontFamily,
-                ...TEXT_STYLE.label,
-                fontSize: "12px",
-                fontWeight: WEIGHT.bold,
-                color: theme.textMuted,
-                letterSpacing: "0.5px",
-                textTransform: "uppercase" as const,
-                padding: "0 4px",
-              }}
-            >
-              {isRTL ? "تتبع الطلبات" : "ORDER TRACKING"}
-            </span>
-            {activeOrders.map((order) => {
-              const cfg = ORDER_STATUS_NOTIF[order.status];
-              const StatusIcon = cfg.icon;
-              const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
-              return (
-                <div
-                  key={order.id}
-                  className="flex items-center gap-3"
-                  style={{
-                    padding: "14px 16px",
-                    borderRadius: "14px",
-                    backgroundColor: `${cfg.color}10`,
-                    border: `1px solid ${cfg.color}25`,
-                  }}
-                >
-                  <div
-                    className="shrink-0 flex items-center justify-center"
-                    style={{
-                      width: "40px",
-                      height: "40px",
-                      borderRadius: "12px",
-                      backgroundColor: `${cfg.color}18`,
-                    }}
-                  >
-                    <StatusIcon size={20} style={{ color: cfg.color }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span
-                      style={{
-                        fontFamily: fontFamily,
-                        ...TEXT_STYLE.body,
-                        fontSize: "14.5px",
-                        fontWeight: WEIGHT.semibold,
-                        color: theme.textHeading,
-                        lineHeight: "20px",
-                        display: "block",
-                      }}
-                    >
-                      {loc(cfg.textKey)}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: fontFamily,
-                        ...TEXT_STYLE.caption,
-                        fontSize: "12px",
-                        color: theme.textMuted,
-                        display: "block",
-                        marginTop: "2px",
-                      }}
-                    >
-                      {orderRef(order.orderNumber)} · {order.items.map((it) => `${it.quantity}x ${loc(it.name)}`).join(", ")}
-                    </span>
-                  </div>
-                  <span
-                    className="shrink-0"
-                    style={{
-                      fontFamily: theme.fontFamily,
-                      ...TEXT_STYLE.caption,
-                      fontSize: "12px",
-                      fontWeight: WEIGHT.bold,
-                      color: cfg.color,
-                      padding: "4px 10px",
-                      borderRadius: "8px",
-                      backgroundColor: `${cfg.color}12`,
-                    }}
-                  >
-                    {order.estimatedDelivery}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
 
         {/* Notifications list */}
         <div
           className="flex-1 overflow-y-auto flex flex-col gap-1.5"
           style={{ padding: "4px 12px 24px 12px", scrollbarWidth: "none" }}
         >
+          {/* Active Order Tracking */}
+          {trackedOrders.length > 0 && (
+            <div className="shrink-0 flex flex-col gap-2" style={{ paddingBottom: "8px" }}>
+              <span
+                style={{
+                  fontFamily: theme.fontFamily,
+                  ...TEXT_STYLE.label,
+                  fontSize: "12px",
+                  fontWeight: WEIGHT.bold,
+                  color: theme.textMuted,
+                  letterSpacing: "0.5px",
+                  textTransform: "uppercase" as const,
+                  padding: "0 4px",
+                }}
+              >
+                {isRTL ? "تتبع الطلبات" : "ORDER TRACKING"}
+              </span>
+              {trackedOrders.map((order) => {
+                const cfg = ORDER_STATUS_NOTIF[order.status];
+                const StatusIcon = cfg.icon;
+                const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
+                return (
+                  <div
+                    key={order.id}
+                    className="flex items-center gap-3"
+                    style={{
+                      padding: "14px 16px",
+                      borderRadius: "14px",
+                      backgroundColor: `${cfg.color}10`,
+                      border: `1px solid ${cfg.color}25`,
+                    }}
+                  >
+                    <div
+                      className="shrink-0 flex items-center justify-center"
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        borderRadius: "12px",
+                        backgroundColor: `${cfg.color}18`,
+                      }}
+                    >
+                      <StatusIcon size={20} style={{ color: cfg.color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span
+                        style={{
+                          fontFamily: fontFamily,
+                          ...TEXT_STYLE.body,
+                          fontSize: "14.5px",
+                          fontWeight: WEIGHT.semibold,
+                          color: theme.textHeading,
+                          lineHeight: "20px",
+                          display: "block",
+                        }}
+                      >
+                        {loc(cfg.textKey)}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: fontFamily,
+                          ...TEXT_STYLE.caption,
+                          fontSize: "12px",
+                          color: theme.textMuted,
+                          display: "block",
+                          marginTop: "2px",
+                        }}
+                      >
+                        {orderRef(order.orderNumber)} · {order.items.map((it) => `${it.quantity}x ${loc(it.name)}`).join(", ")}
+                      </span>
+                    </div>
+                    <span
+                      className="shrink-0"
+                      style={{
+                        fontFamily: theme.fontFamily,
+                        ...TEXT_STYLE.caption,
+                        fontSize: "12px",
+                        fontWeight: WEIGHT.bold,
+                        color: cfg.color,
+                        padding: "4px 10px",
+                        borderRadius: "8px",
+                        backgroundColor: `${cfg.color}12`,
+                      }}
+                    >
+                      {order.estimatedDelivery}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {/* Hospital Broadcasts Section */}
           {acknowledgedBroadcasts.length > 0 && (
             <div className="flex flex-col gap-2 shrink-0" style={{ marginBottom: "8px" }}>
