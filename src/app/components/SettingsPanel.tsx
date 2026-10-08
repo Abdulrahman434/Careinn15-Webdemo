@@ -1905,11 +1905,11 @@ export function SettingsPanel({
                 className="flex items-center justify-center shrink-0"
                 style={{ width: "44px", height: "44px", borderRadius: "13px", backgroundColor: "rgba(255,255,255,0.18)" }}
               >
-                <Smartphone size={22} color={t.primaryOn} />
+                <Smartphone size={22} color={t.brandOnPrimary} />
               </div>
               <div className="flex-1 text-start">
-                <div style={{ fontSize: "17px", fontWeight: 700, color: t.primaryOn }}>{tr("remote.settings.title")}</div>
-                <div style={{ fontSize: "13px", color: t.primaryOn, opacity: 0.85 }}>{tr("remote.settings.subtitle")}</div>
+                <div style={{ fontSize: "17px", fontWeight: 700, color: t.brandOnPrimary }}>{tr("remote.settings.title")}</div>
+                <div style={{ fontSize: "13px", color: t.brandOnPrimary, opacity: 0.85 }}>{tr("remote.settings.subtitle")}</div>
               </div>
             </button>
           )}
