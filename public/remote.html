@@ -70,6 +70,8 @@
   #chItems button.cur { background: var(--accent); color: #fff; }
   #chClose { background: #334155; color: var(--text); height: 50px; font-size: 16px; font-weight: 600; }
   /* Share: photo, video or link to the screen (Android terminals only). */
+  #castBtn { display: none; width: 100%; height: 50px; margin-bottom: 10px; background: var(--accent); color: #fff; font-size: 16px; font-weight: 700; }
+  body.cast-on:not(.tv-on) #castBtn { display: block; }
   #shareBtn { display: none; width: 100%; height: 46px; margin-bottom: 14px; background: transparent; color: var(--text);
     border: 1px solid #475569; font-size: 15px; font-weight: 600; }
   body.share-on:not(.tv-on) #shareBtn { display: block; }
@@ -120,6 +122,7 @@
 <div id="media"><button id="mBack">⏪ 10</button><button id="mToggle">⏯</button><button id="mFwd">10 ⏩</button></div>
 <div id="keys"><input id="field" autocomplete="off" autocapitalize="off" spellcheck="false"><button id="enter"></button></div>
 <div id="voiceHint"></div>
+<button id="castBtn"></button>
 <button id="shareBtn"></button>
 <div class="bar"><button id="btnScrollUp">▲</button><button id="btnTap" class="primary"></button><button id="btnScrollDown">▼</button></div>
 <div id="share">
@@ -148,7 +151,7 @@
   // ── Strings ──
   const T = {
     en: { connecting: "Connecting…", connected: "Connected to your screen", reconnecting: "Reconnecting…",
-      end: "Disconnect", share: "＋ Share to the screen", shTitle: "Share to the screen", shMediaT: "Photo or video", shMediaD: "Shown full screen on the bedside screen. Nothing is saved there; it is removed when closed.", pick: "Choose photo or video", remove: "Remove from screen", shLinkT: "Open a link", paste: "Paste", open: "Open on screen", sending: "Sending… ", shown: "Shown on the screen.", failed: "Couldn't send. Please try again.", needWifi: "Connect your phone to the hospital Wi-Fi to share photos and videos.", tooBig: "That file is too large (photos up to 25 MB, videos up to 200 MB).", badLink: "Please enter a web link (https://…).", tvRemote: "📺 TV remote", channels: "Channels", touchpad: "Touchpad", mute: "Mute", unmute: "Unmute", close: "Close", volume: "Volume", voice: "🎤 Tip: tap the microphone on your keyboard to speak instead of typing.", back: "Back", tap: "Tap", enter: "Enter",
+      end: "Disconnect", castBtn: "📱 Show my phone on the screen", share: "＋ Share to the screen", shTitle: "Share to the screen", shMediaT: "Photo or video", shMediaD: "Shown full screen on the bedside screen. Nothing is saved there; it is removed when closed.", pick: "Choose photo or video", remove: "Remove from screen", shLinkT: "Open a link", paste: "Paste", open: "Open on screen", sending: "Sending… ", shown: "Shown on the screen.", failed: "Couldn't send. Please try again.", needWifi: "Connect your phone to the hospital Wi-Fi to share photos and videos.", tooBig: "That file is too large (photos up to 25 MB, videos up to 200 MB).", badLink: "Please enter a web link (https://…).", tvRemote: "📺 TV remote", channels: "Channels", touchpad: "Touchpad", mute: "Mute", unmute: "Unmute", close: "Close", volume: "Volume", voice: "🎤 Tip: tap the microphone on your keyboard to speak instead of typing.", back: "Back", tap: "Tap", enter: "Enter",
       hint: "Slide one finger to move the pointer.<br>Tap to select. Hold to long-press.<br>Slide two fingers to scroll; ◀ ▶ scroll sideways.",
       blocked: "Please use the screen itself for this",
       endedTitle: "Disconnected", endedText: "You can close this page. To connect again, open Settings on the screen.",
@@ -157,7 +160,7 @@
       busyTitle: "Already connected", busyText: "Another phone is already controlling this screen.",
       badTitle: "Invalid code", badText: "Please scan the code shown on the screen again." },
     ar: { connecting: "جارٍ الاتصال…", connected: "متصل بالشاشة", reconnecting: "جارٍ إعادة الاتصال…",
-      end: "قطع الاتصال", share: "＋ مشاركة على الشاشة", shTitle: "مشاركة على الشاشة", shMediaT: "صورة أو فيديو", shMediaD: "تُعرض بملء شاشة السرير. لا يُحفظ شيء هناك، وتُحذف عند الإغلاق.", pick: "اختر صورة أو فيديو", remove: "إزالة من الشاشة", shLinkT: "فتح رابط", paste: "لصق", open: "افتح على الشاشة", sending: "جارٍ الإرسال… ", shown: "تم العرض على الشاشة.", failed: "تعذّر الإرسال. حاول مجدداً.", needWifi: "اتصل بشبكة Wi-Fi المستشفى لمشاركة الصور والفيديو.", tooBig: "الملف كبير جداً (الصور حتى 25 ميجابايت، والفيديو حتى 200 ميجابايت).", badLink: "يرجى إدخال رابط ويب (https://…).", tvRemote: "📺 ريموت التلفاز", channels: "القنوات", touchpad: "لوحة اللمس", mute: "كتم", unmute: "إلغاء الكتم", close: "إغلاق", volume: "الصوت", voice: "🎤 نصيحة: اضغط على الميكروفون في لوحة المفاتيح لتتحدث بدلاً من الكتابة.", back: "رجوع", tap: "اضغط", enter: "إدخال",
+      end: "قطع الاتصال", castBtn: "📱 اعرض شاشة جوالي على الشاشة", share: "＋ مشاركة على الشاشة", shTitle: "مشاركة على الشاشة", shMediaT: "صورة أو فيديو", shMediaD: "تُعرض بملء شاشة السرير. لا يُحفظ شيء هناك، وتُحذف عند الإغلاق.", pick: "اختر صورة أو فيديو", remove: "إزالة من الشاشة", shLinkT: "فتح رابط", paste: "لصق", open: "افتح على الشاشة", sending: "جارٍ الإرسال… ", shown: "تم العرض على الشاشة.", failed: "تعذّر الإرسال. حاول مجدداً.", needWifi: "اتصل بشبكة Wi-Fi المستشفى لمشاركة الصور والفيديو.", tooBig: "الملف كبير جداً (الصور حتى 25 ميجابايت، والفيديو حتى 200 ميجابايت).", badLink: "يرجى إدخال رابط ويب (https://…).", tvRemote: "📺 ريموت التلفاز", channels: "القنوات", touchpad: "لوحة اللمس", mute: "كتم", unmute: "إلغاء الكتم", close: "إغلاق", volume: "الصوت", voice: "🎤 نصيحة: اضغط على الميكروفون في لوحة المفاتيح لتتحدث بدلاً من الكتابة.", back: "رجوع", tap: "اضغط", enter: "إدخال",
       hint: "حرّك إصبعاً واحداً لتحريك المؤشر.<br>اضغط للاختيار، واضغط مطولاً للخيارات.<br>حرّك إصبعين للتمرير، و◀ ▶ للتمرير جانبياً.",
       blocked: "يرجى استخدام الشاشة نفسها لهذا الإجراء",
       endedTitle: "تم قطع الاتصال", endedText: "يمكنك إغلاق هذه الصفحة. للاتصال مجدداً افتح الإعدادات على الشاشة.",
@@ -166,7 +169,7 @@
       busyTitle: "متصل بالفعل", busyText: "هناك جوال آخر يتحكم بهذه الشاشة.",
       badTitle: "رمز غير صالح", badText: "يرجى مسح الرمز الظاهر على الشاشة مجدداً." },
     ur: { connecting: "منسلک ہو رہا ہے…", connected: "آپ کی اسکرین سے منسلک", reconnecting: "دوبارہ منسلک ہو رہا ہے…",
-      end: "منقطع کریں", share: "＋ اسکرین پر شیئر کریں", shTitle: "اسکرین پر شیئر کریں", shMediaT: "تصویر یا ویڈیو", shMediaD: "بیڈ سائیڈ اسکرین پر پوری اسکرین میں دکھائی جائے گی۔ وہاں کچھ محفوظ نہیں ہوتا، بند کرنے پر ہٹ جاتی ہے۔", pick: "تصویر یا ویڈیو منتخب کریں", remove: "اسکرین سے ہٹائیں", shLinkT: "لنک کھولیں", paste: "پیسٹ", open: "اسکرین پر کھولیں", sending: "بھیجا جا رہا ہے… ", shown: "اسکرین پر دکھایا گیا۔", failed: "بھیجا نہیں جا سکا۔ دوبارہ کوشش کریں۔", needWifi: "تصاویر اور ویڈیو شیئر کرنے کے لیے فون کو ہسپتال کے Wi-Fi سے جوڑیں۔", tooBig: "فائل بہت بڑی ہے (تصاویر 25 MB تک، ویڈیو 200 MB تک)۔", badLink: "براہ کرم ویب لنک درج کریں (https://…)۔", tvRemote: "📺 ٹی وی ریموٹ", channels: "چینلز", touchpad: "ٹچ پیڈ", mute: "خاموش", unmute: "آواز کھولیں", close: "بند کریں", volume: "آواز", voice: "🎤 مشورہ: لکھنے کے بجائے بولنے کے لیے کی بورڈ پر مائیکروفون دبائیں۔", back: "واپس", tap: "ٹیپ", enter: "انٹر",
+      end: "منقطع کریں", castBtn: "📱 میرا فون اسکرین پر دکھائیں", share: "＋ اسکرین پر شیئر کریں", shTitle: "اسکرین پر شیئر کریں", shMediaT: "تصویر یا ویڈیو", shMediaD: "بیڈ سائیڈ اسکرین پر پوری اسکرین میں دکھائی جائے گی۔ وہاں کچھ محفوظ نہیں ہوتا، بند کرنے پر ہٹ جاتی ہے۔", pick: "تصویر یا ویڈیو منتخب کریں", remove: "اسکرین سے ہٹائیں", shLinkT: "لنک کھولیں", paste: "پیسٹ", open: "اسکرین پر کھولیں", sending: "بھیجا جا رہا ہے… ", shown: "اسکرین پر دکھایا گیا۔", failed: "بھیجا نہیں جا سکا۔ دوبارہ کوشش کریں۔", needWifi: "تصاویر اور ویڈیو شیئر کرنے کے لیے فون کو ہسپتال کے Wi-Fi سے جوڑیں۔", tooBig: "فائل بہت بڑی ہے (تصاویر 25 MB تک، ویڈیو 200 MB تک)۔", badLink: "براہ کرم ویب لنک درج کریں (https://…)۔", tvRemote: "📺 ٹی وی ریموٹ", channels: "چینلز", touchpad: "ٹچ پیڈ", mute: "خاموش", unmute: "آواز کھولیں", close: "بند کریں", volume: "آواز", voice: "🎤 مشورہ: لکھنے کے بجائے بولنے کے لیے کی بورڈ پر مائیکروفون دبائیں۔", back: "واپس", tap: "ٹیپ", enter: "انٹر",
       hint: "پوائنٹر ہلانے کے لیے ایک انگلی پھیریں۔<br>منتخب کرنے کے لیے ٹیپ کریں، دیر تک دبانے کے لیے روکے رکھیں۔<br>اسکرول کے لیے دو انگلیاں پھیریں، ◀ ▶ سے دائیں بائیں۔",
       blocked: "براہ کرم اس کے لیے اسکرین ہی استعمال کریں",
       endedTitle: "منقطع ہو گیا", endedText: "آپ یہ صفحہ بند کر سکتے ہیں۔ دوبارہ منسلک ہونے کے لیے اسکرین پر سیٹنگز کھولیں۔",
@@ -190,6 +193,7 @@
   document.documentElement.dir = lang === "en" ? "ltr" : "rtl";
   if (/^[0-9a-fA-F]{6}$/.test(color)) document.documentElement.style.setProperty("--accent", "#" + color);
   $("end").textContent = tr.end;
+  $("castBtn").textContent = tr.castBtn;
   $("shareBtn").textContent = tr.share;
   $("shTitle").textContent = tr.shTitle;
   $("shMediaT").textContent = tr.shMediaT;
@@ -336,6 +340,7 @@
     else if (m.t === "caps") {
       document.body.classList.toggle("nav-on", !!m.nav);
       document.body.classList.toggle("share-on", !!m.share);
+      document.body.classList.toggle("cast-on", !!m.cast);
     }
     else if (m.t === "fileOk") shareDone(m.id, true);
     else if (m.t === "fileErr") shareDone(m.id, false);
@@ -525,6 +530,7 @@
     }
     ch.send(JSON.stringify({ t: "fileEnd", id }));
   }
+  $("castBtn").addEventListener("click", () => send({ t: "cast" }));
   $("shareBtn").addEventListener("click", () => { shareNote(""); $("share").classList.add("show"); });
   $("shareClose").addEventListener("click", () => $("share").classList.remove("show"));
   $("pickBtn").addEventListener("click", () => $("pick").click());
