@@ -121,7 +121,10 @@ export function HospitalBroadcast({
   const [acknowledging, setAcknowledging] = useState(false);
 
   const loc = (v: { en: string; ar: string }) => (locale === "ar" ? v.ar : v.en);
-  const cfg = PRIORITY_CONFIG[notification.priority];
+  /* Amber means "put off for later" in the notifications list, and most
+     ordinary notices are raised as "warning" — so only urgent gets its own
+     colours here; everything else wears the standard notice look. */
+  const cfg = PRIORITY_CONFIG[notification.priority === "urgent" ? "urgent" : "info"];
 
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
