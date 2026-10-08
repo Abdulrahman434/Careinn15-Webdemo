@@ -3277,7 +3277,7 @@ function PersonCenteredCareSlide({ theme, isExpanded = false, onOpenForm }: {
   theme: any; isExpanded?: boolean; onOpenForm?: () => void;
 }) {
   const R = roles(isExpanded);
-  const { t, fontFamily, locale, localizeNumber } = useLocale();
+  const { t, fontFamily, locale } = useLocale();
   const { activeConfigId } = useTheme();
   const nurseStore = useNurseStore();
   const [record, setRecord] = useState(() => readPreferenceRecord());
@@ -3312,22 +3312,8 @@ function PersonCenteredCareSlide({ theme, isExpanded = false, onOpenForm }: {
     return () => window.removeEventListener(CARE_PARTNER_EVENT, refresh);
   }, []);
 
-  /* The collapsed header says how much is on the board, so the count has to
-     follow writes made in the section below it. */
-  const [boardCount, setBoardCount] = useState(() => readQuestions().length);
-  useEffect(() => {
-    const refresh = () => setBoardCount(readQuestions().length);
-    window.addEventListener(QUESTIONS_EVENT, refresh);
-    window.addEventListener("storage", refresh);
-    return () => {
-      window.removeEventListener(QUESTIONS_EVENT, refresh);
-      window.removeEventListener("storage", refresh);
-    };
-  }, []);
-
   const prefRows = preferenceSummaryRows(
     record, t, preferenceAppName(t, activeConfigId, theme.hospitalName));
-  const prefsFilled = !!record?.completedAt && prefRows.length > 0;
 
   /* The goal belongs to the patient now, so the sheet that sets it opens from
      this card rather than from a nurse's tab. */
@@ -3344,11 +3330,6 @@ function PersonCenteredCareSlide({ theme, isExpanded = false, onOpenForm }: {
         first
         icon={Target}
         title={t("care.pcc.goal.title")}
-        actions={
-          <CardBadge theme={theme} isExpanded={isExpanded} tone={careGoal ? "success" : "neutral"}>
-            {careGoal ? t("care.pcc.goal.status.chosen") : t("care.pcc.goal.status.notChosen")}
-          </CardBadge>
-        }
       >
         <div className="flex flex-col gap-3">
           {careGoal ? (
@@ -3383,11 +3364,6 @@ function PersonCenteredCareSlide({ theme, isExpanded = false, onOpenForm }: {
         isExpanded={isExpanded}
         icon={SlidersHorizontal}
         title={t("care.pcc.preferences.title")}
-        actions={
-          <CardBadge theme={theme} isExpanded={isExpanded} tone={prefsFilled ? "success" : "neutral"}>
-            {prefsFilled ? t("care.pcc.status.recorded") : t("care.pcc.status.notFilled")}
-          </CardBadge>
-        }
       >
         <PreferencesBody theme={theme} isExpanded={isExpanded} onOpenForm={onOpenForm} />
       </Section>
@@ -3398,19 +3374,6 @@ function PersonCenteredCareSlide({ theme, isExpanded = false, onOpenForm }: {
         isExpanded={isExpanded}
         icon={UserRound}
         title={t("care.pcc.partner.title")}
-        actions={
-          partner.status === "unasked" ? undefined : (
-            <CardBadge
-              theme={theme}
-              isExpanded={isExpanded}
-              tone={partner.status === "active" ? "success" : partner.status === "nominated" ? "warning" : "neutral"}
-            >
-              {partner.status === "active" ? t("care.pcc.partner.status.active")
-                : partner.status === "nominated" ? t("care.pcc.partner.status.nominated")
-                : t("care.pcc.partner.status.declined")}
-            </CardBadge>
-          )
-        }
       >
         <CarePartnerBody theme={theme} isExpanded={isExpanded} />
       </Section>
@@ -3421,13 +3384,6 @@ function PersonCenteredCareSlide({ theme, isExpanded = false, onOpenForm }: {
         isExpanded={isExpanded}
         icon={MessageCircleQuestion}
         title={t("care.pcc.board.title")}
-        /* Just the number, and only once there is one: "Questions & Concerns"
-           is long, and a worded badge beside it pushed it onto two lines. */
-        actions={boardCount > 0 && (
-          <CardBadge theme={theme} isExpanded={isExpanded} tone="brand">
-            {localizeNumber(boardCount)}
-          </CardBadge>
-        )}
       >
         <CommunicationBoardBody theme={theme} isExpanded={isExpanded} />
       </Section>
