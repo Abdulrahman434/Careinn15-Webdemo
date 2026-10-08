@@ -18,6 +18,8 @@ import {
   AlertTriangle,
   Info,
   Clock,
+  MailCheck,
+  History,
 } from "lucide-react";
 import { orderRef, useOrders } from "./OrderStore";
 import type { OrderStatus } from "./OrderStore";
@@ -589,91 +591,81 @@ export function NotificationsPanel({
           </button>
         </div>
 
-        {/* View Toggle (New vs All) */}
-        <div style={{ padding: "0 16px 12px 16px" }}>
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center gap-2 cursor-pointer transition-all active:scale-95"
-            style={{
-              padding: "4px 10px",
-              borderRadius: "8px",
-              backgroundColor: showHistory ? theme.primary : `${theme.primary}12`,
-              border: "none",
-              outline: "none",
-            }}
-          >
-            <div 
-              style={{ 
-                width: "6px", 
-                height: "6px", 
-                borderRadius: "50%", 
-                backgroundColor: showHistory ? theme.textInverse : theme.primary 
-              }} 
-            />
-            <span
-              style={{
-                fontFamily,
-                ...TEXT_STYLE.micro,
-                fontWeight: WEIGHT.bold,
-                color: showHistory ? theme.textInverse : theme.primaryOn,
-                letterSpacing: "0.5px",
-              }}
-            >
-              {showHistory 
-                ? (isRTL ? "عرض الإشعارات الجديدة" : "BACK TO NEW") 
-                : (isRTL ? "عرض كل الإشعارات" : "VIEW ALL HISTORY")
-              }
-            </span>
-          </button>
+        {/* Actions — three equal tiles, icon over label, sized for a finger */}
+        <div
+          className="shrink-0 grid grid-cols-3"
+          style={{ gap: "8px", padding: "0 16px 8px 16px" }}
+        >
+          {([
+            {
+              key: "read",
+              Icon: MailCheck,
+              label: t("notif.markAllRead"),
+              onClick: markAllRead,
+              enabled: unreadCount > 0,
+              tone: "brand" as const,
+            },
+            {
+              key: "history",
+              Icon: History,
+              label: showHistory
+                ? (isRTL ? "عرض الإشعارات الجديدة" : "Back to new")
+                : (isRTL ? "عرض السجل" : "View history"),
+              onClick: () => setShowHistory(!showHistory),
+              enabled: true,
+              tone: showHistory ? ("active" as const) : ("brand" as const),
+            },
+            {
+              key: "clear",
+              Icon: Trash2,
+              label: t("notif.clearAll"),
+              onClick: clearAll,
+              // History already holds everything; there is nothing to clear there.
+              enabled: !showHistory && (notifications.length > 0 || shownBroadcasts.length > 0),
+              tone: "neutral" as const,
+            },
+          ]).map(({ key, Icon, label, onClick, enabled, tone }) => {
+            const look = !enabled
+              ? { bg: theme.tileInactiveBg, border: "transparent", fg: theme.textDisabled }
+              : tone === "active"
+              ? { bg: theme.primary, border: theme.primary, fg: theme.textInverse }
+              : tone === "brand"
+              ? { bg: theme.primarySubtle, border: theme.primaryBorder, fg: theme.primaryOn }
+              : { bg: theme.tileInactiveBg, border: theme.borderSubtle, fg: theme.textMuted };
+            return (
+              <button
+                key={key}
+                onClick={onClick}
+                disabled={!enabled}
+                className="flex flex-col items-center justify-center cursor-pointer active:scale-[0.96] transition-transform disabled:cursor-default"
+                style={{
+                  gap: "4px",
+                  minHeight: "64px",
+                  padding: "8px 6px",
+                  borderRadius: theme.radiusLg,
+                  backgroundColor: look.bg,
+                  border: `1px solid ${look.border}`,
+                  outline: "none",
+                }}
+              >
+                <Icon size={20} strokeWidth={2} style={{ color: look.fg }} />
+                <span
+                  style={{
+                    fontFamily,
+                    ...TEXT_STYLE.label,
+                    fontSize: TYPE_SCALE.sm,
+                    fontWeight: WEIGHT.bold,
+                    color: look.fg,
+                    lineHeight: 1.2,
+                    textAlign: "center",
+                  }}
+                >
+                  {label}
+                </span>
+              </button>
+            );
+          })}
         </div>
-
-        {/* Action bar */}
-        {(notifications.length > 0 || shownBroadcasts.length > 0) && (
-          <div
-            className="shrink-0 flex items-center justify-between"
-            style={{ padding: "0 16px 8px 16px" }}
-          >
-            <button
-              onClick={markAllRead}
-              className="cursor-pointer active:scale-[0.96] transition-transform flex items-center justify-center"
-              style={{
-                fontFamily: theme.fontFamily,
-                ...TEXT_STYLE.label,
-                fontSize: "13.5px",
-                fontWeight: WEIGHT.bold,
-                color: unreadCount > 0 ? theme.primaryOn : theme.textDisabled,
-                border: "none",
-                background: unreadCount > 0 ? theme.primarySubtle : "none",
-                padding: "10px 16px",
-                borderRadius: "12px",
-                minHeight: "44px",
-              }}
-            >
-              {t("notif.markAllRead")}
-            </button>
-            {!showHistory && (
-            <button
-              onClick={clearAll}
-              className="flex items-center gap-2 cursor-pointer active:scale-[0.96] transition-transform"
-              style={{
-                fontFamily: fontFamily,
-                ...TEXT_STYLE.label,
-                fontSize: "13.5px",
-                fontWeight: WEIGHT.bold,
-                color: theme.textMuted,
-                border: "none",
-                background: theme.tileInactiveBg,
-                padding: "10px 16px",
-                borderRadius: "12px",
-                minHeight: "44px",
-              }}
-            >
-              <Trash2 size={14} />
-              {t("notif.clearAll")}
-            </button>
-            )}
-          </div>
-        )}
 
         {/* Swipe hint */}
         {notifications.length > 0 && (
