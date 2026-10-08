@@ -376,7 +376,8 @@ export function NotificationsPanel({
   const mapApiAlerts = useCallback((alerts: DeviceAlert[], historyMode: boolean): Notification[] => {
     const hidden = getHiddenAlertIds();
     const seen = getSeenAlertIds();
-    let filtered = alerts.filter(a => !hidden.has(a.id));
+    // Cleared or swiped away leaves the main list only; history keeps it.
+    let filtered = historyMode ? [...alerts] : alerts.filter(a => !hidden.has(a.id));
 
     // Filter out any alert that is already in acknowledgedBroadcasts history to avoid duplicates
     filtered = filtered.filter(a => {
@@ -407,7 +408,7 @@ export function NotificationsPanel({
   const mapHardcodedAlerts = useCallback((historyMode: boolean): Notification[] => {
     const hidden = getHardcodedHidden();
     const seen = getHardcodedSeen();
-    let filtered = initialNotifications.filter(n => !hidden.has(n.id));
+    let filtered = historyMode ? [...initialNotifications] : initialNotifications.filter(n => !hidden.has(n.id));
 
     /* A notice that has been acknowledged or put off is already above, under
        HOSPITAL NOTICES, carrying what was done with it. Leaving the original
@@ -435,6 +436,9 @@ export function NotificationsPanel({
   }, [formatNotificationTime, acknowledgedBroadcasts]);
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const shownBroadcasts = showHistory
+    ? acknowledgedBroadcasts
+    : acknowledgedBroadcasts.filter((b) => !b.clearedAt);
 
   // Sync when API alerts, locale or history mode change
   useEffect(() => {
@@ -624,7 +628,7 @@ export function NotificationsPanel({
         </div>
 
         {/* Action bar */}
-        {notifications.length > 0 && (
+        {(notifications.length > 0 || shownBroadcasts.length > 0) && (
           <div
             className="shrink-0 flex items-center justify-between"
             style={{ padding: "0 16px 8px 16px" }}
@@ -647,6 +651,7 @@ export function NotificationsPanel({
             >
               {t("notif.markAllRead")}
             </button>
+            {!showHistory && (
             <button
               onClick={clearAll}
               className="flex items-center gap-2 cursor-pointer active:scale-[0.96] transition-transform"
@@ -666,6 +671,7 @@ export function NotificationsPanel({
               <Trash2 size={14} />
               {t("notif.clearAll")}
             </button>
+            )}
           </div>
         )}
 
@@ -788,7 +794,7 @@ export function NotificationsPanel({
           )}
 
           {/* Hospital Broadcasts Section */}
-          {acknowledgedBroadcasts.length > 0 && (
+          {shownBroadcasts.length > 0 && (
             <div className="flex flex-col gap-2 shrink-0" style={{ marginBottom: "8px" }}>
               <span
                 style={{
@@ -804,7 +810,7 @@ export function NotificationsPanel({
               >
                 {isRTL ? "إشعارات المستشفى" : "HOSPITAL NOTICES"}
               </span>
-              {acknowledgedBroadcasts.map((bc) => {
+              {shownBroadcasts.map((bc) => {
                 const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
                 const isLater = bc.isLater && !bc.acknowledgedAt && !bc.isMissed;
                 /* This list is about what was DONE with a notice, not what it
@@ -957,7 +963,7 @@ export function NotificationsPanel({
             </div>
           )}
 
-          {notifications.length === 0 && activeOrders.length === 0 && acknowledgedBroadcasts.length === 0 ? (
+          {notifications.length === 0 && trackedOrders.length === 0 && shownBroadcasts.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4">
               <div
                 className="flex items-center justify-center"
