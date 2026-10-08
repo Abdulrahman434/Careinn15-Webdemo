@@ -73,14 +73,11 @@ function WeatherIcon({ kind }: { kind: WeatherKind }) {
 }
 
 /* ── CONNECTION_INDICATORS ─────────────────────────────────────────────────
- * The "● Connected" line under the hospital logo and the red warning triangle
- * beside the clock. Both are hidden for now at the ward's request — on a demo
- * screen they read as something being wrong with the kiosk rather than as
- * status. The components, their wiring and their strings are all still here
- * and still compile; this flag is the whole of the removal.
- *
- * Ask for "the connection indicators" and this goes back to true.
- * Hidden 20 Sep 2026. */
+ * The "● Connected" line beside the hospital logo, and the red warning
+ * triangle beside the clock. Both were hidden 20 Sep 2026 at the ward's
+ * request — on a demo screen they read as something being wrong with the
+ * kiosk. The status came back 8 Oct 2026; the triangle is still hidden. */
+const SHOW_CONNECTION_STATUS = true;
 const SHOW_CONNECTION_INDICATORS = false;
 
 export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onMaghribTap, onIshaTap, onWeatherTap, onSettingsTap, onBellTap, unreadCount = 3, logoUrl, hideSettings = false, greeting }: { showPrayer?: boolean; onFajrTap?: () => void; onDhuhrTap?: () => void; onAsrTap?: () => void; onMaghribTap?: () => void; onIshaTap?: () => void; onWeatherTap?: () => void; onSettingsTap?: () => void; onBellTap?: () => void; unreadCount?: number; logoUrl?: string; hideSettings?: boolean; greeting?: string }) {
@@ -246,7 +243,7 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
             style={{ height: SPACE[10], width: "auto", maxWidth: "300px", objectFit: "contain" }}
           />
         </a>
-        {SHOW_CONNECTION_INDICATORS && <ConnectionStatus />}
+        {SHOW_CONNECTION_STATUS && <ConnectionStatus />}
       </div>
 
       {/* Center: Prayer Times — always dead-center on screen */}
