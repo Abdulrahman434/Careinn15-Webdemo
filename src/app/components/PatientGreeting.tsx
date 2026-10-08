@@ -110,12 +110,14 @@ export function PatientGreeting({
     >
       {rippleElements}
 
-      {/* Help / App Tour button */}
+      {/* Help / App Tour + Logout buttons */}
+      <div
+        className="absolute flex items-center z-10"
+        style={{ [isRTL ? "left" : "right"]: SPACE[2], top: SPACE[2], gap: SPACE[1] }}
+      >
       <button
-        className="absolute flex items-center justify-center rounded-full z-10 cursor-pointer active:scale-90 transition-transform"
+        className="flex items-center justify-center rounded-full cursor-pointer active:scale-90 transition-transform"
         style={{
-          [isRTL ? "left" : "right"]: SPACE[2],
-          top: SPACE[2],
           width: theme.touchTargetMin,
           height: theme.touchTargetMin,
           backgroundColor: theme.primarySubtle,
@@ -130,6 +132,27 @@ export function PatientGreeting({
       >
         <HelpCircle size={20} style={{ color: theme.primaryOn }} strokeWidth={2} />
       </button>
+      {!isGuest && (
+        <button
+          className="flex items-center justify-center rounded-full cursor-pointer active:scale-90 transition-transform"
+          style={{
+            width: theme.touchTargetMin,
+            height: theme.touchTargetMin,
+            backgroundColor: theme.errorSubtle,
+            border: "none",
+            outline: "none",
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowLogoutConfirm(true);
+          }}
+          aria-label={t("general.logout")}
+          title={t("general.logout")}
+        >
+          <LogOut size={20} style={{ color: theme.errorOn }} strokeWidth={2} />
+        </button>
+      )}
+      </div>
 
       {/* Text content */}
       <div style={{ padding: `${theme.cardPadding} ${theme.cardPadding} ${SPACE[2]} ${theme.cardPadding}` }}>
@@ -176,7 +199,7 @@ export function PatientGreeting({
           >{t("general.welcome", theme.hospitalShortName)}</p>
         </div>
 
-        {/* Badges: [Room] [Ext] [Logout] */}
+        {/* Badges: [MRN] [Room] [Bed] */}
         {!isGuest && (
           <div className="flex items-center flex-wrap gap-2" style={{ paddingTop: SPACE[2] }}>
             <div
@@ -227,26 +250,6 @@ export function PatientGreeting({
               </div>
             )}
 
-            <button
-              onClick={() => setShowLogoutConfirm(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer active:scale-95 transition-transform border-none outline-none"
-              style={{ 
-                backgroundColor: "#FEE2E2", 
-                borderRadius: theme.radiusFull,
-              }}
-            >
-              <LogOut size={12} style={{ color: "#EF4444" }} />
-              <span
-                style={{
-                  fontFamily: fontFamily,
-                  ...TEXT_STYLE.pill,
-                  color: theme.errorOnLight,
-                  fontWeight: WEIGHT.bold,
-                }}
-              >
-                {t("general.logout")}
-              </span>
-            </button>
           </div>
         )}
       </div>
