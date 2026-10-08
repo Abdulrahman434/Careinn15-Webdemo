@@ -87,6 +87,18 @@ export function NewsTicker({ items, paused = false }: NewsTickerProps = {}) {
         `🔬  Andalusia Health launches new specialized oncology center.`,
         `🏆  Andalusia Health recognized for excellence in patient care and experience.`,
       ]
+    : theme.id === "qumc"
+    ? [
+        `🏥  ${t("news.qumc.1")}`,
+        `🎓  ${t("news.qumc.2")}`,
+        `⭐  ${t("news.qumc.3")}`,
+      ]
+    : theme.id === "ksumc"
+    ? [
+        `🏥  ${t("news.ksumc.1")}`,
+        `🔬  ${t("news.ksumc.2")}`,
+        `⭐  ${t("news.ksumc.3")}`,
+      ]
     : theme.id === "careinn"
     ? [
         `🏆  ${t("news.careinn.1")}`,

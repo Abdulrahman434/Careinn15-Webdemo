@@ -18,6 +18,7 @@ export const CITY_COORDS: Record<string, Coordinates> = {
   "Abu Dhabi": new Coordinates(24.4539, 54.3773),
   "Beirut":    new Coordinates(33.8938, 35.5018),
   "Dubai":     new Coordinates(25.2048, 55.2708),
+  "Buraydah":  new Coordinates(26.3260, 43.9750),
 };
 
 /** Backward-compatibility alias — maps to Jeddah */

@@ -524,9 +524,9 @@ function buildTheme(core: {
     screensaverStyle: c.screensaverStyle,
     logoUrlOnDark: c.logoUrlDark || "",
     patientGuidePdf: c.patientGuidePdf,
-    logoUrl: (dark && c.logoUrlDark) || c.logoUrl || (c.id === "dsfh" ? DSFH_LOGO : c.id === "burjeel" ? burjeelLogo : c.id === "slh" ? slhLogo : c.id === "dallah" ? dallahLogo : c.id === "caremed" ? caremedLogo : c.id === "imc" ? imcLogo : c.id === "careinn" ? careinnLogo : c.id === "prime" ? primeLogo : c.id === "kauh" ? kauhLogo : c.id === "andalusia" ? andalusiaLogo : ""),
-    heroImageUrl: c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : c.id === "kauh" ? kauhHero : c.id === "andalusia" ? andalusiaHero : ""),
-    heroImageUrls: c.heroImageUrls && c.heroImageUrls.length > 0 ? c.heroImageUrls : [c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : c.id === "kauh" ? kauhHero : c.id === "andalusia" ? andalusiaHero : "")],
+    logoUrl: (dark && c.logoUrlDark) || c.logoUrl || (c.id === "dsfh" ? DSFH_LOGO : c.id === "burjeel" ? burjeelLogo : c.id === "slh" ? slhLogo : c.id === "dallah" ? dallahLogo : c.id === "caremed" ? caremedLogo : c.id === "imc" ? imcLogo : c.id === "careinn" ? careinnLogo : c.id === "prime" ? primeLogo : c.id === "kauh" ? kauhLogo : c.id === "andalusia" ? andalusiaLogo : c.id === "qumc" ? qumcLogo : c.id === "ksumc" ? ksumcLogo : ""),
+    heroImageUrl: c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : c.id === "kauh" ? kauhHero : c.id === "andalusia" ? andalusiaHero : c.id === "qumc" ? qumcHero : c.id === "ksumc" ? ksumcHero : ""),
+    heroImageUrls: c.heroImageUrls && c.heroImageUrls.length > 0 ? c.heroImageUrls : [c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : c.id === "kauh" ? kauhHero : c.id === "andalusia" ? andalusiaHero : c.id === "qumc" ? qumcHero : c.id === "ksumc" ? ksumcHero : "")],
     heroCropPosition: c.heroCropPosition || "50% 15%",
     slideshowInterval: c.slideshowInterval || 5,
     heroOpacity: c.heroOpacity ?? 40,
@@ -1100,6 +1100,13 @@ import kauhHero from "../../assets/kauh-hero.webp";
 import andalusiaLogo from "../../assets/Andalusia.webp";
 import andalusiaHero from "../../assets/andalusia-hero.webp";
 
+import qumcLogo from "../../assets/qumc-logo.webp";
+import qumcLogoDark from "../../assets/qumc-logo-white.webp";
+import qumcHero from "../../assets/qumc-hero.webp";
+
+import ksumcLogo from "../../assets/ksumc-logo.webp";
+import ksumcHero from "../../assets/ksumc-hero.webp";
+
 /* Canonical built-in asset URLs — used as fallbacks for DSFH */
 export const DSFH_LOGO = logoImage;
 export const DSFH_HERO = hospitalImg;
@@ -1300,6 +1307,47 @@ export const ANDALUSIA_CORE: HospitalCoreConfig = {
   location: "Saudi Arabia",
 };
 
+export const QUMC_CORE: HospitalCoreConfig = {
+  id: "qumc",
+  hospitalName: "Qassim University Medical Center",
+  hospitalShortName: "QUMC",
+  fontFamily: "'Mulish', sans-serif",
+  fontFamilyAr: "'Almarai', sans-serif",
+  logoUrl: qumcLogo,
+  logoUrlDark: qumcLogoDark,
+  hospitalWebsiteUrl: "https://qumc.edu.sa/departments/aatd",
+  heroImageUrl: qumcHero,
+  heroCropPosition: "50% 70%",
+  primary: "#2C8597",
+  primaryDark: "#1A5F70",
+  primaryLight: "#EDF6F8",
+  accent: "#1A3986",
+  accentDark: "#122866",
+  accentLight: "#EEF2FF",
+  location: "Buraydah",
+  country: "Saudi Arabia",
+};
+
+export const KSUMC_CORE: HospitalCoreConfig = {
+  id: "ksumc",
+  hospitalName: "King Saud University Medical City",
+  hospitalShortName: "KSUMC",
+  fontFamily: "'Mulish', sans-serif",
+  fontFamilyAr: "'Almarai', sans-serif",
+  logoUrl: ksumcLogo,
+  hospitalWebsiteUrl: "https://medicalcity.ksu.edu.sa/en",
+  heroImageUrl: ksumcHero,
+  heroCropPosition: "50% 40%",
+  primary: "#0884BE",
+  primaryDark: "#066693",
+  primaryLight: "#E1F1F8",
+  accent: "#555555",
+  accentDark: "#3D3D3D",
+  accentLight: "#EEEEEE",
+  location: "Riyadh",
+  country: "Saudi Arabia",
+};
+
 /** All built-in hospital presets (always available, never deleted) */
 export const BUILTIN_PRESETS: HospitalCoreConfig[] = [
   DSFH_CORE,
@@ -1312,6 +1360,8 @@ export const BUILTIN_PRESETS: HospitalCoreConfig[] = [
   PRIME_CORE,
   KAUH_CORE,
   ANDALUSIA_CORE,
+  QUMC_CORE,
+  KSUMC_CORE,
 ];
 
 
@@ -1734,7 +1784,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const saveConfigFn = useCallback((config: HospitalCoreConfig) => {
-    const hasBuiltinAssets = ["dsfh", "burjeel", "slh", "dallah", "caremed", "careinn", "prime", "kauh", "andalusia"].includes(config.id);
+    const hasBuiltinAssets = ["dsfh", "burjeel", "slh", "dallah", "caremed", "careinn", "prime", "kauh", "andalusia", "qumc", "ksumc"].includes(config.id);
     const toSave = hasBuiltinAssets
       ? {
         ...config,

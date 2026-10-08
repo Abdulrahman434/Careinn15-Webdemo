@@ -12,6 +12,8 @@ import { applyPendingUpdate } from "../lib/updateCheck";
  *   "caremed"  → Care Medical only
  *   "fakeeh"   → Dr. Soliman Fakeeh Hospital only
  *   "prime"    → Prime Hospital only
+ *   "qumc"     → Qassim University Medical Center only
+ *   "ksumc"    → King Saud University Medical City only
  *   "careinn"  → Full access (all hospitals, configurator enabled)
  *
  * ═══════════════════════════════════════════════════════════════════════════ */
@@ -27,6 +29,8 @@ export const HASHED_PASSWORD_MAP: Record<string, string> = {
   "c598203581040f62b32d0d9c64555333e5ae42dc82878ed73644bc2abf3dbdde": "imc",
   "dccc5d01dabcd1c0b9fa89c91e7f4bde603121ee0172b4ff394e6bb30d295e41": "prime",
   "b1aa85f8364456911b9824f37dd4de913a3108074f620c1c1011161798c57bda": "andalusia",
+  "a9e7c3d8208e122633c6cca053f7f1b049a7ce19077d7aff019ce05bad7faccc": "qumc",
+  "79d2db13ebf7fabba11fdc68143f5d28a61e87f404b96dfea99ba0092884c182": "ksumc",
 };
 
 /** The SHA-256 hash for the careinn full-access password */
@@ -110,6 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       else if (basePassword === "slh") hashHex = "025705ec8cab15dbf71655031ccc2081b8af1dde1bc70539ba56f8f20b8a7a27";
       else if (basePassword === "imc") hashHex = "c598203581040f62b32d0d9c64555333e5ae42dc82878ed73644bc2abf3dbdde";
       else if (basePassword === "prime") hashHex = "dccc5d01dabcd1c0b9fa89c91e7f4bde603121ee0172b4ff394e6bb30d295e41";
+      else if (basePassword === "qumc") hashHex = "a9e7c3d8208e122633c6cca053f7f1b049a7ce19077d7aff019ce05bad7faccc";
+      else if (basePassword === "ksumc") hashHex = "79d2db13ebf7fabba11fdc68143f5d28a61e87f404b96dfea99ba0092884c182";
     }
 
     const mapping = HASHED_PASSWORD_MAP[hashHex];
