@@ -642,7 +642,7 @@ export function NotificationsPanel({
                   gap: "4px",
                   minHeight: "64px",
                   padding: "8px 6px",
-                  borderRadius: theme.radiusLg,
+                  borderRadius: theme.radiusSm,
                   backgroundColor: look.bg,
                   border: `1px solid ${look.border}`,
                   outline: "none",
