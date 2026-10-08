@@ -1889,6 +1889,31 @@ export function SettingsPanel({
             onToggleAlarm={() => setPrayerAlarm(!prayerAlarm)}
           />
 
+          {/* Use my phone — placed here, under Next Prayer, so it is easy to
+              find: scan once to control the screen as a cursor (and, on
+              supported terminals, to show your phone on the screen). */}
+          {t.remoteControl && (
+            <button
+              onClick={() => window.dispatchEvent(new Event("careinn-remote-start"))}
+              className="flex items-center w-full cursor-pointer active:scale-[0.99] transition-transform"
+              style={{
+                gap: "14px", padding: "16px 18px", borderRadius: t.radiusLg,
+                backgroundColor: t.primary, border: "none",
+              }}
+            >
+              <div
+                className="flex items-center justify-center shrink-0"
+                style={{ width: "44px", height: "44px", borderRadius: "13px", backgroundColor: "rgba(255,255,255,0.18)" }}
+              >
+                <Smartphone size={22} color={t.primaryOn} />
+              </div>
+              <div className="flex-1 text-start">
+                <div style={{ fontSize: "17px", fontWeight: 700, color: t.primaryOn }}>{tr("remote.settings.title")}</div>
+                <div style={{ fontSize: "13px", color: t.primaryOn, opacity: 0.85 }}>{tr("remote.settings.subtitle")}</div>
+              </div>
+            </button>
+          )}
+
           {/* Brightness */}
           <SettingsSlider
             icon={<Sun size={20} style={{ color: t.iconBrand }} />}
@@ -2041,15 +2066,6 @@ export function SettingsPanel({
               variant="primary"
               onClick={() => setShowAccountDialog(true)}
             />
-            {t.remoteControl && (
-              <ActionButton
-                icon={<Smartphone size={20} style={{ color: t.primaryOn }} />}
-                label={tr("remote.settings.title")}
-                subtitle={tr("remote.settings.subtitle")}
-                variant="primary"
-                onClick={() => window.dispatchEvent(new Event("careinn-remote-start"))}
-              />
-            )}
           </div>
 
           <div className="flex items-center gap-2.5">
