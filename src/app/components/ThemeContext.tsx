@@ -302,6 +302,7 @@ export interface ThemeConfig {
   heroImageUrl: string;      // hospital exterior photo (1920×600 recommended)
   heroImageUrls: string[];   // multiple hero images for carousel
   heroCropPosition: string;  // object-position for hero image crop, e.g. "50% 15%"
+  welcomeImagePosition?: string; // object-position for the welcome card photo; falls back to heroCropPosition
   slideshowInterval: number; // custom interval for slides in seconds
   heroOpacity: number;       // background photo opacity, percent 0–100 (default 40)
   location: string;
@@ -488,6 +489,7 @@ function buildTheme(core: {
   heroImageUrl: string;
   heroImageUrls?: string[];
   heroCropPosition?: string;
+  welcomeImagePosition?: string;
   slideshowInterval?: number;
   heroOpacity?: number;
   primary: string;
@@ -531,6 +533,7 @@ function buildTheme(core: {
     heroImageUrl: c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : c.id === "kauh" ? kauhHero : c.id === "andalusia" ? andalusiaHero : c.id === "qumc" ? qumcHero : c.id === "ksumc" ? ksumcHero : ""),
     heroImageUrls: c.heroImageUrls && c.heroImageUrls.length > 0 ? c.heroImageUrls : [c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : c.id === "kauh" ? kauhHero : c.id === "andalusia" ? andalusiaHero : c.id === "qumc" ? qumcHero : c.id === "ksumc" ? ksumcHero : "")],
     heroCropPosition: c.heroCropPosition || "50% 15%",
+    welcomeImagePosition: c.welcomeImagePosition,
     slideshowInterval: c.slideshowInterval || 5,
     heroOpacity: c.heroOpacity ?? 40,
     location: (c as any).location || "Riyadh",
@@ -1321,6 +1324,7 @@ export const QUMC_CORE: HospitalCoreConfig = {
   heroImageUrl: qumcHero,
   heroImageUrls: ["/hospitals/qumc.png"],
   heroCropPosition: "50% 70%",
+  welcomeImagePosition: "center 70%",
   primary: "#0F4C81",
   primaryDark: "#0C3B65",
   primaryLight: "#E0E8EF",
@@ -1342,12 +1346,14 @@ export const KSUMC_CORE: HospitalCoreConfig = {
   heroImageUrl: ksumcHero,
   heroImageUrls: ["/hospitals/ksumc-welcome.jpg"],
   heroCropPosition: "50% 40%",
+  welcomeImagePosition: "center 12%",
   primary: "#0084BD",
   primaryDark: "#006793",
   primaryLight: "#DEEFF6",
-  accent: "#E3E0D2",
-  accentDark: "#B1AFA4",
-  accentLight: "#FBFBF9",
+  // KSU Grey carries icons and accents; the cream (#E3E0D2) is too light to
+  // read on white, so it is kept to surfaces via accentLight.
+  accent: "#748995",
+  accentLight: "#E3E0D2",
   location: "Riyadh",
   country: "Saudi Arabia",
 };
@@ -1398,6 +1404,7 @@ export interface HospitalCoreConfig {
   heroImageUrl: string;
   heroImageUrls?: string[];
   heroCropPosition?: string;
+  welcomeImagePosition?: string;
   slideshowInterval?: number;
   heroOpacity?: number;      // background photo opacity, percent 0–100 (default 40)
   primary: string;

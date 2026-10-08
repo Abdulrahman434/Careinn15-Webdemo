@@ -53,8 +53,11 @@ interface ShortcutItem {
 }
 
 const getShortcutItems = (hospitalId: string, patientGuidePdf?: string): ShortcutItem[] => {
-  let podcastData;
-  if (hospitalId === "careinn") {
+  let podcastData: ShortcutItem | null;
+  if (hospitalId === "qumc" || hospitalId === "ksumc") {
+    // No podcast of their own, and the fallback below is Fakeeh's.
+    podcastData = null;
+  } else if (hospitalId === "careinn") {
     podcastData = { labelKey: "shortcut.adminPortal", icon: careinnAdminPortalIcon, url: "https://dashboard.careinn.com" };
   } else if (hospitalId === "caremed") {
     podcastData = { labelKey: "shortcut.podcast", icon: caremedicalicon, url: "https://www.youtube.com/playlist?list=PLbWY8VfHuoBSK7XeJJtutBSTeY_e7Kut3" };
@@ -66,7 +69,7 @@ const getShortcutItems = (hospitalId: string, patientGuidePdf?: string): Shortcu
     podcastData = { labelKey: "shortcut.podcast", icon: podcastIcon, url: "https://www.youtube.com/watch?v=1WKyerFH34U&list=PL_JVZV-KlG7oFe-fUAMnbYsWyTU9k8ljF" };
   }
 
-  return [
+  const items: (ShortcutItem | null)[] = [
     { labelKey: "shortcut.roomControl", icon: roomControlIcon, url: "roomcontrol" },
     hospitalId === "burjeel"
       ? { labelKey: "shortcut.patientPortal", icon: patientPortalIcon, url: "https://patientportal.vpshealth.com/home/login" }
@@ -82,6 +85,7 @@ const getShortcutItems = (hospitalId: string, patientGuidePdf?: string): Shortcu
       ? { labelKey: "shortcut.patientGuide", icon: "", url: "patientguide", lucideIcon: BookMarked }
       : podcastData,
   ];
+  return items.filter((item): item is ShortcutItem => item !== null);
 };
 
 /** The Room Control tile's shade. Named rather than inline because it is the
