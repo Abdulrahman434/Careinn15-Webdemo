@@ -73,10 +73,11 @@ function WeatherIcon({ kind }: { kind: WeatherKind }) {
 }
 
 /* ── CONNECTION_INDICATORS ─────────────────────────────────────────────────
- * The "● Connected" line under the clock and date, and the red warning
- * triangle beside the clock. Both were hidden 20 Sep 2026 at the ward's
- * request — on a demo screen they read as something being wrong with the
- * kiosk. The status came back 8 Oct 2026; the triangle is still hidden. */
+ * The "● Connected" line, and the red warning triangle beside the clock.
+ * Both were hidden 20 Sep 2026 at the ward's request — on a demo screen they
+ * read as something being wrong with the kiosk. The status came back
+ * 8 Oct 2026: beside the logo, except Fakeeh (dsfh), where it sits under the
+ * clock and date — a trial that may be reverted. The triangle stays hidden. */
 const SHOW_CONNECTION_STATUS = true;
 const SHOW_CONNECTION_INDICATORS = false;
 
@@ -243,6 +244,7 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
             style={{ height: SPACE[10], width: "auto", maxWidth: "300px", objectFit: "contain" }}
           />
         </a>
+        {SHOW_CONNECTION_STATUS && theme.id !== "dsfh" && <ConnectionStatus />}
       </div>
 
       {/* Center: Prayer Times — always dead-center on screen */}
@@ -430,7 +432,7 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
             >
               {dateStr}
             </span>
-            {SHOW_CONNECTION_STATUS && (
+            {SHOW_CONNECTION_STATUS && theme.id === "dsfh" && (
               <div style={{ marginTop: "2px" }}>
                 <ConnectionStatus />
               </div>
