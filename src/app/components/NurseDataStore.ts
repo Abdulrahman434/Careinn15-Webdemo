@@ -353,7 +353,7 @@ function createDefaultState(): NurseStoreState {
       age: "32",
       mrn: "00-284619",
       room: "412",
-      bed:           "",
+      bed:           "A",
       sex:           "",
       dob:           "",
       admissionDate: defaultAdmitDate,
