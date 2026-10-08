@@ -3277,7 +3277,7 @@ function PersonCenteredCareSlide({ theme, isExpanded = false, onOpenForm }: {
   theme: any; isExpanded?: boolean; onOpenForm?: () => void;
 }) {
   const R = roles(isExpanded);
-  const { t, fontFamily, locale } = useLocale();
+  const { t, fontFamily, locale, localizeNumber } = useLocale();
   const { activeConfigId } = useTheme();
   const nurseStore = useNurseStore();
   const [record, setRecord] = useState(() => readPreferenceRecord());
@@ -3421,11 +3421,13 @@ function PersonCenteredCareSlide({ theme, isExpanded = false, onOpenForm }: {
         isExpanded={isExpanded}
         icon={MessageCircleQuestion}
         title={t("care.pcc.board.title")}
-        actions={
-          <CardBadge theme={theme} isExpanded={isExpanded} tone={boardCount > 0 ? "brand" : "neutral"}>
-            {boardCount > 0 ? t("care.pcc.board.count", String(boardCount)) : t("care.pcc.board.empty")}
+        /* Just the number, and only once there is one: "Questions & Concerns"
+           is long, and a worded badge beside it pushed it onto two lines. */
+        actions={boardCount > 0 && (
+          <CardBadge theme={theme} isExpanded={isExpanded} tone="brand">
+            {localizeNumber(boardCount)}
           </CardBadge>
-        }
+        )}
       >
         <CommunicationBoardBody theme={theme} isExpanded={isExpanded} />
       </Section>
