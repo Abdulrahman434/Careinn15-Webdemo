@@ -39,6 +39,8 @@ import primeAccreds from "../../assets/prime-accreditations.webp";
 import kauhHeroImg from "../../assets/kauh-hero.webp";
 import shifaaAccreds from "../../assets/shifaa-accreds.webp";
 import andalusiaAccreds from "../../assets/andalusia-accreds.webp";
+import qumcAccreds from "../../assets/qumc-accreditations.png";
+import ksumcAccreds from "../../assets/ksumc-accreditations.png";
 interface AboutSection {
   id: string;
   title: string;
@@ -427,6 +429,332 @@ Secure Patient Communication
 
 Our digital ecosystem helps patients stay connected with their healthcare providers anytime and anywhere.`;
 
+const qumcDnaEn = `QUMC DNA
+Our Identity
+
+Qassim University Medical Center is the first specialized academic medical city in the Qassim region, providing healthcare to citizens and residents across all of the region's governorates.
+
+Vision
+National leadership in healthcare, research and sustainability, with effective national and global partnerships.
+
+Mission
+To provide high-quality, safe and integrated healthcare centered on the beneficiary, along with research and advisory services that support sustainable national development, in a well-governed environment that fosters innovation, technology and partnership.
+
+Our Values
+Belonging
+Transparency
+Innovation
+Commitment
+Fairness
+Quality
+Teamwork
+Excellence
+
+We aspire to deliver world-class care and to be the best locally by meeting the highest standards in care, education and scientific research.`;
+
+const qumcDnaAr = `هوية المدينة الطبية
+من نحن
+
+تُعد المدينة الطبية بجامعة القصيم أول مدينة طبية أكاديمية متخصصة في منطقة القصيم، تقدّم الرعاية الصحية لمواطني المنطقة والمقيمين فيها، وتخدم بموقعها الاستراتيجي جميع محافظات المنطقة.
+
+الرؤية
+ريادة وطنية متميزة في تقديم الرعاية الصحية والبحث والاستدامة، وشراكة فاعلة وطنياً وعالمياً.
+
+الرسالة
+تقديم خدمات صحية عالية الجودة، آمنة ومتكاملة، تتمحور حول المستفيد، إلى جانب خدمات بحثية واستشارية تعزّز التنمية الوطنية المستدامة، في بيئة محوكمة تُفعّل الابتكار والتقنية والشراكة.
+
+قيمنا
+الانتماء
+الشفافية
+الابتكار
+الالتزام
+العدالة
+الجودة
+العمل الجماعي
+التميز
+
+نتطلع إلى تقديم رعاية طبية بمستوى عالمي، وأن نكون الأفضل محلياً بتلبية أعلى المعايير في الرعاية والتعليم والبحث العلمي.`;
+
+const qumcNumbersEn = `QUMC In Numbers
+Qassim University Medical Center by the Numbers
+2018 Opened by the Custodian of the Two Holy Mosques, King Salman bin Abdulaziz
+330,000 m² medical city campus
+400-bed capacity at the University Hospital
+100 beds currently in service
+64 inpatient beds
+36 urgent care beds
+98.95% CBAHI accreditation score (August 2025)
+
+The medical city comprises two main buildings: the University Hospital and the Outpatient Clinics building, home to the Abdullah Al-Othaim Diabetes Center.`;
+
+const qumcNumbersAr = `المدينة الطبية في أرقام
+المدينة الطبية بجامعة القصيم بالأرقام
+2018 افتتحها خادم الحرمين الشريفين الملك سلمان بن عبدالعزيز
+330,000 متر مربع مساحة المدينة الطبية
+400 سرير الطاقة الاستيعابية للمستشفى الجامعي
+100 سرير في الخدمة حالياً
+64 سريراً في أقسام التنويم
+36 سريراً في أقسام الرعاية العاجلة
+98.95% نتيجة اعتماد سباهي (أغسطس 2025)
+
+تضم المدينة الطبية مبنيين رئيسيين: مبنى المستشفى الجامعي، ومبنى العيادات الخارجية الذي يضم مركز عبدالله العثيم للسكري.`;
+
+const qumcServicesEn = `Services
+Medical Departments and Clinics
+
+Qassim University Medical Center offers integrated specialized care through the University Hospital and its outpatient clinics.
+
+Medical Departments
+Emergency Medicine
+Internal Medicine
+Family Medicine
+Pediatrics
+Obstetrics & Gynecology
+General Surgery
+Orthopedic Surgery
+Neurosurgery
+Urology, Infertility & IVF
+Cardiology & Cardiac Catheterization
+Ophthalmology
+Ear, Nose & Throat
+Dermatology
+Psychiatry
+Oral & Dental Health
+Anesthesia
+Radiology
+Physical Therapy & Rehabilitation
+
+Specialized Center
+Abdullah Al-Othaim Diabetes Center
+
+Supporting Medical Services
+Laboratory & Blood Bank
+Pharmacy
+Clinical Nutrition
+Health Education`;
+
+const qumcServicesAr = `الخدمات
+الأقسام الطبية والعيادات
+
+تقدّم المدينة الطبية بجامعة القصيم رعاية تخصصية متكاملة من خلال المستشفى الجامعي والعيادات الخارجية.
+
+الأقسام الطبية
+طب الطوارئ
+الطب الباطني
+طب الأسرة
+طب الأطفال
+النساء والولادة
+الجراحة العامة
+جراحة العظام
+جراحة المخ والأعصاب
+جراحة المسالك والعقم والحقن المجهري
+القلب والقسطرة القلبية
+طب وجراحة العيون
+الأنف والأذن والحنجرة
+الجلدية
+الطب النفسي
+صحة الفم والأسنان
+التخدير
+الأشعة
+العلاج الطبيعي والتأهيل
+
+مركز تخصصي
+مركز عبدالله العثيم للسكري
+
+الخدمات الطبية المساندة
+المختبر وبنك الدم
+الخدمات الصيدلانية
+التغذية
+التثقيف الصحي`;
+
+const qumcDigitalEn = `Digital Services
+Online Patient Services
+
+Patient and visitor services are available online at qumc.edu.sa.
+
+Available Online
+Patient Rights
+Frequently Asked Questions — how to open a medical file and who is eligible for care
+Clinic Hours
+
+Clinic Hours
+University Hospital: 8:00 AM – 4:00 PM
+Outpatient Clinics: 8:00 AM – 4:00 PM
+Blood Draw: 8:00 AM – 1:00 PM`;
+
+const qumcDigitalAr = `الخدمات الرقمية
+خدمات المرضى والمراجعين
+
+تتوفر خدمات المرضى والمراجعين إلكترونياً عبر الموقع الرسمي qumc.edu.sa.
+
+الخدمات المتاحة
+حقوق المرضى
+الأسئلة الشائعة — طريقة فتح الملف الطبي والفئات المستحقة للخدمة
+مواعيد العيادات
+
+مواعيد العيادات
+المستشفى الجامعي: 8:00 ص – 4:00 م
+العيادات الخارجية: 8:00 ص – 4:00 م
+سحب الدم: 8:00 ص – 1:00 م`;
+
+const ksumcDnaEn = `KSUMC DNA
+Our Identity
+
+King Saud University Medical City is an integrated academic medical institution of King Saud University, founded in 1957. It combines extensive medical expertise with administrative excellence to provide comprehensive healthcare to international standards.
+
+Vision
+To be a global academic medical leader that advances the practice of medicine and nurtures future generations of healthcare professionals.
+
+Mission
+Providing excellent healthcare to our patients and promoting education, research and innovation.
+
+Our Values
+Advanced Education
+Accountability
+Quality
+Patient-Centricity
+Innovation
+Excellence
+
+We aim to transform integrated healthcare through medical education, training and scientific research, while providing leading healthcare services that enhance community health and quality of life.`;
+
+const ksumcDnaAr = `هوية المدينة الطبية
+من نحن
+
+المدينة الطبية الجامعية صرح طبي أكاديمي متكامل تابع لجامعة الملك سعود التي تأسست عام 1957م، يجمع بين الخبرة الطبية الواسعة والتميز الإداري لتقديم رعاية صحية شاملة بمعايير عالمية.
+
+الرؤية
+أن نكون صرحاً طبياً أكاديمياً عالمياً يعمل على تطوير ممارسة الطب وتنشئة الأجيال القادمة من المتخصصين في الرعاية الصحية.
+
+الرسالة
+تقديم رعاية صحية ممتازة لمرضانا، وتعزيز التعليم والبحث والابتكار.
+
+قيمنا
+التعليم المتقدم
+المساءلة
+الجودة
+التركيز على المريض
+الابتكار
+التميز
+
+نسعى إلى إحداث نقلة نوعية في إدارة الرعاية الصحية المتكاملة عبر الارتقاء بالتعليم الطبي والتدريب والبحث العلمي، وتقديم خدمات صحية رائدة تعزّز صحة المجتمع وجودة الحياة.`;
+
+const ksumcNumbersEn = `KSUMC In Numbers
+King Saud University Medical City by the Numbers
+3 Major university hospitals
+About 1,800 beds
+1,300+ Full-time physicians
+853 Resident doctors
+2,072 Healthcare professionals (approx.)
+668,541+ Outpatient visits in 2025
+206,916 Emergency cases in 2025
+72,126 Inpatient admissions in 2025
+25,310 Surgical procedures in 2025 (approx.)
+60,000+ Families served by the "A Doctor for Each Family" initiative
+10+ Patented medical devices
+261+ Scientific papers
+
+Milestones
+First smart cochlear implant
+First corneal endothelial transplant
+Guinness World Record: the world's largest dental hospital`;
+
+const ksumcNumbersAr = `المدينة الطبية في أرقام
+المدينة الطبية الجامعية بالأرقام
+3 مستشفيات جامعية رئيسية
+نحو 1,800 سرير
+أكثر من 1,300 طبيب بدوام كامل
+853 طبيباً مقيماً
+نحو 2,072 من الكوادر الصحية
+أكثر من 668,541 مراجعاً في العيادات الخارجية عام 2025م
+206,916 حالة في أقسام الطوارئ عام 2025م
+72,126 حالة تنويم عام 2025م
+نحو 25,310 عملية جراحية عام 2025م
+أكثر من 60,000 أسرة تخدمها مبادرة "طبيب لكل أسرة"
+أكثر من 10 أجهزة طبية مسجلة ببراءات اختراع
+أكثر من 261 بحثاً علمياً
+
+إنجازات رائدة
+أول زراعة قوقعة ذكية
+أول زراعة لبطانة القرنية
+رقم قياسي في موسوعة غينيس: أكبر مستشفى أسنان في العالم`;
+
+const ksumcServicesEn = `Services
+Hospitals and Specialized Centers
+
+King Saud University Medical City is a tertiary academic medical center providing specialized care through its university hospitals and medical centers.
+
+University Hospitals
+King Khalid University Hospital
+King Abdulaziz University Hospital — the first teaching hospital established in the Kingdom
+University Dental Hospital — the first fully integrated teaching dental hospital in the Kingdom
+
+Specialized Medical Centers
+University Family Medicine Center
+University Diabetes Center
+King Fahad Cardiac Center
+University Oncology Center
+King Abdullah Ear Specialists Center
+University Center for Sleep Medicine and Research
+Center of Excellence in Sports Medicine
+HAYAT Center — for combating sudden cardiac death
+
+Key services include oncology, family medicine, diabetes care, cardiac care, sleep medicine and cochlear implant surgery.`;
+
+const ksumcServicesAr = `الخدمات
+المستشفيات والمراكز التخصصية
+
+المدينة الطبية الجامعية مركز طبي أكاديمي من المستوى الثالث، يقدّم الرعاية التخصصية من خلال مستشفياته الجامعية ومراكزه الطبية.
+
+المستشفيات الجامعية
+مستشفى الملك خالد الجامعي
+مستشفى الملك عبدالعزيز الجامعي — أول مستشفى تعليمي في المملكة
+مستشفى طب الأسنان الجامعي — أول مستشفى تعليمي متكامل لطب الأسنان في المملكة
+
+المراكز الطبية التخصصية
+مركز طب الأسرة الجامعي
+المركز الجامعي للسكري
+مركز الملك فهد لطب وجراحة القلب
+المركز الجامعي للأورام
+مركز الملك عبدالله التخصصي للأذن
+المركز الجامعي لطب وأبحاث النوم
+مركز التميز في الطب الرياضي
+مركز حياة — لمكافحة الوفاة القلبية المفاجئة
+
+ومن أبرز خدماتنا: علاج الأورام، وطب الأسرة، ورعاية مرضى السكري، وأمراض القلب، وطب النوم، وجراحات زراعة القوقعة.`;
+
+const ksumcDigitalEn = `Digital Services
+SiHi — KSUMC Patient Portal
+
+SiHi (صحي) is the official patient app of King Saud University Medical City, available on the App Store and Google Play in Arabic and English.
+
+In the App
+Appointments and visits
+Laboratory results
+Medications
+Radiology images
+Medical reports
+Health education
+Sign-in with Nafath
+
+Download SiHi to stay up to date with your medical file at the Medical City.`;
+
+const ksumcDigitalAr = `الخدمات الرقمية
+تطبيق صحي — بوابة المرضى
+
+تطبيق "صحي" هو التطبيق الرسمي لمرضى المدينة الطبية الجامعية بجامعة الملك سعود، ومتاح على متجر App Store وGoogle Play باللغتين العربية والإنجليزية.
+
+خدمات التطبيق
+المواعيد والزيارات
+نتائج المختبر
+الأدوية
+صور الأشعة
+التقارير الطبية
+التثقيف الصحي
+تسجيل الدخول عبر نفاذ
+
+حمّل تطبيق "صحي" لتبقى على اطلاع دائم بملفك الطبي في المدينة الطبية.`;
+
 const getSections = (themeId: string, isRTL: boolean, locale: string): AboutSection[] => [
   {
     id: "hospital",
@@ -436,7 +764,7 @@ const getSections = (themeId: string, isRTL: boolean, locale: string): AboutSect
   },
   {
     id: "dna",
-    title: themeId === "caremed" ? "CareMed InBrief" : themeId === "dallah" ? "Dallah DNA" : themeId === "prime" ? "Prime DNA" : themeId === "kauh" ? "شفاء — هويتنا" : themeId === "andalusia" ? "Andalusia DNA" : "Fakeeh Care DNA",
+    title: themeId === "caremed" ? "CareMed InBrief" : themeId === "dallah" ? "Dallah DNA" : themeId === "prime" ? "Prime DNA" : themeId === "kauh" ? "شفاء — هويتنا" : themeId === "andalusia" ? "Andalusia DNA" : themeId === "qumc" ? "QUMC DNA" : themeId === "ksumc" ? "KSUMC DNA" : "Fakeeh Care DNA",
     titleKey: themeId === "caremed" ? "about.caremedInBrief" : themeId === "dallah" ? "about.dallahDna" : "about.dna",
     ...(themeId === "prime"
       ? { content: primeDna }
@@ -444,11 +772,15 @@ const getSections = (themeId: string, isRTL: boolean, locale: string): AboutSect
       ? { content: locale === "ar" ? kauhDnaAr : kauhDnaEn }
       : themeId === "andalusia"
       ? { content: andalusiaDna }
+      : themeId === "qumc"
+      ? { content: locale === "ar" ? qumcDnaAr : qumcDnaEn }
+      : themeId === "ksumc"
+      ? { content: locale === "ar" ? ksumcDnaAr : ksumcDnaEn }
       : { image: themeId === "burjeel" ? burjeelDna : themeId === "careinn" ? (isRTL ? careinnDnaAr : careinnDna) : themeId === "imc" ? imcDna : themeId === "dallah" ? dallahDna : themeId === "caremed" ? (isRTL ? careMedInBriefAr : careMedInBriefEn) : dnaImg }),
   },
   ...(themeId === "careinn" ? [] : [{
     id: "numbers",
-    title: themeId === "imc" ? "IMC History" : themeId === "caremed" ? "CareMed In Numbers" : themeId === "dallah" ? "Accreditations" : themeId === "prime" ? "Prime In Numbers" : themeId === "kauh" ? "شفاء — أرقام وإنجازات" : themeId === "andalusia" ? "Andalusia In Numbers" : "Fakeeh In Numbers",
+    title: themeId === "imc" ? "IMC History" : themeId === "caremed" ? "CareMed In Numbers" : themeId === "dallah" ? "Accreditations" : themeId === "prime" ? "Prime In Numbers" : themeId === "kauh" ? "شفاء — أرقام وإنجازات" : themeId === "andalusia" ? "Andalusia In Numbers" : themeId === "qumc" ? "QUMC In Numbers" : themeId === "ksumc" ? "KSUMC In Numbers" : "Fakeeh In Numbers",
     titleKey: themeId === "imc" ? "about.imcHistory" : themeId === "dallah" ? "about.accreditations" : "about.numbers",
     ...(themeId === "prime"
       ? { content: primeNumbers }
@@ -456,6 +788,10 @@ const getSections = (themeId: string, isRTL: boolean, locale: string): AboutSect
       ? { content: locale === "ar" ? kauhNumbersAr : kauhNumbersEn }
       : themeId === "andalusia"
       ? { content: andalusiaNumbers }
+      : themeId === "qumc"
+      ? { content: locale === "ar" ? qumcNumbersAr : qumcNumbersEn }
+      : themeId === "ksumc"
+      ? { content: locale === "ar" ? ksumcNumbersAr : ksumcNumbersEn }
       : { image: themeId === "burjeel" ? burjeelNumbers : themeId === "imc" ? imcHistory : themeId === "dallah" ? (isRTL ? dallahAccredsAr : dallahAccredsEn) : themeId === "caremed" ? (isRTL ? numbersAr : numbersEn) : numbersImg }),
   }]),
   {
@@ -463,7 +799,7 @@ const getSections = (themeId: string, isRTL: boolean, locale: string): AboutSect
     title: "Services",
     titleKey: "about.services",
     image: themeId === "burjeel" ? burjeelServices : undefined,
-    content: themeId === "burjeel" ? undefined : themeId === "andalusia" ? andalusiaServices : themeId === "kauh" ? (locale === "ar" ? kauhServicesAr : kauhServicesEn) : themeId === "prime" ? primeServices : themeId === "careinn"
+    content: themeId === "burjeel" ? undefined : themeId === "andalusia" ? andalusiaServices : themeId === "qumc" ? (locale === "ar" ? qumcServicesAr : qumcServicesEn) : themeId === "ksumc" ? (locale === "ar" ? ksumcServicesAr : ksumcServicesEn) : themeId === "kauh" ? (locale === "ar" ? kauhServicesAr : kauhServicesEn) : themeId === "prime" ? primeServices : themeId === "careinn"
       ? (locale === "ar" ? `• CareInn15
 شاشة تفاعلية بجانب السرير تتيح للمرضى سهولة الوصول إلى خدمات المستشفى والترفيه والطلبات والمعلومات الأساسية أثناء إقامتهم. توفر تجربة أكثر تواصلاً وراحة داخل الغرفة.
 
@@ -521,7 +857,7 @@ Support Services
     id: "accreditations",
     title: themeId === "careinn" ? "Certifications" : themeId === "dallah" ? "Awards" : themeId === "kauh" ? "الاعتمادات والجوائز" : "Accreditations",
     titleKey: themeId === "careinn" ? "about.certifications" : themeId === "dallah" ? "about.awards" : "about.accreditations",
-    image: themeId === "burjeel" ? burjeelAccreds : themeId === "careinn" ? careinnCertifications : themeId === "imc" ? imcAccreds : themeId === "dallah" ? (isRTL ? dallahAwardsAr : dallahAwardsEn) : themeId === "caremed" ? accredsImg : themeId === "prime" ? primeAccreds : themeId === "kauh" ? shifaaAccreds : themeId === "andalusia" ? andalusiaAccreds : accreditationsImg,
+    image: themeId === "burjeel" ? burjeelAccreds : themeId === "careinn" ? careinnCertifications : themeId === "imc" ? imcAccreds : themeId === "dallah" ? (isRTL ? dallahAwardsAr : dallahAwardsEn) : themeId === "caremed" ? accredsImg : themeId === "prime" ? primeAccreds : themeId === "kauh" ? shifaaAccreds : themeId === "andalusia" ? andalusiaAccreds : themeId === "qumc" ? qumcAccreds : themeId === "ksumc" ? ksumcAccreds : accreditationsImg,
   },
   {
     id: "digital",
@@ -529,7 +865,7 @@ Support Services
     titleKey: themeId === "careinn" ? "about.participations" : themeId === "dallah" ? "about.patientRights" : "about.digital",
     ...(themeId === "careinn"
       ? { image: careinnParticipations }
-      : { content: themeId === "andalusia" ? andalusiaDigital : themeId === "kauh" ? (locale === "ar" ? kauhDigitalAr : kauhDigitalEn) : themeId === "dallah" ? (isRTL ? dallahPatientRightsAr : dallahPatientRightsEn) : themeId === "prime" ? primeDigital : `Connected Care at Your Fingertips
+      : { content: themeId === "andalusia" ? andalusiaDigital : themeId === "qumc" ? (locale === "ar" ? qumcDigitalAr : qumcDigitalEn) : themeId === "ksumc" ? (locale === "ar" ? ksumcDigitalAr : ksumcDigitalEn) : themeId === "kauh" ? (locale === "ar" ? kauhDigitalAr : kauhDigitalEn) : themeId === "dallah" ? (isRTL ? dallahPatientRightsAr : dallahPatientRightsEn) : themeId === "prime" ? primeDigital : `Connected Care at Your Fingertips
 
 Patient Portal
 • View lab results & medical records
