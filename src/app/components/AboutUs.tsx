@@ -760,7 +760,7 @@ const getSections = (themeId: string, isRTL: boolean, locale: string): AboutSect
     id: "hospital",
     title: themeId === "dallah" ? "About Dallah" : "Our Hospital",
     titleKey: themeId === "dallah" ? "about.aboutDallah" : "about.ourHospital",
-    video: themeId === "burjeel" ? "OH71A4YxCG4" : themeId === "imc" ? imcVideo : themeId === "careinn" ? (locale === "ar" ? "5ZQofr0sVn4" : "pbnYEIewk6Q") : themeId === "caremed" ? "HW7Od_8C3_I" : themeId === "dallah" ? "JPgxKaOQf3s" : themeId === "prime" ? "qM3E7ALQ4TM" : themeId === "kauh" ? "DlQlpgq8Z0s" : themeId === "andalusia" ? "_YdW8et9WSw" : "4VXy7_qn608",
+    video: themeId === "burjeel" ? "OH71A4YxCG4" : themeId === "imc" ? imcVideo : themeId === "careinn" ? (locale === "ar" ? "5ZQofr0sVn4" : "pbnYEIewk6Q") : themeId === "caremed" ? "HW7Od_8C3_I" : themeId === "dallah" ? "JPgxKaOQf3s" : themeId === "prime" ? "qM3E7ALQ4TM" : themeId === "kauh" ? "DlQlpgq8Z0s" : themeId === "andalusia" ? "_YdW8et9WSw" : themeId === "qumc" ? "YroBXrQ-Vb4" : "4VXy7_qn608",
   },
   {
     id: "dna",
