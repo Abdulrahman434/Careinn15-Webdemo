@@ -830,7 +830,7 @@ const translations: Record<string, TranslationEntry> = {
 "care.pcc.partner.status.active": { en: "Assigned", ar: "معيّن", ur: "مقرر شدہ" },
 "care.pcc.partner.status.nominated": { en: "Awaiting agreement", ar: "بانتظار الموافقة", ur: "منظوری کا انتظار" },
 "care.pcc.partner.status.declined": { en: "Not assigned", ar: "غير معيّن", ur: "مقرر نہیں" },
-/* Communication Board — what the patient wants to raise with the ward. */
+/* Questions & Concerns (keys still say "board") — what the patient wants to raise with the ward. */
 /* ─── Care Partner Agreement ───
    The fourteen statements are transcribed from Dr. Soliman Fakeeh Hospital's
    own "Care Partner Agreement Checklist" form, English and Arabic sides. This
@@ -882,17 +882,17 @@ const translations: Record<string, TranslationEntry> = {
 "care.cp.exit.body": { en: "Do you want to leave? The details you entered will be lost.", ar: "هل تريد الخروج؟ ستفقد البيانات المدخلة.", ur: "کیا آپ جانا چاہتے ہیں؟ درج کردہ تفصیلات ضائع ہو جائیں گی۔" },
 "care.cp.exit.keep": { en: "Keep editing", ar: "متابعة التعديل", ur: "ترمیم جاری رکھیں" },
 "care.cp.exit.discard": { en: "Discard and exit", ar: "الخروج دون حفظ", ur: "مسترد کر کے باہر نکلیں" },
-"care.pcc.board.title": { en: "Communication Board", ar: "لوحة التواصل", ur: "رابطہ بورڈ" },
-"care.pcc.board.intro": { en: "Write down anything you want to raise with your care team. They will read it with you at the bedside.", ar: "دوّن ما ترغب في مناقشته مع فريق الرعاية. سيطّلعون عليه معك بجانب السرير.", ur: "جو بات آپ اپنی نگہداشت ٹیم سے کہنا چاہتے ہیں لکھ لیں۔ وہ بستر کے پاس آپ کے ساتھ اسے پڑھیں گے۔" },
-"care.pcc.board.add": { en: "Add to the board", ar: "إضافة إلى اللوحة", ur: "بورڈ میں شامل کریں" },
+"care.pcc.board.title": { en: "Questions & Concerns", ar: "الأسئلة والمخاوف", ur: "سوالات اور خدشات" },
+"care.pcc.board.intro": { en: "Write down any questions or concerns for your care team. They will go through them with you at the bedside.", ar: "دوّن أي أسئلة أو مخاوف لفريق الرعاية. سيناقشونها معك بجانب السرير.", ur: "اپنی نگہداشت ٹیم کے لیے کوئی بھی سوال یا خدشہ لکھ لیں۔ وہ بستر کے پاس آپ کے ساتھ ان پر بات کریں گے۔" },
+"care.pcc.board.add": { en: "Add a question or concern", ar: "إضافة سؤال أو مخاوف", ur: "سوال یا خدشہ شامل کریں" },
 "care.pcc.board.placeholder": { en: "A question, something worrying you, or anything else you\u2019d like the team to know…", ar: "سؤال، أو أمر يقلقك، أو أي شيء آخر تود أن يعرفه الفريق…", ur: "کوئی سوال، کوئی پریشانی، یا کوئی اور بات جو آپ ٹیم کو بتانا چاہتے ہیں…" },
 "care.pcc.board.save": { en: "Add", ar: "إضافة", ur: "شامل کریں" },
 "care.pcc.board.remove": { en: "Remove", ar: "إزالة", ur: "ہٹائیں" },
 "care.pcc.board.pain": { en: "Pain right now (optional)", ar: "مستوى الألم الآن (اختياري)", ur: "ابھی درد (اختیاری)" },
 "care.pcc.board.painShort": { en: "Pain {0}/10", ar: "الألم {0}/10", ur: "درد {0}/10" },
-"care.pcc.board.compose": { en: "Add to the board", ar: "إضافة إلى لوحة التواصل", ur: "بورڈ میں شامل کریں" },
-"care.pcc.board.what": { en: "What would you like to raise with your care team?", ar: "ما الذي تود طرحه على فريق الرعاية؟", ur: "آپ اپنی نگہداشت ٹیم سے کیا بات کہنا چاہیں گے؟" },
-"care.pcc.board.count": { en: "{0} on the board", ar: "{0} على اللوحة", ur: "بورڈ پر {0}" },
+"care.pcc.board.compose": { en: "Add a question or concern", ar: "إضافة سؤال أو مخاوف", ur: "سوال یا خدشہ شامل کریں" },
+"care.pcc.board.what": { en: "What would you like to ask or tell your care team?", ar: "ما الذي تود أن تسأله أو تخبر به فريق الرعاية؟", ur: "آپ اپنی نگہداشت ٹیم سے کیا پوچھنا یا کہنا چاہیں گے؟" },
+"care.pcc.board.count": { en: "{0} added", ar: "{0} مضاف", ur: "{0} شامل" },
 "care.pcc.board.empty": { en: "Nothing yet", ar: "لا يوجد بعد", ur: "ابھی کچھ نہیں" },
 "care.preferences.title": { en: "Your Preferences", ar: "تفضيلاتك", ur: "آپ کی ترجیحات" },
 "care.preferences.description": { en: "A few short questions about your meals, sleep, prayer, and daily care — so your stay follows what works for you.", ar: "أسئلة قصيرة عن وجباتك ونومك وصلاتك ورعايتك اليومية — لتكون إقامتك على ما يناسبك.", ur: "آپ کے کھانے، نیند، نماز اور روزمرہ نگہداشت کے بارے میں چند مختصر سوالات — تاکہ آپ کا قیام آپ کی پسند کے مطابق ہو۔" },
