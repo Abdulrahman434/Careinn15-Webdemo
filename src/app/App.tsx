@@ -613,7 +613,7 @@ function BedsideScreen() {
       return !(createdBeforeToday && !modifiedToday);
     }).length;
 
-    const laterCount = acknowledgedBroadcasts.filter(b => b.isLater && !b.acknowledgedAt && !b.isMissed).length;
+    const laterCount = acknowledgedBroadcasts.filter(b => b.isLater && !b.acknowledgedAt && !b.isMissed && !b.clearedAt).length;
 
     return getHardcodedUnreadCount() + activeApiCount + laterCount;
   }, [apiNotifications, notifTrigger, getHardcodedUnreadCount, acknowledgedBroadcasts]);
@@ -1147,6 +1147,8 @@ function BedsideScreen() {
           ...prev,
           isLater: actionType === "later",
           acknowledgedAt: actionType === "later" ? undefined : nowStr,
+          // Answered again from history — it belongs on the main list again.
+          clearedAt: undefined,
         };
         // Schedule outside state updater
         setTimeout(() => {
@@ -2163,7 +2165,11 @@ function BedsideScreen() {
             acknowledgedBroadcasts={acknowledgedBroadcasts}
             onNotificationClick={handleNotificationClick}
             apiAlerts={apiNotifications}
-            onClearAll={() => setAcknowledgedBroadcasts([])}
+            onClearAll={() => {
+              // Cleared, not deleted — history still lists them.
+              const at = Date.now();
+              setAcknowledgedBroadcasts(list => list.map(b => b.clearedAt ? b : { ...b, clearedAt: at }));
+            }}
             onMarkAllRead={handleMarkAllRead}
             onNotifChange={() => setNotifTrigger(prev => prev + 1)}
           />

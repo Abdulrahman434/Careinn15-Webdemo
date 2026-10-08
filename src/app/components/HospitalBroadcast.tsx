@@ -41,6 +41,8 @@ export interface BroadcastNotification {
   ctaUrl?: string;
   ctaSurveyId?: string;
   isLater?: boolean;
+  /** Set by Clear All: off the main list, still shown in history. */
+  clearedAt?: number;
 }
 
 const PRIORITY_CONFIG: Record<BroadcastPriority, {
