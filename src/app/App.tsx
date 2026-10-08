@@ -178,10 +178,10 @@ const isBeforeToday = (dateStr: string | null | undefined): boolean => {
   return d.getTime() < today.getTime();
 };
 
-/** Screensaver idle delay: thirty seconds, for every screen. The onboarding
- *  and settings choice is no longer read — the delay is set here, not per
- *  device. */
-const SCREENSAVER_TIMEOUT_MS = 30_000;
+/** Screensaver idle delay: ten minutes, for every hospital and every screen.
+ *  The onboarding and settings choice is no longer read — the delay is set
+ *  here, not per device. */
+const SCREENSAVER_TIMEOUT_MS = 10 * 60_000;
 const getScreensaverTimeoutMs = (): number => SCREENSAVER_TIMEOUT_MS;
 
 const getSavedLayoutMode = (): 1 | 2 | 3 => {
@@ -921,7 +921,7 @@ function BedsideScreen() {
         if (!anyOtherOverlayOpen) {
           setShowTasbih(true);
         }
-      }, getScreensaverTimeoutMs()); // onboarding preference, default 10 min
+      }, getScreensaverTimeoutMs());
     };
 
     const handleUserActivity = () => {
