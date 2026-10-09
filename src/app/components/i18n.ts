@@ -231,7 +231,7 @@ const translations: Record<string, TranslationEntry> = {
   "need.cancel": { en: "Cancel", ar: "إلغاء", ur: "منسوخ کریں" },
   "need.send": { en: "Send Request", ar: "أرسل الطلب", ur: "درخواست بھیجیں" },
   "need.multi.selected": { en: "{0} selected", ar: "{0} محددة", ur: "{0} منتخب" },
-  "need.multi.clear": { en: "Clear", ar: "مسح", ur: "صاف کریں" },
+  "need.multi.clear": { en: "Clear selection", ar: "إلغاء التحديد", ur: "انتخاب ختم کریں" },
   "need.multi.continue": { en: "Continue", ar: "متابعة", ur: "جاری رکھیں" },
   "need.report.submit": { en: "Send Report", ar: "أرسل البلاغ", ur: "رپورٹ بھیجیں" },
   "need.success.title": { en: "Thank you!", ar: "شكراً لك!", ur: "شکریہ!" },
