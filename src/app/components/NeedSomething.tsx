@@ -1304,10 +1304,10 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                     <p style={{ ...TEXT_STYLE.sectionTitle, fontFamily, color: theme.textHeading }}>
                       {mineFilter === "report" ? t("need.empty.reportTitle") : t("need.empty.title")}
                     </p>
-                    {/* Says where requests of this kind come from, and the
-                        button goes straight there. */}
+                    {/* The category's own subheading, and the button goes
+                        straight to it. */}
                     <p style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textMuted, maxWidth: 560 }}>
-                      {t(`need.empty.${mineFilter}`)}
+                      {mineFilter === "all" ? t("need.header.subtitle") : t(`need.sub.${mineFilter}`)}
                     </p>
                     <button
                       onClick={() => {
