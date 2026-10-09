@@ -1120,8 +1120,9 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
                   ✕
                 </button>
               </div>
-              {/* Overlay content */}
-              <div className="flex-1 min-h-0 overflow-y-auto">
+              {/* Overlay content — a flex column, not a scroller: the tabs row
+                  stays put and only HistoryView's own list scrolls. */}
+              <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 <HistoryView
                   activeOrders={activeOrders}
                   pastOrders={pastOrders}

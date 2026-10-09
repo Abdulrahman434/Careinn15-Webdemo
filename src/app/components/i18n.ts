@@ -159,6 +159,8 @@ const translations: Record<string, TranslationEntry> = {
   "need.support.barber": { en: "Barber & Salon", ar: "الحلاقة والتجميل", ur: "باربر اور سیلون" },
   "need.support.barber.sub": { en: "Haircut, shave or grooming at the bedside", ar: "قص الشعر أو الحلاقة أو التجميل بجانب السرير", ur: "بیڈ سائیڈ پر بال کٹوانا، شیو یا گرومنگ" },
   "need.tab.mine": { en: "My Requests", ar: "طلباتي", ur: "میری درخواستیں" },
+  "need.mine.all": { en: "All Requests", ar: "جميع الطلبات", ur: "تمام درخواستیں" },
+  "need.mine.count": { en: "{0} Requests", ar: "{0} طلبات", ur: "{0} درخواستیں" },
   "need.title.request": { en: "What do you need today?", ar: "ماذا تحتاج اليوم؟", ur: "آپ کو آج کیا چاہیے؟" },
   "need.title.roomcare": { en: "Room care request", ar: "طلب عناية بالغرفة", ur: "کمرے کی دیکھ بھال کی درخواست" },
   "need.title.report": { en: "Report an issue", ar: "أبلغ عن مشكلة", ur: "مسئلہ رپورٹ کریں" },
