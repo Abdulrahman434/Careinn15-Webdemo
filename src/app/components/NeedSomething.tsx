@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   HandHelping, Wrench, ClipboardList,
   CheckCircle2, Clock, X, Send, Inbox,
-  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Check, ListChecks,
+  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowRight, Check, ListChecks,
   CircleDot, UserRound, Truck,
   // Unified Patient Services icon set — clean, outlined, single-stroke lucide
   // glyphs replacing the old emoji illustrations (matches Entertainment / Home).
@@ -872,61 +872,68 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                     and the send button on either side. The row is always there
                     whether or not anything is ticked, so choosing an item never
                     resizes the cards above it. */}
-                {isMultiTab && (
-                  <div className="shrink-0 relative flex items-center" style={{ height: 56 }}>
-                    {isMultiTab && picked.length > 0 && (
-                      <>
-                        <div className="flex items-center gap-1 relative">
-                          <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textHeading }}>
-                            {t("need.multi.selected", String(picked.length))}
-                          </span>
-                          <button
-                            onClick={() => setPicked([])}
-                            className="flex items-center gap-2 cursor-pointer active:scale-95 transition-transform"
-                            style={{
-                              height: 48,
-                              padding: "0 20px",
-                              marginInlineStart: 12,
-                              borderRadius: theme.radiusFull,
-                              backgroundColor: theme.surface,
-                              border: `1.5px solid ${theme.borderDefault}`,
-                              outline: "none",
-                            }}
-                          >
-                            <X size={18} color={theme.textHeading} strokeWidth={2.4} />
-                            <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textHeading }}>
-                              {t("need.multi.clear")}
-                            </span>
-                          </button>
-                        </div>
-                        <div className="flex-1" />
-                        <button
-                          onClick={() => openSheet(picked, gridKind)}
-                          className="relative flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] transition-transform"
-                          style={{
-                            height: 48,
-                            padding: "0 24px",
-                            borderRadius: theme.radiusFull,
-                            backgroundColor: theme.primary,
-                            border: "none",
-                            outline: "none",
-                            boxShadow: SHADOW.md,
-                          }}
-                        >
-                          <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textInverse }}>
-                            {t("need.multi.continue")}
-                          </span>
-                          <Send
-                            size={18}
-                            color={theme.textInverse}
-                            strokeWidth={2.4}
-                            style={isRTL ? { transform: "scaleX(-1)" } : undefined}
-                          />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
+                {/* Selection bar — a tinted strip across the bottom of the panel,
+                    only while something is ticked. The grid rows are a fixed
+                    height, so the bar arriving never resizes a card. */}
+                <AnimatePresence>
+                  {isMultiTab && picked.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 16 }}
+                      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                      className="shrink-0 flex items-center justify-between"
+                      style={{
+                        margin: "16px -32px -28px",
+                        padding: "14px 32px",
+                        backgroundColor: theme.primaryLight,
+                        borderTop: `1px solid ${theme.borderSubtle}`,
+                      }}
+                    >
+                      <button
+                        onClick={() => setPicked([])}
+                        className="flex items-center gap-3 cursor-pointer active:scale-95 transition-transform"
+                        style={{
+                          height: 52,
+                          padding: "0 24px",
+                          borderRadius: theme.radiusFull,
+                          backgroundColor: theme.surface,
+                          border: `1.5px solid ${theme.primary}`,
+                          outline: "none",
+                        }}
+                      >
+                        <X size={20} color={theme.primary} strokeWidth={2.4} />
+                        <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.primary }}>
+                          {t("need.multi.clear")}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => openSheet(picked, gridKind)}
+                        className="flex items-center justify-center gap-4 cursor-pointer active:scale-[0.98] transition-transform"
+                        style={{
+                          height: 52,
+                          minWidth: 220,
+                          padding: "0 28px",
+                          borderRadius: theme.radiusFull,
+                          backgroundColor: theme.primary,
+                          border: "none",
+                          outline: "none",
+                          boxShadow: SHADOW.md,
+                        }}
+                      >
+                        <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textInverse }}>
+                          {t("need.multi.continue")} ({picked.length})
+                        </span>
+                        <ArrowRight
+                          size={20}
+                          color={theme.textInverse}
+                          strokeWidth={2.4}
+                          style={isRTL ? { transform: "scaleX(-1)" } : undefined}
+                        />
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
           </div>
         </div>
