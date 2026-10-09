@@ -66,7 +66,8 @@ const STORAGE_KEY = "careinn-need-requests";
 interface NeedRequest {
   id: string;
   kind: "request" | "report" | "roomcare" | "support";
-  itemKey: string; // i18n key, e.g. "need.item.blanket"
+  itemKey: string; // i18n key, e.g. "need.item.blanket" — first item of the order
+  itemKeys?: string[]; // every item in the order when several were ticked together
   emoji: string;
   note: string;
   createdAt: number; // epoch ms
@@ -289,6 +290,10 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
 
   /* An interpreter request is useless without a language, so the sheet asks for
      one and will not send until it has it. */
+  /* Supplies and room care always show the basket layout — "N selected" plus
+     a chip per item — so one item and five items look the same. */
+  const isBatchSheet = !!selected && (selected.kind === "request" || selected.kind === "roomcare");
+
   const asksLanguage = !!selected && selected.cards.some((c) => c.key === INTERPRETER_KEY);
   const languageMissing = asksLanguage && !selectedChip;
 
@@ -296,22 +301,22 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
     if (!selected || selected.cards.length === 0) return;
     if (languageMissing) return;
     const at = Date.now();
-    /* One entry per item, so each is tracked and delivered on its own — the
-       shared note rides along with every one of them. Newest first, and the
-       list the patient ticked keeps its order within that batch. */
+    /* Everything ticked together is one order: one entry, one reference
+       number, one status — the items keep the order the patient ticked them. */
     const noteText = [
       asksLanguage && selectedChip ? t("need.support.interpreter.summary", t(selectedChip)) : "",
       note.trim(),
     ].filter(Boolean).join(" \u00b7 ");
-    const entries: NeedRequest[] = selected.cards.map((card, i) => ({
-      id: `${at}-${i}-${Math.random().toString(36).slice(2, 7)}`,
+    const entry: NeedRequest = {
+      id: `${at}-${Math.random().toString(36).slice(2, 7)}`,
       kind: selected.kind,
-      itemKey: card.key,
-      emoji: card.emoji,
+      itemKey: selected.cards[0].key,
+      itemKeys: selected.cards.map((c) => c.key),
+      emoji: selected.cards[0].emoji,
       note: noteText,
       createdAt: at,
-    }));
-    setRequests((prev) => [...entries, ...prev]);
+    };
+    setRequests((prev) => [entry, ...prev]);
     const kind = selected.kind;
     setSelected(null);
     setPicked([]);
@@ -877,15 +882,19 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                           </span>
                           <button
                             onClick={() => setPicked([])}
-                            className="cursor-pointer active:scale-95 transition-transform"
+                            className="flex items-center gap-2 cursor-pointer active:scale-95 transition-transform"
                             style={{
-                              padding: "8px 12px",
-                              backgroundColor: "transparent",
-                              border: "none",
+                              height: 48,
+                              padding: "0 20px",
+                              marginInlineStart: 12,
+                              borderRadius: theme.radiusFull,
+                              backgroundColor: theme.surface,
+                              border: `1.5px solid ${theme.borderDefault}`,
                               outline: "none",
                             }}
                           >
-                            <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textMuted, textDecoration: "underline" }}>
+                            <X size={18} color={theme.textHeading} strokeWidth={2.4} />
+                            <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textHeading }}>
                               {t("need.multi.clear")}
                             </span>
                           </button>
@@ -968,7 +977,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                   {(() => {
                     /* JSX cannot name a component through an index, so the
                        glyph is resolved before it is rendered. */
-                    const SheetIcon = selected.cards.length === 1 ? selected.cards[0].Icon : ListChecks;
+                    const SheetIcon = isBatchSheet ? ListChecks : selected.cards[0].Icon;
                     return (
                       <SheetIcon
                         size={34}
@@ -980,9 +989,9 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p style={{ ...TEXT_STYLE.sectionTitle, fontFamily, color: theme.textHeading }}>
-                    {selected.cards.length === 1
-                      ? t(selected.cards[0].key)
-                      : t("need.multi.selected", String(selected.cards.length))}
+                    {isBatchSheet
+                      ? t("need.multi.selected", String(selected.cards.length))
+                      : t(selected.cards[0].key)}
                   </p>
                   <p style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textMuted, marginTop: 2 }}>
                     {selected.kind === "report" ? t("need.report.whatIssue") : t("need.notes.title")}
@@ -992,7 +1001,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
 
               {/* What is about to be sent — a last look before it goes, and a
                   way to drop one without going back to the grid. */}
-              {selected.cards.length > 1 && (
+              {isBatchSheet && (
                 <div className="flex flex-wrap gap-2 mb-4">
                   {selected.cards.map((card) => (
                     <button
@@ -1248,7 +1257,8 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       const StatusIcon = st.Icon;
                       const isComplaint = r.kind === "report";
                       const typeColor = isComplaint ? theme.accent : theme.primary;
-                      const RowIcon = ICON_BY_KEY[r.itemKey];
+                      const orderKeys = r.itemKeys && r.itemKeys.length > 0 ? r.itemKeys : [r.itemKey];
+                      const RowIcon = orderKeys.length > 1 ? ListChecks : ICON_BY_KEY[r.itemKey];
                       return (
                         <div
                           key={r.id}
@@ -1293,7 +1303,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                               {isComplaint ? t("need.type.complaint") : t("need.type.request")}
                             </span>
                             <p style={{ ...TEXT_STYLE.cardTitle, fontFamily, color: theme.textHeading }}>
-                              {t(r.itemKey)}
+                              {orderKeys.map((k) => t(k)).join(", ")}
                             </p>
                             {r.note ? (
                               <p
