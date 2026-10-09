@@ -175,10 +175,6 @@ const LANGUAGE_CHIPS: string[] = [
   "need.lang.other",
 ];
 
-const ICON_BY_KEY: Record<string, LucideIcon> = Object.fromEntries(
-  [...REQUEST_ITEMS, ...REPORT_ITEMS, ...ROOM_CARE_ITEMS, ...SUPPORT_ITEMS].map((c) => [c.key, c.Icon]),
-);
-
 /* ── Status: derived from elapsed time (no backend). ── */
 type StatusKey = "sent" | "preparing" | "onway" | "delivered";
 
@@ -1265,7 +1261,13 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       const isComplaint = r.kind === "report";
                       const typeColor = isComplaint ? theme.accent : theme.primary;
                       const orderKeys = r.itemKeys && r.itemKeys.length > 0 ? r.itemKeys : [r.itemKey];
-                      const RowIcon = orderKeys.length > 1 ? ListChecks : ICON_BY_KEY[r.itemKey];
+                      /* Each row wears its category's icon — the same glyph as
+                         the tab it was sent from. */
+                      const RowIcon =
+                        r.kind === "report" ? Wrench
+                          : r.kind === "roomcare" ? Sparkles
+                          : r.kind === "support" ? HeartHandshake
+                          : HandHelping;
                       return (
                         <div
                           key={r.id}
@@ -1282,14 +1284,10 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                             style={{
                               width: 60, height: 60,
                               borderRadius: theme.radiusMd,
-                              backgroundColor: theme.primaryLight,
+                              backgroundColor: isComplaint ? theme.errorSubtle : theme.primaryLight,
                             }}
                           >
-                            {RowIcon ? (
-                              <RowIcon size={30} color={theme.primaryOnLight} strokeWidth={1.8} />
-                            ) : (
-                              r.emoji
-                            )}
+                            <RowIcon size={30} color={isComplaint ? theme.errorOn : theme.primaryOnLight} strokeWidth={1.8} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <span
