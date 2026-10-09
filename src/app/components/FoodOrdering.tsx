@@ -745,7 +745,8 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
     else if (step === "confirmed") onClose();
   }, [step, onClose, effectiveDiet, selectedMealId]);
 
-  const showPatientBar = step !== "confirmed";
+  /* Every step, confirmation included, says who the order is for. */
+  const showPatientBar = true;
   const showBottomBar = true;
   const showBackButton = true;
   const isFlow = step === "select-type" || step === "select-meal" || step === "kids-breakfast-type" || step === "build-meal" || step === "confirmed";
@@ -793,8 +794,8 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
       mealName={currentMeal ? loc(currentMeal.label) : null}
       fontFamily={fontFamily}
       isRTL={isRTL}
-      onDietClick={orderFor === "patient" ? handleOpenDietModal : undefined}
-      onAllergiesClick={orderFor === "patient" ? handleOpenAllergiesModal : undefined}
+      onDietClick={orderFor === "patient" && step !== "confirmed" ? handleOpenDietModal : undefined}
+      onAllergiesClick={orderFor === "patient" && step !== "confirmed" ? handleOpenAllergiesModal : undefined}
     />
   );
 

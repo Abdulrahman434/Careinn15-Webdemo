@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   HandHelping, Wrench, ClipboardList,
   CheckCircle2, Clock, X, Send, Inbox,
-  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowRight, Check, ListChecks,
+  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Check, ListChecks,
   CircleDot, UserRound, Truck,
   // Unified Patient Services icon set — clean, outlined, single-stroke lucide
   // glyphs replacing the old emoji illustrations (matches Entertainment / Home).
@@ -872,8 +872,8 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                     and the send button on either side. The row is always there
                     whether or not anything is ticked, so choosing an item never
                     resizes the cards above it. */}
-                {/* Selection bar — a tinted strip across the bottom of the panel,
-                    only while something is ticked. The grid rows are a fixed
+                {/* Selection bar — the panel's white footer row (same as Meal
+                    Ordering's), only while something is ticked. The grid rows are a fixed
                     height, so the bar arriving never resizes a card. */}
                 <AnimatePresence>
                   {isMultiTab && picked.length > 0 && (
@@ -885,47 +885,47 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       className="shrink-0 flex items-center justify-between"
                       style={{
                         margin: "16px -32px -28px",
-                        padding: "14px 32px",
-                        backgroundColor: theme.primaryLight,
-                        borderTop: `1px solid ${theme.borderSubtle}`,
+                        padding: "20px 40px",
+                        backgroundColor: theme.surface,
+                        borderTop: `1.5px solid ${theme.borderCardColor}`,
                       }}
                     >
                       <button
                         onClick={() => setPicked([])}
-                        className="flex items-center gap-3 cursor-pointer active:scale-95 transition-transform"
+                        className="flex items-center gap-[10px] cursor-pointer active:scale-95 transition-transform"
                         style={{
-                          height: 52,
-                          padding: "0 24px",
-                          borderRadius: theme.radiusFull,
+                          height: 60,
+                          padding: "0 28px",
+                          borderRadius: theme.radiusMd,
                           backgroundColor: theme.surface,
                           border: `1.5px solid ${theme.primary}`,
                           outline: "none",
+                          boxShadow: SHADOW.md,
                         }}
                       >
-                        <X size={20} color={theme.primary} strokeWidth={2.4} />
-                        <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.primary }}>
+                        <X size={20} color={theme.primaryOn} strokeWidth={2.5} />
+                        <span style={{ ...TEXT_STYLE.button, fontWeight: WEIGHT.semibold, fontFamily, color: theme.primaryOn }}>
                           {t("need.multi.clear")}
                         </span>
                       </button>
                       <button
                         onClick={() => openSheet(picked, gridKind)}
-                        className="flex items-center justify-center gap-4 cursor-pointer active:scale-[0.98] transition-transform"
+                        className="flex items-center justify-center gap-[10px] cursor-pointer active:scale-[0.97] transition-transform"
                         style={{
-                          height: 52,
-                          minWidth: 220,
-                          padding: "0 28px",
-                          borderRadius: theme.radiusFull,
+                          height: 60,
+                          padding: "0 32px",
+                          borderRadius: theme.radiusMd,
                           backgroundColor: theme.primary,
                           border: "none",
                           outline: "none",
                           boxShadow: SHADOW.md,
                         }}
                       >
-                        <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textInverse }}>
+                        <span style={{ ...TEXT_STYLE.button, fontFamily, color: theme.textInverse }}>
                           {t("need.multi.continue")} ({picked.length})
                         </span>
-                        <ArrowRight
-                          size={20}
+                        <ChevronRight
+                          size={22}
                           color={theme.textInverse}
                           strokeWidth={2.4}
                           style={isRTL ? { transform: "scaleX(-1)" } : undefined}
