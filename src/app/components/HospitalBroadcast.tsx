@@ -276,56 +276,19 @@ export function HospitalBroadcast({
               ...TEXT_STYLE.body,
               color: theme.textBody,
               margin: 0,
-              marginBottom: "32px",
+              marginBottom: isPrayer ? "20px" : "32px",
               lineHeight: 1.7,
             }}
           >
             {loc(notification.body)}
           </p>
 
-          {/* Acknowledge button */}
-          <button
-            onClick={() => handleAcknowledge("read")}
-            className="w-full cursor-pointer flex items-center justify-center gap-3 active:scale-[0.97] transition-transform"
-            style={{
-              height: "60px",
-              borderRadius: theme.radiusMd,
-              backgroundColor: isUrgent ? "#D10044" : theme.primary,
-              border: "none",
-              outline: "none",
-              boxShadow: `0 4px 20px ${isUrgent ? "rgba(209,0,68,0.3)" : `${theme.primary}30`}`,
-            }}
-          >
-            {notification.ctaAction === "open-url" ? (
-              <ExternalLink size={22} style={{ color: theme.textInverse }} />
-            ) : notification.ctaAction === "open-survey" ? (
-              <ClipboardList size={22} style={{ color: theme.textInverse }} />
-            ) : notification.ctaAction === "open-pdf" ? (
-              <FileText size={22} style={{ color: theme.textInverse }} />
-            ) : notification.ctaAction === "open-image" ? (
-              <ImageIcon size={22} style={{ color: theme.textInverse }} />
-            ) : notification.ctaAction === "open-video" ? (
-              <Play size={22} style={{ color: theme.textInverse }} />
-            ) : (
-              <CheckCircle2 size={22} style={{ color: theme.textInverse }} />
-            )}
-            <span
-              style={{
-                fontFamily,
-                ...TEXT_STYLE.button,
-                color: theme.textInverse,
-              }}
-            >
-              {notification.cta ? loc(notification.cta) : (locale === "ar" ? "تم الاطلاع" : "I've Read This")}
-            </span>
-          </button>
-
           {/* Prayer: azan sound on/off, right where the azan is heard. Off
               also stops the azan playing now; it is the same switch as the
               prayer alarm in Settings. */}
           {isPrayer && (
             <div
-              className="flex items-center gap-3 mt-3 w-full"
+              className="flex items-center gap-3 mb-4 w-full"
               style={{
                 padding: "10px 14px",
                 borderRadius: theme.radiusMd,
@@ -381,6 +344,43 @@ export function HospitalBroadcast({
               </button>
             </div>
           )}
+
+          {/* Acknowledge button */}
+          <button
+            onClick={() => handleAcknowledge("read")}
+            className="w-full cursor-pointer flex items-center justify-center gap-3 active:scale-[0.97] transition-transform"
+            style={{
+              height: "60px",
+              borderRadius: theme.radiusMd,
+              backgroundColor: isUrgent ? "#D10044" : theme.primary,
+              border: "none",
+              outline: "none",
+              boxShadow: `0 4px 20px ${isUrgent ? "rgba(209,0,68,0.3)" : `${theme.primary}30`}`,
+            }}
+          >
+            {notification.ctaAction === "open-url" ? (
+              <ExternalLink size={22} style={{ color: theme.textInverse }} />
+            ) : notification.ctaAction === "open-survey" ? (
+              <ClipboardList size={22} style={{ color: theme.textInverse }} />
+            ) : notification.ctaAction === "open-pdf" ? (
+              <FileText size={22} style={{ color: theme.textInverse }} />
+            ) : notification.ctaAction === "open-image" ? (
+              <ImageIcon size={22} style={{ color: theme.textInverse }} />
+            ) : notification.ctaAction === "open-video" ? (
+              <Play size={22} style={{ color: theme.textInverse }} />
+            ) : (
+              <CheckCircle2 size={22} style={{ color: theme.textInverse }} />
+            )}
+            <span
+              style={{
+                fontFamily,
+                ...TEXT_STYLE.button,
+                color: theme.textInverse,
+              }}
+            >
+              {notification.cta ? loc(notification.cta) : (locale === "ar" ? "تم الاطلاع" : "I've Read This")}
+            </span>
+          </button>
 
           {/* Skip / Check Later secondary options (Hidden for prayer notifications) */}
           {!isPrayer && (
