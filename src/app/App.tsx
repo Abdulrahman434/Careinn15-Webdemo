@@ -2301,6 +2301,12 @@ function BedsideScreen() {
           <HospitalBroadcast
             notification={activeBroadcast}
             onAcknowledge={handleBroadcastAcknowledge}
+            onMuteAzan={() => {
+              if (azanAudioRef.current) {
+                azanAudioRef.current.pause();
+                azanAudioRef.current.currentTime = 0;
+              }
+            }}
           />
         )}
 
