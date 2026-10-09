@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW } from "./ThemeContext";
 import { useLocale } from "./i18n";
-import { CheckCircle2, AlertTriangle, Info, Megaphone, ShieldCheck, ExternalLink, ClipboardList, FileText, Image as ImageIcon, Play, Clock, VolumeX } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Info, Megaphone, ShieldCheck, ExternalLink, ClipboardList, FileText, Image as ImageIcon, Play, Clock } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * HospitalBroadcast — Full-screen urgent notification overlay
@@ -122,9 +122,6 @@ export function HospitalBroadcast({
 }) {
   const { theme, prayerAlarm, setPrayerAlarm } = useTheme();
   const { isRTL, fontFamily, locale, t } = useLocale();
-  /* The azan is muted for this prayer only; "keep it off" also turns the
-     prayer alarm off for later prayers (Settings turns it back on). */
-  const [azanMuted, setAzanMuted] = useState(false);
   const [visible, setVisible] = useState(false);
   const [acknowledging, setAcknowledging] = useState(false);
 
@@ -323,46 +320,65 @@ export function HospitalBroadcast({
             </span>
           </button>
 
-          {/* Prayer: a quiet way to silence the azan — the patient may be
-              resting, on a call, or simply prefer it off. Shown only while the
-              azan is actually set to play. */}
-          {isPrayer && onMuteAzan && (prayerAlarm || azanMuted) && (
-            <div className="flex flex-col items-center gap-2 mt-4 w-full">
+          {/* Prayer: azan sound on/off, right where the azan is heard. Off
+              also stops the azan playing now; it is the same switch as the
+              prayer alarm in Settings. */}
+          {isPrayer && (
+            <div
+              className="flex items-center gap-3 mt-3 w-full"
+              style={{
+                padding: "10px 14px",
+                borderRadius: theme.radiusMd,
+                backgroundColor: theme.tileInactiveBg,
+                border: `1px solid ${theme.borderSubtle}`,
+                textAlign: isRTL ? "right" : "left",
+              }}
+            >
+              <div className="flex-1 min-w-0">
+                <p style={{ fontFamily, ...TEXT_STYLE.buttonSm, fontSize: TYPE_SCALE.base, color: theme.textHeading, margin: 0 }}>
+                  {t("broadcast.azan.sound")}
+                </p>
+                <p style={{ fontFamily, ...TEXT_STYLE.helper, color: theme.textMuted, margin: "3px 0 0" }}>
+                  {t("broadcast.azan.soundHint")}
+                </p>
+              </div>
+              <span style={{ fontFamily, ...TEXT_STYLE.buttonSm, color: theme.textBody }}>
+                {prayerAlarm ? t("broadcast.azan.on") : t("broadcast.azan.off")}
+              </span>
               <button
-                onClick={() => { if (!azanMuted) { onMuteAzan(); setAzanMuted(true); } }}
-                disabled={azanMuted}
-                className="w-full flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97] transition-transform"
+                role="switch"
+                aria-checked={prayerAlarm}
+                aria-label={t("broadcast.azan.sound")}
+                onClick={() => {
+                  if (prayerAlarm) onMuteAzan?.();
+                  setPrayerAlarm(!prayerAlarm);
+                }}
+                className="shrink-0 relative cursor-pointer"
                 style={{
-                  height: "52px",
-                  borderRadius: theme.radiusMd,
-                  backgroundColor: theme.surface,
-                  border: `1.5px solid ${azanMuted ? theme.borderDefault : theme.primary}`,
+                  width: 52,
+                  height: 30,
+                  borderRadius: theme.radiusFull,
+                  backgroundColor: prayerAlarm ? theme.primary : theme.borderDefault,
+                  border: "none",
                   outline: "none",
-                  cursor: azanMuted ? "default" : "pointer",
+                  padding: 0,
+                  transition: "background-color 0.2s ease",
                 }}
               >
-                <VolumeX size={20} style={{ color: azanMuted ? theme.textMuted : theme.primaryOn }} />
-                <span style={{ fontFamily, ...TEXT_STYLE.buttonSm, color: azanMuted ? theme.textMuted : theme.primaryOn }}>
-                  {azanMuted ? t("broadcast.azan.muted") : t("broadcast.azan.mute")}
-                </span>
+                <span
+                  style={{
+                    position: "absolute",
+                    top: 3,
+                    [isRTL ? "right" : "left"]: prayerAlarm ? 25 : 3,
+                    width: 24,
+                    height: 24,
+                    borderRadius: theme.radiusFull,
+                    backgroundColor: theme.surface,
+                    boxShadow: SHADOW.md,
+                    transition: "left 0.2s ease, right 0.2s ease",
+                  }}
+                />
               </button>
-              {azanMuted && (
-                prayerAlarm ? (
-                  <button
-                    onClick={() => setPrayerAlarm(false)}
-                    className="cursor-pointer"
-                    style={{ background: "transparent", border: "none", outline: "none", padding: "6px 8px" }}
-                  >
-                    <span style={{ fontFamily, ...TEXT_STYLE.helper, color: theme.textMuted, textDecoration: "underline" }}>
-                      {t("broadcast.azan.keepOff")}
-                    </span>
-                  </button>
-                ) : (
-                  <span style={{ fontFamily, ...TEXT_STYLE.helper, color: theme.textMuted, padding: "6px 8px" }}>
-                    {t("broadcast.azan.keptOff")}
-                  </span>
-                )
-              )}
             </div>
           )}
 
