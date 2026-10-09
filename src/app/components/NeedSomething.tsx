@@ -1302,11 +1302,35 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       <Inbox size={44} color={theme.primaryOn} strokeWidth={1.8} />
                     </div>
                     <p style={{ ...TEXT_STYLE.sectionTitle, fontFamily, color: theme.textHeading }}>
-                      {t("need.empty.title")}
+                      {mineFilter === "report" ? t("need.empty.reportTitle") : t("need.empty.title")}
                     </p>
-                    <p style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textMuted, maxWidth: 420 }}>
-                      {t("need.empty.body")}
+                    {/* Says where requests of this kind come from, and the
+                        button goes straight there. */}
+                    <p style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textMuted, maxWidth: 560 }}>
+                      {t(`need.empty.${mineFilter}`)}
                     </p>
+                    <button
+                      onClick={() => {
+                        setShowRequestsOverlay(false);
+                        setTab(mineFilter === "all" ? "request" : mineFilter);
+                      }}
+                      className="flex items-center gap-[10px] cursor-pointer active:scale-95 transition-transform"
+                      style={{
+                        marginTop: 8,
+                        height: 60,
+                        padding: "0 28px",
+                        borderRadius: theme.radiusMd,
+                        backgroundColor: theme.surface,
+                        border: `1.5px solid ${theme.primary}`,
+                        outline: "none",
+                        boxShadow: SHADOW.md,
+                      }}
+                    >
+                      <span style={{ ...TEXT_STYLE.button, fontWeight: WEIGHT.semibold, fontFamily, color: theme.primaryOn }}>
+                        {t("need.empty.goTo", t(`need.tab.${mineFilter === "all" ? "request" : mineFilter}`))}
+                      </span>
+                      <ChevronRight size={22} color={theme.primaryOn} strokeWidth={2.5} style={isRTL ? { transform: "scaleX(-1)" } : undefined} />
+                    </button>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-4">
