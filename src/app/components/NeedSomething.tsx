@@ -1,9 +1,9 @@
 import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence, PanInfo } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   HandHelping, Wrench, ClipboardList,
   CheckCircle2, Clock, X, Send, Inbox,
-  ChevronLeft, ChevronRight, Check, ListChecks,
+  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Check, ListChecks,
   CircleDot, UserRound, Truck,
   // Unified Patient Services icon set — clean, outlined, single-stroke lucide
   // glyphs replacing the old emoji illustrations (matches Entertainment / Home).
@@ -362,40 +362,34 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
   const allGridItems = tab === "report" ? REPORT_ITEMS : tab === "roomcare" ? ROOM_CARE_ITEMS : tab === "support" ? SUPPORT_ITEMS : REQUEST_ITEMS;
   const gridKind: "request" | "report" | "roomcare" | "support" = tab === "report" ? "report" : tab === "roomcare" ? "roomcare" : tab === "support" ? "support" : "request";
 
-  /* ── Pagination (8 items per page) ── */
-  const ITEMS_PER_PAGE = 8;
-  const [gridPage, setGridPage] = useState(0);
-  const totalPages = Math.ceil(allGridItems.length / ITEMS_PER_PAGE);
-  const gridItems = allGridItems.slice(gridPage * ITEMS_PER_PAGE, (gridPage + 1) * ITEMS_PER_PAGE);
+  /* ── One vertical scrolling grid ──
+     Every item of the tab is laid out at once and the patient scrolls up/down
+     with a thumb — no sideways paging. The fade + chevron at the bottom edge
+     say "there is more below" and also scroll one screen when tapped. */
+  const gridItems = allGridItems;
+  const gridScrollRef = useRef<HTMLDivElement>(null);
+  const [scrollEdge, setScrollEdge] = useState({ top: true, bottom: true });
+  const updateScrollEdge = useCallback(() => {
+    const el = gridScrollRef.current;
+    if (!el) return;
+    const top = el.scrollTop <= 4;
+    const bottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
+    setScrollEdge((prev) => (prev.top === top && prev.bottom === bottom ? prev : { top, bottom }));
+  }, []);
+  const scrollGridBy = useCallback((dir: 1 | -1) => {
+    const el = gridScrollRef.current;
+    if (!el) return;
+    el.scrollBy({ top: dir * el.clientHeight * 0.8, behavior: "smooth" });
+  }, []);
 
-  /* Reset to page 0 when switching tabs */
   /* Ticks belong to the category they were made in. */
   useEffect(() => { setPicked([]); }, [tab]);
 
-  const prevTab = useRef(tab);
+  /* Back to the top when switching tabs */
   useEffect(() => {
-    if (prevTab.current !== tab) { setGridPage(0); prevTab.current = tab; }
-  }, [tab]);
-
-  const goPage = useCallback((pg: number) => {
-    /* Infinite wrap: going past the end wraps to 0 and vice-versa */
-    if (totalPages <= 1) return;
-    setGridPage(((pg % totalPages) + totalPages) % totalPages);
-  }, [totalPages]);
-
-  /* ── Swipe / drag gesture for infinite slider ── */
-  const SWIPE_THRESHOLD = 50; // min px to trigger page change
-  const handleDragEnd = useCallback((_: any, info: PanInfo) => {
-    if (Math.abs(info.offset.x) > SWIPE_THRESHOLD) {
-      if (info.offset.x < 0) {
-        // Swiped left → next page (or right in RTL)
-        goPage(gridPage + (isRTL ? -1 : 1));
-      } else {
-        // Swiped right → prev page (or next in RTL)
-        goPage(gridPage + (isRTL ? 1 : -1));
-      }
-    }
-  }, [goPage, gridPage, isRTL]);
+    gridScrollRef.current?.scrollTo({ top: 0 });
+    requestAnimationFrame(updateScrollEdge);
+  }, [tab, updateScrollEdge]);
 
   const tabs: { key: Tab; Icon: typeof HandHelping; label: string; count?: number }[] = [
     { key: "request", Icon: HandHelping, label: t("need.tab.request") },
@@ -632,30 +626,27 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
             </div>
 
               <div className="flex-1 min-h-0 flex flex-col">
-                {/* Cards grid — lifted up to make room for pagination */}
-                <div className="flex-1 min-h-0 flex items-start justify-center pt-1">
-                  <AnimatePresence mode="wait">
+                {/* Cards grid — scrolls vertically; fades + chevrons mark more above/below */}
+                <div className="flex-1 min-h-0 relative">
+                  <div
+                    ref={gridScrollRef}
+                    onScroll={updateScrollEdge}
+                    className="ns-scroll absolute inset-0 overflow-y-auto"
+                    style={{ touchAction: "pan-y", overscrollBehavior: "contain", paddingBottom: 48 }}
+                  >
                     <motion.div
-                      key={`page-${gridPage}-${tab}`}
-                      initial={{ opacity: 0, x: 40 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -40 }}
+                      key={`grid-${tab}`}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                      drag={tab === "request" && totalPages > 1 ? "x" : false}
-                      dragConstraints={{ left: 0, right: 0 }}
-                      dragElastic={0.18}
-                      onDragEnd={handleDragEnd}
+                      onAnimationComplete={updateScrollEdge}
                       className="grid w-full"
                       style={{
-                        gridTemplateColumns: (tab === "report" || tab === "roomcare" || tab === "support") ? "repeat(3, 1fr)" : "repeat(4, 1fr)",
-                        gridTemplateRows: "repeat(2, 1fr)",
-                        columnGap: "24px",
-                        rowGap: "20px",
-                        maxHeight: "92%",
-                        height: "100%",
-                        maxWidth: "100%",
-                        cursor: tab === "request" && totalPages > 1 ? "grab" : undefined,
-                        touchAction: "pan-y",
+                        gridTemplateColumns: (tab === "report" || tab === "roomcare" || tab === "support") ? "repeat(3, 1fr)" : "repeat(5, 1fr)",
+                        gridAutoRows: (tab === "report" || tab === "roomcare" || tab === "support") ? "200px" : "196px",
+                        columnGap: "20px",
+                        rowGap: "18px",
+                        padding: "4px 4px 0",
                       }}
                     >
                     {gridItems.map((card) => {
@@ -828,7 +819,47 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       );
                     })}
                     </motion.div>
-                  </AnimatePresence>
+                  </div>
+
+                  {/* Edge fades — a soft hint that the list continues */}
+                  {(["top", "bottom"] as const).map((edge) => {
+                    const hidden = scrollEdge[edge];
+                    return (
+                      <div
+                        key={edge}
+                        className="absolute inset-x-0 flex justify-center transition-opacity duration-300"
+                        style={{
+                          [edge]: 0,
+                          height: 96,
+                          opacity: hidden ? 0 : 1,
+                          pointerEvents: "none",
+                          alignItems: edge === "top" ? "flex-start" : "flex-end",
+                          background: `linear-gradient(to ${edge === "top" ? "bottom" : "top"}, ${theme.surface}, transparent)`,
+                        }}
+                      >
+                        <button
+                          onClick={() => scrollGridBy(edge === "top" ? -1 : 1)}
+                          aria-label={edge === "top" ? "Scroll up" : "Scroll down"}
+                          className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+                          style={{
+                            pointerEvents: hidden ? "none" : "auto",
+                            width: 64,
+                            height: 64,
+                            margin: "8px 0",
+                            borderRadius: theme.radiusFull,
+                            backgroundColor: theme.surface,
+                            border: theme.borderCard,
+                            boxShadow: SHADOW.md,
+                            outline: "none",
+                          }}
+                        >
+                          {edge === "top"
+                            ? <ChevronUp size={32} color={theme.primary} strokeWidth={2.4} />
+                            : <ChevronDown size={32} color={theme.primary} strokeWidth={2.4} />}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* One constant-height footer under the grid: page dots in the
@@ -836,34 +867,8 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                     and the send button on either side. The row is always there
                     whether or not anything is ticked, so choosing an item never
                     resizes the cards above it. */}
-                {(isMultiTab || totalPages > 1) && (
+                {isMultiTab && (
                   <div className="shrink-0 relative flex items-center" style={{ height: 56 }}>
-                    {totalPages > 1 && (
-                      <div
-                        className="absolute inset-0 flex items-center justify-center gap-3"
-                        style={{ pointerEvents: "none" }}
-                      >
-                        {Array.from({ length: totalPages }).map((_, i) => (
-                          <button
-                            key={i}
-                            onClick={() => goPage(i)}
-                            className="rounded-full cursor-pointer transition-all duration-300"
-                            style={{
-                              pointerEvents: "auto",
-                              width: i === gridPage ? "24px" : "8px",
-                              height: "8px",
-                              backgroundColor: i === gridPage ? theme.primary : theme.borderDefault,
-                              border: "none",
-                              outline: "none",
-                              padding: 0,
-                              transition: "width 0.3s ease, background-color 0.3s ease",
-                            }}
-                            aria-label={`Page ${i + 1}`}
-                          />
-                        ))}
-                      </div>
-                    )}
-
                     {isMultiTab && picked.length > 0 && (
                       <>
                         <div className="flex items-center gap-1 relative">
