@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW } from "./ThemeContext";
 import { useLocale } from "./i18n";
-import { CheckCircle2, AlertTriangle, Info, Megaphone, ShieldCheck, ExternalLink, ClipboardList, FileText, Image as ImageIcon, Play, Clock } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Info, Megaphone, ShieldCheck, ExternalLink, ClipboardList, FileText, Image as ImageIcon, Play, Clock, VolumeX } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * HospitalBroadcast — Full-screen urgent notification overlay
@@ -113,12 +113,18 @@ const PULSE_KEYFRAMES = `
 export function HospitalBroadcast({
   notification,
   onAcknowledge,
+  onMuteAzan,
 }: {
   notification: BroadcastNotification;
   onAcknowledge: (id: string, action?: "read" | "later" | "skip") => void;
+  /** Stops the azan that is playing now. */
+  onMuteAzan?: () => void;
 }) {
-  const { theme } = useTheme();
-  const { isRTL, fontFamily, locale } = useLocale();
+  const { theme, prayerAlarm, setPrayerAlarm } = useTheme();
+  const { isRTL, fontFamily, locale, t } = useLocale();
+  /* The azan is muted for this prayer only; "keep it off" also turns the
+     prayer alarm off for later prayers (Settings turns it back on). */
+  const [azanMuted, setAzanMuted] = useState(false);
   const [visible, setVisible] = useState(false);
   const [acknowledging, setAcknowledging] = useState(false);
 
@@ -316,6 +322,49 @@ export function HospitalBroadcast({
               {notification.cta ? loc(notification.cta) : (locale === "ar" ? "تم الاطلاع" : "I've Read This")}
             </span>
           </button>
+
+          {/* Prayer: a quiet way to silence the azan — the patient may be
+              resting, on a call, or simply prefer it off. Shown only while the
+              azan is actually set to play. */}
+          {isPrayer && onMuteAzan && (prayerAlarm || azanMuted) && (
+            <div className="flex flex-col items-center gap-2 mt-4 w-full">
+              <button
+                onClick={() => { if (!azanMuted) { onMuteAzan(); setAzanMuted(true); } }}
+                disabled={azanMuted}
+                className="w-full flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97] transition-transform"
+                style={{
+                  height: "52px",
+                  borderRadius: theme.radiusMd,
+                  backgroundColor: theme.surface,
+                  border: `1.5px solid ${azanMuted ? theme.borderDefault : theme.primary}`,
+                  outline: "none",
+                  cursor: azanMuted ? "default" : "pointer",
+                }}
+              >
+                <VolumeX size={20} style={{ color: azanMuted ? theme.textMuted : theme.primaryOn }} />
+                <span style={{ fontFamily, ...TEXT_STYLE.buttonSm, color: azanMuted ? theme.textMuted : theme.primaryOn }}>
+                  {azanMuted ? t("broadcast.azan.muted") : t("broadcast.azan.mute")}
+                </span>
+              </button>
+              {azanMuted && (
+                prayerAlarm ? (
+                  <button
+                    onClick={() => setPrayerAlarm(false)}
+                    className="cursor-pointer"
+                    style={{ background: "transparent", border: "none", outline: "none", padding: "6px 8px" }}
+                  >
+                    <span style={{ fontFamily, ...TEXT_STYLE.helper, color: theme.textMuted, textDecoration: "underline" }}>
+                      {t("broadcast.azan.keepOff")}
+                    </span>
+                  </button>
+                ) : (
+                  <span style={{ fontFamily, ...TEXT_STYLE.helper, color: theme.textMuted, padding: "6px 8px" }}>
+                    {t("broadcast.azan.keptOff")}
+                  </span>
+                )
+              )}
+            </div>
+          )}
 
           {/* Skip / Check Later secondary options (Hidden for prayer notifications) */}
           {!isPrayer && (
