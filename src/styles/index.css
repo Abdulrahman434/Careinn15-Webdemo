@@ -69,3 +69,39 @@ button, a, [role="button"] {
 .seamless-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.15);
 }
+/* ─── App-wide scrollbar ───
+ * One look everywhere (the thin rounded bar Patient Services introduced), and
+ * invisible until the element is actually being scrolled: scrollReveal.ts puts
+ * `.is-scrolling` on the scrolling element and takes it off ~1s after it stops.
+ *
+ * Colour and thumb shape are !important so per-screen scrollbar styles all
+ * follow this one; width is not, so screens that hide their scrollbar
+ * (scrollbar-width: none / ::-webkit-scrollbar { display: none }) stay hidden.
+ *
+ * Chromium 121+ uses the standard properties; older WebViews use the
+ * ::-webkit-scrollbar rules below. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent !important;
+}
+.is-scrolling {
+  scrollbar-color: color-mix(in srgb, var(--hbs-text-muted, #6b7280) 45%, transparent) transparent !important;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent !important;
+  border: none !important;
+  margin: 4px 0;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: transparent !important;
+  border-radius: 100px !important;
+  border: 3px solid transparent !important;
+  background-clip: content-box !important;
+}
+.is-scrolling::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--hbs-text-muted, #6b7280) 45%, transparent) !important;
+}

@@ -213,6 +213,8 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
   /* ── View state ── */
   const [tab, setTab] = useState<Tab>(initialTab || "request");
   const [showRequestsOverlay, setShowRequestsOverlay] = useState(false);
+  /* My Requests filter — "all" or one of the four categories. */
+  const [mineFilter, setMineFilter] = useState<"all" | NeedRequest["kind"]>("all");
   const [selected, setSelected] = useState<{ cards: CardDef[]; kind: "request" | "report" | "roomcare" | "support" } | null>(null);
 
   /* Items ticked in the grid but not yet sent.
@@ -1231,9 +1233,63 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                   ✕
                 </button>
               </div>
+              {/* Category tabs + total — fixed above the list; only the list scrolls */}
+              {(() => {
+                const filters: { key: "all" | NeedRequest["kind"]; label: string }[] = [
+                  { key: "all", label: t("need.mine.all") },
+                  { key: "request", label: t("need.tab.request") },
+                  { key: "roomcare", label: t("need.tab.roomcare") },
+                  { key: "support", label: t("need.tab.support") },
+                  { key: "report", label: t("need.tab.report") },
+                ];
+                const shown = mineFilter === "all" ? requests : requests.filter((r) => r.kind === mineFilter);
+                return (
+                  <div className="shrink-0 flex items-center justify-between gap-4 px-8 pt-6 pb-4">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      {filters.map((f) => {
+                        const active = mineFilter === f.key;
+                        const count = f.key === "all" ? requests.length : requests.filter((r) => r.kind === f.key).length;
+                        return (
+                          <button
+                            key={f.key}
+                            onClick={() => setMineFilter(f.key)}
+                            className="flex items-center gap-3 cursor-pointer active:scale-95 transition-transform"
+                            style={{
+                              padding: "13px 22px",
+                              borderRadius: theme.radiusFull,
+                              backgroundColor: active ? theme.primary : theme.surface,
+                              border: active ? "none" : `1.5px solid ${theme.borderCardColor}`,
+                              outline: "none",
+                            }}
+                          >
+                            <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: active ? theme.textInverse : theme.textMuted }}>
+                              {f.label}
+                            </span>
+                            <span
+                              className="flex items-center justify-center"
+                              style={{
+                                minWidth: 28, height: 28, padding: "0 8px",
+                                borderRadius: theme.radiusFull,
+                                backgroundColor: active ? "rgba(255,255,255,0.15)" : theme.tileInactiveBg,
+                                fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.semibold,
+                                color: active ? theme.textInverse : theme.textHeading,
+                              }}
+                            >
+                              {count}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <span className="shrink-0" style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.semibold, color: theme.textMuted }}>
+                      {t("need.mine.count", String(shown.length))}
+                    </span>
+                  </div>
+                );
+              })()}
               {/* Overlay content */}
-              <div className="flex-1 min-h-0 overflow-y-auto px-8 py-6">
-                {requests.length === 0 ? (
+              <div className="flex-1 min-h-0 overflow-y-auto px-8 pt-2 pb-6">
+                {(mineFilter === "all" ? requests : requests.filter((r) => r.kind === mineFilter)).length === 0 ? (
                   <div className="flex flex-col items-center justify-center text-center gap-4 min-h-[300px]">
                     <div
                       className="flex items-center justify-center"
@@ -1254,7 +1310,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                   </div>
                 ) : (
                   <div className="flex flex-col gap-4">
-                    {requests.map((r) => {
+                    {(mineFilter === "all" ? requests : requests.filter((r) => r.kind === mineFilter)).map((r) => {
                       const status = deriveStatus(r.createdAt, now);
                       const st = STATUS_STYLE[status];
                       const StatusIcon = st.Icon;

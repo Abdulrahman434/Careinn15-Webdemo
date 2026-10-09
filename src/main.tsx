@@ -14,10 +14,14 @@ import App from "./app/App.tsx";
 import PatientServicesPreview from "./preview/PatientServicesPreview.tsx";
 import { installMemoryPressureHandler } from "./app/lib/memoryPressure";
 import { registerServiceWorker } from "./app/lib/updateCheck";
+import { installScrollReveal } from "./app/utils/scrollReveal";
 import "./styles/index.css";
 
 // Respond to native low-memory signals by dropping non-essential caches.
 installMemoryPressureHandler();
+
+// Scrollbars appear only while an element is being scrolled.
+installScrollReveal();
 
 // Back button logic moved to App.tsx for better control
 
