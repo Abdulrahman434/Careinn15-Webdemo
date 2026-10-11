@@ -42,7 +42,7 @@ import { PatientPreferenceForm } from "./components/PatientPreferenceForm";
 import { FoodOrdering } from "./components/FoodOrdering";
 import { NeedSomething } from "./components/NeedSomething";
 import { OrderProvider, useOrders } from "./components/OrderStore";
-import { ToastProvider, useToast } from "./components/ToastNotifications";
+import { ToastProvider, runNoticeAction, raiseServiceNotice } from "./components/ToastNotifications";
 import { dueReminder, reminderText, alreadyFired, markFired } from "./components/mealReminders";
 import { windowClock } from "./components/orderWindow";
 import { AuthProvider, useAuth } from "./components/AuthContext";
@@ -275,7 +275,6 @@ function BedsideScreen() {
   const { patientAdmitted, setPatientAdmitted, theme, darkMode, switchConfig, prayerAlarm, layout2Theme, setLocale, setDarkMode, setPrayerAlarm } = useTheme();
   const { isFullAccess, lockedHospitalId } = useAuth();
   const { t, locale, isRTL, dir, fontFamily } = useLocale();
-  const { showToast } = useToast();
   const { orders } = useOrders();
   const scale = useScreenScale();
   const isOnline = useNetworkStatus();
@@ -564,7 +563,7 @@ function BedsideScreen() {
       if (!due || alreadyFired(due.slot)) return;
       markFired(due.slot);
       const { title, body } = reminderText(due, t, mealClock);
-      showToast({
+      raiseServiceNotice({
         variant: "meal",
         category: t("toast.meal.category"),
         title,
@@ -577,15 +576,26 @@ function BedsideScreen() {
           setFoodOrderInitialView(undefined);
           setShowFoodOrder(true);
         },
-      });
+      }, t);
     };
     check();
     const id = setInterval(check, 60 * 1000);
     return () => clearInterval(id);
-  }, [orders, showToast, t, mealClock, showFoodOrder]);
+  }, [orders, t, mealClock, showFoodOrder]);
 
   // Queue of immediate alerts to show as broadcast popups
   const [broadcastQueue, setBroadcastQueue] = useState<BroadcastNotification[]>([]);
+
+  /* Meal + housekeeping notices arrive from ToastNotifications as
+     "hospital-notice" events and join the same queue as every other notice. */
+  useEffect(() => {
+    const onNotice = (e: Event) => {
+      const n = (e as CustomEvent<BroadcastNotification>).detail;
+      setBroadcastQueue((prev) => [...prev, n]);
+    };
+    window.addEventListener("hospital-notice", onNotice);
+    return () => window.removeEventListener("hospital-notice", onNotice);
+  }, []);
 
   const [apiNotifications, setApiNotifications] = useState<DeviceAlert[]>([]);
 
@@ -1155,6 +1165,9 @@ function BedsideScreen() {
           setAcknowledgedBroadcasts((list) =>
             [acknowledged, ...list].slice(0, MAX_ACKNOWLEDGED_BROADCASTS));
           setNotifTrigger((p) => p + 1);
+
+          // Meal / housekeeping notices: their main button runs the tap action
+          if (actionType === "read") runNoticeAction(prev.id);
 
           // Handle CTA Actions if present and user clicked "read" (main CTA button)
           if (actionType === "read" && (prev.ctaAction || prev.ctaUrl)) {
