@@ -1082,6 +1082,7 @@ import slhLogo from "../../assets/000bda4db783fe15cbd489d69579eb6e0e831a8a.webp"
 import slhHero from "../../assets/e956f98cfa0d9f06f0dd2befe535fed91ed51d1e.webp";
 
 import dallahLogo from "../../assets/DallahLogo.webp";
+import dallahLogoDark from "../../assets/logos/dallah-logo-dark.webp";
 import dallahHero from "../../assets/dallah-hero-welcome.webp";
 
 import caremedLogo from "../../assets/CareMedicalLogo.webp";
@@ -1177,6 +1178,7 @@ export const DALLAH_CORE: HospitalCoreConfig = {
   fontFamily: "'Mulish', sans-serif",
   fontFamilyAr: "'Almarai', sans-serif",
   logoUrl: dallahLogo,
+  logoUrlDark: dallahLogoDark,
   hospitalWebsiteUrl: "https://www.dallah-hospital.com/english/home",
   heroImageUrl: dallahHero,
   heroCropPosition: "50% 45%",
