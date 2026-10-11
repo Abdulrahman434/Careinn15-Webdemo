@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   HandHelping, Wrench, ClipboardList,
   CheckCircle2, Clock, X, Send, Inbox,
-  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Check, ListChecks,
+  ChevronLeft, ChevronRight, Check, ListChecks,
   CircleDot, UserRound, Truck,
   // Unified Patient Services icon set — clean, outlined, single-stroke lucide
   // glyphs replacing the old emoji illustrations (matches Entertainment / Home).
@@ -379,10 +379,16 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
     const bottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
     setScrollEdge((prev) => (prev.top === top && prev.bottom === bottom ? prev : { top, bottom }));
   }, []);
-  const scrollGridBy = useCallback((dir: 1 | -1) => {
+  /* Row height follows the space the grid has: two full rows plus a slice
+     of the third, so a patient can see there is more below without any
+     arrow telling them. */
+  const [gridViewH, setGridViewH] = useState(0);
+  useEffect(() => {
     const el = gridScrollRef.current;
     if (!el) return;
-    el.scrollBy({ top: dir * el.clientHeight * 0.8, behavior: "smooth" });
+    const ro = new ResizeObserver(() => setGridViewH(el.clientHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   /* Ticks belong to the category they were made in. */
@@ -635,7 +641,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                     ref={gridScrollRef}
                     onScroll={updateScrollEdge}
                     className="ns-scroll absolute inset-0 overflow-y-auto"
-                    style={{ touchAction: "pan-y", overscrollBehavior: "contain", paddingBottom: 48 }}
+                    style={{ touchAction: "pan-y", overscrollBehavior: "contain", paddingBottom: 8 }}
                   >
                     <motion.div
                       key={`grid-${tab}`}
@@ -645,10 +651,19 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       onAnimationComplete={updateScrollEdge}
                       className="grid w-full"
                       style={{
-                        gridTemplateColumns: (tab === "report" || tab === "roomcare" || tab === "support") ? "repeat(3, 1fr)" : "repeat(5, 1fr)",
-                        gridAutoRows: (tab === "report" || tab === "roomcare" || tab === "support") ? "200px" : "196px",
-                        columnGap: "20px",
-                        rowGap: "18px",
+                        gridTemplateColumns: (tab === "report" || tab === "roomcare" || tab === "support") ? "repeat(3, 1fr)" : "repeat(4, 1fr)",
+                        /* More than two rows: 2 rows + ~35% of the next one.
+                           Two or fewer: the two rows share the space, as the
+                           paged grid did. */
+                        gridAutoRows: gridViewH > 0
+                          ? `${Math.floor(
+                              allGridItems.length > ((tab === "report" || tab === "roomcare" || tab === "support") ? 6 : 8)
+                                ? (gridViewH - 2 * 20) / 2.35
+                                : (gridViewH * 0.92 - 20) / 2,
+                            )}px`
+                          : "200px",
+                        columnGap: "24px",
+                        rowGap: "20px",
                         padding: "4px 4px 0",
                       }}
                     >
@@ -824,7 +839,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                     </motion.div>
                   </div>
 
-                  {/* Edge fades — a soft hint that the list continues */}
+                  {/* Edge fades — a soft hint that the list continues (no arrows) */}
                   {(["top", "bottom"] as const).map((edge) => {
                     const hidden = scrollEdge[edge];
                     return (
@@ -833,33 +848,13 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                         className="absolute inset-x-0 flex justify-center transition-opacity duration-300"
                         style={{
                           [edge]: 0,
-                          height: 96,
+                          height: 44,
                           opacity: hidden ? 0 : 1,
                           pointerEvents: "none",
                           alignItems: edge === "top" ? "flex-start" : "flex-end",
                           background: `linear-gradient(to ${edge === "top" ? "bottom" : "top"}, ${theme.surface}, transparent)`,
                         }}
                       >
-                        <button
-                          onClick={() => scrollGridBy(edge === "top" ? -1 : 1)}
-                          aria-label={edge === "top" ? "Scroll up" : "Scroll down"}
-                          className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
-                          style={{
-                            pointerEvents: hidden ? "none" : "auto",
-                            width: 64,
-                            height: 64,
-                            margin: "8px 0",
-                            borderRadius: theme.radiusFull,
-                            backgroundColor: theme.surface,
-                            border: theme.borderCard,
-                            boxShadow: SHADOW.md,
-                            outline: "none",
-                          }}
-                        >
-                          {edge === "top"
-                            ? <ChevronUp size={32} color={theme.primary} strokeWidth={2.4} />
-                            : <ChevronDown size={32} color={theme.primary} strokeWidth={2.4} />}
-                        </button>
                       </div>
                     );
                   })}
