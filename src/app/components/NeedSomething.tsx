@@ -382,12 +382,14 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
   /* Row height follows the space the grid has: two full rows plus a slice
      of the third, so a patient can see there is more below without any
      arrow telling them. */
+  /* Measured on the area that holds the grid AND the selection bar, not on
+     the grid itself — so the bar sliding in never resizes the cards. */
   const [gridViewH, setGridViewH] = useState(0);
   useEffect(() => {
-    const el = gridScrollRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setGridViewH(el.clientHeight));
-    ro.observe(el);
+    const area = gridScrollRef.current?.parentElement?.parentElement;
+    if (!area) return;
+    const ro = new ResizeObserver(() => setGridViewH(area.clientHeight));
+    ro.observe(area);
     return () => ro.disconnect();
   }, []);
 
