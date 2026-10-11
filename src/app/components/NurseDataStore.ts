@@ -132,6 +132,8 @@ export interface ProcedureResult {
   id: string;
   label: string;
   date: string;
+  /** Scheduled time, e.g. "09:00 AM". Optional — older records have none. */
+  time?: string;
   summary?: string;
   pdfUrl?: string;
   visible: boolean;
@@ -431,8 +433,8 @@ function createDefaultState(): NurseStoreState {
     ],
 
     procedures: [
-      { id: "proc-1", label: "Fetal Monitoring (CTG)", date: "11 Mar", summary: "Reactive trace. No decelerations.", pdfUrl: "/reports/lab-report-cbc.html", visible: true },
-      { id: "proc-2", label: "Epidural Anaesthesia Review", date: "12 Mar", visible: true },
+      { id: "proc-1", label: "Fetal Monitoring (CTG)", date: "11 Mar", time: "09:00 AM", summary: "Reactive trace. No decelerations.", pdfUrl: "/reports/lab-report-cbc.html", visible: true },
+      { id: "proc-2", label: "Epidural Anaesthesia Review", date: "12 Mar", time: "02:30 PM", visible: true },
     ],
 
     babyCameras: [
