@@ -1722,6 +1722,10 @@ interface TestEntry {
   date: string;
   /** Empty until the report is back. */
   pdfUrl?: string;
+  /** Procedures only: scheduled time, shown after the date. */
+  time?: string;
+  /** Procedures are a schedule, not a report: no View, no pending badge. */
+  scheduleOnly?: boolean;
 }
 
 /* ─── Tests & Procedures ───────────────────────────────────────────────────
@@ -1799,7 +1803,7 @@ function TestsAndProceduresSlide({ theme, isExpanded = false }: { theme: any; is
 
   const procedures: TestEntry[] = (nurseStore.procedures || [])
     .filter(pr => pr.visible)
-    .map(pr => ({ id: pr.id, label: pr.label, date: pr.date, pdfUrl: pr.pdfUrl }));
+    .map(pr => ({ id: pr.id, label: pr.label, date: pr.date, time: pr.time, scheduleOnly: true }));
 
   const groups = [
     { key: "labs", icon: FlaskConical, title: t("care.labs.title"), items: labs },
@@ -1812,7 +1816,7 @@ function TestsAndProceduresSlide({ theme, isExpanded = false }: { theme: any; is
      gone too: a number without its reference range is not something to hand a
      patient unexplained — the report behind the button carries both. */
   const entry = (e: TestEntry, first: boolean) => {
-    const ready = !!e.pdfUrl?.trim();
+    const ready = !e.scheduleOnly && !!e.pdfUrl?.trim();
     return (
       <div
         key={e.id}
@@ -1838,13 +1842,14 @@ function TestsAndProceduresSlide({ theme, isExpanded = false }: { theme: any; is
             {e.label}
           </span>
           <span style={{ fontFamily: theme.fontFamily, ...R.label, color: theme.textMuted, marginTop: LABEL_GAP }}>
-            <Ltr>{e.date}</Ltr>
+            <Ltr>{e.time ? `${e.date} · ${e.time}` : e.date}</Ltr>
           </span>
         </div>
 
         {/* Waiting on a report is the state the patient checks for, so it is
-            named rather than left as an absent button. */}
-        {ready ? (
+            named rather than left as an absent button. Procedures are a
+            schedule (name, date, time) and carry neither. */}
+        {e.scheduleOnly ? null : ready ? (
           <span
             className="shrink-0 inline-flex items-center justify-center pointer-events-none"
             style={{
