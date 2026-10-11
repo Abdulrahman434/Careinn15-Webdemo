@@ -49,14 +49,12 @@ import {
   Stethoscope,
   Users,
   UserCircle,
-  ShieldCheck,
 } from "lucide-react";
 import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useAuth } from "./AuthContext";
 import { clearAllDataAndReload, clearUserDataAndReload } from "../lib/clearAllData";
 import { NurseInterface } from "./nurse/NurseInterface";
-import { SignInHelper } from "./SignInHelper";
 import type { Locale } from "./i18n";
 import imgMosque from "../../assets/b51acb5e2ec4a2c930572c53103b020b12e76ee2.webp";
 import { getPrayerStatus, getCountdown, formatPrayerTime, PRAYER_NAMES } from "../utils/prayerUtils";
@@ -1751,7 +1749,6 @@ export function SettingsPanel({
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showLangDialog, setShowLangDialog] = useState(false);
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
-  const [showSignIn, setShowSignIn] = useState(false);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
   const [replayToast, setReplayToast] = useState<string | null>(null);
 
@@ -1898,18 +1895,18 @@ export function SettingsPanel({
               className="flex items-center w-full cursor-pointer active:scale-[0.99] transition-transform"
               style={{
                 gap: "14px", padding: "16px 18px", borderRadius: t.radiusLg,
-                backgroundColor: t.primary, border: "none",
+                backgroundColor: "transparent", border: `1.5px solid ${t.primary}`,
               }}
             >
               <div
                 className="flex items-center justify-center shrink-0"
-                style={{ width: "44px", height: "44px", borderRadius: "13px", backgroundColor: "rgba(255,255,255,0.18)" }}
+                style={{ width: "44px", height: "44px", borderRadius: "13px", backgroundColor: t.surfaceInset }}
               >
-                <Smartphone size={22} color={t.brandOnPrimary} />
+                <Smartphone size={22} color={t.primary} />
               </div>
               <div className="flex-1 text-start">
-                <div style={{ fontSize: "17px", fontWeight: 700, color: t.brandOnPrimary }}>{tr("remote.settings.title")}</div>
-                <div style={{ fontSize: "13px", color: t.brandOnPrimary, opacity: 0.85 }}>{tr("remote.settings.subtitle")}</div>
+                <div style={{ fontSize: "17px", fontWeight: 700, color: t.textHeading }}>{tr("remote.settings.title")}</div>
+                <div style={{ fontSize: "13px", color: t.textMuted }}>{tr("remote.settings.subtitle")}</div>
               </div>
             </button>
           )}
@@ -2065,16 +2062,6 @@ export function SettingsPanel({
               }
               variant="primary"
               onClick={() => setShowAccountDialog(true)}
-            />
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <ActionButton
-              icon={<ShieldCheck size={20} style={{ color: t.primaryOn }} />}
-              label={tr("signin.title")}
-              subtitle={tr("signin.subtitle")}
-              variant="primary"
-              onClick={() => setShowSignIn(true)}
             />
           </div>
 
@@ -2270,7 +2257,6 @@ export function SettingsPanel({
         />
       )}
 
-      {showSignIn && <SignInHelper onClose={() => setShowSignIn(false)} />}
 
       {activeCareRole && (
         <NurseInterface 
