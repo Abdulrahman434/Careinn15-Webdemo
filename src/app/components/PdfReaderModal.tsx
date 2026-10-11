@@ -457,6 +457,7 @@ export function PdfReaderModal({ onClose, pdfSource, title }: Props) {
 
   const onTouchEnd = useCallback((e: React.TouchEvent) => {
     if (scrollEnabled) return;
+    if (pinchingRef.current) return; // a pinch is not a page swipe
     const dy = touchStartY.current - e.changedTouches[0].clientY;
     const threshold = 40; // min px to count as swipe
     if (Math.abs(dy) < threshold) return;
@@ -485,6 +486,85 @@ export function PdfReaderModal({ onClose, pdfSource, title }: Props) {
 
   const zoomIn = () => { setZoomMode("custom"); setScale(s => Math.min(s + 0.2, 4.0)); };
   const zoomOut = () => { setZoomMode("custom"); setScale(s => Math.max(s - 0.2, 0.5)); };
+
+  // ═══════════════════════════════════════════════════════════
+  // Pinch-to-zoom (two fingers)
+  // Self-contained: while the fingers move, the page content is only
+  // CSS-scaled around the pinch point (no PDF re-render per frame). On
+  // release the new scale is committed once through setScale — the same
+  // path the zoom buttons use — and the scroll position is adjusted so the
+  // spot under the fingers stays put. Same 0.5–4.0 limits as the buttons.
+  // ═══════════════════════════════════════════════════════════
+  const pinchingRef = useRef(false);
+  useEffect(() => {
+    const c = scrollRef.current;
+    if (!c) return;
+    let startDist = 0;
+    let startScale = 1;
+    let ratio = 1;
+    let mid = { x: 0, y: 0 };      // pinch centre, relative to the scroll box
+    let content: HTMLElement | null = null;
+    const dist = (t: TouchList) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const clampRatio = (r: number) => Math.min(4.0, Math.max(0.5, startScale * r)) / startScale;
+
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length !== 2) return;
+      const box = c.getBoundingClientRect();
+      startDist = dist(e.touches);
+      startScale = scaleRef.current;
+      ratio = 1;
+      mid = {
+        x: (e.touches[0].clientX + e.touches[1].clientX) / 2 - box.left,
+        y: (e.touches[0].clientY + e.touches[1].clientY) / 2 - box.top,
+      };
+      content = c.firstElementChild as HTMLElement | null;
+      if (content) {
+        content.style.transformOrigin = `${c.scrollLeft + mid.x}px ${c.scrollTop + mid.y}px`;
+        content.style.willChange = "transform";
+      }
+      pinchingRef.current = true;
+    };
+    const onMove = (e: TouchEvent) => {
+      if (!pinchingRef.current || e.touches.length !== 2 || startDist === 0) return;
+      e.preventDefault(); // keep the browser from zooming the whole kiosk page
+      ratio = clampRatio(dist(e.touches) / startDist);
+      if (content) content.style.transform = `scale(${ratio})`;
+    };
+    const onEnd = (e: TouchEvent) => {
+      if (!pinchingRef.current) return;
+      if (e.touches.length > 0) return; // wait until every finger is up
+      if (content) {
+        content.style.transform = "";
+        content.style.transformOrigin = "";
+        content.style.willChange = "";
+      }
+      const anchorX = c.scrollLeft + mid.x;
+      const anchorY = c.scrollTop + mid.y;
+      if (Math.abs(ratio - 1) > 0.02) {
+        setZoomMode("custom");
+        setScale(startScale * ratio);
+        const r = ratio;
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          c.scrollLeft = anchorX * r - mid.x;
+          c.scrollTop = anchorY * r - mid.y;
+        }));
+      }
+      startDist = 0;
+      // cleared after the swipe handler has seen this touchend
+      setTimeout(() => { pinchingRef.current = false; }, 0);
+    };
+
+    c.addEventListener("touchstart", onStart, { passive: true });
+    c.addEventListener("touchmove", onMove, { passive: false });
+    c.addEventListener("touchend", onEnd);
+    c.addEventListener("touchcancel", onEnd);
+    return () => {
+      c.removeEventListener("touchstart", onStart);
+      c.removeEventListener("touchmove", onMove);
+      c.removeEventListener("touchend", onEnd);
+      c.removeEventListener("touchcancel", onEnd);
+    };
+  }, []);
 
   // ═══════════════════════════════════════════════════════════
   // Bookmarks
