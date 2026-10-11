@@ -290,7 +290,7 @@ export function HospitalBroadcast({
             <div
               className="flex items-center gap-3 mb-4 w-full"
               style={{
-                padding: "10px 14px",
+                padding: "8px 14px",
                 borderRadius: theme.radiusMd,
                 backgroundColor: theme.tileInactiveBg,
                 border: `1px solid ${theme.borderSubtle}`,
@@ -300,9 +300,6 @@ export function HospitalBroadcast({
               <div className="flex-1 min-w-0">
                 <p style={{ fontFamily, ...TEXT_STYLE.buttonSm, fontSize: TYPE_SCALE.base, color: theme.textHeading, margin: 0 }}>
                   {t("broadcast.azan.sound")}
-                </p>
-                <p style={{ fontFamily, ...TEXT_STYLE.helper, color: theme.textMuted, margin: "3px 0 0" }}>
-                  {t("broadcast.azan.soundHint")}
                 </p>
               </div>
               <span style={{ fontFamily, ...TEXT_STYLE.buttonSm, color: theme.textBody }}>
