@@ -60,6 +60,49 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue>({ showToast: () => {} });
 
+/* ── Meal + housekeeping → Hospital Notice ──
+ * Every service notice now reads the same way as a hospital notice: the
+ * centred card with "I've Read This", not a slide-in toast. showToast keeps
+ * its signature so callers are unchanged; for these two variants it raises a
+ * "hospital-notice" event that App.tsx queues as a BroadcastNotification.
+ * Text arrives already translated, so it fills both language slots. The tap
+ * action can't travel inside the (persisted) notice, so it waits here, keyed
+ * by notice id, and App runs it when the patient presses the main button. */
+const noticeActions = new Map<string, () => void>();
+export function runNoticeAction(id: string): void {
+  const fn = noticeActions.get(id);
+  noticeActions.delete(id);
+  fn?.();
+}
+let noticeSeq = 0;
+
+/** Raise a meal / housekeeping update as a Hospital Notice. Usable outside
+ *  the ToastProvider too (App.tsx's meal reminder sits above it). */
+export function raiseServiceNotice(input: ToastInput, t: (key: string, ...args: string[]) => string): void {
+  const noticeId = `service-${Date.now()}-${++noticeSeq}`;
+  const isMeal = input.variant === "meal";
+  /* Housekeeping: the item and its status are the headline ("Water —
+     Delivered"); meal reminders already carry a title and a body. */
+  const title = isMeal || !input.actionText ? input.title : `${input.title} — ${input.actionText}`;
+  const body = isMeal ? (input.body ?? "") : (input.body ?? t("toast.hk.updated"));
+  const cta = isMeal && input.actionText && input.onTap ? input.actionText : undefined;
+  /* Only a notice with its own button (meal "Order Now") navigates;
+     "I've Read This" on a status update just closes it. */
+  if (cta && input.onTap) noticeActions.set(noticeId, input.onTap);
+  window.dispatchEvent(new CustomEvent("hospital-notice", {
+    detail: {
+      id: noticeId,
+      type: "general",
+      title: { en: title, ar: title },
+      body: { en: body, ar: body },
+      cta: cta ? { en: cta, ar: cta } : undefined,
+      priority: "info",
+      timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
+      createdAt: Date.now(),
+    },
+  }));
+}
+
 export function useToast() {
   return useContext(ToastContext);
 }
@@ -83,11 +126,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const showToast = useCallback((input: ToastInput) => {
+    if (input.variant === "meal" || input.variant === "housekeeping") {
+      raiseServiceNotice(input, t);
+      return;
+    }
     const id = ++idRef.current;
     setToasts((prev) => [{ ...input, id }, ...prev].slice(0, MAX_VISIBLE));
     const timer = setTimeout(() => remove(id), AUTO_DISMISS_MS);
     timers.current.set(id, timer);
-  }, [remove]);
+  }, [remove, t]);
 
   useEffect(() => {
     const map = timers.current;
