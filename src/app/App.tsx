@@ -43,6 +43,7 @@ import { FoodOrdering } from "./components/FoodOrdering";
 import { NeedSomething } from "./components/NeedSomething";
 import { OrderProvider, useOrders } from "./components/OrderStore";
 import { ToastProvider, raiseToast } from "./components/ToastNotifications";
+import { ImageNotice, imageAdFor } from "./components/ImageNotice";
 import { dueReminder, reminderText, alreadyFired, markFired } from "./components/mealReminders";
 import { windowClock } from "./components/orderWindow";
 import { AuthProvider, useAuth } from "./components/AuthContext";
@@ -526,6 +527,7 @@ function BedsideScreen() {
   const [activeCareRole, setActiveCareRole] = useState<"nurse" | "doctor" | null>(null);
   const [layoutVersion, setLayoutVersion] = useState<1 | 2 | 3>(1);
   const [activeBroadcast, setActiveBroadcast] = useState<BroadcastNotification | null>(null);
+  const [activeImageAd, setActiveImageAd] = useState<{ src: string; alt: string } | null>(null);
   const [acknowledgedBroadcasts, setAcknowledgedBroadcasts] = useState<BroadcastNotification[]>([]);
   const [activeGame, setActiveGame] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<string | null>(null);
@@ -595,12 +597,13 @@ function BedsideScreen() {
       const seen = new Set(JSON.parse(seenRaw ?? "[]"));
       const hidden = new Set(JSON.parse(hiddenRaw ?? "[]"));
 
-      const initialUnreadIds = ["cta-survey", "cta-pdf", "cta-image", "cta-video", "cta-url"];
+      const initialUnreadIds = ["cta-survey", "cta-pdf", "cta-image", "cta-video", "cta-url",
+        ...(imageAdFor(theme.id, locale) ? ["cta-ad"] : [])];
       return initialUnreadIds.filter(id => !seen.has(id) && !hidden.has(id)).length;
     } catch {
       return 5;
     }
-  }, [notifTrigger]);
+  }, [notifTrigger, theme.id, locale]);
 
   const getUnreadCount = useCallback(() => {
     const seen = getSeenAlertIds();
@@ -1340,6 +1343,16 @@ function BedsideScreen() {
     } catch (e) {
       console.error(e);
     }
+    // Image-only notification: the picture on its own, no notice card
+    if (notif.id === "cta-ad") {
+      const ad = imageAdFor(theme.id, locale);
+      if (ad) {
+        setActiveImageAd(ad);
+        setShowNotifications(false);
+        return;
+      }
+    }
+
     // Map textKey to realistic broadcast content
     const contentMap = hospitalNoticeContent(theme.patientGuidePdf);
 
@@ -1371,7 +1384,7 @@ function BedsideScreen() {
        With [] it kept whichever it was handed on the first render, so a
        hospital switched at runtime would have served the previous brand's
        PDF and a freshly fetched alert would have opened empty. */
-  }, [apiNotifications, theme.patientGuidePdf]);
+  }, [apiNotifications, theme.patientGuidePdf, theme.id, locale]);
 
   const handleOpenCategory = (categoryKey: string) => {
     if (categoryKey === "About Us") {
@@ -2298,6 +2311,11 @@ function BedsideScreen() {
         })()}
 
         <RemoteControl />
+
+        {/* Image-only notification */}
+        {activeImageAd && (
+          <ImageNotice src={activeImageAd.src} alt={activeImageAd.alt} onClose={() => setActiveImageAd(null)} />
+        )}
 
         {/* Hospital Broadcast Overlay */}
         {activeBroadcast && (

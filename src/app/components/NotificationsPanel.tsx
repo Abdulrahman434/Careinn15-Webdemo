@@ -19,6 +19,7 @@ import {
   History,
 } from "lucide-react";
 import type { BroadcastNotification } from "./HospitalBroadcast";
+import { imageAdFor } from "./ImageNotice";
 import { DeviceAlert, getSeenAlertIds, markAlertSeen, getHiddenAlertIds, markAlertHidden, markAllAlertsHidden } from "../lib/hospitalApi";
 
 interface Notification {
@@ -52,6 +53,9 @@ const getDaysAgoAt = (days: number, hours: number, minutes: number): string => {
 };
 
 const initialNotifications: Notification[] = [
+  /* Image-only notification — listed only for hospitals that have an ad
+     (see ImageNotice.tsx); tapping it shows the picture with no card. */
+  { id: "cta-ad", iconType: "megaphone", textKey: "notif.ctaAd", time: getTodayAt(11, 45), read: false },
   { id: "cta-survey", iconType: "megaphone", textKey: "notif.ctaSurvey", time: getTodayAt(11, 20), read: false },
   { id: "cta-pdf", iconType: "megaphone", textKey: "notif.ctaPdf", time: getTodayAt(10, 45), read: false },
   { id: "cta-image", iconType: "megaphone", textKey: "notif.ctaImage", time: getTodayAt(9, 30), read: false },
@@ -389,6 +393,7 @@ export function NotificationsPanel({
     const hidden = getHardcodedHidden();
     const seen = getHardcodedSeen();
     let filtered = historyMode ? [...initialNotifications] : initialNotifications.filter(n => !hidden.has(n.id));
+    if (!imageAdFor(theme.id, locale)) filtered = filtered.filter(n => n.id !== "cta-ad");
 
     /* A notice that has been acknowledged or put off is already above, under
        HOSPITAL NOTICES, carrying what was done with it. Leaving the original
@@ -413,7 +418,7 @@ export function NotificationsPanel({
       time:      formatNotificationTime(n.time),
       read:      seen.has(n.id),
     }));
-  }, [formatNotificationTime, acknowledgedBroadcasts]);
+  }, [formatNotificationTime, acknowledgedBroadcasts, theme.id, locale]);
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const shownBroadcasts = showHistory
