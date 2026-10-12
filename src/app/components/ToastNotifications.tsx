@@ -72,9 +72,9 @@ export function useToast() {
 }
 
 const AUTO_DISMISS_MS = 7000;
-/** Toasts are switched off for now — every showToast/raiseToast is dropped.
- *  Flip back to true when they are wanted again; nothing else needs to change. */
-const TOASTS_ENABLED = false;
+/** Which toasts may show. For now only the staff-entry (RTLS) alert; meal
+ *  and housekeeping toasts are dropped. Add a variant back here to restore it. */
+const ENABLED_VARIANTS: ReadonlySet<ToastVariant> = new Set<ToastVariant>(["rtls"]);
 const MAX_VISIBLE = 4;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -93,7 +93,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const showToast = useCallback((input: ToastInput) => {
-    if (!TOASTS_ENABLED) return;
+    if (!ENABLED_VARIANTS.has(input.variant)) return;
     const id = ++idRef.current;
     setToasts((prev) => [{ ...input, id }, ...prev].slice(0, MAX_VISIBLE));
     const timer = setTimeout(() => remove(id), AUTO_DISMISS_MS);
