@@ -17,9 +17,9 @@ import fakeehPediatricAr from "../../assets/Ads/fakeeh-pediatric-ar.jpg";
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * The admin sends a picture and nothing else: no card, no title, no button.
- * It sits on the dimmed screen, scaled to fit (never cropped) inside a
- * 1600 × 900 box — the recommended upload size shows 1:1 on the 1920 × 1080
- * canvas. Closed with the ✕ or a tap anywhere outside the picture.
+ * It sits on the dimmed screen, scaled to fit (never cropped, ratio kept)
+ * inside a 1200 × 900 box: a landscape ad is at most 1200 wide, a portrait
+ * one at most 900 tall. Closed with the ✕ or a tap anywhere outside it.
  *
  * Demo content: two ads per hospital that has them, in English and Arabic.
  * Urdu falls back to the English artwork. Each ad's panel title is the i18n
@@ -50,7 +50,7 @@ export function adNumberOf(notifId: string): number | null {
   return m ? Number(m[1]) : null;
 }
 
-const MAX_W = 1600;
+const MAX_W = 1200;
 const MAX_H = 900;
 
 export function ImageNotice({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
