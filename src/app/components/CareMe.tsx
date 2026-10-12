@@ -3912,12 +3912,6 @@ export function CareMe({ onExpand, onOpenPreferences }: { onExpand?: () => void;
                 <Maximize2 size={18} style={{ color: theme.primaryOn }} />
               </TapTarget>
             )}
-            <TapTarget theme={theme} label="Previous slide" onClick={() => handleManualNav(activeIndex - 1)}>
-              <ChevronLeft size={18} strokeWidth={2} style={{ color: theme.primaryOn, transform: isRTL ? "scaleX(-1)" : undefined }} />
-            </TapTarget>
-            <TapTarget theme={theme} label="Next slide" onClick={() => handleManualNav(activeIndex + 1)}>
-              <ChevronRight size={18} strokeWidth={2} style={{ color: theme.primaryOn, transform: isRTL ? "scaleX(-1)" : undefined }} />
-            </TapTarget>
           </div>
         </div>
 
@@ -3977,8 +3971,11 @@ export function CareMe({ onExpand, onOpenPreferences }: { onExpand?: () => void;
         </div>
       </div>
 
-      {/* Pagination dots */}
-      <div className="flex items-center justify-center gap-2 py-3 shrink-0">
+      {/* Pagination: previous ‹ dots › next, under the slide */}
+      <div className="flex items-center justify-center gap-2 py-1 shrink-0">
+        <TapTarget theme={theme} label="Previous slide" onClick={() => handleManualNav(activeIndex - 1)}>
+          <ChevronLeft size={18} strokeWidth={2} style={{ color: theme.primaryOn, transform: isRTL ? "scaleX(-1)" : undefined }} />
+        </TapTarget>
         {slides.map((s, i) => (
           <button
             key={s.key}
@@ -3993,6 +3990,9 @@ export function CareMe({ onExpand, onOpenPreferences }: { onExpand?: () => void;
             aria-label={`Go to ${t(s.titleKey)}`}
           />
         ))}
+        <TapTarget theme={theme} label="Next slide" onClick={() => handleManualNav(activeIndex + 1)}>
+          <ChevronRight size={18} strokeWidth={2} style={{ color: theme.primaryOn, transform: isRTL ? "scaleX(-1)" : undefined }} />
+        </TapTarget>
       </div>
 
       {/* Custom scrollbar styles */}
