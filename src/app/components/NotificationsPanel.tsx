@@ -10,9 +10,6 @@ import {
   Download,
   MessageSquare,
   Trash2,
-  ChefHat,
-  Heart,
-  Utensils,
   Check,
   Megaphone,
   AlertTriangle,
@@ -21,8 +18,6 @@ import {
   MailCheck,
   History,
 } from "lucide-react";
-import { orderRef, useOrders } from "./OrderStore";
-import type { OrderStatus } from "./OrderStore";
 import type { BroadcastNotification } from "./HospitalBroadcast";
 import { DeviceAlert, getSeenAlertIds, markAlertSeen, getHiddenAlertIds, markAlertHidden, markAllAlertsHidden } from "../lib/hospitalApi";
 
@@ -307,15 +302,6 @@ function SwipeableRow({
   );
 }
 
-/* ─── Order Status Helpers ─── */
-const ORDER_STATUS_NOTIF: Record<OrderStatus, { textKey: { en: string; ar: string }; icon: typeof ChefHat; color: string }> = {
-  "received":      { textKey: { en: "Your meal order has been received", ar: "تم استلام طلب وجبتك" }, icon: Check, color: "#22C55E" },
-  "preparing":     { textKey: { en: "Your meal is being prepared by the kitchen", ar: "يتم تحضير وجبتك في المطبخ" }, icon: ChefHat, color: "#F59E0B" },
-  "quality-check": { textKey: { en: "Your meal is undergoing a quality check", ar: "وجبتك تخضع لفحص الجودة" }, icon: Heart, color: "#3B82F6" },
-  "delivering":    { textKey: { en: "Your meal is on the way to your room", ar: "وجبتك في الطريق إلى غرفتك" }, icon: Utensils, color: "#8B5CF6" },
-  "delivered":     { textKey: { en: "Your meal has been delivered. Enjoy!", ar: "تم توصيل وجبتك. بالعافية!" }, icon: Check, color: "#22C55E" },
-};
-
 /* ─── Main Panel ─── */
 export function NotificationsPanel({ 
   onClose, 
@@ -336,14 +322,6 @@ export function NotificationsPanel({
 }) {
   const { theme } = useTheme();
   const { t, locale, isRTL, fontFamily } = useLocale();
-  const { activeOrders } = useOrders();
-  /* Only meals due today. Orders that never reached "delivered" — the
-     kitchen's standing orders, or a demo order whose timers died with a
-     reload — otherwise pile up here day after day. */
-  const todayStr = new Date().toDateString();
-  const trackedOrders = activeOrders.filter((o) =>
-    new Date(o.deliveryDate ?? o.placedAt).toDateString() === todayStr
-  );
   const [showHistory, setShowHistory] = useState(false);
 
   const formatNotificationTime = useCallback((dateInput: Date | string | number | null | undefined): string => {
@@ -694,97 +672,6 @@ export function NotificationsPanel({
           className="flex-1 overflow-y-auto flex flex-col gap-1.5"
           style={{ padding: "4px 12px 24px 12px", scrollbarWidth: "none" }}
         >
-          {/* Active Order Tracking */}
-          {trackedOrders.length > 0 && (
-            <div className="shrink-0 flex flex-col gap-2" style={{ paddingBottom: "8px" }}>
-              <span
-                style={{
-                  fontFamily: theme.fontFamily,
-                  ...TEXT_STYLE.label,
-                  fontSize: "12px",
-                  fontWeight: WEIGHT.bold,
-                  color: theme.textMuted,
-                  letterSpacing: "0.5px",
-                  textTransform: "uppercase" as const,
-                  padding: "0 4px",
-                }}
-              >
-                {isRTL ? "تتبع الطلبات" : "ORDER TRACKING"}
-              </span>
-              {trackedOrders.map((order) => {
-                const cfg = ORDER_STATUS_NOTIF[order.status];
-                const StatusIcon = cfg.icon;
-                const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
-                return (
-                  <div
-                    key={order.id}
-                    className="flex items-center gap-3"
-                    style={{
-                      padding: "14px 16px",
-                      borderRadius: "14px",
-                      backgroundColor: `${cfg.color}10`,
-                      border: `1px solid ${cfg.color}25`,
-                    }}
-                  >
-                    <div
-                      className="shrink-0 flex items-center justify-center"
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        borderRadius: "12px",
-                        backgroundColor: `${cfg.color}18`,
-                      }}
-                    >
-                      <StatusIcon size={20} style={{ color: cfg.color }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span
-                        style={{
-                          fontFamily: fontFamily,
-                          ...TEXT_STYLE.body,
-                          fontSize: "14.5px",
-                          fontWeight: WEIGHT.semibold,
-                          color: theme.textHeading,
-                          lineHeight: "20px",
-                          display: "block",
-                        }}
-                      >
-                        {loc(cfg.textKey)}
-                      </span>
-                      <span
-                        style={{
-                          fontFamily: fontFamily,
-                          ...TEXT_STYLE.caption,
-                          fontSize: "12px",
-                          color: theme.textMuted,
-                          display: "block",
-                          marginTop: "2px",
-                        }}
-                      >
-                        {orderRef(order.orderNumber)} · {order.items.map((it) => `${it.quantity}x ${loc(it.name)}`).join(", ")}
-                      </span>
-                    </div>
-                    <span
-                      className="shrink-0"
-                      style={{
-                        fontFamily: theme.fontFamily,
-                        ...TEXT_STYLE.caption,
-                        fontSize: "12px",
-                        fontWeight: WEIGHT.bold,
-                        color: cfg.color,
-                        padding: "4px 10px",
-                        borderRadius: "8px",
-                        backgroundColor: `${cfg.color}12`,
-                      }}
-                    >
-                      {order.estimatedDelivery}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
           {/* Hospital Broadcasts Section */}
           {shownBroadcasts.length > 0 && (
             <div className="flex flex-col gap-2 shrink-0" style={{ marginBottom: "8px" }}>
@@ -804,7 +691,10 @@ export function NotificationsPanel({
               </span>
               {shownBroadcasts.map((bc) => {
                 const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
-                const isLater = bc.isLater && !bc.acknowledgedAt && !bc.isMissed;
+                /* Anything not answered — put off, displaced by a newer notice,
+                   or left past its time (older records call that "missed") —
+                   reads as Check Later. */
+                const isLater = (bc.isLater || bc.isMissed) && !bc.acknowledgedAt;
                 /* This list is about what was DONE with a notice, not what it
                    arrived as. The tint used to come from bc.priority, so an
                    acknowledged warning came out amber — the same amber as
@@ -820,13 +710,6 @@ export function NotificationsPanel({
                       border: "1px solid rgba(245, 158, 11, 0.25)",
                       chip: "rgba(245, 158, 11, 0.1)",
                       glyph: "#F59E0B",
-                    }
-                  : bc.isMissed
-                  ? {
-                      bg: "rgba(209, 0, 68, 0.04)",
-                      border: "1px dashed rgba(209, 0, 68, 0.25)",
-                      chip: "rgba(209, 0, 68, 0.1)",
-                      glyph: "#D10044",
                     }
                   : {
                       // Answered, so it recedes — and green, because the tick
@@ -918,20 +801,6 @@ export function NotificationsPanel({
                               {isRTL ? "الاطلاع لاحقاً" : "Check Later"}
                             </span>
                           </>
-                        ) : bc.isMissed ? (
-                          <>
-                            <X size={12} style={{ color: "#D10044" }} />
-                            <span
-                              style={{
-                                fontFamily: fontFamily,
-                                fontSize: "11px",
-                                fontWeight: WEIGHT.medium,
-                                color: "#D10044",
-                              }}
-                            >
-                              {t("notif.missed")} {bc.missedAt}
-                            </span>
-                          </>
                         ) : (
                           <>
                             <Check size={12} style={{ color: theme.successOn }} />
@@ -955,7 +824,7 @@ export function NotificationsPanel({
             </div>
           )}
 
-          {notifications.length === 0 && trackedOrders.length === 0 && shownBroadcasts.length === 0 ? (
+          {notifications.length === 0 && shownBroadcasts.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4">
               <div
                 className="flex items-center justify-center"

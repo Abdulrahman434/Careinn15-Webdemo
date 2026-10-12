@@ -42,7 +42,7 @@ import { PatientPreferenceForm } from "./components/PatientPreferenceForm";
 import { FoodOrdering } from "./components/FoodOrdering";
 import { NeedSomething } from "./components/NeedSomething";
 import { OrderProvider, useOrders } from "./components/OrderStore";
-import { ToastProvider, runNoticeAction, raiseServiceNotice } from "./components/ToastNotifications";
+import { ToastProvider, raiseToast } from "./components/ToastNotifications";
 import { dueReminder, reminderText, alreadyFired, markFired } from "./components/mealReminders";
 import { windowClock } from "./components/orderWindow";
 import { AuthProvider, useAuth } from "./components/AuthContext";
@@ -563,7 +563,7 @@ function BedsideScreen() {
       if (!due || alreadyFired(due.slot)) return;
       markFired(due.slot);
       const { title, body } = reminderText(due, t, mealClock);
-      raiseServiceNotice({
+      raiseToast({
         variant: "meal",
         category: t("toast.meal.category"),
         title,
@@ -576,7 +576,7 @@ function BedsideScreen() {
           setFoodOrderInitialView(undefined);
           setShowFoodOrder(true);
         },
-      }, t);
+      });
     };
     check();
     const id = setInterval(check, 60 * 1000);
@@ -585,17 +585,6 @@ function BedsideScreen() {
 
   // Queue of immediate alerts to show as broadcast popups
   const [broadcastQueue, setBroadcastQueue] = useState<BroadcastNotification[]>([]);
-
-  /* Meal + housekeeping notices arrive from ToastNotifications as
-     "hospital-notice" events and join the same queue as every other notice. */
-  useEffect(() => {
-    const onNotice = (e: Event) => {
-      const n = (e as CustomEvent<BroadcastNotification>).detail;
-      setBroadcastQueue((prev) => [...prev, n]);
-    };
-    window.addEventListener("hospital-notice", onNotice);
-    return () => window.removeEventListener("hospital-notice", onNotice);
-  }, []);
 
   const [apiNotifications, setApiNotifications] = useState<DeviceAlert[]>([]);
 
@@ -623,7 +612,7 @@ function BedsideScreen() {
       return !(createdBeforeToday && !modifiedToday);
     }).length;
 
-    const laterCount = acknowledgedBroadcasts.filter(b => b.isLater && !b.acknowledgedAt && !b.isMissed && !b.clearedAt).length;
+    const laterCount = acknowledgedBroadcasts.filter(b => (b.isLater || b.isMissed) && !b.acknowledgedAt && !b.clearedAt).length;
 
     return getHardcodedUnreadCount() + activeApiCount + laterCount;
   }, [apiNotifications, notifTrigger, getHardcodedUnreadCount, acknowledgedBroadcasts]);
@@ -728,13 +717,25 @@ function BedsideScreen() {
     }
   }, [showTour, fetchAlerts]);
 
+  /* Only process the queue if the tour is NOT active AND the user has at least
+     seen/skipped the tour once. Notices never stack: the newest one takes the
+     screen, and whatever it displaces (the notice already showing, or older
+     ones still waiting) goes to the notifications panel as Check Later. */
   useEffect(() => {
-    // Only process the queue if the tour is NOT active AND the user has at least seen/skipped the tour once
-    if (!showTour && tourDismissed && !activeBroadcast && broadcastQueue.length > 0) {
-      const [next, ...rest] = broadcastQueue;
-      setActiveBroadcast(next);
-      setBroadcastQueue(rest);
+    if (showTour || !tourDismissed || broadcastQueue.length === 0) return;
+    const next = broadcastQueue[broadcastQueue.length - 1];
+    const displaced = [...(activeBroadcast ? [activeBroadcast] : []), ...broadcastQueue.slice(0, -1)];
+    if (displaced.length > 0) {
+      if (activeBroadcast?.type === "prayer" && azanAudioRef.current) {
+        azanAudioRef.current.pause();
+        azanAudioRef.current.currentTime = 0;
+      }
+      const later = displaced.reverse().map((b) => ({ ...b, isLater: true, acknowledgedAt: undefined }));
+      setAcknowledgedBroadcasts((prev) => [...later, ...prev].slice(0, MAX_ACKNOWLEDGED_BROADCASTS));
+      setNotifTrigger((p) => p + 1);
     }
+    setActiveBroadcast(next);
+    setBroadcastQueue([]);
   }, [activeBroadcast, broadcastQueue, showTour, tourDismissed]);
 
   // Check for expired/missed notifications every 2 seconds
@@ -750,11 +751,7 @@ function BedsideScreen() {
             azanAudioRef.current.pause();
             azanAudioRef.current.currentTime = 0;
           }
-          const missedNotif: BroadcastNotification = {
-            ...activeBroadcast,
-            isMissed: true,
-            missedAt: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
-          };
+          const missedNotif: BroadcastNotification = { ...activeBroadcast, isLater: true };
           setActiveBroadcast(null);
           setAcknowledgedBroadcasts(prev =>
             [missedNotif, ...prev].slice(0, MAX_ACKNOWLEDGED_BROADCASTS));
@@ -768,11 +765,7 @@ function BedsideScreen() {
 
         prevQueue.forEach(item => {
           if (item.createdAt && now - item.createdAt > TIMEOUT_MS) {
-            expired.push({
-              ...item,
-              isMissed: true,
-              missedAt: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
-            });
+            expired.push({ ...item, isLater: true });
           } else {
             active.push(item);
           }
@@ -1166,9 +1159,6 @@ function BedsideScreen() {
             [acknowledged, ...list].slice(0, MAX_ACKNOWLEDGED_BROADCASTS));
           setNotifTrigger((p) => p + 1);
 
-          // Meal / housekeeping notices: their main button runs the tap action
-          if (actionType === "read") runNoticeAction(prev.id);
-
           // Handle CTA Actions if present and user clicked "read" (main CTA button)
           if (actionType === "read" && (prev.ctaAction || prev.ctaUrl)) {
             const url = prev.ctaUrl || "";
@@ -1285,8 +1275,8 @@ function BedsideScreen() {
 
     setAcknowledgedBroadcasts((list) => {
       const settled = list.map(b =>
-        b.isLater && !b.acknowledgedAt && !b.isMissed
-          ? { ...b, isLater: false, acknowledgedAt: nowStr }
+        (b.isLater || b.isMissed) && !b.acknowledgedAt
+          ? { ...b, isLater: false, isMissed: false, acknowledgedAt: nowStr }
           : b);
       const already = new Set(settled.map(b => b.id));
       const fresh = answered.filter(b => !already.has(b.id));
@@ -2312,6 +2302,7 @@ function BedsideScreen() {
         {/* Hospital Broadcast Overlay */}
         {activeBroadcast && (
           <HospitalBroadcast
+            key={activeBroadcast.id}
             notification={activeBroadcast}
             onAcknowledge={handleBroadcastAcknowledge}
             onMuteAzan={() => {
