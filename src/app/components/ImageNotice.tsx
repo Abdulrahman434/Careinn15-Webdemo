@@ -7,10 +7,10 @@ import burjeelAdAr from "../../assets/Ads/Burjeel_dietitian_in_a_light_grey_hija
 import burjeelAdEn from "../../assets/Ads/Nutrition_care_with_a_warm_grey_hijab-2.jpg";
 import fakeehAdEn from "../../assets/Ads/Teal-hijab_nurse_caring_for_an_older_patient-1.jpg";
 import fakeehAdAr from "../../assets/Ads/Teal-hijab_nurse_in_Fakeeh_home-care_ad-1.jpg";
-import burjeelCheckupEn from "../../assets/Ads/burjeel-checkup-en.webp";
-import burjeelCheckupAr from "../../assets/Ads/burjeel-checkup-ar.webp";
-import fakeehPediatricEn from "../../assets/Ads/fakeeh-pediatric-en.webp";
-import fakeehPediatricAr from "../../assets/Ads/fakeeh-pediatric-ar.webp";
+import burjeelCheckupEn from "../../assets/Ads/burjeel-checkup-en.jpg";
+import burjeelCheckupAr from "../../assets/Ads/burjeel-checkup-ar.jpg";
+import fakeehPediatricEn from "../../assets/Ads/fakeeh-pediatric-en.jpg";
+import fakeehPediatricAr from "../../assets/Ads/fakeeh-pediatric-ar.jpg";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * ImageNotice — an image-only notification
