@@ -43,7 +43,7 @@ import { FoodOrdering } from "./components/FoodOrdering";
 import { NeedSomething } from "./components/NeedSomething";
 import { OrderProvider, useOrders } from "./components/OrderStore";
 import { ToastProvider, raiseToast } from "./components/ToastNotifications";
-import { ImageNotice, imageAdFor } from "./components/ImageNotice";
+import { ImageNotice, imageAdFor, adNumberOf } from "./components/ImageNotice";
 import { dueReminder, reminderText, alreadyFired, markFired } from "./components/mealReminders";
 import { windowClock } from "./components/orderWindow";
 import { AuthProvider, useAuth } from "./components/AuthContext";
@@ -598,7 +598,7 @@ function BedsideScreen() {
       const hidden = new Set(JSON.parse(hiddenRaw ?? "[]"));
 
       const initialUnreadIds = ["cta-survey", "cta-pdf", "cta-image", "cta-video", "cta-url",
-        ...(imageAdFor(theme.id, locale) ? ["cta-ad"] : [])];
+        ...[1, 2].filter((k) => imageAdFor(theme.id, locale, k)).map((k) => `cta-ad-${k}`)];
       return initialUnreadIds.filter(id => !seen.has(id) && !hidden.has(id)).length;
     } catch {
       return 5;
@@ -1344,8 +1344,9 @@ function BedsideScreen() {
       console.error(e);
     }
     // Image-only notification: the picture on its own, no notice card
-    if (notif.id === "cta-ad") {
-      const ad = imageAdFor(theme.id, locale);
+    const adNumber = adNumberOf(notif.id);
+    if (adNumber !== null) {
+      const ad = imageAdFor(theme.id, locale, adNumber);
       if (ad) {
         setActiveImageAd(ad);
         setShowNotifications(false);
