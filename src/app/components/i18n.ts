@@ -1121,6 +1121,7 @@ const translations: Record<string, TranslationEntry> = {
   /* ─── Notification Items ─── */
   "notif.ctaSurvey": { en: "Hospital Feedback Survey", ar: "استطلاع الرأي للمستشفى", ur: "ہسپتال کا سروے" },
   "notif.ctaPdf": { en: "Patient Guide Guidebook", ar: "دليل إرشادات المريض", ur: "مریض کی گائیڈ بک" },
+  "notif.ctaAd": { en: "Hospital Announcement", ar: "إعلان من المستشفى", ur: "ہسپتال کا اعلان" },
   "notif.ctaImage": { en: "Daily Healthy Diet Chart", ar: "مخطط النظام الغذائي الصحي اليومي", ur: "روزمرہ کی خوراک کا چارٹ" },
   "notif.ctaVideo": { en: "CareInn Presentation Video", ar: "فيديو تعريفي لكيرإن", ur: "کیر ان تعریفی ویڈیو" },
   "notif.ctaUrl": { en: "Hospital Medical Portal", ar: "بوابة المريض الطبية", ur: "مریض کا پورٹل" },
