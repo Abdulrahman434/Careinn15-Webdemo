@@ -42,7 +42,7 @@ import { PatientPreferenceForm } from "./components/PatientPreferenceForm";
 import { FoodOrdering } from "./components/FoodOrdering";
 import { NeedSomething } from "./components/NeedSomething";
 import { OrderProvider, useOrders } from "./components/OrderStore";
-import { ToastProvider, raiseToast } from "./components/ToastNotifications";
+import { ToastProvider } from "./components/ToastNotifications";
 import { ImageNotice, imageAdFor, adNumberOf } from "./components/ImageNotice";
 import { dueReminder, reminderText, alreadyFired, markFired } from "./components/mealReminders";
 import { windowClock } from "./components/orderWindow";
@@ -565,20 +565,20 @@ function BedsideScreen() {
       if (!due || alreadyFired(due.slot)) return;
       markFired(due.slot);
       const { title, body } = reminderText(due, t, mealClock);
-      raiseToast({
-        variant: "meal",
-        category: t("toast.meal.category"),
-        title,
-        body,
-        /* Nothing can be ordered once the window has shut, so the closing
-           notice is a statement, not an invitation. */
-        actionText: due.kind === "closed" ? undefined : t("toast.meal.orderNow"),
-        actionColor: due.kind === "last" ? "#D97706" : "#2563EB",
-        onTap: due.kind === "closed" ? undefined : () => {
-          setFoodOrderInitialView(undefined);
-          setShowFoodOrder(true);
-        },
-      });
+      /* A Hospital Notice, like every other notice: "Order Now" opens Meal
+         Ordering. Text is already in the screen's language, so it fills both
+         slots. */
+      const orderNow = t("toast.meal.orderNow");
+      setBroadcastQueue((prev) => [...prev, {
+        id: `meal-reminder-${due.slot}`,
+        title: { en: title, ar: title },
+        body: { en: body, ar: body },
+        priority: "info",
+        timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
+        createdAt: Date.now(),
+        cta: { en: orderNow, ar: orderNow },
+        ctaAction: "open-meal-ordering",
+      }]);
     };
     check();
     const id = setInterval(check, 60 * 1000);
@@ -1162,8 +1162,14 @@ function BedsideScreen() {
             [acknowledged, ...list].slice(0, MAX_ACKNOWLEDGED_BROADCASTS));
           setNotifTrigger((p) => p + 1);
 
+          // Meal reminder: "Order Now" opens Meal Ordering
+          if (actionType === "read" && prev.ctaAction === "open-meal-ordering") {
+            setFoodOrderInitialView(undefined);
+            setShowFoodOrder(true);
+          }
+
           // Handle CTA Actions if present and user clicked "read" (main CTA button)
-          if (actionType === "read" && (prev.ctaAction || prev.ctaUrl)) {
+          else if (actionType === "read" && (prev.ctaAction || prev.ctaUrl)) {
             const url = prev.ctaUrl || "";
             let action = prev.ctaAction;
 

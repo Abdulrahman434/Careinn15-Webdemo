@@ -37,7 +37,7 @@ export interface BroadcastNotification {
   isMissed?: boolean;
   missedAt?: string;
   cta?: { en: string; ar: string };
-  ctaAction?: "open-url" | "open-survey" | "open-pdf" | "open-image" | "open-video";
+  ctaAction?: "open-url" | "open-survey" | "open-pdf" | "open-image" | "open-video" | "open-meal-ordering";
   ctaUrl?: string;
   ctaSurveyId?: string;
   isLater?: boolean;
