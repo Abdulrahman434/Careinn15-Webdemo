@@ -3,16 +3,16 @@
  *
  * The kitchen's window is a few hours long and shuts for good at 8 PM, so a
  * patient who never opens the meal screen that afternoon simply does not eat
- * what they would have chosen. These are the nudges that stop that happening:
- * one when the window opens, one on each hour after it while something is
- * still unordered, one when the last hour starts, and one when it has shut.
+ * what they would have chosen. Two nudges a day, no more: one when the
+ * window opens, and one 30 minutes before it shuts while something is still
+ * unordered. Both are shown as Hospital Notices.
  *
  * Deliberately says nothing about a guest. Nothing in the record tells us
  * whether anyone is staying in the room, and a reminder about a companion who
  * does not exist is worse than no reminder at all — the patient's own meals
  * are the only thing here we can be sure about.
  *
- * Pure except for the clock: App owns the timer, the toast and the memory of
+ * Pure except for the clock: App owns the timer, the notice and the memory of
  * what has already fired.
  */
 import type { MealId } from "./menuData";
@@ -70,43 +70,33 @@ export interface DueReminder {
   missing: MealId[];
 }
 
+/** The last call goes out this long before the window shuts. */
+const LAST_CALL_MINUTES = 30;
+
 /**
- * The reminder this hour owes the patient, or null for silence.
+ * The reminder the patient is owed right now, or null for silence.
  *
- * Called on a timer, so it answers for the hour the clock is in rather than
- * for the exact minute: a kiosk woken at 5:40 PM still gets 5 PM's reminder,
- * which is the point of reminding at all.
+ * Called on a timer, so it answers for a span rather than an exact minute: a
+ * kiosk woken at 5:40 PM still gets the "menu is open" notice it slept
+ * through. Each kind fires once a day (see `slot`).
  */
 export function dueReminder(now: Date, orders: OrderLike[]): DueReminder | null {
-  const start = orderWindowStart();
-  const end = ORDER_WINDOW_END;
-  const hour = now.getHours();
   const dateKey = now.toDateString();
-  const missing = unorderedMealsForTomorrow(orders);
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  const open = orderWindowStart() * 60;
+  const close = ORDER_WINDOW_END * 60;
+  const lastCall = close - LAST_CALL_MINUTES;
 
-  if (hour < start) return null;
+  if (minutes < open || minutes >= close) return null;
 
-  if (hour === start) {
-    return { kind: "open", slot: `${dateKey}|open`, missing: [] };
-  }
-
-  if (hour >= end) {
-    /* Once, and only if something was actually left behind. */
+  if (minutes >= lastCall) {
+    const missing = unorderedMealsForTomorrow(orders);
+    /* Nothing left to order — nothing to remind about. */
     if (missing.length === 0) return null;
-    return { kind: "closed", slot: `${dateKey}|closed`, missing };
-  }
-
-  if (missing.length === 0) return null;
-
-  if (hour === end - 1) {
     return { kind: "last", slot: `${dateKey}|last`, missing };
   }
 
-  return {
-    kind: missing.length === MEAL_IDS.length ? "none" : "some",
-    slot: `${dateKey}|h${hour}`,
-    missing,
-  };
+  return { kind: "open", slot: `${dateKey}|open`, missing: [] };
 }
 
 /* ── What has already been said today ──────────────────────────────────────

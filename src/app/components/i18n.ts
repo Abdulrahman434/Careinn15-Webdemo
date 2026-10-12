@@ -317,7 +317,7 @@ const translations: Record<string, TranslationEntry> = {
     ar: "لم تُطلب بعد: {0}. يغلق الطلب الساعة {1}.",
     ur: "ابھی آرڈر نہیں ہوا: {0}۔ آرڈر {1} پر بند ہو جائے گا۔",
   },
-  "food.remind.last.title": { en: "Last hour to order tomorrow's meals", ar: "آخر ساعة لطلب وجبات الغد", ur: "کل کے کھانے آرڈر کرنے کا آخری گھنٹہ" },
+  "food.remind.last.title": { en: "30 minutes left to order tomorrow's meals", ar: "بقيت 30 دقيقة لطلب وجبات الغد", ur: "کل کے کھانے آرڈر کرنے کے لیے 30 منٹ باقی ہیں" },
   "food.remind.last.body": {
     en: "Ordering closes at {0}, and tomorrow's menu can't be changed after that.",
     ar: "يغلق الطلب الساعة {0}، ولا يمكن تغيير قائمة الغد بعدها.",
