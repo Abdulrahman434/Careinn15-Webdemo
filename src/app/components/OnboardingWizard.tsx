@@ -719,6 +719,18 @@ export function OnboardingWizard({
           .ob-root .grid-cols-3, .ob-root .grid-cols-4 { grid-template-columns: repeat(2, 1fr) !important; }
           .ob-root .grid { gap: 10px !important; }
         }
+        /* Very short windows: the white card no longer has to fit the screen.
+           The whole page scrolls instead, so nothing is squeezed or clipped. */
+        @media (max-height: 560px) {
+          .ob-root { overflow-y: auto !important; }
+          .ob-content, .ob-scroll { flex: none !important; min-height: 0 !important; overflow: visible !important; }
+          .ob-body { flex: none !important; padding-top: 18px !important; padding-bottom: 72px !important; }
+          .ob-header { gap: 10px !important; padding: 12px 16px 10px !important; }
+          .ob-header-divider, .ob-header-icon, .ob-subtitle, .ob-hero { display: none !important; }
+          .ob-title { font-size: 20px !important; line-height: 24px !important; }
+          .ob-step-icon { width: 56px !important; height: 56px !important; margin-bottom: 12px !important; }
+          .ob-step-title { font-size: 22px !important; line-height: 28px !important; margin-bottom: 16px !important; }
+        }
         /* Short landscape screens: tighter vertical rhythm */
         @media (max-height: 700px) and (min-width: 641px) {
           .ob-header { padding-top: 16px !important; padding-bottom: 12px !important; }
