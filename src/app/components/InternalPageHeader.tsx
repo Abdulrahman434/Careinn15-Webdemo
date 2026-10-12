@@ -18,7 +18,9 @@ export function InternalPageHeader({ title, subtitle, icon, onClose, rightAction
   const { theme } = useTheme();
   const { isRTL, fontFamily } = useLocale();
   return (
-    <div className="shrink-0 flex items-center gap-5 px-12 pt-10 pb-6 relative z-10">
+    /* iph-* class names are hooks for a page that wants its own small-screen
+       rules (e.g. Feedback); they carry no styles here. */
+    <div className="iph shrink-0 flex items-center gap-5 px-12 pt-10 pb-6 relative z-10">
       <button
         onClick={onClose}
         className="flex items-center justify-center cursor-pointer active:scale-95"
@@ -37,10 +39,10 @@ export function InternalPageHeader({ title, subtitle, icon, onClose, rightAction
         <Home size={22} style={{ color: "#fff" }} />
       </button>
       {/* Divider */}
-      <div style={{ width: "1.5px", height: "32px", backgroundColor: "rgba(255,255,255,0.18)", borderRadius: "1px" }} />
-      <div className="flex items-center gap-4 flex-1">
+      <div className="iph-divider" style={{ width: "1.5px", height: "32px", backgroundColor: "rgba(255,255,255,0.18)", borderRadius: "1px" }} />
+      <div className="flex items-center gap-4 flex-1 min-w-0">
         <div
-          className="flex items-center justify-center"
+          className="iph-icon flex items-center justify-center"
           style={{
             width: "52px",
             height: "52px",
@@ -51,8 +53,9 @@ export function InternalPageHeader({ title, subtitle, icon, onClose, rightAction
         >
           {icon}
         </div>
-        <div>
+        <div className="min-w-0">
           <h2
+            className="iph-title"
             style={{
               fontFamily: fontFamily,
               ...TEXT_STYLE.display,
@@ -65,6 +68,7 @@ export function InternalPageHeader({ title, subtitle, icon, onClose, rightAction
           </h2>
           {subtitle && (
             <p
+              className="iph-subtitle"
               style={{
                 fontFamily: fontFamily,
                 ...TEXT_STYLE.caption,
@@ -83,7 +87,7 @@ export function InternalPageHeader({ title, subtitle, icon, onClose, rightAction
           than passed in by each page, which is how they drifted into a
           different corner on each screen. */}
       {(rightAction || demoControls) && (
-        <div className="shrink-0 flex items-center gap-3">
+        <div className="iph-actions shrink-0 flex items-center gap-3">
           {rightAction}
           {demoControls && <DemoControls />}
         </div>
