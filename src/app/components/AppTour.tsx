@@ -64,6 +64,7 @@ const STEPS: TourStep[] = [
     titleKey: "tour.step.prayer.title",
     body: "All five daily prayer times at a glance. The next upcoming prayer is highlighted so you never miss a salah.",
     bodyKey: "tour.step.prayer.body",
+    detailKey: "tour.step.prayer.detail",
   },
   {
     id: "controls",
@@ -86,6 +87,7 @@ const STEPS: TourStep[] = [
     titleKey: "tour.step.ticker.title",
     body: "Hospital news and announcements scroll across this bar.",
     bodyKey: "tour.step.ticker.body",
+    detailKey: "tour.step.ticker.detail",
   },
   {
     id: "greeting",
@@ -144,6 +146,7 @@ const STEPS: TourStep[] = [
     titleKey: "tour.step.shortcuts.title",
     body: "Quick access to apps and services set up by your hospital, always one tap away.",
     bodyKey: "tour.step.shortcuts.body",
+    detailKey: "tour.step.shortcuts.detail",
   },
   {
     id: "survey",
@@ -154,6 +157,7 @@ const STEPS: TourStep[] = [
     titleKey: "tour.step.survey.title",
     body: "Help us improve! Take a quick survey, or share a concern or a thank-you with our team.",
     bodyKey: "tour.step.survey.body",
+    detailKey: "tour.step.survey.detail",
   },
   {
     id: "finish",
