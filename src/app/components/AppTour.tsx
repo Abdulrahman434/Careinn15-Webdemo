@@ -142,7 +142,7 @@ const STEPS: TourStep[] = [
     icon: Zap,
     title: "Quick Shortcuts",
     titleKey: "tour.step.shortcuts.title",
-    body: "Quick access to apps and services chosen by your hospital. What appears here may differ from one hospital to another.",
+    body: "Quick access to apps and services set up by your hospital, always one tap away.",
     bodyKey: "tour.step.shortcuts.body",
   },
   {
