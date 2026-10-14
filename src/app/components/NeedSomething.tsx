@@ -184,6 +184,8 @@ const MEDICAL_ITEMS: CardDef[] = [
   { key: "need.medical.sickLeave", emoji: "📄", Icon: SickLeaveIcon, subtitle: "need.medical.sickLeave.sub" },
 ];
 const BURJEEL_ONLY_TABS: Tab[] = ["complaint", "medical"];
+/* Tabs Burjeel does not offer. */
+const BURJEEL_HIDDEN_TABS: Tab[] = ["support"];
 
 const ROOM_CARE_ITEMS: CardDef[] = [
   { key: "need.care.bedlinen", emoji: "🛏️", Icon: BedSingle, subtitle: "need.care.bedlinen.sub" },
@@ -456,7 +458,9 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
     { key: "complaint", Icon: MessageSquareWarning, label: t("need.tab.complaint") },
     { key: "medical", Icon: Stethoscope, label: t("need.tab.medical") },
     { key: "report", Icon: Wrench, label: t("need.tab.report") },
-  ].filter((tb) => isBurjeel || !BURJEEL_ONLY_TABS.includes(tb.key as Tab)) as { key: Tab; Icon: typeof HandHelping; label: string; count?: number }[];
+  ].filter((tb) => isBurjeel
+    ? !BURJEEL_HIDDEN_TABS.includes(tb.key as Tab)
+    : !BURJEEL_ONLY_TABS.includes(tb.key as Tab)) as { key: Tab; Icon: typeof HandHelping; label: string; count?: number }[];
 
   const titleKey = `need.title.${tab}`;
   const subKey = `need.sub.${tab}`;
@@ -1281,7 +1285,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                   { key: "all", label: t("need.mine.all") },
                   { key: "request", label: t("need.tab.request") },
                   { key: "roomcare", label: t("need.tab.roomcare") },
-                  { key: "support", label: t("need.tab.support") },
+                  ...(isBurjeel ? [] : [{ key: "support" as const, label: t("need.tab.support") }]),
                   ...(isBurjeel ? [
                     { key: "complaint" as const, label: t("need.tab.complaint") },
                     { key: "medical" as const, label: t("need.tab.medical") },
