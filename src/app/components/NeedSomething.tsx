@@ -597,7 +597,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
           </motion.div>
         ) : (
         <div
-          className="flex-1 min-h-0 flex flex-col overflow-hidden"
+          className="flex-1 min-h-0 flex overflow-hidden"
           style={{
             backgroundColor: theme.surface,
             borderRadius: theme.radiusXl,
@@ -605,45 +605,61 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
             border: theme.cardBorder,
           }}
         >
-          {/* Tabs strip */}
-          <div
-            className="shrink-0 flex items-center gap-3 flex-wrap px-8 pt-7 pb-5"
-            style={{ borderBottom: `1px solid ${theme.borderSubtle}` }}
+          {/* Category rail — a vertical list down the leading edge (left in
+              English, right in Arabic: the row follows the page direction).
+              Report an Issue sits apart at the foot: it is the one category
+              that is not a request. */}
+          <nav
+            className="shrink-0 flex flex-col gap-2 py-7 px-5"
+            style={{
+              width: 320,
+              backgroundColor: theme.surfaceInset,
+              borderInlineEnd: `1px solid ${theme.borderSubtle}`,
+            }}
           >
             {tabs.map((tb) => {
               const active = tab === tb.key;
               const TIcon = tb.Icon;
               const isReportTab = tb.key === "report";
               const activeBg = isReportTab ? theme.error : theme.primary;
-              /* Report stays red whether or not it is the tab you are on —
-                 it is the one tab that is not a request, and the colour is
-                 how the strip says so at a glance. */
               const restTone = isReportTab ? theme.errorOn : theme.primaryOn;
               return (
                 <button
                   key={tb.key}
                   onClick={() => setTab(tb.key)}
-                  className="flex items-center gap-2.5 cursor-pointer active:scale-95 transition-transform"
+                  className="flex items-center gap-3 w-full cursor-pointer active:scale-[0.98] transition-transform"
                   style={{
-                    padding: "13px 22px",
-                    borderRadius: theme.radiusFull,
-                    backgroundColor: active ? activeBg : theme.surface,
-                    /* The selected tab's border is its own fill: borderCardSelected
-                       is the brand glyph at 55%, which on the red Report fill read
-                       as a black ring drawn around the tab. An unselected tab
-                       carries its own tone as the stroke — neutral edges left the
-                       whole strip looking disabled until something was picked. */
-                    border: `1px solid ${active ? activeBg : restTone}`,
+                    marginTop: isReportTab ? "auto" : 0,
+                    minHeight: 64,
+                    padding: "10px 14px",
+                    borderRadius: theme.radiusMd,
+                    backgroundColor: active ? activeBg : "transparent",
+                    border: "none",
                     outline: "none",
-                    boxShadow: active ? SHADOW.sm : "none",
+                    boxShadow: active ? SHADOW.md : "none",
+                    textAlign: "start",
                   }}
                 >
-                  <TIcon size={20} color={active ? theme.textInverse : restTone} strokeWidth={2.2} />
                   <span
+                    className="shrink-0 flex items-center justify-center"
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: theme.radiusSm,
+                      backgroundColor: active
+                        ? "rgba(255,255,255,0.18)"
+                        : isReportTab ? theme.errorSubtle : theme.primarySubtle,
+                    }}
+                  >
+                    <TIcon size={20} color={active ? theme.textInverse : restTone} strokeWidth={2.2} />
+                  </span>
+                  <span
+                    className="flex-1 min-w-0"
                     style={{
                       ...TEXT_STYLE.buttonSm,
                       fontFamily,
-                      color: active ? theme.textInverse : restTone,
+                      color: active ? theme.textInverse : isReportTab ? restTone : theme.textHeading,
+                      lineHeight: 1.25,
                     }}
                   >
                     {tb.label}
@@ -671,10 +687,10 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                 </button>
               );
             })}
-          </div>
+          </nav>
 
           {/* Body */}
-          <div className="ns-scroll flex-1 min-h-0 overflow-y-auto px-8 py-7 flex flex-col">
+          <div className="ns-scroll flex-1 min-w-0 min-h-0 overflow-y-auto px-8 py-7 flex flex-col">
             {/* Section heading */}
             <div className="shrink-0 mb-4">
               <h3 style={{ ...TEXT_STYLE.pageTitle, fontFamily, color: theme.textHeading }}>
