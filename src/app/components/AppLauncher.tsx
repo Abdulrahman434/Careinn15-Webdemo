@@ -21,6 +21,8 @@ import {
   Shield,
   X,
   Lock,
+  Cast,
+  Airplay,
 } from "lucide-react";
 import { ApiImage } from "./ApiImage";
 
@@ -106,6 +108,7 @@ interface AppItem {
   pdfSource?: string;
   packageName?: string;  // Android package name — checked for install state
   apkUrl?: string;       // CDN URL to download APK if not installed
+  bundledAsset?: string; // APK bundled inside the kiosk app (assets/…); installed offline
   imageUrl?: string;     // API image URL
   appType?: "apk" | "url" | "pdf";
 }
@@ -188,6 +191,11 @@ function dedupeApps(list: any[]): any[] {
 /* ── App data with accurate branding ────────────────────────── */
 
 function getCategories(theme: any, locale: string = "en", t: any): Record<string, CategoryConfig> {
+  // The cast / iPhone-mirror helpers are bundled inside the NFC bedside kiosk
+  // app only. Show their tiles only on that device type — detected by the NFC
+  // bridge (window.AndroidNFC), which no browser or TV box exposes.
+  const isNfcKiosk = typeof window !== "undefined"
+    && typeof (window as any).AndroidNFC !== "undefined";
   return {
     Media: {
       label: "Media",
@@ -921,6 +929,45 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
       labelKey: "launcher.tools",
       icon: Wrench,
       apps: [
+        // Screen sharing / mirroring — bundled in the NFC kiosk, shown only there.
+        ...(isNfcKiosk ? [
+          {
+            id: "careinn-cast",
+            name: locale === "ar" ? "مشاركة شاشة أندرويد" : "Android Cast",
+            bg: "linear-gradient(135deg, #0EA5E9 0%, #2563EB 100%)",
+            mark: "",
+            textColor: "#fff",
+            packageName: "com.careinn.cast",
+            bundledAsset: "bundled-apps/careinn-cast.apk",
+            appType: "apk" as const,
+            customRender: () => (
+              <div className="flex flex-col items-center justify-center" style={{ width: 150, height: 150 }}>
+                <Cast size={60} color="#fff" strokeWidth={1.8} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginTop: 8 }}>
+                  {locale === "ar" ? "أندرويد" : "Android"}
+                </span>
+              </div>
+            ),
+          },
+          {
+            id: "iphone-mirror",
+            name: locale === "ar" ? "عكس شاشة آيفون" : "iPhone Mirror",
+            bg: "linear-gradient(135deg, #1F2937 0%, #4B5563 100%)",
+            mark: "",
+            textColor: "#fff",
+            packageName: "io.github.jqssun.airplay",
+            bundledAsset: "bundled-apps/airplay.apk",
+            appType: "apk" as const,
+            customRender: () => (
+              <div className="flex flex-col items-center justify-center" style={{ width: 150, height: 150 }}>
+                <Airplay size={60} color="#fff" strokeWidth={1.8} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginTop: 8 }}>
+                  {locale === "ar" ? "آيفون" : "iPhone"}
+                </span>
+              </div>
+            ),
+          },
+        ] : []),
         {
           id: "calculator",
           name: locale === "ar" ? "آلة حاسبة" : "Calculator",
@@ -1821,6 +1868,17 @@ export function AppLauncher({
         window.AndroidSystem?.launchApp?.(pkg);
         // Backstop: clear the overlay if no app-launched/app-launch-failed event arrives.
         setTimeout(() => setOpeningApp(prev => (prev?.packageName === pkg ? null : prev)), 6000);
+        return;
+      }
+      // Bundled APK (shipped inside the kiosk) — install offline, no download.
+      if (app.bundledAsset && typeof window.AndroidSystem?.installBundledApk === "function") {
+        setInstallingApp({
+          packageName: app.packageName,
+          name: app.nameKey ? t(app.nameKey) : app.name,
+          apkUrl: "",
+          progress: 0,
+        });
+        window.AndroidSystem.installBundledApk(app.bundledAsset, app.packageName);
         return;
       }
       if (app.apkUrl) {

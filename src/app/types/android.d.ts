@@ -52,6 +52,8 @@ interface AndroidSystemInterface {
   launchApp(componentName: string): void;
   isAppInstalled(packageName: string): boolean;
   installApk?(apkUrl: string, packageName: string): void;
+  /** Install an APK bundled inside the kiosk app's assets (offline). */
+  installBundledApk?(assetName: string, packageName: string): void;
   showToast?(message: string, longDuration: boolean): void;
   setLaunchableApps?(packagesJson: string): void;
 
