@@ -11,6 +11,7 @@ import {
   AirVent, Lightbulb, Tv, ShowerHead, Plug,
   Ear, Eye, Accessibility, ShieldCheck, BookOpen, PersonStanding,
   Scissors, Brush, Droplets, Sparkles, Trash2, Languages, HeartHandshake,
+  Wifi, MessageSquareWarning, Stethoscope, UsersRound, ConciergeBell, MessageSquareText, FileText,
   createLucideIcon, type LucideIcon,
 } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW, SPACE, LEADING } from "./ThemeContext";
@@ -63,9 +64,12 @@ import imgNonSlipSocks from "../../assets/Housekeeping/non-slip socks.webp";
 /* localStorage key — patient's own service requests for the "I Need Something" flow. */
 const STORAGE_KEY = "careinn-need-requests";
 
+/* complaint / medical: Burjeel-only categories (see BURJEEL_ONLY_TABS). */
+type NeedKind = "request" | "report" | "roomcare" | "support" | "complaint" | "medical";
+
 interface NeedRequest {
   id: string;
-  kind: "request" | "report" | "roomcare" | "support";
+  kind: NeedKind;
   itemKey: string; // i18n key, e.g. "need.item.blanket" — first item of the order
   itemKeys?: string[]; // every item in the order when several were ticked together
   emoji: string;
@@ -105,6 +109,7 @@ const ISSUE_CHIPS: Record<string, string[]> = {
   "need.issue.bed": ["need.chip.uncomfortable", "need.chip.broken"],
   "need.issue.bathroom": ["need.chip.leaking", "need.chip.clogged", "need.chip.dirty"],
   "need.issue.power": ["need.chip.notWorking", "need.chip.loose", "need.chip.sparking"],
+  "need.issue.wifi": ["need.chip.noConnection", "need.chip.slow"],
 };
 
 const REQUEST_ITEMS: CardDef[] = [
@@ -145,6 +150,22 @@ const REPORT_ITEMS: CardDef[] = [
 
 /* Look up the unified icon for a persisted request by its i18n item key, so the
    "My Requests" list and dialogs render the same vector set as the grid cards. */
+/* ── Burjeel only ──────────────────────────────────────────────────────────
+   Burjeel asked for Wi-Fi under Report an Issue, and two extra categories:
+   complaints and medical requests. Other hospitals see none of these. */
+const BURJEEL_REPORT_EXTRA: CardDef[] = [
+  { key: "need.issue.wifi", emoji: "📶", Icon: Wifi, subtitle: "need.issue.wifi.sub" },
+];
+const COMPLAINT_ITEMS: CardDef[] = [
+  { key: "need.complaint.staff", emoji: "🧑‍⚕️", Icon: UsersRound, subtitle: "need.complaint.staff.sub" },
+  { key: "need.complaint.service", emoji: "🛎️", Icon: ConciergeBell, subtitle: "need.complaint.service.sub" },
+  { key: "need.complaint.general", emoji: "💬", Icon: MessageSquareText, subtitle: "need.complaint.general.sub" },
+];
+const MEDICAL_ITEMS: CardDef[] = [
+  { key: "need.medical.sickLeave", emoji: "📄", Icon: FileText, subtitle: "need.medical.sickLeave.sub" },
+];
+const BURJEEL_ONLY_TABS: Tab[] = ["complaint", "medical"];
+
 const ROOM_CARE_ITEMS: CardDef[] = [
   { key: "need.care.bedlinen", emoji: "🛏️", Icon: BedSingle, subtitle: "need.care.bedlinen.sub" },
   { key: "need.care.trash", emoji: "🗑️", Icon: Trash2, subtitle: "need.care.trash.sub" },
@@ -192,7 +213,7 @@ interface NeedSomethingProps {
   initialTab?: Tab;
 }
 
-type Tab = "request" | "roomcare" | "support" | "report";
+type Tab = NeedKind;
 
 export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
   const { theme } = useTheme();
@@ -215,7 +236,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
   const [showRequestsOverlay, setShowRequestsOverlay] = useState(false);
   /* My Requests filter — "all" or one of the four categories. */
   const [mineFilter, setMineFilter] = useState<"all" | NeedRequest["kind"]>("all");
-  const [selected, setSelected] = useState<{ cards: CardDef[]; kind: "request" | "report" | "roomcare" | "support" } | null>(null);
+  const [selected, setSelected] = useState<{ cards: CardDef[]; kind: NeedKind } | null>(null);
 
   /* Items ticked in the grid but not yet sent.
    *
@@ -274,7 +295,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
     };
   }, [success]);
 
-  const openSheet = (cards: CardDef[], kind: "request" | "report" | "roomcare" | "support") => {
+  const openSheet = (cards: CardDef[], kind: NeedKind) => {
     setSelected({ cards, kind });
     setNote("");
     setSelectedChip(null);
@@ -362,8 +383,15 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
     return t(`need.status.${status}`);
   };
 
-  const allGridItems = tab === "report" ? REPORT_ITEMS : tab === "roomcare" ? ROOM_CARE_ITEMS : tab === "support" ? SUPPORT_ITEMS : REQUEST_ITEMS;
-  const gridKind: "request" | "report" | "roomcare" | "support" = tab === "report" ? "report" : tab === "roomcare" ? "roomcare" : tab === "support" ? "support" : "request";
+  const isBurjeel = theme.id === "burjeel";
+  const allGridItems =
+    tab === "report" ? (isBurjeel ? [...REPORT_ITEMS, ...BURJEEL_REPORT_EXTRA] : REPORT_ITEMS)
+      : tab === "roomcare" ? ROOM_CARE_ITEMS
+      : tab === "support" ? SUPPORT_ITEMS
+      : tab === "complaint" ? COMPLAINT_ITEMS
+      : tab === "medical" ? MEDICAL_ITEMS
+      : REQUEST_ITEMS;
+  const gridKind: NeedKind = tab;
 
   /* ── One vertical scrolling grid ──
      Every item of the tab is laid out at once and the patient scrolls up/down
@@ -406,15 +434,13 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
     { key: "request", Icon: HandHelping, label: t("need.tab.request") },
     { key: "roomcare", Icon: Sparkles, label: t("need.tab.roomcare") },
     { key: "support", Icon: HeartHandshake, label: t("need.tab.support") },
+    { key: "complaint", Icon: MessageSquareWarning, label: t("need.tab.complaint") },
+    { key: "medical", Icon: Stethoscope, label: t("need.tab.medical") },
     { key: "report", Icon: Wrench, label: t("need.tab.report") },
-  ];
+  ].filter((tb) => isBurjeel || !BURJEEL_ONLY_TABS.includes(tb.key as Tab)) as { key: Tab; Icon: typeof HandHelping; label: string; count?: number }[];
 
-  const titleKey =
-    tab === "report" ? "need.title.report" : tab === "roomcare" ? "need.title.roomcare"
-      : tab === "support" ? "need.title.support" : "need.title.request";
-  const subKey =
-    tab === "report" ? "need.sub.report" : tab === "roomcare" ? "need.sub.roomcare"
-      : tab === "support" ? "need.sub.support" : "need.sub.request";
+  const titleKey = `need.title.${tab}`;
+  const subKey = `need.sub.${tab}`;
 
   return (
     <motion.div
@@ -653,13 +679,13 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       onAnimationComplete={updateScrollEdge}
                       className="grid w-full"
                       style={{
-                        gridTemplateColumns: (tab === "report" || tab === "roomcare" || tab === "support") ? "repeat(3, 1fr)" : "repeat(4, 1fr)",
+                        gridTemplateColumns: tab !== "request" ? "repeat(3, 1fr)" : "repeat(4, 1fr)",
                         /* More than two rows: 2 rows + ~35% of the next one.
                            Two or fewer: the two rows share the space, as the
                            paged grid did. */
                         gridAutoRows: gridViewH > 0
                           ? `${Math.floor(
-                              allGridItems.length > ((tab === "report" || tab === "roomcare" || tab === "support") ? 6 : 8)
+                              allGridItems.length > (tab !== "request" ? 6 : 8)
                                 ? (gridViewH - 2 * 20) / 2.35
                                 : (gridViewH * 0.92 - 20) / 2,
                             )}px`
@@ -671,7 +697,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                     >
                     {gridItems.map((card) => {
                       const CardIcon = card.Icon;
-                      const isCompactCard = tab === "report" || tab === "roomcare" || tab === "support";
+                      const isCompactCard = tab !== "request";
                       const isReport = tab === "report";
                       const isPicked = picked.some((c) => c.key === card.key);
                       const isCardSelected = isMultiTab
@@ -996,7 +1022,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       : t(selected.cards[0].key)}
                   </p>
                   <p style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textMuted, marginTop: 2 }}>
-                    {selected.kind === "report" ? t("need.report.whatIssue") : t("need.notes.title")}
+                    {selected.kind === "report" ? t("need.report.whatIssue") : selected.kind === "complaint" ? t("need.complaint.whatHappened") : t("need.notes.title")}
                   </p>
                 </div>
               </div>
@@ -1115,7 +1141,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                 onChange={(e) => setNote(e.target.value)}
                 /* "Describe the issue" is the wording for a fault report; a
                    supplies request is not an issue. */
-                placeholder={t(selected.kind === "report" ? "need.notes.placeholder" : "need.notes.placeholderRequest")}
+                placeholder={t(selected.kind === "report" || selected.kind === "complaint" ? "need.notes.placeholder" : "need.notes.placeholderRequest")}
                 rows={3}
                 dir={isRTL ? "rtl" : "ltr"}
                 style={{
@@ -1237,6 +1263,10 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                   { key: "request", label: t("need.tab.request") },
                   { key: "roomcare", label: t("need.tab.roomcare") },
                   { key: "support", label: t("need.tab.support") },
+                  ...(isBurjeel ? [
+                    { key: "complaint" as const, label: t("need.tab.complaint") },
+                    { key: "medical" as const, label: t("need.tab.medical") },
+                  ] : []),
                   { key: "report", label: t("need.tab.report") },
                 ];
                 const shown = mineFilter === "all" ? requests : requests.filter((r) => r.kind === mineFilter);
@@ -1336,7 +1366,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       const status = deriveStatus(r.createdAt, now);
                       const st = STATUS_STYLE[status];
                       const StatusIcon = st.Icon;
-                      const isComplaint = r.kind === "report";
+                      const isComplaint = r.kind === "report" || r.kind === "complaint";
                       const typeColor = isComplaint ? theme.accent : theme.primary;
                       const orderKeys = r.itemKeys && r.itemKeys.length > 0 ? r.itemKeys : [r.itemKey];
                       /* Each row wears its category's icon — the same glyph as
@@ -1345,6 +1375,8 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                         r.kind === "report" ? Wrench
                           : r.kind === "roomcare" ? Sparkles
                           : r.kind === "support" ? HeartHandshake
+                          : r.kind === "complaint" ? MessageSquareWarning
+                          : r.kind === "medical" ? Stethoscope
                           : HandHelping;
                       return (
                         <div
