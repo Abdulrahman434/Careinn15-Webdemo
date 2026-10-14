@@ -11,7 +11,7 @@ import {
   AirVent, Lightbulb, Tv, ShowerHead, Plug,
   Ear, Eye, Accessibility, ShieldCheck, BookOpen, PersonStanding,
   Scissors, Brush, Droplets, Sparkles, Trash2, Languages, HeartHandshake,
-  Stethoscope,
+  Stethoscope, Wifi, ConciergeBell, MessageSquareWarning,
   createLucideIcon, type LucideIcon,
 } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW, SPACE, LEADING } from "./ThemeContext";
@@ -86,48 +86,23 @@ const TissueBox: LucideIcon = createLucideIcon("TissueBox", [
   ["rect", { x: "3", y: "11", width: "18", height: "9", rx: "2", key: "box" }],
 ]);
 
-/* ── Burjeel icons, drawn to match the reference artwork ──
-   Same construction as TissueBox: real LucideIcons on the 24px grid, so they
-   take the set's stroke, round caps and colour like every other card. */
-const ComplaintBubbleIcon: LucideIcon = createLucideIcon("ComplaintBubble", [
-  ["path", { d: "M7 4h10a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3h-7l-4 3.5.6-3.5H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3z", key: "bubble" }],
-  ["path", { d: "M12 7.5v4", key: "bang" }],
-  ["path", { d: "M12 14.5h.01", key: "dot" }],
+/* ── Burjeel icons from published sets, not drawn here ──
+   Staff complaint and sick leave come from Tabler Icons (MIT,
+   tabler.io/icons: "user-exclamation", "report-medical"), path data copied
+   unchanged. Both sets share Lucide's 24px stroke grid, so they sit with the
+   rest. The other three are stock Lucide: MessageSquareWarning,
+   ConciergeBell and Wifi. */
+const StaffComplaintIcon: LucideIcon = createLucideIcon("TablerUserExclamation", [
+  ["path", { d: "M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0", key: "head" }],
+  ["path", { d: "M6 21v-2a4 4 0 0 1 4 -4h4c.348 0 .686 .045 1.008 .128", key: "body" }],
+  ["path", { d: "M19 16v3", key: "bang" }],
+  ["path", { d: "M19 22v.01", key: "dot" }],
 ]);
-const ServiceComplaintIcon: LucideIcon = createLucideIcon("ServiceComplaint", [
-  ["path", { d: "M3 17a6 6 0 0 1 12 0", key: "dome" }],
-  ["path", { d: "M9 11V9", key: "stem" }],
-  ["path", { d: "M7.5 9h3", key: "knob" }],
-  ["path", { d: "M2 17h14", key: "base1" }],
-  ["path", { d: "M1.5 20.5h15", key: "base2" }],
-  ["path", { d: "M15.6 8.4A4.5 4.5 0 1 1 18.5 10L16 11z", key: "bubble" }],
-  ["path", { d: "M19 3.6v2.2", key: "bang" }],
-  ["path", { d: "M19 8.1h.01", key: "dot" }],
-]);
-const StaffComplaintIcon: LucideIcon = createLucideIcon("StaffComplaint", [
-  ["circle", { cx: "8", cy: "8.5", r: "3.5", key: "head" }],
-  ["path", { d: "M1.5 21v-.5A5.5 5.5 0 0 1 7 15h2a5.5 5.5 0 0 1 5.5 5.5v.5z", key: "body" }],
-  ["path", { d: "M10 18.2h2", key: "badge" }],
-  ["path", { d: "M16 1.5h5A1.5 1.5 0 0 1 22.5 3v4.5A1.5 1.5 0 0 1 21 9h-2.5L16 11.2V9a1.5 1.5 0 0 1-1.5-1.5V3A1.5 1.5 0 0 1 16 1.5z", key: "bubble" }],
-  ["path", { d: "M18.5 3.4v2.2", key: "bang" }],
-  ["path", { d: "M18.5 7.3h.01", key: "dot" }],
-]);
-const SickLeaveIcon: LucideIcon = createLucideIcon("SickLeave", [
-  ["path", { d: "M11 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9l5 5v4", key: "doc" }],
-  ["path", { d: "M14 2v4a2 2 0 0 0 2 2h4", key: "fold" }],
-  ["path", { d: "M9 7v5", key: "crossV" }],
-  ["path", { d: "M6.5 9.5h5", key: "crossH" }],
-  ["path", { d: "M7 16h3", key: "line" }],
-  ["rect", { x: "13", y: "13.5", width: "9", height: "8.5", rx: "2", key: "cal" }],
-  ["path", { d: "M13 17h9", key: "calHead" }],
-  ["path", { d: "M15.5 12v3", key: "ring1" }],
-  ["path", { d: "M19.5 12v3", key: "ring2" }],
-]);
-const WifiIssueIcon: LucideIcon = createLucideIcon("WifiIssue", [
-  ["path", { d: "M2 8.82a15 15 0 0 1 20 0", key: "arc1" }],
-  ["path", { d: "M5 12.86a10 10 0 0 1 14 0", key: "arc2" }],
-  ["path", { d: "M8.5 16.43a5 5 0 0 1 7 0", key: "arc3" }],
-  ["circle", { cx: "12", cy: "20", r: "1.5", key: "dot" }],
+const SickLeaveIcon: LucideIcon = createLucideIcon("TablerReportMedical", [
+  ["path", { d: "M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2", key: "board" }],
+  ["path", { d: "M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z", key: "clip" }],
+  ["path", { d: "M10 14l4 0", key: "crossH" }],
+  ["path", { d: "M12 12l0 4", key: "crossV" }],
 ]);
 
 /* Prayer mat icon (carpet with fringe detail) — no lucide equivalent */
@@ -198,12 +173,12 @@ const REPORT_ITEMS: CardDef[] = [
    Burjeel asked for Wi-Fi under Report an Issue, and two extra categories:
    complaints and medical requests. Other hospitals see none of these. */
 const BURJEEL_REPORT_EXTRA: CardDef[] = [
-  { key: "need.issue.wifi", emoji: "📶", Icon: WifiIssueIcon, subtitle: "need.issue.wifi.sub" },
+  { key: "need.issue.wifi", emoji: "📶", Icon: Wifi, subtitle: "need.issue.wifi.sub" },
 ];
 const COMPLAINT_ITEMS: CardDef[] = [
   { key: "need.complaint.staff", emoji: "🧑‍⚕️", Icon: StaffComplaintIcon, subtitle: "need.complaint.staff.sub" },
-  { key: "need.complaint.service", emoji: "🛎️", Icon: ServiceComplaintIcon, subtitle: "need.complaint.service.sub" },
-  { key: "need.complaint.general", emoji: "💬", Icon: ComplaintBubbleIcon, subtitle: "need.complaint.general.sub" },
+  { key: "need.complaint.service", emoji: "🛎️", Icon: ConciergeBell, subtitle: "need.complaint.service.sub" },
+  { key: "need.complaint.general", emoji: "💬", Icon: MessageSquareWarning, subtitle: "need.complaint.general.sub" },
 ];
 const MEDICAL_ITEMS: CardDef[] = [
   { key: "need.medical.sickLeave", emoji: "📄", Icon: SickLeaveIcon, subtitle: "need.medical.sickLeave.sub" },
@@ -478,7 +453,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
     { key: "request", Icon: HandHelping, label: t("need.tab.request") },
     { key: "roomcare", Icon: Sparkles, label: t("need.tab.roomcare") },
     { key: "support", Icon: HeartHandshake, label: t("need.tab.support") },
-    { key: "complaint", Icon: ComplaintBubbleIcon, label: t("need.tab.complaint") },
+    { key: "complaint", Icon: MessageSquareWarning, label: t("need.tab.complaint") },
     { key: "medical", Icon: Stethoscope, label: t("need.tab.medical") },
     { key: "report", Icon: Wrench, label: t("need.tab.report") },
   ].filter((tb) => isBurjeel || !BURJEEL_ONLY_TABS.includes(tb.key as Tab)) as { key: Tab; Icon: typeof HandHelping; label: string; count?: number }[];
@@ -1419,7 +1394,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                         r.kind === "report" ? Wrench
                           : r.kind === "roomcare" ? Sparkles
                           : r.kind === "support" ? HeartHandshake
-                          : r.kind === "complaint" ? ComplaintBubbleIcon
+                          : r.kind === "complaint" ? MessageSquareWarning
                           : r.kind === "medical" ? Stethoscope
                           : HandHelping;
                       return (
