@@ -607,8 +607,8 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
         >
           {/* Category rail — a vertical list down the leading edge (left in
               English, right in Arabic: the row follows the page direction).
-              Report an Issue sits apart at the foot: it is the one category
-              that is not a request. */}
+              Report an Issue stays in red — the one category that is not a
+              request — but sits in line with the rest. */}
           <nav
             className="shrink-0 flex flex-col gap-2 py-7 px-5"
             style={{
@@ -629,7 +629,6 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                   onClick={() => setTab(tb.key)}
                   className="flex items-center gap-3 w-full cursor-pointer active:scale-[0.98] transition-transform"
                   style={{
-                    marginTop: isReportTab ? "auto" : 0,
                     minHeight: 64,
                     padding: "10px 14px",
                     borderRadius: theme.radiusMd,
