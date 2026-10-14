@@ -155,7 +155,7 @@ const STEPS: TourStep[] = [
     icon: MessageSquareHeart,
     title: "Share Your Feedback",
     titleKey: "tour.step.survey.title",
-    body: "Help us improve! Take a quick survey, or share a concern or a thank-you with our team.",
+    body: "Tell us about your stay — your feedback helps us improve.",
     bodyKey: "tour.step.survey.body",
     detailKey: "tour.step.survey.detail",
   },
