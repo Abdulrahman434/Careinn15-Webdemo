@@ -385,7 +385,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
 
   const isBurjeel = theme.id === "burjeel";
   const allGridItems =
-    tab === "report" ? (isBurjeel ? [...REPORT_ITEMS, ...BURJEEL_REPORT_EXTRA] : REPORT_ITEMS)
+    tab === "report" ? (isBurjeel ? [...BURJEEL_REPORT_EXTRA, ...REPORT_ITEMS] : REPORT_ITEMS)
       : tab === "roomcare" ? ROOM_CARE_ITEMS
       : tab === "support" ? SUPPORT_ITEMS
       : tab === "complaint" ? COMPLAINT_ITEMS
