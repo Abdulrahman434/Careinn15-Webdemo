@@ -54,6 +54,13 @@ export function panelCitiesFor(hospitalId: string, ownCity: string): string[] {
   return [own, ...["Riyadh", "Jeddah", "Makkah", "Dubai"].filter((c) => c !== own)].slice(0, 3);
 }
 
+/* OpenWeatherMap's own spelling where it differs from ours. It answers
+   "city not found" for "Makkah" and only knows the city as "Mecca". The
+   screen still shows our name; this is only what we ask the API for. */
+const OWM_QUERY: Record<string, string> = {
+  Makkah: "Mecca,SA",
+};
+
 export interface CityWeather {
   city: string;
   temp: number;
@@ -69,7 +76,7 @@ export interface CityWeather {
  *  Never throws — a failed city comes back as null and the card says so. */
 export async function fetchCityWeather(city: string, hourCount = 5): Promise<CityWeather | null> {
   try {
-    const q = encodeURIComponent(city);
+    const q = encodeURIComponent(OWM_QUERY[city] ?? city);
     const [nowRes, fcRes] = await Promise.all([
       fetch(`${OWM}/weather?q=${q}&units=metric&appid=${OWM_KEY}`),
       fetch(`${OWM}/forecast?q=${q}&units=metric&cnt=${hourCount}&appid=${OWM_KEY}`),
