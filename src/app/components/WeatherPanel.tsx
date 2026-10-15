@@ -78,9 +78,10 @@ export function WeatherPanel({ onClose }: { onClose: () => void }) {
         dir={isRTL ? "rtl" : "ltr"}
         onClick={(e) => e.stopPropagation()}
         style={{
-          /* Always full width. Cards stay 456 wide whether there are one,
-             two or three of them, and sit centred in the panel. */
-          width: preview ? 1800 : 1480,
+          /* Shrink to fit: cards stay 456 wide whether there are one, two
+             or three of them, and the panel wraps them (1 → 520,
+             2 → 1000, 3 → 1480). */
+          width: preview ? 1800 : cities.length * 456 + (cities.length - 1) * 24 + 64,
           maxHeight: preview ? 1000 : undefined,
           display: "flex",
           flexDirection: "column",
