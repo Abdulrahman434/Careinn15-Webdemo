@@ -3,6 +3,7 @@ import { ApiImage } from "./ApiImage";
 import { Settings, Globe, Bell, Cast, AlertTriangle, Moon, Sun, Cloud, CloudSun, CloudMoon,
          CloudDrizzle, CloudRain, CloudLightning, CloudSnow, CloudFog, Haze, Wind } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE, WEATHER_TINT } from "./ThemeContext";
+import { WeatherKind, WEATHER_GLYPH, weatherKind } from "../lib/weather";
 import { useLocale } from "./i18n";
 import { getPrayerTimes, PRAYER_KEYS, PRAYER_NAMES, getPrayerStatus, localizeDigits, prayerTimeParts } from "../utils/prayerUtils";
 import { Prayer } from "adhan";
@@ -25,35 +26,8 @@ import { AdminGate, useAdminGateTap } from "./AdminGate";
  * Codes: https://openweathermap.org/weather-conditions. The API's own icon
  * string ends in "d" or "n", which is how we know it is night there — the
  * kiosk's clock can't tell us, the hospital's city might be elsewhere. */
-type WeatherKind = keyof typeof WEATHER_TINT;
-
-const WEATHER_GLYPH: Record<WeatherKind, typeof Sun> = {
-  clearDay: Sun,
-  clearNight: Moon,
-  partlyDay: CloudSun,
-  partlyNight: CloudMoon,
-  cloudy: Cloud,
-  drizzle: CloudDrizzle,
-  rain: CloudRain,
-  thunder: CloudLightning,
-  snow: CloudSnow,
-  fog: CloudFog,
-  dust: Haze,
-  wind: Wind,
-};
-
-function weatherKind(code: number, isNight: boolean): WeatherKind {
-  if (code >= 200 && code < 300) return "thunder";
-  if (code >= 300 && code < 400) return "drizzle";
-  if (code >= 500 && code < 600) return code === 511 ? "snow" : "rain";
-  if (code >= 600 && code < 700) return "snow";
-  if (code === 731 || code === 751 || code === 761 || code === 762) return "dust";
-  if (code === 771 || code === 781) return "wind";
-  if (code >= 700 && code < 800) return "fog";
-  if (code === 800) return isNight ? "clearNight" : "clearDay";
-  if (code === 801 || code === 802) return isNight ? "partlyNight" : "partlyDay";
-  return "cloudy";
-}
+// WeatherKind, WEATHER_GLYPH and weatherKind live in lib/weather.ts, shared
+// with the weather panel.
 
 /* ── WEATHER_DEMO ──────────────────────────────────────────────────────────
  * Jeddah is clear most days, so the other eleven skies would never show up in

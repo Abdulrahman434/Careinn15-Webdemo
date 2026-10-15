@@ -44,6 +44,7 @@ import { NeedSomething } from "./components/NeedSomething";
 import { OrderProvider, useOrders } from "./components/OrderStore";
 import { ToastProvider } from "./components/ToastNotifications";
 import { ImageNotice, imageAdFor, adNumberOf } from "./components/ImageNotice";
+import { WeatherPanel } from "./components/WeatherPanel";
 import { dueReminder, reminderText, alreadyFired, markFired } from "./components/mealReminders";
 import { windowClock } from "./components/orderWindow";
 import { AuthProvider, useAuth } from "./components/AuthContext";
@@ -526,6 +527,7 @@ function BedsideScreen() {
   const [foodOrderInitialView, setFoodOrderInitialView] = useState<"order" | "my-orders" | undefined>(undefined);
   const [activeCareRole, setActiveCareRole] = useState<"nurse" | "doctor" | null>(null);
   const [layoutVersion, setLayoutVersion] = useState<1 | 2 | 3>(1);
+  const [showWeather, setShowWeather] = useState(false);
   const [activeBroadcast, setActiveBroadcast] = useState<BroadcastNotification | null>(null);
   const [activeImageAd, setActiveImageAd] = useState<{ src: string; alt: string } | null>(null);
   const [acknowledgedBroadcasts, setAcknowledgedBroadcasts] = useState<BroadcastNotification[]>([]);
@@ -1862,10 +1864,10 @@ function BedsideScreen() {
             <TopBar
               onFajrTap={() => setLayoutVersion((v) => (v === 3 ? 1 : 3))}
               onDhuhrTap={() => setShowConfigurator(true)}
-              onAsrTap={undefined}
+              onAsrTap={() => setLayoutVersion((v) => (v === 1 ? 2 : 1))}
               onMaghribTap={() => handlePrayerTimeReached(Prayer.Maghrib)}
               onIshaTap={() => setShowTasbih(true)}
-              onWeatherTap={() => setLayoutVersion((v) => (v === 1 ? 2 : 1))}
+              onWeatherTap={() => setShowWeather(true)}
               onSettingsTap={() => setShowSettings(true)}
               onBellTap={() => setShowNotifications(true)}
               unreadCount={getUnreadCount()}
@@ -2318,6 +2320,9 @@ function BedsideScreen() {
         })()}
 
         <RemoteControl />
+
+        {/* Weather — three cities, from the top-bar weather pill */}
+        {showWeather && <WeatherPanel onClose={() => setShowWeather(false)} />}
 
         {/* Image-only notification */}
         {activeImageAd && (
