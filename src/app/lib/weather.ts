@@ -44,9 +44,11 @@ const OWM_KEY = "01a477912e47daf2010808cc62015829";
 const OWM = "https://api.openweathermap.org/data/2.5";
 
 /* Which cities the weather panel shows. The hospital's own city comes first. */
+/* One to three cities; the panel sizes itself to however many there are. */
 const PANEL_CITIES: Record<string, string[]> = {
   burjeel: ["Abu Dhabi", "Dubai", "Riyadh"],
-  slh: ["Beirut", "Riyadh", "Dubai"],
+  dsfh: ["Jeddah", "Riyadh"],
+  slh: ["Beirut"],
 };
 export function panelCitiesFor(hospitalId: string, ownCity: string): string[] {
   if (PANEL_CITIES[hospitalId]) return PANEL_CITIES[hospitalId];

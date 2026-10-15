@@ -78,7 +78,9 @@ export function WeatherPanel({ onClose }: { onClose: () => void }) {
         dir={isRTL ? "rtl" : "ltr"}
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: preview ? 1800 : 1480,
+          /* Cards stay 456 wide whether there are one, two or three of
+             them; the panel grows around them (3 → 1480). */
+          width: preview ? 1800 : cities.length * 456 + (cities.length - 1) * 24 + 64,
           maxHeight: preview ? 1000 : undefined,
           display: "flex",
           flexDirection: "column",
@@ -127,7 +129,7 @@ export function WeatherPanel({ onClose }: { onClose: () => void }) {
         <div
           className="grid"
           style={{
-            gridTemplateColumns: preview ? "repeat(4, 1fr)" : "repeat(3, 1fr)",
+            gridTemplateColumns: preview ? "repeat(4, 1fr)" : `repeat(${cities.length}, 1fr)`,
             gap: 24,
             padding: 32,
             overflowY: preview ? "auto" : undefined,
