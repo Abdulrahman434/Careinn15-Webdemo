@@ -184,7 +184,7 @@ const translations: Record<string, TranslationEntry> = {
   "broadcast.azan.off": { en: "Off", ar: "إيقاف", ur: "آف" },
   /* Weather panel (tap the weather pill) */
   "weather.title": { en: "Weather", ar: "الطقس", ur: "موسم" },
-  "weather.subtitle": { en: "Current conditions and the next few hours", ar: "الأحوال الحالية والساعات القادمة", ur: "موجودہ موسم اور اگلے چند گھنٹے" },
+  "weather.subtitle": { en: "Now and the next few hours", ar: "الآن والساعات القادمة", ur: "ابھی اور اگلے چند گھنٹے" },
   "weather.previewNote": { en: "Preview — all 12 skies with sample numbers", ar: "معاينة — جميع حالات الطقس الـ12 بأرقام تجريبية", ur: "پیش نظارہ — تمام 12 موسمی حالتیں نمونہ اعداد کے ساتھ" },
   "weather.yourCity": { en: "Hospital city", ar: "مدينة المستشفى", ur: "ہسپتال کا شہر" },
   "weather.feelsLike": { en: "Feels like", ar: "الإحساس", ur: "محسوس" },
