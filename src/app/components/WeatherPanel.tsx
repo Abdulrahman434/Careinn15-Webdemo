@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { X, CloudSun, Thermometer, Droplets, Wind, MapPin } from "lucide-react";
 import { useTheme, TEXT_STYLE, TYPE_SCALE, WEIGHT, SHADOW, WEATHER_TINT } from "./ThemeContext";
 import { useLocale } from "./i18n";
-import { CityWeather, WEATHER_GLYPH, fetchCityWeather, panelCitiesFor } from "../lib/weather";
+import { CityWeather, WeatherKind, WEATHER_GLYPH, fetchCityWeather, panelCitiesFor } from "../lib/weather";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * WeatherPanel — opened by tapping the weather pill in the top bar.
@@ -19,17 +19,36 @@ const CITY_KEY: Record<string, string> = {
   Makkah: "makkah", Beirut: "beirut",
 };
 
+/* ── Preview: ?weather=demo ───────────────────────────────────────────────
+   Shows all twelve skies at once with sample numbers, so the design of every
+   condition can be reviewed without waiting for the weather. Drop the query
+   string and the panel goes back to the live cities. Nothing persists. */
+const PREVIEW_KINDS = Object.keys(WEATHER_TINT) as WeatherKind[];
+const previewWeather = (kind: WeatherKind, i: number): CityWeather => ({
+  city: kind,
+  temp: 18 + ((i * 7) % 20),
+  feelsLike: 20 + ((i * 5) % 20),
+  humidity: 20 + ((i * 11) % 70),
+  windKmh: 4 + ((i * 3) % 30),
+  kind,
+  hours: [12, 15, 18, 21, 0].map((h, k) => ({ label: String(h), temp: 18 + ((i * 7 + k) % 20), kind })),
+});
+const isPreview = () =>
+  typeof window !== "undefined" && new URLSearchParams(window.location.search).get("weather") === "demo";
+
 export function WeatherPanel({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
   const { t, isRTL, fontFamily, locale } = useLocale();
-  const cities = panelCitiesFor(theme.id, theme.location);
+  const preview = isPreview();
+  const cities = preview ? PREVIEW_KINDS : panelCitiesFor(theme.id, theme.location);
   const [data, setData] = useState<Record<string, CityWeather | null | undefined>>({});
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
     let alive = true;
-    cities.forEach((c) => {
+    if (preview) setData(Object.fromEntries(PREVIEW_KINDS.map((k, i) => [k, previewWeather(k, i)])));
+    else cities.forEach((c) => {
       fetchCityWeather(c).then((w) => { if (alive) setData((d) => ({ ...d, [c]: w })); });
     });
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -59,7 +78,10 @@ export function WeatherPanel({ onClose }: { onClose: () => void }) {
         dir={isRTL ? "rtl" : "ltr"}
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: 1480,
+          width: preview ? 1800 : 1480,
+          maxHeight: preview ? 1000 : undefined,
+          display: "flex",
+          flexDirection: "column",
           backgroundColor: theme.surface,
           borderRadius: theme.radiusXl,
           boxShadow: SHADOW.xl,
@@ -85,7 +107,7 @@ export function WeatherPanel({ onClose }: { onClose: () => void }) {
               {t("weather.title")}
             </h2>
             <p style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textMuted, margin: "2px 0 0" }}>
-              {t("weather.subtitle")}
+              {preview ? t("weather.previewNote") : t("weather.subtitle")}
             </p>
           </div>
           <button
@@ -102,10 +124,21 @@ export function WeatherPanel({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Cities */}
-        <div className="grid" style={{ gridTemplateColumns: "repeat(3, 1fr)", gap: 24, padding: 32 }}>
+        <div
+          className="grid"
+          style={{
+            gridTemplateColumns: preview ? "repeat(4, 1fr)" : "repeat(3, 1fr)",
+            gap: 24,
+            padding: 32,
+            overflowY: preview ? "auto" : undefined,
+            gridAutoRows: "max-content",
+            flex: preview ? "1 1 auto" : undefined,
+            minHeight: 0,
+          }}
+        >
           {cities.map((c, i) => {
             const w = data[c];
-            const isOwn = i === 0;
+            const isOwn = !preview && i === 0;
             const tint = w ? WEATHER_TINT[w.kind] : null;
             const Glyph = w ? WEATHER_GLYPH[w.kind] : null;
             return (
@@ -132,7 +165,7 @@ export function WeatherPanel({ onClose }: { onClose: () => void }) {
                     <div className="flex items-center gap-2 min-w-0">
                       <MapPin size={20} color={theme.primaryOn} strokeWidth={2.2} />
                       <span style={{ ...TEXT_STYLE.cardTitle, fontFamily, color: theme.textHeading }}>
-                        {cityName(c)}
+                        {preview ? t(`weather.kind.${c}`) : cityName(c)}
                       </span>
                     </div>
                     {isOwn && (
