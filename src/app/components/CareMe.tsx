@@ -3971,8 +3971,11 @@ export function CareMe({ onExpand, onOpenPreferences }: { onExpand?: () => void;
         </div>
       </div>
 
-      {/* Pagination: previous ‹ dots › next, under the slide */}
-      <div className="flex items-center justify-center gap-2 py-1 shrink-0">
+      {/* Pagination: previous ‹ dots › next, under the slide. The card is
+          forced LTR, so the row takes the page direction itself: in Arabic
+          "previous" sits on the right pointing right, "next" on the left
+          pointing left — the flipped chevrons below assume that. */}
+      <div dir={dir} className="flex items-center justify-center gap-2 py-1 shrink-0">
         <TapTarget theme={theme} label="Previous slide" onClick={() => handleManualNav(activeIndex - 1)}>
           <ChevronLeft size={18} strokeWidth={2} style={{ color: theme.primaryOn, transform: isRTL ? "scaleX(-1)" : undefined }} />
         </TapTarget>
