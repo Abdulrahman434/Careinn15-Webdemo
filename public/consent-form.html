@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admission Consent (Dummy)</title>
+<style>
+  :root { --ink:#2b2230; --muted:#6d6373; --plum:#7a1f4d; --paper:#ffffff; --line:#e6dfe9; --tint:#f7f3f8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --ink:#eee8f0; --muted:#b3a8b8; --plum:#e08ab4; --paper:#1d1721; --line:#3a303f; --tint:#262029; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; background:var(--paper); color:var(--ink);
+    font:16px/1.65 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 24px 20px 40px; }
+  h1 { font-size: 1.5rem; line-height:1.25; margin:0 0 4px; color:var(--plum); }
+  .sub { color:var(--muted); margin:0 0 24px; font-size:.9rem; }
+  h2 { font-size:1.05rem; margin:28px 0 6px; }
+  p, li { margin:0 0 10px; }
+  ul { padding-inline-start: 20px; }
+  .ar { direction: rtl; text-align: right; background:var(--tint); border-radius:10px;
+    padding:4px 18px 14px; margin-top:36px;
+    font-family: "Segoe UI", "Noto Naskh Arabic", Tahoma, sans-serif; line-height:1.9; }
+  .ar h2:first-child { margin-top:18px; }
+  .end { margin-top:32px; padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font-size:.9rem; text-align:center; }
+</style>
+</head>
+<body>
+<main id="doc">
+  <h1>Consent to Admission and Treatment</h1>
+  <p class="sub">Sample document for testing only. Not a legal or medical document.</p>
+
+  <h2>1. Purpose</h2>
+  <p>This form explains what you agree to when you are admitted to the hospital and use the patient app during your stay. Please read all of it before you continue.</p>
+
+  <h2>2. Consent to care</h2>
+  <p>You agree that the care team may assess, examine and treat you as needed during your admission. You may ask questions about any procedure at any time and may withdraw consent for a specific procedure by telling your nurse or physician.</p>
+
+  <h2>3. Your information</h2>
+  <p>The hospital collects and stores your personal and health information to provide care, manage your admission and meet legal requirements. Your information is shared only with staff who need it for your care, and with third parties where the law requires it.</p>
+  <ul>
+    <li>Your records are kept confidential and securely.</li>
+    <li>You may request a copy of your records through the hospital.</li>
+    <li>Information shown in the app is limited to your own admission.</li>
+  </ul>
+
+  <h2>4. Using the patient app</h2>
+  <p>The app lets you view your admission details, requests and notifications. It does not replace speaking to your care team. In an emergency, use the call button at your bedside rather than the app.</p>
+
+  <h2>5. Belongings and valuables</h2>
+  <p>You are advised to keep valuables at home. The hospital cannot accept responsibility for items you keep with you unless they have been handed over and recorded by staff.</p>
+
+  <h2>6. Visitors and attendants</h2>
+  <p>Visiting hours and attendant rules may apply to your department. An attendant who stays with you must register their details with the admissions desk.</p>
+
+  <h2>7. Financial responsibility</h2>
+  <p>You understand that charges not covered by your insurance or sponsor may be payable by you. Your admissions executive can explain your coverage and estimated costs.</p>
+
+  <h2>8. Your acknowledgement</h2>
+  <p>By selecting Accept in the app, you confirm that you have read and understood this form, that you had the chance to ask questions, and that you agree to the terms above.</p>
+
+  <section class="ar" lang="ar" dir="rtl">
+    <h2>الموافقة على الدخول والعلاج</h2>
+    <p>هذا المستند للتجربة فقط وليس مستنداً قانونياً أو طبياً.</p>
+    <h2>الغرض</h2>
+    <p>يوضح هذا النموذج ما توافق عليه عند دخولك المستشفى واستخدامك تطبيق المريض خلال فترة إقامتك. يرجى قراءته كاملاً قبل المتابعة.</p>
+    <h2>الموافقة على الرعاية</h2>
+    <p>توافق على قيام فريق الرعاية بتقييمك وفحصك وعلاجك حسب الحاجة خلال فترة الإقامة. يحق لك طرح الأسئلة في أي وقت.</p>
+    <h2>معلوماتك</h2>
+    <p>يجمع المستشفى معلوماتك الشخصية والصحية ويحفظها لتقديم الرعاية وإدارة الإقامة والالتزام بالمتطلبات القانونية، ولا تتم مشاركتها إلا مع من يحتاجها لرعايتك.</p>
+    <h2>إقرارك</h2>
+    <p>باختيارك «موافق» في التطبيق، فإنك تؤكد أنك قرأت هذا النموذج وفهمته وأنك توافق على ما ورد فيه.</p>
+  </section>
+
+  <div class="end" id="end">End of document</div>
+</main>
+
+<script>
+  // Tells the parent app when the user has reached the bottom of this page.
+  // Works inside an iframe (cross-origin safe) via postMessage.
+  (function () {
+    var sent = false;
+    var THRESHOLD = 24; // px of tolerance from the very bottom
+
+    function atBottom() {
+      var el = document.scrollingElement || document.documentElement;
+      return el.scrollTop + window.innerHeight >= el.scrollHeight - THRESHOLD;
+    }
+    function notify(type, extra) {
+      try { window.parent.postMessage(Object.assign({ source: 'consent-form', type: type }, extra || {}), '*'); } catch (e) {}
+    }
+    function progress() {
+      var el = document.scrollingElement || document.documentElement;
+      var max = el.scrollHeight - window.innerHeight;
+      return max <= 0 ? 1 : Math.min(1, el.scrollTop / max);
+    }
+    function check() {
+      notify('progress', { value: progress() });
+      if (!sent && atBottom()) { sent = true; notify('scrolled-to-end'); }
+    }
+    window.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    window.addEventListener('load', function () { notify('ready'); check(); });
+  })();
+</script>
+</body>
+</html>

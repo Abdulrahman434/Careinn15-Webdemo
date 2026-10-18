@@ -95,6 +95,7 @@ import {
 import { nurseActions, useNurseStore } from "./components/NurseDataStore";
 import { getDeviceInfo } from "./utils/androidBridge";
 import { OnboardingWizard } from "./components/OnboardingWizard";
+import { ConsentGate, requiresAdmissionConsent } from "./components/ConsentGate";
 import { isOnboardingComplete } from "./lib/onboardingStore";
 import { startDataLifecycleWatchers } from "./lib/dataLifecycle";
 import { matchBinding } from "./lib/handsetConfig";
@@ -272,8 +273,8 @@ function hospitalNoticeContent(patientGuidePdf?: string) {
 }
 
 function BedsideScreen() {
-  const { patientAdmitted, setPatientAdmitted, theme, darkMode, switchConfig, prayerAlarm, layout2Theme, setLocale, setDarkMode, setPrayerAlarm } = useTheme();
-  const { isFullAccess, lockedHospitalId } = useAuth();
+  const { patientAdmitted, setPatientAdmitted, theme, darkMode, switchConfig, prayerAlarm, layout2Theme, setLocale, setDarkMode, setPrayerAlarm, activeConfigId } = useTheme();
+  const { isFullAccess, lockedHospitalId, logout } = useAuth();
   const { t, locale, isRTL, dir, fontFamily } = useLocale();
   const { showToast } = useToast();
   const { orders } = useOrders();
@@ -446,6 +447,34 @@ function BedsideScreen() {
   const [showOnboarding, setShowOnboarding] = useState(
     () => localStorage.getItem("careinn-onboarding-complete") !== "true"
   );
+
+  /* ── Admission consent gate ──
+   * Shown after onboarding/welcome, before the home screen. Acceptance is
+   * kept in localStorage ("admission-consent-accepted") so the gate does not
+   * reappear within the same admission. It is scoped as a SETUP key in
+   * onboardingStore, so it resets together with onboarding on a new admission.
+   * TODO(backend): persist acceptance server-side (patient id, consent type =
+   * admission, timestamp) and source the form URL from the file the admin
+   * uploads under Backend → Consent → Consent Form. */
+  const [consentAccepted, setConsentAccepted] = useState(
+    () => localStorage.getItem("admission-consent-accepted") === "true"
+  );
+  const handleConsentAccept = useCallback(() => {
+    try {
+      localStorage.setItem("admission-consent-accepted", "true");
+    } catch (e) {
+      console.error(e);
+    }
+    setConsentAccepted(true);
+  }, []);
+  /* Rejection does NOT save acceptance. Log the patient out through the
+   * existing auth flow, which returns the kiosk to the welcome/access-code
+   * screen and hands the bed on clean.
+   * TODO(backend): record the rejection server-side (patient id, consent
+   * type = admission, timestamp) before/alongside the logout. */
+  const handleConsentReject = useCallback(() => {
+    logout();
+  }, [logout]);
   const [currentAdmitRef, setCurrentAdmitRef] = useState<string | null>(
     () => localStorage.getItem("careinn-onboarding-admit-ref")
   );
@@ -460,6 +489,7 @@ function BedsideScreen() {
     setDarkMode(false);
     setPrayerAlarm(true);
     setShowSettings(false);
+    setConsentAccepted(false);
     setShowOnboarding(true);
   }, [setLocale, setDarkMode, setPrayerAlarm]);
 
@@ -2548,6 +2578,13 @@ function BedsideScreen() {
           onStartTour={() => setShowTour(true)}
           onStartSlideshow={() => setShowWelcomeSlideshow(true)}
         />
+      )}
+
+      {/* Admission consent — after onboarding/welcome, before the home screen.
+          Only for hospitals that require it (see requiresAdmissionConsent); not
+          shown to guest sessions (they are not admitted patients). */}
+      {requiresAdmissionConsent(activeConfigId) && !showOnboarding && !consentAccepted && !guestSession && (
+        <ConsentGate onAccept={handleConsentAccept} onReject={handleConsentReject} />
       )}
 
       <Toaster position="bottom-center" />

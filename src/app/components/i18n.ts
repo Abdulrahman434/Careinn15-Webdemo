@@ -1773,6 +1773,15 @@ const translations: Record<string, TranslationEntry> = {
   "onboarding.consent.startWithTour": { en: "Start with a tour", ar: "ابدأ مع الجولة", ur: "ٹور کے ساتھ شروع کریں" },
   "onboarding.consent.startNow": { en: "Start now", ar: "ابدأ الآن", ur: "ابھی شروع کریں" },
 
+  /* ─── Admission consent gate (ConsentGate) ─── */
+  "admissionConsent.title": { en: "Admission consent", ar: "موافقة الدخول", ur: "داخلے کی رضامندی" },
+  "admissionConsent.hint": { en: "Please read to the end of the form to continue.", ar: "يرجى قراءة النموذج حتى نهايته للمتابعة.", ur: "جاری رکھنے کے لیے براہ کرم فارم کو آخر تک پڑھیں۔" },
+  "admissionConsent.accept": { en: "Accept and start the app", ar: "موافق وبدء التطبيق", ur: "قبول کریں اور ایپ شروع کریں" },
+  "admissionConsent.reject": { en: "Reject", ar: "رفض", ur: "مسترد کریں" },
+  "admissionConsent.confirm.message": { en: "Are you sure? You need to accept to use the app.", ar: "هل أنت متأكد؟ يجب الموافقة لاستخدام التطبيق.", ur: "کیا آپ کو یقین ہے؟ ایپ استعمال کرنے کے لیے آپ کو قبول کرنا ہوگا۔" },
+  "admissionConsent.confirm.goBack": { en: "Go back", ar: "رجوع", ur: "واپس جائیں" },
+  "admissionConsent.confirm.yesReject": { en: "Yes, reject", ar: "نعم، رفض", ur: "ہاں، مسترد کریں" },
+
   /* ─── My Preferences: Setup your Preferences ─── */
   "prefs.setup":            { en: "Setup your Preferences", ar: "إعداد تفضيلاتك", ur: "اپنی ترجیحات ترتیب دیں" },
   "prefs.setup.incomplete": { en: "Finish setting up your screen", ar: "أكمل إعداد شاشتك", ur: "اپنی اسکرین کی ترتیب مکمل کریں" },

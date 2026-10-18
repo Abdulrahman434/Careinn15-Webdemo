@@ -55,6 +55,7 @@ const SETUP_KEYS = [
   "careinn-screensaver-timeout",
   "careinn-consent-tour-seen",
   "careinn-consent-terms-agreed",
+  "admission-consent-accepted",   // admission consent gate (ConsentGate)
   "careinn-has-seen-app-lock-tutorial",
   // Existing persistence keys behind the wizard's answers — the wizard applies
   // choices through the real setters (ThemeContext, tour), which write these.
