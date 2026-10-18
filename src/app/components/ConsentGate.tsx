@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocale } from "./i18n";
+import { SHADOW } from "./ThemeContext";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * Admission consent gate
@@ -13,13 +14,17 @@ import { useLocale } from "./i18n";
  * The Accept button stays disabled until the form reports "scrolled-to-end",
  * so the patient cannot continue without scrolling the whole document.
  *
- * Colors are fixed to the consent document's own brand (plum #7a1f4d, disabled
- * #cfc6d3) rather than theme tokens, so the gate matches the framed form 1:1
- * regardless of which hospital brand is active.
+ * Colors are fixed to the consent document's own brand (plum #7a1f4d) rather
+ * than theme tokens, so the gate matches the framed form 1:1 regardless of
+ * which hospital brand is active.
+ *
+ * The Accept / Reject buttons mirror the welcome-screen "Start now" /
+ * "Start with a tour" buttons (OnboardingWizard PrimaryButton / GhostButton):
+ * a solid primary pill and a white outline pill, fully rounded (9999px). The
+ * disabled state is a faded (0.4 opacity) version, as on the welcome screen.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 const PLUM = "#7a1f4d";
-const DISABLED = "#cfc6d3";
 
 /* Hospitals that require the admission consent step before the home screen.
  * Add more config ids here as other hospitals adopt the flow. The ids match
@@ -155,40 +160,45 @@ export function ConsentGate({ src = "/consent-form.html", onAccept, onReject }: 
             {t("admissionConsent.hint")}
           </span>
           <div style={{ display: "flex", flexShrink: 0, gap: "12px" }}>
-            {/* Secondary / outline */}
+            {/* Secondary / outline — matches welcome "Start with a tour" (GhostButton):
+                white background, subtle border, gray text, fully rounded pill. */}
             <button
               type="button"
               disabled={!reachedEnd}
               onClick={() => setConfirmingReject(true)}
               style={{
                 padding: "14px 28px",
-                borderRadius: "12px",
-                border: `2px solid ${reachedEnd ? PLUM : DISABLED}`,
+                borderRadius: "9999px",
+                border: "1.5px solid #e6dfe9",
                 fontSize: "17px",
-                fontWeight: 700,
-                color: reachedEnd ? PLUM : DISABLED,
+                fontWeight: 600,
+                color: "#6d6373",
                 background: "transparent",
+                opacity: reachedEnd ? 1 : 0.4,
                 cursor: reachedEnd ? "pointer" : "not-allowed",
-                transition: "border-color 0.2s ease, color 0.2s ease",
+                transition: "opacity 0.2s ease",
               }}
             >
               {t("admissionConsent.reject")}
             </button>
-            {/* Primary */}
+            {/* Primary — matches welcome "Start now" (PrimaryButton):
+                solid primary, bold text, soft shadow, fully rounded pill. */}
             <button
               type="button"
               disabled={!reachedEnd}
               onClick={onAccept}
               style={{
                 padding: "14px 28px",
-                borderRadius: "12px",
+                borderRadius: "9999px",
                 border: "none",
                 fontSize: "17px",
                 fontWeight: 700,
                 color: "#ffffff",
-                background: reachedEnd ? PLUM : DISABLED,
+                background: PLUM,
+                boxShadow: reachedEnd ? SHADOW.md : "none",
+                opacity: reachedEnd ? 1 : 0.4,
                 cursor: reachedEnd ? "pointer" : "not-allowed",
-                transition: "background 0.2s ease",
+                transition: "opacity 0.2s ease, box-shadow 0.2s ease",
               }}
             >
               {t("admissionConsent.accept")}
