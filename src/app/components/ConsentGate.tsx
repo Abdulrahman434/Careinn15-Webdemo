@@ -156,7 +156,7 @@ export function ConsentGate({ src = "/consent-form.html", onAccept, onReject }: 
             background: "#ffffff",
           }}
         >
-          <span style={{ fontSize: "15px", color: "#6d6373" }}>
+          <span style={{ fontSize: "15px", lineHeight: 1.4, color: "#5a5160" }}>
             {t("admissionConsent.hint")}
           </span>
           <div style={{ display: "flex", flexShrink: 0, gap: "12px" }}>
