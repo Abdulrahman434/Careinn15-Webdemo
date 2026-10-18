@@ -363,8 +363,8 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
    * RENDER: HUB SCREEN (cards side-by-side)
    * ═══════════════════════════════════════════════════════════════ */
   const renderHubScreen = () => (
-    <div className="flex flex-col items-center justify-center h-full px-16 text-center">
-      <div className="flex items-center justify-center gap-6 w-full max-w-[1000px]">
+    <div className="sm-hub sm-pad flex flex-col items-center justify-center h-full px-16 text-center">
+      <div className="sm-hub-row flex items-center justify-center gap-6 w-full max-w-[1000px]">
         {/* Quick Survey Card */}
         <button
           onClick={() => setPath("survey")}
@@ -503,10 +503,10 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
     const currentAnswer = answers[question.id];
 
     return (
-      <div className="flex flex-col items-center justify-center min-h-full px-16 py-10">
+      <div className="sm-pad flex flex-col items-center justify-center min-h-full px-16 py-10">
         {/* Question number badge */}
         <div
-          className="flex items-center justify-center rounded-full mb-6"
+          className="sm-qbadge flex items-center justify-center rounded-full mb-6"
           style={{ width: "96px", height: "96px", backgroundColor: theme.primarySubtle }}
         >
           <span style={{ fontFamily, fontSize: "40px", fontWeight: WEIGHT.bold, color: BRAND }}>
@@ -515,12 +515,12 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
         </div>
 
         {/* Question counter */}
-        <p style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.medium, color: theme.textMuted, marginBottom: "40px" }}>
+        <p className="sm-qcount" style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.medium, color: theme.textMuted, marginBottom: "40px" }}>
           {t("survey.questionOf", question.id, questions.length)}
         </p>
 
         {/* Question text */}
-        <h3 style={{
+        <h3 className="sm-qtitle" style={{
           fontFamily,
           fontSize: TYPE_SCALE["2xl"],
           fontWeight: WEIGHT.bold,
@@ -534,7 +534,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
         </h3>
 
         {/* Options */}
-        <div className="flex flex-wrap items-center justify-center gap-5 max-w-[1100px]">
+        <div className="sm-options flex flex-wrap items-center justify-center gap-5 max-w-[1100px]">
           {question.type === "emoji" ? (
             question.optionKeys.map((option, idx) => {
               const isSelected = currentAnswer === idx;
@@ -542,7 +542,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
                 <button
                   key={idx}
                   onClick={() => handleAnswer(question.id, idx)}
-                  className="transition-transform duration-200"
+                  className="sm-emoji transition-transform duration-200"
                   style={{
                     width: "140px", height: "140px",
                     borderRadius: theme.radiusXl,
@@ -567,7 +567,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
                     <button
                       key={idx}
                       onClick={() => handleAnswer(question.id, option)}
-                      className="transition-transform duration-200"
+                      className="sm-opt transition-transform duration-200"
                       style={{
                         minWidth: "220px", padding: "20px 32px",
                         borderRadius: theme.radiusXl,
@@ -592,7 +592,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
                       <button
                         key={idx + 4}
                         onClick={() => handleAnswer(question.id, option)}
-                        className="transition-transform duration-200"
+                        className="sm-opt transition-transform duration-200"
                         style={{
                           minWidth: "220px", padding: "20px 32px",
                           borderRadius: theme.radiusXl,
@@ -618,7 +618,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
   };
 
   const renderSurveyFeedbackSlide = () => (
-    <div className="flex flex-col items-center justify-center min-h-full px-16 py-10">
+    <div className="sm-pad flex flex-col items-center justify-center min-h-full px-16 py-10">
       <h3 style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "16px", textAlign: "center" }}>
         {t("survey.additionalFeedback")}
       </h3>
@@ -652,7 +652,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
   );
 
   const renderSurveyThankYou = () => (
-    <div className="flex flex-col items-center justify-center min-h-full px-16 py-10 text-center"
+    <div className="sm-pad flex flex-col items-center justify-center min-h-full px-16 py-10 text-center"
       style={{ backgroundColor: theme.primarySubtle }}>
       {/* Check icon */}
       <div className="flex items-center justify-center mb-8"
@@ -674,11 +674,11 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
   );
 
   const renderSurveyPath = () => (
-    <div className="flex-1 flex flex-col overflow-hidden relative">
+    <div className="sm-path flex-1 flex flex-col overflow-hidden relative">
       {renderSurveyProgressBar()}
 
       {/* Main content */}
-      <div className="flex-1 overflow-y-auto" style={{ paddingTop: "2px" }}>
+      <div className="sm-scroll flex-1 overflow-y-auto" style={{ paddingTop: "2px" }}>
         {currentSlide >= 0 && currentSlide <= 6 && renderQuestionSlide(currentSlide)}
         {currentSlide === 7 && renderSurveyFeedbackSlide()}
         {currentSlide === 8 && renderSurveyThankYou()}
@@ -687,7 +687,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
       {/* Survey footer nav */}
       {currentSlide < 8 && (
         <div
-          className="flex items-center justify-between px-10 py-5"
+          className="sm-footer flex items-center justify-between px-10 py-5"
           style={{ borderColor: theme.borderDefault, zIndex: 20, direction: "ltr" }}
         >
           {/* LTR left = Previous / RTL left = Next */}
@@ -776,7 +776,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
     if (concernSubmitted) {
       const refNumber = `CR-${Math.floor(10000 + Math.random() * 90000)}`;
       return (
-        <div className="flex-1 flex flex-col items-center justify-center px-16 text-center"
+        <div className="sm-pad flex-1 flex flex-col items-center justify-center px-16 text-center"
           style={{ backgroundColor: "rgba(196,87,26,0.03)" }}>
           {/* Check icon */}
           <div className="flex items-center justify-center mb-8"
@@ -805,11 +805,11 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
     }
 
     return (
-      <div className="flex-1 flex flex-col overflow-hidden relative">
-        <div className="flex-1 flex flex-col overflow-hidden items-center justify-center">
-          <div className="w-full max-w-[800px] flex flex-col h-full shrink-0">
+      <div className="sm-path flex-1 flex flex-col overflow-hidden relative">
+        <div className="sm-path flex-1 flex flex-col overflow-hidden items-center justify-center">
+          <div className="sm-form w-full max-w-[800px] flex flex-col h-full shrink-0">
             {/* Header */}
-            <div className="shrink-0 flex items-center gap-4 px-0 pt-10 pb-4">
+            <div className="sm-form-head shrink-0 flex items-center gap-4 px-0 pt-10 pb-4">
               <div className="flex items-center justify-center"
                 style={{ width: 44, height: 44, borderRadius: theme.radiusLg, backgroundColor: CONCERN_SUBTLE }}>
                 <AlertTriangle size={22} style={{ color: CONCERN_COLOR }} />
@@ -825,7 +825,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto px-0 pb-6 scrollbar-width-none">
+            <div className="sm-scroll flex-1 overflow-y-auto px-0 pb-6 scrollbar-width-none">
               {/* Area question */}
               <h3 style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "20px", marginTop: "24px" }}>
                 {t("concern.areaQuestion")}
@@ -882,7 +882,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 flex items-center justify-between px-10 py-5" style={{ borderColor: theme.borderDefault, direction: "ltr" }}>
+        <div className="sm-footer shrink-0 flex items-center justify-between px-10 py-5" style={{ borderColor: theme.borderDefault, direction: "ltr" }}>
           {isRTL ? (
             <>
               <button
@@ -941,7 +941,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
   const renderAppreciationPath = () => {
     if (appreciationSubmitted) {
       return (
-        <div className="flex-1 flex flex-col items-center justify-center px-16 text-center"
+        <div className="sm-pad flex-1 flex flex-col items-center justify-center px-16 text-center"
           style={{ backgroundColor: APPRECIATION_SUBTLE }}>
           {/* Heart icon */}
           <div className="flex items-center justify-center mb-8"
@@ -970,11 +970,11 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
     }
 
     return (
-      <div className="flex-1 flex flex-col overflow-hidden relative">
-        <div className="flex-1 flex flex-col overflow-hidden items-center justify-center">
-          <div className="w-full max-w-[800px] flex flex-col h-full shrink-0">
+      <div className="sm-path flex-1 flex flex-col overflow-hidden relative">
+        <div className="sm-path flex-1 flex flex-col overflow-hidden items-center justify-center">
+          <div className="sm-form w-full max-w-[800px] flex flex-col h-full shrink-0">
             {/* Header */}
-            <div className="shrink-0 flex items-center gap-4 px-0 pt-10 pb-4">
+            <div className="sm-form-head shrink-0 flex items-center gap-4 px-0 pt-10 pb-4">
               <div className="flex items-center justify-center"
                 style={{ width: 44, height: 44, borderRadius: theme.radiusLg, backgroundColor: APPRECIATION_SUBTLE }}>
                 <Heart size={22} style={{ color: APPRECIATION_COLOR }} />
@@ -990,7 +990,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto px-0 pb-6 scrollbar-width-none">
+            <div className="sm-scroll flex-1 overflow-y-auto px-0 pb-6 scrollbar-width-none">
               {/* Who to thank */}
               <h3 style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "20px", marginTop: "24px" }}>
                 {t("appreciation.whoQuestion")}
@@ -1047,7 +1047,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 flex items-center justify-between px-10 py-5" style={{ borderColor: theme.borderDefault, direction: "ltr" }}>
+        <div className="sm-footer shrink-0 flex items-center justify-between px-10 py-5" style={{ borderColor: theme.borderDefault, direction: "ltr" }}>
           {isRTL ? (
             <>
               <button
@@ -1105,7 +1105,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
    * ═══════════════════════════════════════════════════════════════ */
   return (
     <div
-      className="fixed inset-0 flex flex-col overflow-hidden"
+      className="sm-root fixed inset-0 flex flex-col overflow-hidden"
       style={{
         background: theme.pageGradientFlat,
         zIndex: 1000,
@@ -1128,6 +1128,60 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
         .sm-card:active { transform: scale(0.985); }
         .sm-iconbox { transition: transform .2s ease; }
         .sm-card:hover .sm-iconbox { transform: scale(1.06); }
+
+        /* Hub: centred while it fits, scrolls from the top when it doesn't */
+        .sm-hub { justify-content: flex-start !important; overflow-y: auto; }
+        .sm-hub-row { margin-top: auto; margin-bottom: auto; }
+
+        /* ── Small screens (phones, tablets in portrait) ── */
+        @media (max-width: 820px) {
+          .sm-root .iph { gap: 10px !important; padding: 14px 12px 10px !important; }
+          .sm-root .iph-divider, .sm-root .iph-icon, .sm-root .iph-subtitle { display: none !important; }
+          .sm-root .iph-title { font-size: 20px !important; line-height: 24px !important; }
+          .sm-root .iph > button, .sm-root .iph-actions button { width: 40px !important; height: 40px !important; }
+          .sm-root .iph-actions { gap: 6px !important; }
+          .sm-content { padding: 0 10px 10px !important; }
+          .sm-pad { padding: 20px 16px !important; }
+          .sm-hub-row { flex-direction: column !important; gap: 12px !important; }
+          .sm-root .sm-card { flex: 0 0 auto !important; width: 100% !important; padding: 20px 16px !important; }
+          .sm-root .sm-iconbox { width: 56px !important; height: 56px !important; margin-bottom: 10px !important; }
+          .sm-root .sm-iconbox svg { width: 28px; height: 28px; }
+          .sm-qbadge { width: 60px !important; height: 60px !important; margin-bottom: 10px !important; }
+          .sm-qbadge span { font-size: 26px !important; }
+          .sm-qcount { font-size: 15px !important; margin-bottom: 14px !important; }
+          .sm-qtitle { font-size: 22px !important; margin-bottom: 22px !important; }
+          .sm-options { gap: 10px !important; }
+          .sm-emoji { width: 60px !important; height: 60px !important; font-size: 32px !important; }
+          .sm-opt { min-width: 0 !important; width: 100%; padding: 14px 18px !important; font-size: 17px !important; }
+          .sm-form { padding: 0 16px; }
+          .sm-form-head { padding-top: 18px !important; }
+          .sm-footer { gap: 8px; padding: 10px 12px !important; }
+          .sm-footer > div { display: none !important; }
+          .sm-footer button { height: 46px !important; padding: 0 16px !important; font-size: 16px !important; }
+        }
+        /* Very short windows: the white card no longer has to fit the screen.
+           The whole page scrolls instead, so nothing is squeezed or clipped. */
+        @media (max-height: 560px) {
+          .sm-root { overflow-y: auto !important; }
+          .sm-content, .sm-shell, .sm-path, .sm-scroll, .sm-form { flex: none !important; height: auto !important; min-height: 0 !important; overflow: visible !important; }
+          .sm-hub { height: auto !important; overflow: visible !important; }
+          .sm-root .iph { gap: 10px !important; padding: 12px 16px 10px !important; }
+          .sm-root .iph-divider, .sm-root .iph-icon, .sm-root .iph-subtitle { display: none !important; }
+          .sm-root .iph-title { font-size: 20px !important; line-height: 24px !important; }
+          .sm-root .iph > button, .sm-root .iph-actions button { width: 40px !important; height: 40px !important; }
+        }
+        /* Short landscape screens: tighter vertical rhythm */
+        @media (max-height: 700px) and (min-width: 821px) {
+          .sm-root .iph { padding-top: 16px !important; padding-bottom: 12px !important; }
+          .sm-content { padding-bottom: 16px !important; }
+          .sm-pad { padding-top: 20px !important; padding-bottom: 20px !important; }
+          .sm-qbadge { width: 64px !important; height: 64px !important; margin-bottom: 10px !important; }
+          .sm-qbadge span { font-size: 28px !important; }
+          .sm-qcount { margin-bottom: 14px !important; }
+          .sm-qtitle { font-size: 26px !important; margin-bottom: 24px !important; }
+          .sm-emoji { width: 96px !important; height: 96px !important; font-size: 46px !important; }
+          .sm-footer { padding-top: 12px !important; padding-bottom: 12px !important; }
+        }
       `}</style>
 
       {/* ─── Header (white text on brand gradient) ─── */}
@@ -1139,9 +1193,9 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
       />
 
       {/* ─── Main content — large white rounded card ─── */}
-      <div className="flex-1 min-h-0 px-12 pt-2 pb-8 relative z-10 flex flex-col">
+      <div className="sm-content flex-1 min-h-0 px-12 pt-2 pb-8 relative z-10 flex flex-col">
         <div
-          className="flex-1 min-h-0 flex flex-col overflow-hidden"
+          className="sm-shell flex-1 min-h-0 flex flex-col overflow-hidden"
           style={{
             backgroundColor: theme.surface,
             borderRadius: theme.radiusXl,

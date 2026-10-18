@@ -1722,6 +1722,10 @@ interface TestEntry {
   date: string;
   /** Empty until the report is back. */
   pdfUrl?: string;
+  /** Procedures only: scheduled time, shown after the date. */
+  time?: string;
+  /** Procedures are a schedule, not a report: no View, no pending badge. */
+  scheduleOnly?: boolean;
 }
 
 /* ─── Tests & Procedures ───────────────────────────────────────────────────
@@ -1799,7 +1803,7 @@ function TestsAndProceduresSlide({ theme, isExpanded = false }: { theme: any; is
 
   const procedures: TestEntry[] = (nurseStore.procedures || [])
     .filter(pr => pr.visible)
-    .map(pr => ({ id: pr.id, label: pr.label, date: pr.date, pdfUrl: pr.pdfUrl }));
+    .map(pr => ({ id: pr.id, label: pr.label, date: pr.date, time: pr.time, scheduleOnly: true }));
 
   const groups = [
     { key: "labs", icon: FlaskConical, title: t("care.labs.title"), items: labs },
@@ -1812,7 +1816,7 @@ function TestsAndProceduresSlide({ theme, isExpanded = false }: { theme: any; is
      gone too: a number without its reference range is not something to hand a
      patient unexplained — the report behind the button carries both. */
   const entry = (e: TestEntry, first: boolean) => {
-    const ready = !!e.pdfUrl?.trim();
+    const ready = !e.scheduleOnly && !!e.pdfUrl?.trim();
     return (
       <div
         key={e.id}
@@ -1838,13 +1842,14 @@ function TestsAndProceduresSlide({ theme, isExpanded = false }: { theme: any; is
             {e.label}
           </span>
           <span style={{ fontFamily: theme.fontFamily, ...R.label, color: theme.textMuted, marginTop: LABEL_GAP }}>
-            <Ltr>{e.date}</Ltr>
+            <Ltr>{e.time ? `${e.date} · ${e.time}` : e.date}</Ltr>
           </span>
         </div>
 
         {/* Waiting on a report is the state the patient checks for, so it is
-            named rather than left as an absent button. */}
-        {ready ? (
+            named rather than left as an absent button. Procedures are a
+            schedule (name, date, time) and carry neither. */}
+        {e.scheduleOnly ? null : ready ? (
           <span
             className="shrink-0 inline-flex items-center justify-center pointer-events-none"
             style={{
@@ -3312,22 +3317,8 @@ function PersonCenteredCareSlide({ theme, isExpanded = false, onOpenForm }: {
     return () => window.removeEventListener(CARE_PARTNER_EVENT, refresh);
   }, []);
 
-  /* The collapsed header says how much is on the board, so the count has to
-     follow writes made in the section below it. */
-  const [boardCount, setBoardCount] = useState(() => readQuestions().length);
-  useEffect(() => {
-    const refresh = () => setBoardCount(readQuestions().length);
-    window.addEventListener(QUESTIONS_EVENT, refresh);
-    window.addEventListener("storage", refresh);
-    return () => {
-      window.removeEventListener(QUESTIONS_EVENT, refresh);
-      window.removeEventListener("storage", refresh);
-    };
-  }, []);
-
   const prefRows = preferenceSummaryRows(
     record, t, preferenceAppName(t, activeConfigId, theme.hospitalName));
-  const prefsFilled = !!record?.completedAt && prefRows.length > 0;
 
   /* The goal belongs to the patient now, so the sheet that sets it opens from
      this card rather than from a nurse's tab. */
@@ -3344,11 +3335,6 @@ function PersonCenteredCareSlide({ theme, isExpanded = false, onOpenForm }: {
         first
         icon={Target}
         title={t("care.pcc.goal.title")}
-        actions={
-          <CardBadge theme={theme} isExpanded={isExpanded} tone={careGoal ? "success" : "neutral"}>
-            {careGoal ? t("care.pcc.goal.status.chosen") : t("care.pcc.goal.status.notChosen")}
-          </CardBadge>
-        }
       >
         <div className="flex flex-col gap-3">
           {careGoal ? (
@@ -3383,11 +3369,6 @@ function PersonCenteredCareSlide({ theme, isExpanded = false, onOpenForm }: {
         isExpanded={isExpanded}
         icon={SlidersHorizontal}
         title={t("care.pcc.preferences.title")}
-        actions={
-          <CardBadge theme={theme} isExpanded={isExpanded} tone={prefsFilled ? "success" : "neutral"}>
-            {prefsFilled ? t("care.pcc.status.recorded") : t("care.pcc.status.notFilled")}
-          </CardBadge>
-        }
       >
         <PreferencesBody theme={theme} isExpanded={isExpanded} onOpenForm={onOpenForm} />
       </Section>
@@ -3398,19 +3379,6 @@ function PersonCenteredCareSlide({ theme, isExpanded = false, onOpenForm }: {
         isExpanded={isExpanded}
         icon={UserRound}
         title={t("care.pcc.partner.title")}
-        actions={
-          partner.status === "unasked" ? undefined : (
-            <CardBadge
-              theme={theme}
-              isExpanded={isExpanded}
-              tone={partner.status === "active" ? "success" : partner.status === "nominated" ? "warning" : "neutral"}
-            >
-              {partner.status === "active" ? t("care.pcc.partner.status.active")
-                : partner.status === "nominated" ? t("care.pcc.partner.status.nominated")
-                : t("care.pcc.partner.status.declined")}
-            </CardBadge>
-          )
-        }
       >
         <CarePartnerBody theme={theme} isExpanded={isExpanded} />
       </Section>
@@ -3421,11 +3389,6 @@ function PersonCenteredCareSlide({ theme, isExpanded = false, onOpenForm }: {
         isExpanded={isExpanded}
         icon={MessageCircleQuestion}
         title={t("care.pcc.board.title")}
-        actions={
-          <CardBadge theme={theme} isExpanded={isExpanded} tone={boardCount > 0 ? "brand" : "neutral"}>
-            {boardCount > 0 ? t("care.pcc.board.count", String(boardCount)) : t("care.pcc.board.empty")}
-          </CardBadge>
-        }
       >
         <CommunicationBoardBody theme={theme} isExpanded={isExpanded} />
       </Section>
@@ -3949,12 +3912,6 @@ export function CareMe({ onExpand, onOpenPreferences }: { onExpand?: () => void;
                 <Maximize2 size={18} style={{ color: theme.primaryOn }} />
               </TapTarget>
             )}
-            <TapTarget theme={theme} label="Previous slide" onClick={() => handleManualNav(activeIndex - 1)}>
-              <ChevronLeft size={18} strokeWidth={2} style={{ color: theme.primaryOn, transform: isRTL ? "scaleX(-1)" : undefined }} />
-            </TapTarget>
-            <TapTarget theme={theme} label="Next slide" onClick={() => handleManualNav(activeIndex + 1)}>
-              <ChevronRight size={18} strokeWidth={2} style={{ color: theme.primaryOn, transform: isRTL ? "scaleX(-1)" : undefined }} />
-            </TapTarget>
           </div>
         </div>
 
@@ -4014,8 +3971,14 @@ export function CareMe({ onExpand, onOpenPreferences }: { onExpand?: () => void;
         </div>
       </div>
 
-      {/* Pagination dots */}
-      <div className="flex items-center justify-center gap-2 py-3 shrink-0">
+      {/* Pagination: previous ‹ dots › next, under the slide. The card is
+          forced LTR, so the row takes the page direction itself: in Arabic
+          "previous" sits on the right pointing right, "next" on the left
+          pointing left — the flipped chevrons below assume that. */}
+      <div dir={dir} className="flex items-center justify-center gap-2 py-1 shrink-0">
+        <TapTarget theme={theme} label="Previous slide" onClick={() => handleManualNav(activeIndex - 1)}>
+          <ChevronLeft size={18} strokeWidth={2} style={{ color: theme.primaryOn, transform: isRTL ? "scaleX(-1)" : undefined }} />
+        </TapTarget>
         {slides.map((s, i) => (
           <button
             key={s.key}
@@ -4030,6 +3993,9 @@ export function CareMe({ onExpand, onOpenPreferences }: { onExpand?: () => void;
             aria-label={`Go to ${t(s.titleKey)}`}
           />
         ))}
+        <TapTarget theme={theme} label="Next slide" onClick={() => handleManualNav(activeIndex + 1)}>
+          <ChevronRight size={18} strokeWidth={2} style={{ color: theme.primaryOn, transform: isRTL ? "scaleX(-1)" : undefined }} />
+        </TapTarget>
       </div>
 
       {/* Custom scrollbar styles */}

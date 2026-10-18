@@ -21,6 +21,10 @@ function patientAppPackages(): string[] {
     "com.microsoft.teams", "com.google.android.apps.tachyon",
     "com.instagram.android", "com.facebook.katana", "com.twitter.android",
     "com.snapchat.android",
+    // YouTube TV (the cast receiver): clearing its data drops the MDX/Lounge
+    // pairing and any sign-in, so the previous patient's phone can no longer
+    // reconnect or control playback after discharge.
+    "com.google.android.youtube.tv",
   ];
   return Array.from(new Set([...apiPkgs, ...known]));
 }

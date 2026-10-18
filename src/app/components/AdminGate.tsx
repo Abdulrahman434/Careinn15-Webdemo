@@ -27,7 +27,15 @@ export function useAdminGateTap() {
   const taps = useRef<number[]>([]);
   const [armed, setArmed] = useState(false);
 
-  const registerTap = useCallback(() => {
+  const registerTap = useCallback((e?: { target: EventTarget | null }) => {
+    /* Only taps on the bar's empty space count. Taps on its buttons (language,
+       dark mode, weather/layout, bell, settings, prayer tiles) are ordinary use:
+       counted, four quick toggles opened this box by accident. */
+    const el = e?.target instanceof Element ? e.target : null;
+    if (el?.closest('button, a, input, select, textarea, [role="button"], [data-nav], [onclick]')) {
+      taps.current = [];
+      return;
+    }
     const now = Date.now();
     taps.current = [...taps.current, now].filter(t => now - t <= TAP_WINDOW_MS);
     if (taps.current.length >= TAP_COUNT) {

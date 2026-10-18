@@ -460,10 +460,18 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
      autoStandard orders are the kitchen's fallback for anything left unordered
      at the cut-off — they sit in `orders` like any other, so they are skipped
      or the notice would report a meal nobody chose as the patient's own. */
+  /* Patient and guest order separately — a breakfast placed for the guest is
+     not the patient's breakfast. Everything that asks "is this meal already
+     ordered?" reads only the orders of whoever is being ordered for. */
+  const ordersForWho = useMemo(
+    () => (orders as any[]).filter((o) => (o.orderFor === "guest" ? "guest" : "patient") === orderFor),
+    [orders, orderFor],
+  );
+
   const dayOrderStatus = useMemo<DayOrderStatus>(() => {
     const dayStr = dayForOffset(selectedDayOffset).toDateString();
     const chosen = new Set(
-      (orders as any[])
+      ordersForWho
         .filter((o) => !o.autoStandard && o.deliveryDate &&
           new Date(o.deliveryDate).toDateString() === dayStr)
         .map((o) => o.mealId || o.mealType?.toLowerCase()),
@@ -471,14 +479,14 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
     const ids = Object.keys(MEAL_WINDOWS) as MealId[];
     if (ids.every((id) => chosen.has(id))) return "all";
     return ids.some((id) => chosen.has(id)) ? "some" : "none";
-  }, [orders, selectedDayOffset]);
+  }, [ordersForWho, selectedDayOffset]);
 
   /* Already with the kitchen, keyed day + meal against the moment it was
      sent. Read back off the placed orders rather than kept alongside them, so
      it survives leaving this screen and coming back. */
   const placedAtByKey = useMemo(() => {
     const keys = new Map<string, Date | null>();
-    for (const o of orders as any[]) {
+    for (const o of ordersForWho) {
       const mealId = o.mealId || o.mealType?.toLowerCase();
       if (!mealId || !o.deliveryDate) continue;
       const d = new Date(o.deliveryDate);
@@ -493,7 +501,7 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
       }
     }
     return keys;
-  }, [orders]);
+  }, [ordersForWho]);
 
   /* Tomorrow's window state, live across the 4 PM and 8 PM boundaries. */
   const windowState = useOrderWindowState();
@@ -745,7 +753,8 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
     else if (step === "confirmed") onClose();
   }, [step, onClose, effectiveDiet, selectedMealId]);
 
-  const showPatientBar = step !== "confirmed";
+  /* Every step, confirmation included, says who the order is for. */
+  const showPatientBar = true;
   const showBottomBar = true;
   const showBackButton = true;
   const isFlow = step === "select-type" || step === "select-meal" || step === "kids-breakfast-type" || step === "build-meal" || step === "confirmed";
@@ -793,8 +802,8 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
       mealName={currentMeal ? loc(currentMeal.label) : null}
       fontFamily={fontFamily}
       isRTL={isRTL}
-      onDietClick={orderFor === "patient" ? handleOpenDietModal : undefined}
-      onAllergiesClick={orderFor === "patient" ? handleOpenAllergiesModal : undefined}
+      onDietClick={orderFor === "patient" && step !== "confirmed" ? handleOpenDietModal : undefined}
+      onAllergiesClick={orderFor === "patient" && step !== "confirmed" ? handleOpenAllergiesModal : undefined}
     />
   );
 
@@ -975,7 +984,7 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
                     dietLabel={dietDisplayLabel}
                     allergiesLabel={allergiesLabel}
                     meals={meals}
-                    orders={orders}
+                    orders={ordersForWho}
                     submitted={submittedSummary.map((e) => ({ dayOffset: e.dayOffset, mealId: e.mealId }))}
                     onOrderMeal={(mealId) => {
                       setSelectedMealId(mealId);
@@ -1111,8 +1120,9 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
                   ✕
                 </button>
               </div>
-              {/* Overlay content */}
-              <div className="flex-1 min-h-0 overflow-y-auto">
+              {/* Overlay content — a flex column, not a scroller: the tabs row
+                  stays put and only HistoryView's own list scrolls. */}
+              <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 <HistoryView
                   activeOrders={activeOrders}
                   pastOrders={pastOrders}

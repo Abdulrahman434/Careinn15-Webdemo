@@ -37,7 +37,7 @@ export interface BroadcastNotification {
   isMissed?: boolean;
   missedAt?: string;
   cta?: { en: string; ar: string };
-  ctaAction?: "open-url" | "open-survey" | "open-pdf" | "open-image" | "open-video";
+  ctaAction?: "open-url" | "open-survey" | "open-pdf" | "open-image" | "open-video" | "open-meal-ordering";
   ctaUrl?: string;
   ctaSurveyId?: string;
   isLater?: boolean;
@@ -113,12 +113,15 @@ const PULSE_KEYFRAMES = `
 export function HospitalBroadcast({
   notification,
   onAcknowledge,
+  onMuteAzan,
 }: {
   notification: BroadcastNotification;
   onAcknowledge: (id: string, action?: "read" | "later" | "skip") => void;
+  /** Stops the azan that is playing now. */
+  onMuteAzan?: () => void;
 }) {
-  const { theme } = useTheme();
-  const { isRTL, fontFamily, locale } = useLocale();
+  const { theme, prayerAlarm, setPrayerAlarm } = useTheme();
+  const { isRTL, fontFamily, locale, t } = useLocale();
   const [visible, setVisible] = useState(false);
   const [acknowledging, setAcknowledging] = useState(false);
 
@@ -273,12 +276,71 @@ export function HospitalBroadcast({
               ...TEXT_STYLE.body,
               color: theme.textBody,
               margin: 0,
-              marginBottom: "32px",
+              marginBottom: isPrayer ? "20px" : "32px",
               lineHeight: 1.7,
             }}
           >
             {loc(notification.body)}
           </p>
+
+          {/* Prayer: azan sound on/off, right where the azan is heard. Off
+              also stops the azan playing now; it is the same switch as the
+              prayer alarm in Settings. */}
+          {isPrayer && (
+            <div
+              className="flex items-center gap-3 mb-4 w-full"
+              style={{
+                padding: "8px 14px",
+                borderRadius: theme.radiusMd,
+                backgroundColor: theme.tileInactiveBg,
+                border: `1px solid ${theme.borderSubtle}`,
+                textAlign: isRTL ? "right" : "left",
+              }}
+            >
+              <div className="flex-1 min-w-0">
+                <p style={{ fontFamily, ...TEXT_STYLE.buttonSm, fontSize: TYPE_SCALE.base, color: theme.textHeading, margin: 0 }}>
+                  {t("broadcast.azan.sound")}
+                </p>
+              </div>
+              <span style={{ fontFamily, ...TEXT_STYLE.buttonSm, color: theme.textBody }}>
+                {prayerAlarm ? t("broadcast.azan.on") : t("broadcast.azan.off")}
+              </span>
+              <button
+                role="switch"
+                aria-checked={prayerAlarm}
+                aria-label={t("broadcast.azan.sound")}
+                onClick={() => {
+                  if (prayerAlarm) onMuteAzan?.();
+                  setPrayerAlarm(!prayerAlarm);
+                }}
+                className="shrink-0 relative cursor-pointer"
+                style={{
+                  width: 52,
+                  height: 30,
+                  borderRadius: theme.radiusFull,
+                  backgroundColor: prayerAlarm ? theme.primary : theme.borderDefault,
+                  border: "none",
+                  outline: "none",
+                  padding: 0,
+                  transition: "background-color 0.2s ease",
+                }}
+              >
+                <span
+                  style={{
+                    position: "absolute",
+                    top: 3,
+                    [isRTL ? "right" : "left"]: prayerAlarm ? 25 : 3,
+                    width: 24,
+                    height: 24,
+                    borderRadius: theme.radiusFull,
+                    backgroundColor: theme.surface,
+                    boxShadow: SHADOW.md,
+                    transition: "left 0.2s ease, right 0.2s ease",
+                  }}
+                />
+              </button>
+            </div>
+          )}
 
           {/* Acknowledge button */}
           <button

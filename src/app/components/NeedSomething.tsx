@@ -1,5 +1,5 @@
 import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence, PanInfo } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   HandHelping, Wrench, ClipboardList,
   CheckCircle2, Clock, X, Send, Inbox,
@@ -11,6 +11,7 @@ import {
   AirVent, Lightbulb, Tv, ShowerHead, Plug,
   Ear, Eye, Accessibility, ShieldCheck, BookOpen, PersonStanding,
   Scissors, Brush, Droplets, Sparkles, Trash2, Languages, HeartHandshake,
+  Stethoscope, Wifi, ConciergeBell, MessageSquareWarning,
   createLucideIcon, type LucideIcon,
 } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW, SPACE, LEADING } from "./ThemeContext";
@@ -63,10 +64,14 @@ import imgNonSlipSocks from "../../assets/Housekeeping/non-slip socks.webp";
 /* localStorage key — patient's own service requests for the "I Need Something" flow. */
 const STORAGE_KEY = "careinn-need-requests";
 
+/* complaint / medical: Burjeel-only categories (see BURJEEL_ONLY_TABS). */
+type NeedKind = "request" | "report" | "roomcare" | "support" | "complaint" | "medical";
+
 interface NeedRequest {
   id: string;
-  kind: "request" | "report" | "roomcare" | "support";
-  itemKey: string; // i18n key, e.g. "need.item.blanket"
+  kind: NeedKind;
+  itemKey: string; // i18n key, e.g. "need.item.blanket" — first item of the order
+  itemKeys?: string[]; // every item in the order when several were ticked together
   emoji: string;
   note: string;
   createdAt: number; // epoch ms
@@ -79,6 +84,25 @@ interface NeedRequest {
 const TissueBox: LucideIcon = createLucideIcon("TissueBox", [
   ["path", { d: "M8.5 11 L9.5 6.5 L12 8 L14.5 6.5 L15.5 11", key: "sheet" }],
   ["rect", { x: "3", y: "11", width: "18", height: "9", rx: "2", key: "box" }],
+]);
+
+/* ── Burjeel icons from published sets, not drawn here ──
+   Staff complaint and sick leave come from Tabler Icons (MIT,
+   tabler.io/icons: "user-exclamation", "report-medical"), path data copied
+   unchanged. Both sets share Lucide's 24px stroke grid, so they sit with the
+   rest. The other three are stock Lucide: MessageSquareWarning,
+   ConciergeBell and Wifi. */
+const StaffComplaintIcon: LucideIcon = createLucideIcon("TablerUserExclamation", [
+  ["path", { d: "M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0", key: "head" }],
+  ["path", { d: "M6 21v-2a4 4 0 0 1 4 -4h4c.348 0 .686 .045 1.008 .128", key: "body" }],
+  ["path", { d: "M19 16v3", key: "bang" }],
+  ["path", { d: "M19 22v.01", key: "dot" }],
+]);
+const SickLeaveIcon: LucideIcon = createLucideIcon("TablerReportMedical", [
+  ["path", { d: "M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2", key: "board" }],
+  ["path", { d: "M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z", key: "clip" }],
+  ["path", { d: "M10 14l4 0", key: "crossH" }],
+  ["path", { d: "M12 12l0 4", key: "crossV" }],
 ]);
 
 /* Prayer mat icon (carpet with fringe detail) — no lucide equivalent */
@@ -104,6 +128,7 @@ const ISSUE_CHIPS: Record<string, string[]> = {
   "need.issue.bed": ["need.chip.uncomfortable", "need.chip.broken"],
   "need.issue.bathroom": ["need.chip.leaking", "need.chip.clogged", "need.chip.dirty"],
   "need.issue.power": ["need.chip.notWorking", "need.chip.loose", "need.chip.sparking"],
+  "need.issue.wifi": ["need.chip.noConnection", "need.chip.slow"],
 };
 
 const REQUEST_ITEMS: CardDef[] = [
@@ -144,6 +169,24 @@ const REPORT_ITEMS: CardDef[] = [
 
 /* Look up the unified icon for a persisted request by its i18n item key, so the
    "My Requests" list and dialogs render the same vector set as the grid cards. */
+/* ── Burjeel only ──────────────────────────────────────────────────────────
+   Burjeel asked for Wi-Fi under Report an Issue, and two extra categories:
+   complaints and medical requests. Other hospitals see none of these. */
+const BURJEEL_REPORT_EXTRA: CardDef[] = [
+  { key: "need.issue.wifi", emoji: "📶", Icon: Wifi, subtitle: "need.issue.wifi.sub" },
+];
+const COMPLAINT_ITEMS: CardDef[] = [
+  { key: "need.complaint.staff", emoji: "🧑‍⚕️", Icon: StaffComplaintIcon, subtitle: "need.complaint.staff.sub" },
+  { key: "need.complaint.service", emoji: "🛎️", Icon: ConciergeBell, subtitle: "need.complaint.service.sub" },
+  { key: "need.complaint.general", emoji: "💬", Icon: MessageSquareWarning, subtitle: "need.complaint.general.sub" },
+];
+const MEDICAL_ITEMS: CardDef[] = [
+  { key: "need.medical.sickLeave", emoji: "📄", Icon: SickLeaveIcon, subtitle: "need.medical.sickLeave.sub" },
+];
+const BURJEEL_ONLY_TABS: Tab[] = ["complaint", "medical"];
+/* Tabs Burjeel does not offer. */
+const BURJEEL_HIDDEN_TABS: Tab[] = ["support"];
+
 const ROOM_CARE_ITEMS: CardDef[] = [
   { key: "need.care.bedlinen", emoji: "🛏️", Icon: BedSingle, subtitle: "need.care.bedlinen.sub" },
   { key: "need.care.trash", emoji: "🗑️", Icon: Trash2, subtitle: "need.care.trash.sub" },
@@ -174,10 +217,6 @@ const LANGUAGE_CHIPS: string[] = [
   "need.lang.other",
 ];
 
-const ICON_BY_KEY: Record<string, LucideIcon> = Object.fromEntries(
-  [...REQUEST_ITEMS, ...REPORT_ITEMS, ...ROOM_CARE_ITEMS, ...SUPPORT_ITEMS].map((c) => [c.key, c.Icon]),
-);
-
 /* ── Status: derived from elapsed time (no backend). ── */
 type StatusKey = "sent" | "preparing" | "onway" | "delivered";
 
@@ -195,7 +234,7 @@ interface NeedSomethingProps {
   initialTab?: Tab;
 }
 
-type Tab = "request" | "roomcare" | "support" | "report";
+type Tab = NeedKind;
 
 export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
   const { theme } = useTheme();
@@ -216,7 +255,9 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
   /* ── View state ── */
   const [tab, setTab] = useState<Tab>(initialTab || "request");
   const [showRequestsOverlay, setShowRequestsOverlay] = useState(false);
-  const [selected, setSelected] = useState<{ cards: CardDef[]; kind: "request" | "report" | "roomcare" | "support" } | null>(null);
+  /* My Requests filter — "all" or one of the four categories. */
+  const [mineFilter, setMineFilter] = useState<"all" | NeedRequest["kind"]>("all");
+  const [selected, setSelected] = useState<{ cards: CardDef[]; kind: NeedKind } | null>(null);
 
   /* Items ticked in the grid but not yet sent.
    *
@@ -275,7 +316,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
     };
   }, [success]);
 
-  const openSheet = (cards: CardDef[], kind: "request" | "report" | "roomcare" | "support") => {
+  const openSheet = (cards: CardDef[], kind: NeedKind) => {
     setSelected({ cards, kind });
     setNote("");
     setSelectedChip(null);
@@ -289,6 +330,10 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
 
   /* An interpreter request is useless without a language, so the sheet asks for
      one and will not send until it has it. */
+  /* Supplies and room care always show the basket layout — "N selected" plus
+     a chip per item — so one item and five items look the same. */
+  const isBatchSheet = !!selected && (selected.kind === "request" || selected.kind === "roomcare");
+
   const asksLanguage = !!selected && selected.cards.some((c) => c.key === INTERPRETER_KEY);
   const languageMissing = asksLanguage && !selectedChip;
 
@@ -296,22 +341,22 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
     if (!selected || selected.cards.length === 0) return;
     if (languageMissing) return;
     const at = Date.now();
-    /* One entry per item, so each is tracked and delivered on its own — the
-       shared note rides along with every one of them. Newest first, and the
-       list the patient ticked keeps its order within that batch. */
+    /* Everything ticked together is one order: one entry, one reference
+       number, one status — the items keep the order the patient ticked them. */
     const noteText = [
       asksLanguage && selectedChip ? t("need.support.interpreter.summary", t(selectedChip)) : "",
       note.trim(),
     ].filter(Boolean).join(" \u00b7 ");
-    const entries: NeedRequest[] = selected.cards.map((card, i) => ({
-      id: `${at}-${i}-${Math.random().toString(36).slice(2, 7)}`,
+    const entry: NeedRequest = {
+      id: `${at}-${Math.random().toString(36).slice(2, 7)}`,
       kind: selected.kind,
-      itemKey: card.key,
-      emoji: card.emoji,
+      itemKey: selected.cards[0].key,
+      itemKeys: selected.cards.map((c) => c.key),
+      emoji: selected.cards[0].emoji,
       note: noteText,
       createdAt: at,
-    }));
-    setRequests((prev) => [...entries, ...prev]);
+    };
+    setRequests((prev) => [entry, ...prev]);
     const kind = selected.kind;
     setSelected(null);
     setPicked([]);
@@ -359,57 +404,66 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
     return t(`need.status.${status}`);
   };
 
-  const allGridItems = tab === "report" ? REPORT_ITEMS : tab === "roomcare" ? ROOM_CARE_ITEMS : tab === "support" ? SUPPORT_ITEMS : REQUEST_ITEMS;
-  const gridKind: "request" | "report" | "roomcare" | "support" = tab === "report" ? "report" : tab === "roomcare" ? "roomcare" : tab === "support" ? "support" : "request";
+  const isBurjeel = theme.id === "burjeel";
+  const allGridItems =
+    tab === "report" ? (isBurjeel ? [...BURJEEL_REPORT_EXTRA, ...REPORT_ITEMS] : REPORT_ITEMS)
+      : tab === "roomcare" ? ROOM_CARE_ITEMS
+      : tab === "support" ? SUPPORT_ITEMS
+      : tab === "complaint" ? COMPLAINT_ITEMS
+      : tab === "medical" ? MEDICAL_ITEMS
+      : REQUEST_ITEMS;
+  const gridKind: NeedKind = tab;
 
-  /* ── Pagination (8 items per page) ── */
-  const ITEMS_PER_PAGE = 8;
-  const [gridPage, setGridPage] = useState(0);
-  const totalPages = Math.ceil(allGridItems.length / ITEMS_PER_PAGE);
-  const gridItems = allGridItems.slice(gridPage * ITEMS_PER_PAGE, (gridPage + 1) * ITEMS_PER_PAGE);
+  /* ── One vertical scrolling grid ──
+     Every item of the tab is laid out at once and the patient scrolls up/down
+     with a thumb — no sideways paging. The fade + chevron at the bottom edge
+     say "there is more below" and also scroll one screen when tapped. */
+  const gridItems = allGridItems;
+  const gridScrollRef = useRef<HTMLDivElement>(null);
+  const [scrollEdge, setScrollEdge] = useState({ top: true, bottom: true });
+  const updateScrollEdge = useCallback(() => {
+    const el = gridScrollRef.current;
+    if (!el) return;
+    const top = el.scrollTop <= 4;
+    const bottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
+    setScrollEdge((prev) => (prev.top === top && prev.bottom === bottom ? prev : { top, bottom }));
+  }, []);
+  /* Row height follows the space the grid has: two full rows plus a slice
+     of the third, so a patient can see there is more below without any
+     arrow telling them. */
+  /* Measured on the area that holds the grid AND the selection bar, not on
+     the grid itself — so the bar sliding in never resizes the cards. */
+  const [gridViewH, setGridViewH] = useState(0);
+  useEffect(() => {
+    const area = gridScrollRef.current?.parentElement?.parentElement;
+    if (!area) return;
+    const ro = new ResizeObserver(() => setGridViewH(area.clientHeight));
+    ro.observe(area);
+    return () => ro.disconnect();
+  }, []);
 
-  /* Reset to page 0 when switching tabs */
   /* Ticks belong to the category they were made in. */
   useEffect(() => { setPicked([]); }, [tab]);
 
-  const prevTab = useRef(tab);
+  /* Back to the top when switching tabs */
   useEffect(() => {
-    if (prevTab.current !== tab) { setGridPage(0); prevTab.current = tab; }
-  }, [tab]);
-
-  const goPage = useCallback((pg: number) => {
-    /* Infinite wrap: going past the end wraps to 0 and vice-versa */
-    if (totalPages <= 1) return;
-    setGridPage(((pg % totalPages) + totalPages) % totalPages);
-  }, [totalPages]);
-
-  /* ── Swipe / drag gesture for infinite slider ── */
-  const SWIPE_THRESHOLD = 50; // min px to trigger page change
-  const handleDragEnd = useCallback((_: any, info: PanInfo) => {
-    if (Math.abs(info.offset.x) > SWIPE_THRESHOLD) {
-      if (info.offset.x < 0) {
-        // Swiped left → next page (or right in RTL)
-        goPage(gridPage + (isRTL ? -1 : 1));
-      } else {
-        // Swiped right → prev page (or next in RTL)
-        goPage(gridPage + (isRTL ? 1 : -1));
-      }
-    }
-  }, [goPage, gridPage, isRTL]);
+    gridScrollRef.current?.scrollTo({ top: 0 });
+    requestAnimationFrame(updateScrollEdge);
+  }, [tab, updateScrollEdge]);
 
   const tabs: { key: Tab; Icon: typeof HandHelping; label: string; count?: number }[] = [
     { key: "request", Icon: HandHelping, label: t("need.tab.request") },
     { key: "roomcare", Icon: Sparkles, label: t("need.tab.roomcare") },
     { key: "support", Icon: HeartHandshake, label: t("need.tab.support") },
+    { key: "complaint", Icon: MessageSquareWarning, label: t("need.tab.complaint") },
+    { key: "medical", Icon: Stethoscope, label: t("need.tab.medical") },
     { key: "report", Icon: Wrench, label: t("need.tab.report") },
-  ];
+  ].filter((tb) => isBurjeel
+    ? !BURJEEL_HIDDEN_TABS.includes(tb.key as Tab)
+    : !BURJEEL_ONLY_TABS.includes(tb.key as Tab)) as { key: Tab; Icon: typeof HandHelping; label: string; count?: number }[];
 
-  const titleKey =
-    tab === "report" ? "need.title.report" : tab === "roomcare" ? "need.title.roomcare"
-      : tab === "support" ? "need.title.support" : "need.title.request";
-  const subKey =
-    tab === "report" ? "need.sub.report" : tab === "roomcare" ? "need.sub.roomcare"
-      : tab === "support" ? "need.sub.support" : "need.sub.request";
+  const titleKey = `need.title.${tab}`;
+  const subKey = `need.sub.${tab}`;
 
   return (
     <motion.div
@@ -543,7 +597,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
           </motion.div>
         ) : (
         <div
-          className="flex-1 min-h-0 flex flex-col overflow-hidden"
+          className="flex-1 min-h-0 flex overflow-hidden"
           style={{
             backgroundColor: theme.surface,
             borderRadius: theme.radiusXl,
@@ -551,45 +605,60 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
             border: theme.cardBorder,
           }}
         >
-          {/* Tabs strip */}
-          <div
-            className="shrink-0 flex items-center gap-3 flex-wrap px-8 pt-7 pb-5"
-            style={{ borderBottom: `1px solid ${theme.borderSubtle}` }}
+          {/* Category rail — a vertical list down the leading edge (left in
+              English, right in Arabic: the row follows the page direction).
+              Report an Issue stays in red — the one category that is not a
+              request — but sits in line with the rest. */}
+          <nav
+            className="shrink-0 flex flex-col gap-2 py-7 px-5"
+            style={{
+              width: 320,
+              backgroundColor: theme.surfaceInset,
+              borderInlineEnd: `1px solid ${theme.borderSubtle}`,
+            }}
           >
             {tabs.map((tb) => {
               const active = tab === tb.key;
               const TIcon = tb.Icon;
               const isReportTab = tb.key === "report";
               const activeBg = isReportTab ? theme.error : theme.primary;
-              /* Report stays red whether or not it is the tab you are on —
-                 it is the one tab that is not a request, and the colour is
-                 how the strip says so at a glance. */
               const restTone = isReportTab ? theme.errorOn : theme.primaryOn;
               return (
                 <button
                   key={tb.key}
                   onClick={() => setTab(tb.key)}
-                  className="flex items-center gap-2.5 cursor-pointer active:scale-95 transition-transform"
+                  className="flex items-center gap-3 w-full cursor-pointer active:scale-[0.98] transition-transform"
                   style={{
-                    padding: "13px 22px",
-                    borderRadius: theme.radiusFull,
-                    backgroundColor: active ? activeBg : theme.surface,
-                    /* The selected tab's border is its own fill: borderCardSelected
-                       is the brand glyph at 55%, which on the red Report fill read
-                       as a black ring drawn around the tab. An unselected tab
-                       carries its own tone as the stroke — neutral edges left the
-                       whole strip looking disabled until something was picked. */
-                    border: `1px solid ${active ? activeBg : restTone}`,
+                    minHeight: 64,
+                    padding: "10px 14px",
+                    borderRadius: theme.radiusMd,
+                    backgroundColor: active ? activeBg : "transparent",
+                    border: "none",
                     outline: "none",
-                    boxShadow: active ? SHADOW.sm : "none",
+                    boxShadow: active ? SHADOW.md : "none",
+                    textAlign: "start",
                   }}
                 >
-                  <TIcon size={20} color={active ? theme.textInverse : restTone} strokeWidth={2.2} />
                   <span
+                    className="shrink-0 flex items-center justify-center"
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: theme.radiusSm,
+                      backgroundColor: active
+                        ? "rgba(255,255,255,0.18)"
+                        : isReportTab ? theme.errorSubtle : theme.primarySubtle,
+                    }}
+                  >
+                    <TIcon size={20} color={active ? theme.textInverse : restTone} strokeWidth={2.2} />
+                  </span>
+                  <span
+                    className="flex-1 min-w-0"
                     style={{
                       ...TEXT_STYLE.buttonSm,
                       fontFamily,
-                      color: active ? theme.textInverse : restTone,
+                      color: active ? theme.textInverse : isReportTab ? restTone : theme.textHeading,
+                      lineHeight: 1.25,
                     }}
                   >
                     {tb.label}
@@ -617,10 +686,10 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                 </button>
               );
             })}
-          </div>
+          </nav>
 
           {/* Body */}
-          <div className="ns-scroll flex-1 min-h-0 overflow-y-auto px-8 py-7 flex flex-col">
+          <div className="ns-scroll flex-1 min-w-0 min-h-0 overflow-y-auto px-8 py-7 flex flex-col">
             {/* Section heading */}
             <div className="shrink-0 mb-4">
               <h3 style={{ ...TEXT_STYLE.pageTitle, fontFamily, color: theme.textHeading }}>
@@ -632,35 +701,41 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
             </div>
 
               <div className="flex-1 min-h-0 flex flex-col">
-                {/* Cards grid — lifted up to make room for pagination */}
-                <div className="flex-1 min-h-0 flex items-start justify-center pt-1">
-                  <AnimatePresence mode="wait">
+                {/* Cards grid — scrolls vertically; fades + chevrons mark more above/below */}
+                <div className="flex-1 min-h-0 relative">
+                  <div
+                    ref={gridScrollRef}
+                    onScroll={updateScrollEdge}
+                    className="ns-scroll absolute inset-0 overflow-y-auto"
+                    style={{ touchAction: "pan-y", overscrollBehavior: "contain", paddingBottom: 8 }}
+                  >
                     <motion.div
-                      key={`page-${gridPage}-${tab}`}
-                      initial={{ opacity: 0, x: 40 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -40 }}
+                      key={`grid-${tab}`}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                      drag={tab === "request" && totalPages > 1 ? "x" : false}
-                      dragConstraints={{ left: 0, right: 0 }}
-                      dragElastic={0.18}
-                      onDragEnd={handleDragEnd}
+                      onAnimationComplete={updateScrollEdge}
                       className="grid w-full"
                       style={{
-                        gridTemplateColumns: (tab === "report" || tab === "roomcare" || tab === "support") ? "repeat(3, 1fr)" : "repeat(4, 1fr)",
-                        gridTemplateRows: "repeat(2, 1fr)",
+                        gridTemplateColumns: tab !== "request" ? "repeat(3, 1fr)" : "repeat(4, 1fr)",
+                        /* More than two rows: 2 rows + ~35% of the next one.
+                           Two or fewer: the two rows share the space, as the
+                           paged grid did. */
+                        gridAutoRows: gridViewH > 0
+                          ? `${Math.floor(
+                              allGridItems.length > (tab !== "request" ? 6 : 8)
+                                ? (gridViewH - 2 * 20) / 2.35
+                                : (gridViewH * 0.92 - 20) / 2,
+                            )}px`
+                          : "200px",
                         columnGap: "24px",
                         rowGap: "20px",
-                        maxHeight: "92%",
-                        height: "100%",
-                        maxWidth: "100%",
-                        cursor: tab === "request" && totalPages > 1 ? "grab" : undefined,
-                        touchAction: "pan-y",
+                        padding: "4px 4px 0",
                       }}
                     >
                     {gridItems.map((card) => {
                       const CardIcon = card.Icon;
-                      const isCompactCard = tab === "report" || tab === "roomcare" || tab === "support";
+                      const isCompactCard = tab !== "request";
                       const isReport = tab === "report";
                       const isPicked = picked.some((c) => c.key === card.key);
                       const isCardSelected = isMultiTab
@@ -828,7 +903,27 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       );
                     })}
                     </motion.div>
-                  </AnimatePresence>
+                  </div>
+
+                  {/* Edge fades — a soft hint that the list continues (no arrows) */}
+                  {(["top", "bottom"] as const).map((edge) => {
+                    const hidden = scrollEdge[edge];
+                    return (
+                      <div
+                        key={edge}
+                        className="absolute inset-x-0 flex justify-center transition-opacity duration-300"
+                        style={{
+                          [edge]: 0,
+                          height: 44,
+                          opacity: hidden ? 0 : 1,
+                          pointerEvents: "none",
+                          alignItems: edge === "top" ? "flex-start" : "flex-end",
+                          background: `linear-gradient(to ${edge === "top" ? "bottom" : "top"}, ${theme.surface}, transparent)`,
+                        }}
+                      >
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* One constant-height footer under the grid: page dots in the
@@ -836,83 +931,68 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                     and the send button on either side. The row is always there
                     whether or not anything is ticked, so choosing an item never
                     resizes the cards above it. */}
-                {(isMultiTab || totalPages > 1) && (
-                  <div className="shrink-0 relative flex items-center" style={{ height: 56 }}>
-                    {totalPages > 1 && (
-                      <div
-                        className="absolute inset-0 flex items-center justify-center gap-3"
-                        style={{ pointerEvents: "none" }}
+                {/* Selection bar — the panel's white footer row (same as Meal
+                    Ordering's), only while something is ticked. The grid rows are a fixed
+                    height, so the bar arriving never resizes a card. */}
+                <AnimatePresence>
+                  {isMultiTab && picked.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 16 }}
+                      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                      className="shrink-0 flex items-center justify-between"
+                      style={{
+                        margin: "16px -32px -28px",
+                        padding: "20px 40px",
+                        backgroundColor: theme.surface,
+                        borderTop: `1.5px solid ${theme.borderCardColor}`,
+                      }}
+                    >
+                      <button
+                        onClick={() => setPicked([])}
+                        className="flex items-center gap-[10px] cursor-pointer active:scale-95 transition-transform"
+                        style={{
+                          height: 60,
+                          padding: "0 28px",
+                          borderRadius: theme.radiusMd,
+                          backgroundColor: theme.surface,
+                          border: `1.5px solid ${theme.primary}`,
+                          outline: "none",
+                          boxShadow: SHADOW.md,
+                        }}
                       >
-                        {Array.from({ length: totalPages }).map((_, i) => (
-                          <button
-                            key={i}
-                            onClick={() => goPage(i)}
-                            className="rounded-full cursor-pointer transition-all duration-300"
-                            style={{
-                              pointerEvents: "auto",
-                              width: i === gridPage ? "24px" : "8px",
-                              height: "8px",
-                              backgroundColor: i === gridPage ? theme.primary : theme.borderDefault,
-                              border: "none",
-                              outline: "none",
-                              padding: 0,
-                              transition: "width 0.3s ease, background-color 0.3s ease",
-                            }}
-                            aria-label={`Page ${i + 1}`}
-                          />
-                        ))}
-                      </div>
-                    )}
-
-                    {isMultiTab && picked.length > 0 && (
-                      <>
-                        <div className="flex items-center gap-1 relative">
-                          <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textHeading }}>
-                            {t("need.multi.selected", String(picked.length))}
-                          </span>
-                          <button
-                            onClick={() => setPicked([])}
-                            className="cursor-pointer active:scale-95 transition-transform"
-                            style={{
-                              padding: "8px 12px",
-                              backgroundColor: "transparent",
-                              border: "none",
-                              outline: "none",
-                            }}
-                          >
-                            <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textMuted, textDecoration: "underline" }}>
-                              {t("need.multi.clear")}
-                            </span>
-                          </button>
-                        </div>
-                        <div className="flex-1" />
-                        <button
-                          onClick={() => openSheet(picked, gridKind)}
-                          className="relative flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] transition-transform"
-                          style={{
-                            height: 48,
-                            padding: "0 24px",
-                            borderRadius: theme.radiusFull,
-                            backgroundColor: theme.primary,
-                            border: "none",
-                            outline: "none",
-                            boxShadow: SHADOW.md,
-                          }}
-                        >
-                          <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textInverse }}>
-                            {t("need.multi.continue")}
-                          </span>
-                          <Send
-                            size={18}
-                            color={theme.textInverse}
-                            strokeWidth={2.4}
-                            style={isRTL ? { transform: "scaleX(-1)" } : undefined}
-                          />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
+                        <X size={20} color={theme.primaryOn} strokeWidth={2.5} />
+                        <span style={{ ...TEXT_STYLE.button, fontWeight: WEIGHT.semibold, fontFamily, color: theme.primaryOn }}>
+                          {t("need.multi.clear")}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => openSheet(picked, gridKind)}
+                        className="flex items-center justify-center gap-[10px] cursor-pointer active:scale-[0.97] transition-transform"
+                        style={{
+                          height: 60,
+                          padding: "0 32px",
+                          borderRadius: theme.radiusMd,
+                          backgroundColor: theme.primary,
+                          border: "none",
+                          outline: "none",
+                          boxShadow: SHADOW.md,
+                        }}
+                      >
+                        <span style={{ ...TEXT_STYLE.button, fontFamily, color: theme.textInverse }}>
+                          {t("need.multi.continue")} ({picked.length})
+                        </span>
+                        <ChevronRight
+                          size={22}
+                          color={theme.textInverse}
+                          strokeWidth={2.4}
+                          style={isRTL ? { transform: "scaleX(-1)" } : undefined}
+                        />
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
           </div>
         </div>
@@ -963,7 +1043,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                   {(() => {
                     /* JSX cannot name a component through an index, so the
                        glyph is resolved before it is rendered. */
-                    const SheetIcon = selected.cards.length === 1 ? selected.cards[0].Icon : ListChecks;
+                    const SheetIcon = isBatchSheet ? ListChecks : selected.cards[0].Icon;
                     return (
                       <SheetIcon
                         size={34}
@@ -975,19 +1055,19 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p style={{ ...TEXT_STYLE.sectionTitle, fontFamily, color: theme.textHeading }}>
-                    {selected.cards.length === 1
-                      ? t(selected.cards[0].key)
-                      : t("need.multi.selected", String(selected.cards.length))}
+                    {isBatchSheet
+                      ? t("need.multi.selected", String(selected.cards.length))
+                      : t(selected.cards[0].key)}
                   </p>
                   <p style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textMuted, marginTop: 2 }}>
-                    {selected.kind === "report" ? t("need.report.whatIssue") : t("need.notes.title")}
+                    {selected.kind === "report" ? t("need.report.whatIssue") : selected.kind === "complaint" ? t("need.complaint.whatHappened") : t("need.notes.title")}
                   </p>
                 </div>
               </div>
 
               {/* What is about to be sent — a last look before it goes, and a
                   way to drop one without going back to the grid. */}
-              {selected.cards.length > 1 && (
+              {isBatchSheet && (
                 <div className="flex flex-wrap gap-2 mb-4">
                   {selected.cards.map((card) => (
                     <button
@@ -1099,7 +1179,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                 onChange={(e) => setNote(e.target.value)}
                 /* "Describe the issue" is the wording for a fault report; a
                    supplies request is not an issue. */
-                placeholder={t(selected.kind === "report" ? "need.notes.placeholder" : "need.notes.placeholderRequest")}
+                placeholder={t(selected.kind === "report" || selected.kind === "complaint" ? "need.notes.placeholder" : "need.notes.placeholderRequest")}
                 rows={3}
                 dir={isRTL ? "rtl" : "ltr"}
                 style={{
@@ -1214,10 +1294,69 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                   ✕
                 </button>
               </div>
+              {/* Category tabs + total — fixed above the list; only the list scrolls */}
+              {(() => {
+                const filters: { key: "all" | NeedRequest["kind"]; label: string }[] = [
+                  { key: "all", label: t("need.mine.all") },
+                  { key: "request", label: t("need.tab.request") },
+                  { key: "roomcare", label: t("need.tab.roomcare") },
+                  ...(isBurjeel ? [] : [{ key: "support" as const, label: t("need.tab.support") }]),
+                  ...(isBurjeel ? [
+                    { key: "complaint" as const, label: t("need.tab.complaint") },
+                    { key: "medical" as const, label: t("need.tab.medical") },
+                  ] : []),
+                  { key: "report", label: t("need.tab.report") },
+                ];
+                const shown = mineFilter === "all" ? requests : requests.filter((r) => r.kind === mineFilter);
+                return (
+                  <div className="shrink-0 flex items-center justify-between gap-4 px-8 pt-6 pb-4">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      {filters.map((f) => {
+                        const active = mineFilter === f.key;
+                        const count = f.key === "all" ? requests.length : requests.filter((r) => r.kind === f.key).length;
+                        return (
+                          <button
+                            key={f.key}
+                            onClick={() => setMineFilter(f.key)}
+                            className="flex items-center gap-3 cursor-pointer active:scale-95 transition-transform"
+                            style={{
+                              padding: "13px 22px",
+                              borderRadius: theme.radiusFull,
+                              backgroundColor: active ? theme.primary : theme.surface,
+                              border: active ? "none" : `1.5px solid ${theme.borderCardColor}`,
+                              outline: "none",
+                            }}
+                          >
+                            <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: active ? theme.textInverse : theme.textMuted }}>
+                              {f.label}
+                            </span>
+                            <span
+                              className="flex items-center justify-center"
+                              style={{
+                                minWidth: 28, height: 28, padding: "0 8px",
+                                borderRadius: theme.radiusFull,
+                                backgroundColor: active ? "rgba(255,255,255,0.15)" : theme.tileInactiveBg,
+                                fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.semibold,
+                                color: active ? theme.textInverse : theme.textHeading,
+                              }}
+                            >
+                              {count}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <span className="shrink-0" style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.semibold, color: theme.textMuted }}>
+                      {t("need.mine.count", String(shown.length))}
+                    </span>
+                  </div>
+                );
+              })()}
               {/* Overlay content */}
-              <div className="flex-1 min-h-0 overflow-y-auto px-8 py-6">
-                {requests.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center text-center gap-4 min-h-[300px]">
+              <div className="flex-1 min-h-0 overflow-y-auto px-8 pt-2 pb-6 flex flex-col">
+                {(mineFilter === "all" ? requests : requests.filter((r) => r.kind === mineFilter)).length === 0 ? (
+                  /* flex-1: centred in the space under the tabs, not pinned to the top */
+                  <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 min-h-[300px]">
                     <div
                       className="flex items-center justify-center"
                       style={{
@@ -1229,21 +1368,54 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       <Inbox size={44} color={theme.primaryOn} strokeWidth={1.8} />
                     </div>
                     <p style={{ ...TEXT_STYLE.sectionTitle, fontFamily, color: theme.textHeading }}>
-                      {t("need.empty.title")}
+                      {mineFilter === "report" ? t("need.empty.reportTitle") : t("need.empty.title")}
                     </p>
-                    <p style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textMuted, maxWidth: 420 }}>
-                      {t("need.empty.body")}
+                    {/* The category's own subheading, and the button goes
+                        straight to it. */}
+                    <p style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textMuted, maxWidth: 560 }}>
+                      {mineFilter === "all" ? t("need.header.subtitle") : t(`need.sub.${mineFilter}`)}
                     </p>
+                    <button
+                      onClick={() => {
+                        setShowRequestsOverlay(false);
+                        setTab(mineFilter === "all" ? "request" : mineFilter);
+                      }}
+                      className="flex items-center gap-[10px] cursor-pointer active:scale-95 transition-transform"
+                      style={{
+                        marginTop: 8,
+                        height: 60,
+                        padding: "0 28px",
+                        borderRadius: theme.radiusMd,
+                        backgroundColor: theme.surface,
+                        border: `1.5px solid ${theme.primary}`,
+                        outline: "none",
+                        boxShadow: SHADOW.md,
+                      }}
+                    >
+                      <span style={{ ...TEXT_STYLE.button, fontWeight: WEIGHT.semibold, fontFamily, color: theme.primaryOn }}>
+                        {t("need.empty.goTo", t(`need.tab.${mineFilter === "all" ? "request" : mineFilter}`))}
+                      </span>
+                      <ChevronRight size={22} color={theme.primaryOn} strokeWidth={2.5} style={isRTL ? { transform: "scaleX(-1)" } : undefined} />
+                    </button>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-4">
-                    {requests.map((r) => {
+                    {(mineFilter === "all" ? requests : requests.filter((r) => r.kind === mineFilter)).map((r) => {
                       const status = deriveStatus(r.createdAt, now);
                       const st = STATUS_STYLE[status];
                       const StatusIcon = st.Icon;
-                      const isComplaint = r.kind === "report";
+                      const isComplaint = r.kind === "report" || r.kind === "complaint";
                       const typeColor = isComplaint ? theme.accent : theme.primary;
-                      const RowIcon = ICON_BY_KEY[r.itemKey];
+                      const orderKeys = r.itemKeys && r.itemKeys.length > 0 ? r.itemKeys : [r.itemKey];
+                      /* Each row wears its category's icon — the same glyph as
+                         the tab it was sent from. */
+                      const RowIcon =
+                        r.kind === "report" ? Wrench
+                          : r.kind === "roomcare" ? Sparkles
+                          : r.kind === "support" ? HeartHandshake
+                          : r.kind === "complaint" ? MessageSquareWarning
+                          : r.kind === "medical" ? Stethoscope
+                          : HandHelping;
                       return (
                         <div
                           key={r.id}
@@ -1260,14 +1432,10 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                             style={{
                               width: 60, height: 60,
                               borderRadius: theme.radiusMd,
-                              backgroundColor: theme.primaryLight,
+                              backgroundColor: isComplaint ? theme.errorSubtle : theme.primaryLight,
                             }}
                           >
-                            {RowIcon ? (
-                              <RowIcon size={30} color={theme.primaryOnLight} strokeWidth={1.8} />
-                            ) : (
-                              r.emoji
-                            )}
+                            <RowIcon size={30} color={isComplaint ? theme.errorOn : theme.primaryOnLight} strokeWidth={1.8} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <span
@@ -1288,7 +1456,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                               {isComplaint ? t("need.type.complaint") : t("need.type.request")}
                             </span>
                             <p style={{ ...TEXT_STYLE.cardTitle, fontFamily, color: theme.textHeading }}>
-                              {t(r.itemKey)}
+                              {orderKeys.map((k) => t(k)).join(", ")}
                             </p>
                             {r.note ? (
                               <p

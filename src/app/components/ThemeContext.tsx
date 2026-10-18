@@ -1082,9 +1082,11 @@ import hospitalImg from "../../assets/fakeeh-jeddah-hero.webp";
 import burjeelLogo from "../../assets/logos/burjeel-logo.png";
 import burjeelHero from "../../assets/6c870dc0bd960be4275cdbc07d5394bb50ec781e.webp";
 import slhLogo from "../../assets/000bda4db783fe15cbd489d69579eb6e0e831a8a.webp";
+import slhLogoDark from "../../assets/logos/slh-logo-dark.webp";
 import slhHero from "../../assets/e956f98cfa0d9f06f0dd2befe535fed91ed51d1e.webp";
 
 import dallahLogo from "../../assets/DallahLogo.webp";
+import dallahLogoDark from "../../assets/logos/dallah-logo-dark.webp";
 import dallahHero from "../../assets/dallah-hero-welcome.webp";
 
 import caremedLogo from "../../assets/CareMedicalLogo.webp";
@@ -1168,6 +1170,7 @@ export const SLH_CORE: HospitalCoreConfig = {
   fontFamily: "'Poppins', sans-serif",
   fontFamilyAr: "'Almarai', sans-serif",
   logoUrl: slhLogo,
+  logoUrlDark: slhLogoDark,
   hospitalWebsiteUrl: "https://www.slouishospital.com/en",
   heroImageUrl: slhHero,
   heroCropPosition: "50% 65%",
@@ -1187,6 +1190,7 @@ export const DALLAH_CORE: HospitalCoreConfig = {
   fontFamily: "'Mulish', sans-serif",
   fontFamilyAr: "'Almarai', sans-serif",
   logoUrl: dallahLogo,
+  logoUrlDark: dallahLogoDark,
   hospitalWebsiteUrl: "https://www.dallah-hospital.com/english/home",
   heroImageUrl: dallahHero,
   heroCropPosition: "50% 45%",

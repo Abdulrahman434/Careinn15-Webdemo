@@ -42,7 +42,9 @@ import { PatientPreferenceForm } from "./components/PatientPreferenceForm";
 import { FoodOrdering } from "./components/FoodOrdering";
 import { NeedSomething } from "./components/NeedSomething";
 import { OrderProvider, useOrders } from "./components/OrderStore";
-import { ToastProvider, useToast } from "./components/ToastNotifications";
+import { ToastProvider } from "./components/ToastNotifications";
+import { ImageNotice, imageAdFor, adNumberOf } from "./components/ImageNotice";
+import { WeatherPanel } from "./components/WeatherPanel";
 import { dueReminder, reminderText, alreadyFired, markFired } from "./components/mealReminders";
 import { windowClock } from "./components/orderWindow";
 import { AuthProvider, useAuth } from "./components/AuthContext";
@@ -179,10 +181,10 @@ const isBeforeToday = (dateStr: string | null | undefined): boolean => {
   return d.getTime() < today.getTime();
 };
 
-/** Screensaver idle delay: thirty seconds, for every screen. The onboarding
- *  and settings choice is no longer read — the delay is set here, not per
- *  device. */
-const SCREENSAVER_TIMEOUT_MS = 30_000;
+/** Screensaver idle delay: ten minutes, for every hospital and every screen.
+ *  The onboarding and settings choice is no longer read — the delay is set
+ *  here, not per device. */
+const SCREENSAVER_TIMEOUT_MS = 10 * 60_000;
 const getScreensaverTimeoutMs = (): number => SCREENSAVER_TIMEOUT_MS;
 
 const getSavedLayoutMode = (): 1 | 2 | 3 => {
@@ -276,7 +278,6 @@ function BedsideScreen() {
   const { patientAdmitted, setPatientAdmitted, theme, darkMode, switchConfig, prayerAlarm, layout2Theme, setLocale, setDarkMode, setPrayerAlarm, activeConfigId } = useTheme();
   const { isFullAccess, lockedHospitalId, logout } = useAuth();
   const { t, locale, isRTL, dir, fontFamily } = useLocale();
-  const { showToast } = useToast();
   const { orders } = useOrders();
   const scale = useScreenScale();
   const isOnline = useNetworkStatus();
@@ -556,7 +557,9 @@ function BedsideScreen() {
   const [foodOrderInitialView, setFoodOrderInitialView] = useState<"order" | "my-orders" | undefined>(undefined);
   const [activeCareRole, setActiveCareRole] = useState<"nurse" | "doctor" | null>(null);
   const [layoutVersion, setLayoutVersion] = useState<1 | 2 | 3>(1);
+  const [showWeather, setShowWeather] = useState(false);
   const [activeBroadcast, setActiveBroadcast] = useState<BroadcastNotification | null>(null);
+  const [activeImageAd, setActiveImageAd] = useState<{ src: string; alt: string } | null>(null);
   const [acknowledgedBroadcasts, setAcknowledgedBroadcasts] = useState<BroadcastNotification[]>([]);
   const [activeGame, setActiveGame] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<string | null>(null);
@@ -594,25 +597,25 @@ function BedsideScreen() {
       if (!due || alreadyFired(due.slot)) return;
       markFired(due.slot);
       const { title, body } = reminderText(due, t, mealClock);
-      showToast({
-        variant: "meal",
-        category: t("toast.meal.category"),
-        title,
-        body,
-        /* Nothing can be ordered once the window has shut, so the closing
-           notice is a statement, not an invitation. */
-        actionText: due.kind === "closed" ? undefined : t("toast.meal.orderNow"),
-        actionColor: due.kind === "last" ? "#D97706" : "#2563EB",
-        onTap: due.kind === "closed" ? undefined : () => {
-          setFoodOrderInitialView(undefined);
-          setShowFoodOrder(true);
-        },
-      });
+      /* A Hospital Notice, like every other notice: "Order Now" opens Meal
+         Ordering. Text is already in the screen's language, so it fills both
+         slots. */
+      const orderNow = t("toast.meal.orderNow");
+      setBroadcastQueue((prev) => [...prev, {
+        id: `meal-reminder-${due.slot}`,
+        title: { en: title, ar: title },
+        body: { en: body, ar: body },
+        priority: "info",
+        timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
+        createdAt: Date.now(),
+        cta: { en: orderNow, ar: orderNow },
+        ctaAction: "open-meal-ordering",
+      }]);
     };
     check();
     const id = setInterval(check, 60 * 1000);
     return () => clearInterval(id);
-  }, [orders, showToast, t, mealClock, showFoodOrder]);
+  }, [orders, t, mealClock, showFoodOrder]);
 
   // Queue of immediate alerts to show as broadcast popups
   const [broadcastQueue, setBroadcastQueue] = useState<BroadcastNotification[]>([]);
@@ -626,12 +629,13 @@ function BedsideScreen() {
       const seen = new Set(JSON.parse(seenRaw ?? "[]"));
       const hidden = new Set(JSON.parse(hiddenRaw ?? "[]"));
 
-      const initialUnreadIds = ["cta-survey", "cta-pdf", "cta-image", "cta-video", "cta-url"];
+      const initialUnreadIds = ["cta-survey", "cta-pdf", "cta-image", "cta-video", "cta-url",
+        ...[1, 2].filter((k) => imageAdFor(theme.id, locale, k)).map((k) => `cta-ad-${k}`)];
       return initialUnreadIds.filter(id => !seen.has(id) && !hidden.has(id)).length;
     } catch {
       return 5;
     }
-  }, [notifTrigger]);
+  }, [notifTrigger, theme.id, locale]);
 
   const getUnreadCount = useCallback(() => {
     const seen = getSeenAlertIds();
@@ -643,7 +647,7 @@ function BedsideScreen() {
       return !(createdBeforeToday && !modifiedToday);
     }).length;
 
-    const laterCount = acknowledgedBroadcasts.filter(b => b.isLater && !b.acknowledgedAt && !b.isMissed && !b.clearedAt).length;
+    const laterCount = acknowledgedBroadcasts.filter(b => (b.isLater || b.isMissed) && !b.acknowledgedAt && !b.clearedAt).length;
 
     return getHardcodedUnreadCount() + activeApiCount + laterCount;
   }, [apiNotifications, notifTrigger, getHardcodedUnreadCount, acknowledgedBroadcasts]);
@@ -748,13 +752,25 @@ function BedsideScreen() {
     }
   }, [showTour, fetchAlerts]);
 
+  /* Only process the queue if the tour is NOT active AND the user has at least
+     seen/skipped the tour once. Notices never stack: the newest one takes the
+     screen, and whatever it displaces (the notice already showing, or older
+     ones still waiting) goes to the notifications panel as Check Later. */
   useEffect(() => {
-    // Only process the queue if the tour is NOT active AND the user has at least seen/skipped the tour once
-    if (!showTour && tourDismissed && !activeBroadcast && broadcastQueue.length > 0) {
-      const [next, ...rest] = broadcastQueue;
-      setActiveBroadcast(next);
-      setBroadcastQueue(rest);
+    if (showTour || !tourDismissed || broadcastQueue.length === 0) return;
+    const next = broadcastQueue[broadcastQueue.length - 1];
+    const displaced = [...(activeBroadcast ? [activeBroadcast] : []), ...broadcastQueue.slice(0, -1)];
+    if (displaced.length > 0) {
+      if (activeBroadcast?.type === "prayer" && azanAudioRef.current) {
+        azanAudioRef.current.pause();
+        azanAudioRef.current.currentTime = 0;
+      }
+      const later = displaced.reverse().map((b) => ({ ...b, isLater: true, acknowledgedAt: undefined }));
+      setAcknowledgedBroadcasts((prev) => [...later, ...prev].slice(0, MAX_ACKNOWLEDGED_BROADCASTS));
+      setNotifTrigger((p) => p + 1);
     }
+    setActiveBroadcast(next);
+    setBroadcastQueue([]);
   }, [activeBroadcast, broadcastQueue, showTour, tourDismissed]);
 
   // Check for expired/missed notifications every 2 seconds
@@ -770,11 +786,7 @@ function BedsideScreen() {
             azanAudioRef.current.pause();
             azanAudioRef.current.currentTime = 0;
           }
-          const missedNotif: BroadcastNotification = {
-            ...activeBroadcast,
-            isMissed: true,
-            missedAt: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
-          };
+          const missedNotif: BroadcastNotification = { ...activeBroadcast, isLater: true };
           setActiveBroadcast(null);
           setAcknowledgedBroadcasts(prev =>
             [missedNotif, ...prev].slice(0, MAX_ACKNOWLEDGED_BROADCASTS));
@@ -788,11 +800,7 @@ function BedsideScreen() {
 
         prevQueue.forEach(item => {
           if (item.createdAt && now - item.createdAt > TIMEOUT_MS) {
-            expired.push({
-              ...item,
-              isMissed: true,
-              missedAt: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
-            });
+            expired.push({ ...item, isLater: true });
           } else {
             active.push(item);
           }
@@ -951,7 +959,7 @@ function BedsideScreen() {
         if (!anyOtherOverlayOpen) {
           setShowTasbih(true);
         }
-      }, getScreensaverTimeoutMs()); // onboarding preference, default 10 min
+      }, getScreensaverTimeoutMs());
     };
 
     const handleUserActivity = () => {
@@ -1186,8 +1194,14 @@ function BedsideScreen() {
             [acknowledged, ...list].slice(0, MAX_ACKNOWLEDGED_BROADCASTS));
           setNotifTrigger((p) => p + 1);
 
+          // Meal reminder: "Order Now" opens Meal Ordering
+          if (actionType === "read" && prev.ctaAction === "open-meal-ordering") {
+            setFoodOrderInitialView(undefined);
+            setShowFoodOrder(true);
+          }
+
           // Handle CTA Actions if present and user clicked "read" (main CTA button)
-          if (actionType === "read" && (prev.ctaAction || prev.ctaUrl)) {
+          else if (actionType === "read" && (prev.ctaAction || prev.ctaUrl)) {
             const url = prev.ctaUrl || "";
             let action = prev.ctaAction;
 
@@ -1302,8 +1316,8 @@ function BedsideScreen() {
 
     setAcknowledgedBroadcasts((list) => {
       const settled = list.map(b =>
-        b.isLater && !b.acknowledgedAt && !b.isMissed
-          ? { ...b, isLater: false, acknowledgedAt: nowStr }
+        (b.isLater || b.isMissed) && !b.acknowledgedAt
+          ? { ...b, isLater: false, isMissed: false, acknowledgedAt: nowStr }
           : b);
       const already = new Set(settled.map(b => b.id));
       const fresh = answered.filter(b => !already.has(b.id));
@@ -1367,6 +1381,17 @@ function BedsideScreen() {
     } catch (e) {
       console.error(e);
     }
+    // Image-only notification: the picture on its own, no notice card
+    const adNumber = adNumberOf(notif.id);
+    if (adNumber !== null) {
+      const ad = imageAdFor(theme.id, locale, adNumber);
+      if (ad) {
+        setActiveImageAd(ad);
+        setShowNotifications(false);
+        return;
+      }
+    }
+
     // Map textKey to realistic broadcast content
     const contentMap = hospitalNoticeContent(theme.patientGuidePdf);
 
@@ -1398,7 +1423,7 @@ function BedsideScreen() {
        With [] it kept whichever it was handed on the first render, so a
        hospital switched at runtime would have served the previous brand's
        PDF and a freshly fetched alert would have opened empty. */
-  }, [apiNotifications, theme.patientGuidePdf]);
+  }, [apiNotifications, theme.patientGuidePdf, theme.id, locale]);
 
   const handleOpenCategory = (categoryKey: string) => {
     if (categoryKey === "About Us") {
@@ -1869,10 +1894,10 @@ function BedsideScreen() {
             <TopBar
               onFajrTap={() => setLayoutVersion((v) => (v === 3 ? 1 : 3))}
               onDhuhrTap={() => setShowConfigurator(true)}
-              onAsrTap={undefined}
+              onAsrTap={() => setLayoutVersion((v) => (v === 1 ? 2 : 1))}
               onMaghribTap={() => handlePrayerTimeReached(Prayer.Maghrib)}
               onIshaTap={() => setShowTasbih(true)}
-              onWeatherTap={() => setLayoutVersion((v) => (v === 1 ? 2 : 1))}
+              onWeatherTap={() => setShowWeather(true)}
               onSettingsTap={() => setShowSettings(true)}
               onBellTap={() => setShowNotifications(true)}
               unreadCount={getUnreadCount()}
@@ -2326,11 +2351,26 @@ function BedsideScreen() {
 
         <RemoteControl />
 
+        {/* Weather — three cities, from the top-bar weather pill */}
+        {showWeather && <WeatherPanel onClose={() => setShowWeather(false)} />}
+
+        {/* Image-only notification */}
+        {activeImageAd && (
+          <ImageNotice src={activeImageAd.src} alt={activeImageAd.alt} onClose={() => setActiveImageAd(null)} />
+        )}
+
         {/* Hospital Broadcast Overlay */}
         {activeBroadcast && (
           <HospitalBroadcast
+            key={activeBroadcast.id}
             notification={activeBroadcast}
             onAcknowledge={handleBroadcastAcknowledge}
+            onMuteAzan={() => {
+              if (azanAudioRef.current) {
+                azanAudioRef.current.pause();
+                azanAudioRef.current.currentTime = 0;
+              }
+            }}
           />
         )}
 

@@ -21,7 +21,9 @@ import imgPrayerTimesPage from "../../assets/prayer times page.webp";
 import imgWelcomeImage from "../../assets/Welcome Image.webp";
 import imgLanguage from "../../assets/language.webp";
 import imgNotificationSet from "../../assets/notificationset.webp";
-import imgMosque from "../../assets/b51acb5e2ec4a2c930572c53103b020b12e76ee2.webp";
+/* Transparent line cut-out of the mosque icon — used as a CSS mask, so it
+   needs real transparency (the full-colour app icon renders as a square). */
+import imgMosque from "../../assets/onboarding-prayer-mosque.webp";
 
 const STEP_BACKGROUNDS: Record<string, string> = {
   language: imgLanguage,
@@ -674,7 +676,7 @@ export function OnboardingWizard({
 
   return (
     <div
-      className="fixed inset-0 z-[8000] flex flex-col overflow-hidden"
+      className="ob-root fixed inset-0 z-[8000] flex flex-col overflow-hidden"
       dir={dir}
       style={{
         display: hidden ? "none" : "flex",
@@ -693,10 +695,54 @@ export function OnboardingWizard({
         .ob-scroll::-webkit-scrollbar-track { background: transparent; }
         .ob-scroll::-webkit-scrollbar-thumb { background: ${t.borderDefault}; border-radius: 100px; border: 3px solid transparent; background-clip: content-box; }
         @keyframes obStepIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Step body: centred while it fits, scrolls from the top when it
+           doesn't. Auto margins are the "safe" centring — a step taller
+           than the card can never be pushed up out of reach. */
+        .ob-body { flex: 1 0 auto !important; justify-content: flex-start !important; }
+        .ob-step { margin-top: auto; margin-bottom: auto; }
+
+        /* ── Small screens (phones, small tablets in portrait) ── */
+        @media (max-width: 640px) {
+          .ob-header { gap: 10px !important; padding: 14px 14px 10px !important; }
+          .ob-header-divider, .ob-header-icon, .ob-subtitle { display: none !important; }
+          .ob-title { font-size: 20px !important; line-height: 24px !important; }
+          .ob-content { padding: 0 10px 10px !important; }
+          .ob-progress { gap: 10px !important; padding: 14px 14px 0 !important; }
+          .ob-progress-label { min-width: 0 !important; font-size: 12px !important; }
+          .ob-body { padding: 18px 16px 76px !important; align-items: center !important; }
+          .ob-step-icon { width: 60px !important; height: 60px !important; margin-bottom: 14px !important; }
+          .ob-step-title { font-size: 21px !important; line-height: 27px !important; margin-bottom: 16px !important; }
+          .ob-hero { display: none !important; }
+          .ob-skip { left: 16px !important; right: auto !important; bottom: 16px !important; }
+          .ob-root .grid-cols-2 { grid-template-columns: 1fr !important; }
+          .ob-root .grid-cols-3, .ob-root .grid-cols-4 { grid-template-columns: repeat(2, 1fr) !important; }
+          .ob-root .grid { gap: 10px !important; }
+        }
+        /* Very short windows: the white card no longer has to fit the screen.
+           The whole page scrolls instead, so nothing is squeezed or clipped. */
+        @media (max-height: 560px) {
+          .ob-root { overflow-y: auto !important; }
+          .ob-content, .ob-scroll { flex: none !important; min-height: 0 !important; overflow: visible !important; }
+          .ob-body { flex: none !important; padding-top: 18px !important; padding-bottom: 72px !important; }
+          .ob-header { gap: 10px !important; padding: 12px 16px 10px !important; }
+          .ob-header-divider, .ob-header-icon, .ob-subtitle, .ob-hero { display: none !important; }
+          .ob-title { font-size: 20px !important; line-height: 24px !important; }
+          .ob-step-icon { width: 56px !important; height: 56px !important; margin-bottom: 12px !important; }
+          .ob-step-title { font-size: 22px !important; line-height: 28px !important; margin-bottom: 16px !important; }
+        }
+        /* Short landscape screens: tighter vertical rhythm */
+        @media (max-height: 700px) and (min-width: 641px) {
+          .ob-header { padding-top: 16px !important; padding-bottom: 12px !important; }
+          .ob-content { padding-bottom: 16px !important; }
+          .ob-body { padding-top: 20px !important; padding-bottom: 72px !important; }
+          .ob-step-icon { width: 64px !important; height: 64px !important; margin-bottom: 14px !important; }
+          .ob-step-title { margin-bottom: 16px !important; }
+        }
       `}</style>
 
       {/* ─── Page header (white on brand gradient) ─── */}
-      <div className="shrink-0 flex items-center gap-5 px-10 pt-8 pb-5 relative z-10">
+      <div className="ob-header shrink-0 flex items-center gap-5 px-10 pt-8 pb-5 relative z-10">
         <HeaderButton
           onClick={() => {
             if (stepId !== "consent") {
@@ -707,16 +753,16 @@ export function OnboardingWizard({
         >
           <Home size={22} style={{ color: "#fff" }} />
         </HeaderButton>
-        <div style={{ width: "1.5px", height: "32px", backgroundColor: "rgba(255,255,255,0.18)", borderRadius: "1px" }} />
+        <div className="ob-header-divider" style={{ width: "1.5px", height: "32px", backgroundColor: "rgba(255,255,255,0.18)", borderRadius: "1px" }} />
         <div className="flex items-center gap-4 flex-1 min-w-0">
-          <div className="flex items-center justify-center shrink-0" style={{ width: "52px", height: "52px", borderRadius: "14px", backgroundColor: "rgba(255,255,255,0.12)" }}>
+          <div className="ob-header-icon flex items-center justify-center shrink-0" style={{ width: "52px", height: "52px", borderRadius: "14px", backgroundColor: "rgba(255,255,255,0.12)" }}>
             <SlidersHorizontal size={24} style={{ color: "#fff" }} />
           </div>
           <div className="min-w-0">
-            <h2 style={{ fontFamily, fontSize: "30px", fontWeight: 800, color: "#FFFFFF", lineHeight: "34px" }}>
+            <h2 className="ob-title" style={{ fontFamily, fontSize: "30px", fontWeight: 800, color: "#FFFFFF", lineHeight: "34px" }}>
               {tr("onboarding.header.title")}
             </h2>
-            <p style={{ fontFamily, fontSize: "15px", color: "rgba(255,255,255,0.6)", marginTop: "2px" }}>
+            <p className="ob-subtitle" style={{ fontFamily, fontSize: "15px", color: "rgba(255,255,255,0.6)", marginTop: "2px" }}>
               {tr("onboarding.header.subtitle")}
             </p>
           </div>
@@ -742,7 +788,7 @@ export function OnboardingWizard({
       </div>
 
       {/* ─── Content — large white rounded card ─── */}
-      <div className="flex-1 min-h-0 px-10 pb-8 relative z-10 flex flex-col">
+      <div className="ob-content flex-1 min-h-0 px-10 pb-8 relative z-10 flex flex-col">
         <div
           className="ob-scroll flex-1 min-h-0 flex flex-col overflow-y-auto relative"
           style={{
@@ -754,7 +800,7 @@ export function OnboardingWizard({
         >
           {/* Welcome step split hero image (fades out smoothly) */}
           <div
-            className="absolute inset-y-0 w-1/2 overflow-hidden pointer-events-none z-0"
+            className="ob-hero absolute inset-y-0 w-1/2 overflow-hidden pointer-events-none z-0"
             style={{
               right: 0,
               left: "auto",
@@ -800,7 +846,7 @@ export function OnboardingWizard({
           })}
 
           {/* progress strip */}
-          <div className="shrink-0 flex items-center gap-4 px-10 pt-7 relative z-10">
+          <div className="ob-progress shrink-0 flex items-center gap-4 px-10 pt-7 relative z-10">
             {stepIndex > 0 ? (
               <button
                 onClick={goBack}
@@ -816,14 +862,14 @@ export function OnboardingWizard({
                 <div style={{ height: "100%", width: `${progress * 100}%`, backgroundColor: t.primary, borderRadius: "100px", transition: "width 0.25s ease" }} />
               </div>
             </div>
-            <span className="shrink-0" style={{ fontFamily, fontSize: "14px", fontWeight: 700, color: t.textMuted, minWidth: "72px", textAlign: isRTL ? "left" : "right" }}>
+            <span className="ob-progress-label shrink-0" style={{ fontFamily, fontSize: "14px", fontWeight: 700, color: t.textMuted, minWidth: "72px", textAlign: isRTL ? "left" : "right" }}>
               {tr("onboarding.progress", stepIndexInFull + 1, totalSteps)}
             </span>
           </div>
 
           {/* centered step body */}
           <div
-            className="flex-1 min-h-0 flex flex-col justify-center px-10 py-8 relative z-10"
+            className="ob-body flex-1 min-h-0 flex flex-col justify-center px-10 py-8 relative z-10"
             style={{
               alignItems: stepId === "welcome" ? "flex-start" : "center",
               paddingLeft: stepId === "welcome" ? "8%" : "2.5rem",
@@ -833,7 +879,7 @@ export function OnboardingWizard({
           >
             <div 
               key={stepId} 
-              className="flex flex-col items-center w-full" 
+              className="ob-step flex flex-col items-center w-full" 
               style={{ 
                 maxWidth: "620px", 
                 animation: "obStepIn 0.25s ease-out",
@@ -841,7 +887,7 @@ export function OnboardingWizard({
               }}
             >
               <div
-                className="flex items-center justify-center"
+                className="ob-step-icon flex items-center justify-center"
                 style={{ width: "80px", height: "80px", borderRadius: t.radiusFull, backgroundColor: t.primarySubtle, marginBottom: "22px" }}
               >
                 {typeof Icon === "string" ? (
@@ -865,6 +911,7 @@ export function OnboardingWizard({
                 )}
               </div>
               <h3
+                className="ob-step-title"
                 style={{ fontFamily, fontSize: "28px", fontWeight: 800, color: t.textHeading, textAlign: "center", lineHeight: "34px", marginBottom: "24px" }}
               >
                 {tr(`onboarding.${stepId}.title`)}
@@ -874,6 +921,7 @@ export function OnboardingWizard({
 
             {skipConfig && (
               <div
+                className="ob-skip"
                 style={{
                   position: "absolute",
                   bottom: "24px",

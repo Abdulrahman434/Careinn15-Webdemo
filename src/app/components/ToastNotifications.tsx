@@ -60,11 +60,21 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue>({ showToast: () => {} });
 
+/** Show a toast from outside the ToastProvider (App.tsx's meal reminder sits
+ *  above it, where useToast() only reaches the no-op default). The provider
+ *  listens for this event and shows it like any other toast. */
+export function raiseToast(input: ToastInput): void {
+  window.dispatchEvent(new CustomEvent("careinn-toast", { detail: input }));
+}
+
 export function useToast() {
   return useContext(ToastContext);
 }
 
 const AUTO_DISMISS_MS = 7000;
+/** Which toasts may show. For now only the staff-entry (RTLS) alert; meal
+ *  and housekeeping toasts are dropped. Add a variant back here to restore it. */
+const ENABLED_VARIANTS: ReadonlySet<ToastVariant> = new Set<ToastVariant>(["rtls"]);
 const MAX_VISIBLE = 4;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -83,11 +93,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const showToast = useCallback((input: ToastInput) => {
+    if (!ENABLED_VARIANTS.has(input.variant)) return;
     const id = ++idRef.current;
     setToasts((prev) => [{ ...input, id }, ...prev].slice(0, MAX_VISIBLE));
     const timer = setTimeout(() => remove(id), AUTO_DISMISS_MS);
     timers.current.set(id, timer);
   }, [remove]);
+
+  useEffect(() => {
+    const onToast = (e: Event) => showToast((e as CustomEvent<ToastInput>).detail);
+    window.addEventListener("careinn-toast", onToast);
+    return () => window.removeEventListener("careinn-toast", onToast);
+  }, [showToast]);
 
   useEffect(() => {
     const map = timers.current;
