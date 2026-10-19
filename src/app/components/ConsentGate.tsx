@@ -131,16 +131,19 @@ export function ConsentGate({ src = "/consent-form.html", onAccept, onReject }: 
         backgroundColor: theme.overlay,
         backdropFilter: "blur(4px)",
         WebkitBackdropFilter: "blur(4px)",
-        padding: "32px",
+        padding: "24px",
         fontFamily,
       }}
     >
       <div
         className="relative flex flex-col"
         style={{
-          width: "min(900px, 92%)",
-          height: "100%",
-          maxHeight: "96%",
+          /* Same footprint as the Care Partner Agreement dialog — a bounded
+             box, not the full screen. Percentage (not vh) so it tracks the
+             scaled 1920×1080 canvas the gate lives in. */
+          width: "min(920px, 92%)",
+          height: "85%",
+          maxHeight: "85%",
           borderRadius: theme.radiusXl,
           backgroundColor: theme.surface,
           border: theme.cardBorder,
