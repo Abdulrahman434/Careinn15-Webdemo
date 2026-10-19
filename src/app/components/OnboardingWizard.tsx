@@ -59,10 +59,10 @@ const STEP_ICONS: Record<StepId, any> = {
  * that is left, in both reading directions. */
 const HERO_SHARE = "50%";
 
-/* One measure for every step — the same 760px the preference form caps its
- * questions at, so the two screens read as one design on the 1920×1080
- * canvas the wizard now lays out in. */
-const CONTENT_MAX_W = "760px";
+/* One measure for every step — the 620px column the previous onboarding used,
+ * so the answer cards and buttons sit inset and centred on the white card
+ * rather than stretching toward its edges on the 1920×1080 canvas. */
+const CONTENT_MAX_W = "620px";
 
 const readLS = (k: string): string | null => {
   try { return localStorage.getItem(k); } catch { return null; }
@@ -152,7 +152,7 @@ export function OnboardingWizard({
    *  gap, so no step can drift out of rhythm with the others. */
   const INTRO_BODY: React.CSSProperties = {
     fontFamily,
-    fontSize: TYPE_SCALE.md,
+    fontSize: TYPE_SCALE.base,
     color: t.textBody,
     textAlign: "center",
     lineHeight: LEADING.relaxed,
@@ -485,6 +485,38 @@ export function OnboardingWizard({
             border: t.cardBorder,
           }}
         >
+          {/* Welcome hero photo — fills the right half of the card for its
+              whole height, starting at the very top behind the progress strip
+              (which sits above it via z-10), with a soft fade into the card on
+              its left. */}
+          <div
+            className="absolute inset-y-0 w-1/2 overflow-hidden pointer-events-none z-0"
+            style={{
+              right: 0,
+              left: "auto",
+              opacity: isWelcome ? 1 : 0,
+              transition: "opacity 0.4s ease-in-out",
+            }}
+          >
+            <img
+              src={t.heroImageUrl}
+              alt="Hospital Hero"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: t.heroCropPosition || "50% 50%",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: `linear-gradient(to left, transparent 0%, ${t.surface} 100%)`,
+              }}
+            />
+          </div>
+
           {/* Stacked background images for smooth cross-fade transition */}
           {Object.entries(STEP_BACKGROUNDS).map(([id, src]) => {
             const isActive = stepId === id;
@@ -539,37 +571,6 @@ export function OnboardingWizard({
               paddingRight: isWelcome ? HERO_SHARE : SPACE[5],
             }}
           >
-            {/* Welcome step photo panel. It sits in the body rather than the
-                card so it starts below the progress strip instead of running
-                under the step counter and swallowing it. */}
-            <div
-              className="absolute inset-y-0 w-1/2 overflow-hidden pointer-events-none z-0"
-              style={{
-                right: 0,
-                left: "auto",
-                opacity: isWelcome ? 1 : 0,
-                transition: "opacity 0.4s ease-in-out",
-              }}
-            >
-              <img
-                src={t.heroImageUrl}
-                alt="Hospital Hero"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  objectPosition: t.heroCropPosition || "50% 50%",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background: `linear-gradient(to left, transparent 0%, ${t.surface} 100%)`,
-                }}
-              />
-            </div>
-
             <div
               key={stepId}
               className="flex flex-col items-center w-full relative z-10"
@@ -581,13 +582,13 @@ export function OnboardingWizard({
             >
               <div
                 className="flex items-center justify-center shrink-0"
-                style={{ width: "96px", height: "96px", borderRadius: t.radiusFull, backgroundColor: t.primarySubtle }}
+                style={{ width: "80px", height: "80px", borderRadius: t.radiusFull, backgroundColor: t.primarySubtle }}
               >
                 {typeof Icon === "string" ? (
                   <div
                     style={{
-                      width: "44px",
-                      height: "44px",
+                      width: "38px",
+                      height: "38px",
                       backgroundColor: t.primary,
                       WebkitMaskImage: `url(${Icon})`,
                       maskImage: `url(${Icon})`,
@@ -600,15 +601,15 @@ export function OnboardingWizard({
                     }}
                   />
                 ) : (
-                  <Icon size={44} style={{ color: t.primary }} />
+                  <Icon size={38} style={{ color: t.primary }} />
                 )}
               </div>
               <h3
-                style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.extrabold, color: t.textHeading, textAlign: "center", lineHeight: LEADING.snug, margin: 0 }}
+                style={{ fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.extrabold, color: t.textHeading, textAlign: "center", lineHeight: LEADING.snug, margin: 0 }}
               >
                 {tr(`onboarding.${stepId}.title`)}
               </h3>
-              <div className="w-full flex flex-col" style={{ gap: SPACE[3] }}>{renderStep()}</div>
+              <div className="w-full flex flex-col" style={{ gap: SPACE[2] }}>{renderStep()}</div>
             </div>
 
           </div>
