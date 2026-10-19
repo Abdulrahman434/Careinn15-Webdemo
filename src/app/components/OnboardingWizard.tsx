@@ -187,8 +187,10 @@ export function OnboardingWizard({
 
   const sequence = useMemo(() => sequenceFor(activeConfigId), [activeConfigId]);
   const shortFlow = activeConfigId === "dsfh";
-  // Without the slideshow checkbox, consent rests on the terms alone.
-  const consentReady = shortFlow ? termsAgreed : (tourSeen && termsAgreed);
+  // Without the slideshow checkbox, consent rests on the terms alone. Fakeeh
+  // (shortFlow) never had the checkbox; Burjeel (consentGateEnabled) drops it
+  // too, so there consent is gated by the Terms & Conditions box alone.
+  const consentReady = (shortFlow || consentGateEnabled) ? termsAgreed : (tourSeen && termsAgreed);
   const visibleSteps = useMemo(
     () => sequence.filter(s => !s.extendedOnly || extended),
     [sequence, extended]
@@ -619,9 +621,9 @@ export function OnboardingWizard({
         return (
           <>
             <div className="flex flex-col gap-3 w-full" style={{ marginBottom: "8px" }}>
-              {/* Fakeeh drops the welcome-slideshow acknowledgement; other
-                  brands still gate on it. */}
-              {!shortFlow && (
+              {/* Fakeeh and Burjeel drop the welcome-slideshow
+                  acknowledgement; other brands still gate on it. */}
+              {!shortFlow && !consentGateEnabled && (
                 <ConsentCheckbox
                   checked={tourSeen}
                   onToggle={() => setTourSeen(!tourSeen)}
