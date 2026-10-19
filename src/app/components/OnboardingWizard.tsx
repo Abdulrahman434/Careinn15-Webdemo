@@ -1,39 +1,22 @@
 import React, { useMemo, useState } from "react";
-import { useTheme, SHADOW, buildTheme } from "./ThemeContext";
+import { useTheme, SHADOW, SPACE, TYPE_SCALE, WEIGHT, LEADING, buildTheme } from "./ThemeContext";
 import { useLocale, type Locale } from "./i18n";
 import { toast } from "sonner";
 import {
-  Hand, Globe, UserRound, Shield, BellRing, SlidersHorizontal,
-  Moon, Sun, DatabaseZap, Volume2, VolumeX, Bluetooth, MonitorPause,
+  Hand, Globe, Shield, SlidersHorizontal,
   FileCheck2, Check, ChevronLeft, Home,
 } from "lucide-react";
-import { useNurseStore } from "./NurseDataStore";
-import { ConsentGate, requiresAdmissionConsent } from "./ConsentGate";
 import { markOnboardingComplete } from "../lib/onboardingStore";
 import { isAccountSet } from "../lib/accountAuth";
 import { MyPreferencesDialog } from "./MyAccountDialog";
-import { BluetoothDialog } from "./SettingsPanel";
-import { bluetooth as bluetoothBridge, isAndroidApp } from "../utils/androidBridge";
+import { ConsentGate, requiresAdmissionConsent } from "./ConsentGate";
 
-import imgDataStorage from "../../assets/data storage.webp";
-import imgDarkLightMode from "../../assets/Dark and light mode.webp";
-import imgLockAppPages from "../../assets/lock app pages..webp";
-import imgPrayerTimesPage from "../../assets/prayer times page.webp";
-import imgWelcomeImage from "../../assets/Welcome Image.webp";
-import imgLanguage from "../../assets/language.webp";
-import imgNotificationSet from "../../assets/notificationset.webp";
-/* Transparent line cut-out of the mosque icon — used as a CSS mask, so it
-   needs real transparency (the full-colour app icon renders as a square). */
-import imgMosque from "../../assets/onboarding-prayer-mosque.webp";
+import imgLockAppPages from "../../assets/lock app pages..jpg";
+import imgLanguage from "../../assets/language.jpg";
 
 const STEP_BACKGROUNDS: Record<string, string> = {
   language: imgLanguage,
-  displayName: imgWelcomeImage,
   pin: imgLockAppPages,
-  prayer: imgPrayerTimesPage,
-  theme: imgDarkLightMode,
-  dataClear: imgDataStorage,
-  notifications: imgNotificationSet,
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -46,64 +29,40 @@ const STEP_BACKGROUNDS: Record<string, string> = {
  * tappable answer cards.
  *
  * Data-driven step machine: STEP_SEQUENCE is the single source of truth for
- * order and branching. Steps marked extendedOnly appear only on the
- * "Yes, continue setup" branch; both branches end on the shared Consent step.
+ * order, the progress bar and the step counter — nothing here counts steps by
+ * hand, so removing one re-numbers the whole flow. It asks two questions only
+ * — language and PIN — and ends on the consent step.
+ *
+ * The Patient Preference Form is NOT part of setup. It used to sit between
+ * the PIN and consent steps as an introduction; it is now opened from the
+ * CareMe preferences card, which is also where the answers are read back and
+ * the only place the form is reachable. Setup does not ask for it.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-type StepId =
-  | "welcome" | "language" | "displayName" | "pin" | "prayer" | "decision"
-  | "theme" | "dataClear" | "notifications" | "bluetooth" | "screensaver"
-  | "consent";
+type StepId = "welcome" | "language" | "pin" | "consent";
 
-interface StepDef {
-  id: StepId;
-  /** Only shown on the "Yes, continue setup" branch. */
-  extendedOnly?: boolean;
-}
-
-const STEP_SEQUENCE: StepDef[] = [
-  { id: "welcome" },
-  { id: "language" },
-  { id: "displayName" },
-  { id: "pin" },
-  { id: "prayer" },
-  { id: "decision" },
-  { id: "theme", extendedOnly: true },
-  { id: "dataClear", extendedOnly: true },
-  { id: "notifications", extendedOnly: true },
-  { id: "bluetooth", extendedOnly: true },
-  { id: "screensaver", extendedOnly: true },
-  { id: "consent" },
+const STEP_SEQUENCE: StepId[] = [
+  "welcome",
+  "language",
+  "pin",
+  "consent",
 ];
-
-/* Fakeeh runs a deliberately short intro: welcome, language, PIN, consent.
- * Everything else keeps the full setup flow. The five preferences the trimmed
- * steps used to set (display name, prayer alarm, theme, data-clear policy,
- * screensaver timeout) fall back to their defaults for that brand. */
-const SHORT_SEQUENCE: StepDef[] = [
-  { id: "welcome" },
-  { id: "language" },
-  { id: "pin" },
-  { id: "consent" },
-];
-
-const sequenceFor = (hospitalId: string): StepDef[] =>
-  hospitalId === "dsfh" ? SHORT_SEQUENCE : STEP_SEQUENCE;
 
 const STEP_ICONS: Record<StepId, any> = {
   welcome: Hand,
   language: Globe,
-  displayName: UserRound,
   pin: Shield,
-  prayer: imgMosque,
-  decision: SlidersHorizontal,
-  theme: Moon,
-  dataClear: DatabaseZap,
-  notifications: Volume2,
-  bluetooth: Bluetooth,
-  screensaver: MonitorPause,
   consent: FileCheck2,
 };
+
+/* The welcome photo owns half the card; the text column centres in the half
+ * that is left, in both reading directions. */
+const HERO_SHARE = "50%";
+
+/* One measure for every step — the same 760px the preference form caps its
+ * questions at, so the two screens read as one design on the 1920×1080
+ * canvas the wizard now lays out in. */
+const CONTENT_MAX_W = "760px";
 
 const readLS = (k: string): string | null => {
   try { return localStorage.getItem(k); } catch { return null; }
@@ -112,21 +71,21 @@ const readLS = (k: string): string | null => {
 export function OnboardingWizard({
   admitRef,
   onComplete,
+  onExit,
   onStartTour,
-  onStartSlideshow,
   hidden = false,
 }: {
   admitRef: string | null;
   onComplete: () => void;
+  /** Leaves the wizard for the home screen without finishing setup. */
+  onExit: () => void;
   onStartTour: () => void;
-  onStartSlideshow: () => void;
   /** Keeps the wizard mounted (state intact) but invisible — used while
    *  the welcome tour plays on top of it. */
   hidden?: boolean;
 }) {
   const {
-    theme: activeTheme, allConfigs, activeConfigId, locale, darkMode,
-    setLocale, setDarkMode, setPrayerAlarm,
+    theme: activeTheme, allConfigs, activeConfigId, locale, setLocale,
   } = useTheme();
   const { t: tr, isRTL, dir } = useLocale();
 
@@ -143,67 +102,29 @@ export function OnboardingWizard({
   }, [allConfigs, activeConfigId, activeTheme, locale]);
 
   const fontFamily = t.fontFamily;
-  const nurseStore = useNurseStore();
 
   const [stepId, setStepId] = useState<StepId>("welcome");
-  const [extended, setExtended] = useState(() => readLS("careinn-data-clear-policy") != null);
+
+  /* Burjeel gates the terms box behind the full-screen admission ConsentGate;
+   * other hospitals keep the plain tap-to-toggle checkbox. */
+  const needsConsent = requiresAdmissionConsent(activeConfigId);
 
   /* per-step answers — pre-filled from storage so re-opening shows current choices */
   const [selLocale, setSelLocale] = useState<Locale>(() => (readLS("careinn-locale") as Locale) || locale || "en");
-  const [useFileName, setUseFileName] = useState(() => readLS("careinn-display-name-mode") === "auto");
-  const [nameEn, setNameEn] = useState(() => readLS("careinn-display-name") || "");
-  const [nameAr, setNameAr] = useState(() => readLS("careinn-display-name-ar") || "");
-  const [selDark, setSelDark] = useState(() => {
-    const v = readLS("careinn-theme-mode");
-    return v ? v === "dark" : darkMode;
-  });
-  const [selPolicy, setSelPolicy] = useState<"daily" | "24h-idle" | "discharge" | null>(
-    () => (readLS("careinn-data-clear-policy") as any) || null
-  );
-  const [selSound, setSelSound] = useState<"sound" | "silent" | null>(
-    () => (readLS("careinn-notification-sound") as any) || null
-  );
-  const [selSaver, setSelSaver] = useState<"30s" | "1m" | "5m" | "10m" | null>(
-    () => (readLS("careinn-screensaver-timeout") as any) || null
-  );
-  const [tourSeen, setTourSeen] = useState(() => !!readLS("careinn-consent-tour-seen"));
-  // Where an admission-consent gate is required (Burjeel), the terms box must
-  // start unchecked every session and may only be ticked by Accepting the gate
-  // — so no stale "careinn-consent-terms-agreed"/"admission-consent-accepted"
-  // value pre-checks it. Other brands keep the prior restore-from-storage.
-  const [termsAgreed, setTermsAgreed] = useState(() =>
-    requiresAdmissionConsent(activeConfigId) ? false : !!readLS("careinn-consent-terms-agreed")
-  );
+  /* When consent is gated, the box always starts unchecked for a fresh session
+   * — it is checked only by Accept inside ConsentGate, never from a saved value. */
+  const [termsAgreed, setTermsAgreed] = useState(() => needsConsent ? false : !!readLS("careinn-consent-terms-agreed"));
 
   /* reused native flows rendered on top of the wizard */
-  const [overlay, setOverlay] = useState<"pin" | "bluetooth" | null>(null);
-  const [btDevice, setBtDevice] = useState<string | null>(null);
+  const [overlay, setOverlay] = useState<"pin" | "consent" | null>(null);
 
-  /* Admission consent form, opened from the "Terms & Conditions" link on the
-   * consent step (Burjeel only — other brands have no gate and the link is a
-   * no-op, as before). Accepting checks the terms box; rejecting just closes. */
-  const [showConsentGate, setShowConsentGate] = useState(false);
-  const consentGateEnabled = requiresAdmissionConsent(activeConfigId);
+  const stepIndex = STEP_SEQUENCE.indexOf(stepId);
 
-  const sequence = useMemo(() => sequenceFor(activeConfigId), [activeConfigId]);
-  const shortFlow = activeConfigId === "dsfh";
-  // Without the slideshow checkbox, consent rests on the terms alone. Fakeeh
-  // (shortFlow) never had the checkbox; Burjeel (consentGateEnabled) drops it
-  // too, so there consent is gated by the Terms & Conditions box alone.
-  const consentReady = (shortFlow || consentGateEnabled) ? termsAgreed : (tourSeen && termsAgreed);
-  const visibleSteps = useMemo(
-    () => sequence.filter(s => !s.extendedOnly || extended),
-    [sequence, extended]
-  );
-  const stepIndex = visibleSteps.findIndex(s => s.id === stepId);
-
-  const goNext = (fromSteps?: StepDef[]) => {
-    const steps = fromSteps ?? visibleSteps;
-    const i = steps.findIndex(s => s.id === stepId);
-    if (i >= 0 && i < steps.length - 1) setStepId(steps[i + 1].id);
+  const goNext = () => {
+    if (stepIndex >= 0 && stepIndex < STEP_SEQUENCE.length - 1) setStepId(STEP_SEQUENCE[stepIndex + 1]);
   };
   const goBack = () => {
-    if (stepIndex > 0) setStepId(visibleSteps[stepIndex - 1].id);
+    if (stepIndex > 0) setStepId(STEP_SEQUENCE[stepIndex - 1]);
   };
 
   /* ── answer handlers (write storage + apply via existing setters) ── */
@@ -213,59 +134,30 @@ export function OnboardingWizard({
     setLocale(l); // existing ThemeContext setter — persists under active-locale
     localStorage.setItem("careinn-locale", l);
   };
-  const toggleLanguage = () => applyLocale(locale === "en" ? "ar" : "en");
-
-  const saveDisplayName = (mode: "auto" | "custom" | "skipped") => {
-    localStorage.setItem("careinn-display-name-mode", mode);
-    if (mode === "custom") {
-      localStorage.setItem("careinn-display-name", nameEn.trim());
-      localStorage.setItem("careinn-display-name-ar", nameAr.trim());
-    } else {
-      localStorage.removeItem("careinn-display-name");
-      localStorage.removeItem("careinn-display-name-ar");
-    }
-    window.dispatchEvent(new CustomEvent("display-name-changed"));
-    goNext();
-  };
-
-  const savePrayer = (on: boolean) => {
-    setPrayerAlarm(on); // existing "Alarm me" toggle — persists under prayer-alarm
-    localStorage.setItem("careinn-prayer-alarm", on ? "true" : "false");
-    goNext();
-  };
-
-  const applyTheme = (dark: boolean) => {
-    setSelDark(dark);
-    setDarkMode(dark); // applies immediately via ThemeContext
-    localStorage.setItem("careinn-theme-mode", dark ? "dark" : "light");
-  };
-
-  const savePolicy = (p: "daily" | "24h-idle" | "discharge") => {
-    setSelPolicy(p);
-    localStorage.setItem("careinn-data-clear-policy", p);
-    if (p === "daily") {
-      // anchor the daily cycle now so it doesn't fire on the next tick
-      localStorage.setItem("careinn-last-scheduled-clear", String(Date.now()));
-    }
-  };
-
-  const saveSaver = (v: "30s" | "1m" | "5m" | "10m") => {
-    setSelSaver(v);
-    localStorage.setItem("careinn-screensaver-timeout", v);
-    // picked up by the existing idle timer in App.tsx
-    window.dispatchEvent(new CustomEvent("screensaver-timeout-changed"));
-  };
 
   const finish = (withTour: boolean) => {
     const now = String(Date.now());
     markOnboardingComplete(admitRef);
-    localStorage.setItem("careinn-consent-tour-seen", now);
+    localStorage.setItem("careinn-prefs-completed", now);
     localStorage.setItem("careinn-consent-terms-agreed", now);
     onComplete();
     if (withTour) onStartTour();
   };
 
   /* ═══════════════════ shared UI bits ═══════════════════ */
+
+  /** The descriptive paragraph on the intro-style steps (welcome, the PIN
+   *  note). It carries no margin of its own: the spacing between the
+   *  icon, the heading, this paragraph and the buttons is the column's single
+   *  gap, so no step can drift out of rhythm with the others. */
+  const INTRO_BODY: React.CSSProperties = {
+    fontFamily,
+    fontSize: TYPE_SCALE.md,
+    color: t.textBody,
+    textAlign: "center",
+    lineHeight: LEADING.relaxed,
+    margin: 0,
+  };
 
   /** Large, tappable answer card. */
   const OptionCard = ({
@@ -331,14 +223,14 @@ export function OnboardingWizard({
       disabled={disabled}
       className="ob-primary flex items-center justify-center w-full"
       style={{
-        height: "58px",
+        height: SPACE[8],
         backgroundColor: t.primary,
         borderRadius: t.radiusLg,
         border: "none",
         color: "#FFFFFF",
         fontFamily,
-        fontWeight: 700,
-        fontSize: "17px",
+        fontWeight: WEIGHT.bold,
+        fontSize: TYPE_SCALE.base,
         boxShadow: disabled ? "none" : SHADOW.md,
         opacity: disabled ? 0.4 : 1,
         cursor: disabled ? "default" : "pointer",
@@ -348,19 +240,22 @@ export function OnboardingWizard({
     </button>
   );
 
-  const GhostButton = ({ label, onClick }: { label: string; onClick: () => void }) => (
+  const GhostButton = ({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) => (
     <button
       onClick={onClick}
-      className="flex items-center justify-center w-full cursor-pointer active:scale-[0.98] transition-transform"
+      disabled={disabled}
+      className="flex items-center justify-center w-full active:scale-[0.98] transition-transform"
       style={{
-        height: "58px",
+        height: SPACE[8],
         backgroundColor: "transparent",
         borderRadius: t.radiusLg,
         border: `1.5px solid ${t.borderDefault}`,
         color: t.textMuted,
         fontFamily,
-        fontWeight: 600,
-        fontSize: "17px",
+        fontWeight: WEIGHT.semibold,
+        fontSize: TYPE_SCALE.base,
+        opacity: disabled ? 0.4 : 1,
+        cursor: disabled ? "default" : "pointer",
       }}
     >
       {label}
@@ -419,10 +314,9 @@ export function OnboardingWizard({
       case "welcome":
         return (
           <>
-            <p style={{ fontFamily, fontSize: "18px", color: t.textBody, textAlign: "center", lineHeight: 1.65, margin: "0 0 8px" }}>
+            <p style={INTRO_BODY}>
               {tr("onboarding.welcome.body")}
             </p>
-            <div style={{ height: "8px" }} />
             <PrimaryButton label={tr("onboarding.welcome.start")} onClick={() => goNext()} />
           </>
         );
@@ -430,7 +324,7 @@ export function OnboardingWizard({
       case "language":
         return (
           <>
-            <div className="grid grid-cols-2 gap-4 w-full" style={{ marginBottom: "8px" }}>
+            <div className="grid grid-cols-2 gap-4 w-full">
               <OptionCard
                 selected={selLocale === "en"}
                 onClick={() => applyLocale("en")}
@@ -453,66 +347,11 @@ export function OnboardingWizard({
           </>
         );
 
-      case "displayName": {
-        const filePatient = nurseStore.patient;
-        const fileName = isRTL && filePatient.nameAr ? filePatient.nameAr : filePatient.name;
-        return (
-          <>
-            <div className="flex flex-col gap-4 w-full" style={{ marginBottom: "8px" }}>
-              <div className="grid grid-cols-2 gap-4 w-full">
-                <OptionCard
-                  selected={useFileName}
-                  onClick={() => setUseFileName(true)}
-                  icon={<UserRound size={22} style={{ color: t.primary }} />}
-                  label={tr("onboarding.displayName.useFile")}
-                  sublabel={fileName || undefined}
-                />
-                <OptionCard
-                  selected={!useFileName}
-                  onClick={() => setUseFileName(false)}
-                  icon={<UserRound size={22} style={{ color: t.primary }} />}
-                  label={tr("onboarding.displayName.custom")}
-                />
-              </div>
-              {!useFileName && (
-                <div className="flex flex-col gap-3 w-full">
-                  <input
-                    type="text"
-                    dir="ltr"
-                    value={nameEn}
-                    onChange={(e) => setNameEn(e.target.value)}
-                    placeholder={tr("onboarding.displayName.nameEn")}
-                    style={{
-                      width: "100%", padding: "16px", borderRadius: t.radiusMd,
-                      border: `1.5px solid ${t.borderDefault}`, backgroundColor: t.surfaceElevated,
-                      color: t.textBody, fontFamily, fontSize: "16px", outline: "none",
-                    }}
-                  />
-                  <input
-                    type="text"
-                    dir="rtl"
-                    value={nameAr}
-                    onChange={(e) => setNameAr(e.target.value)}
-                    placeholder={tr("onboarding.displayName.nameAr")}
-                    style={{
-                      width: "100%", padding: "16px", borderRadius: t.radiusMd,
-                      border: `1.5px solid ${t.borderDefault}`, backgroundColor: t.surfaceElevated,
-                      color: t.textBody, fontFamily, fontSize: "16px", outline: "none",
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-            <PrimaryButton label={tr("onboarding.next")} onClick={() => saveDisplayName(useFileName ? "auto" : "custom")} />
-          </>
-        );
-      }
-
       case "pin":
         return (
           <>
             {isAccountSet() && (
-              <p style={{ fontFamily, fontSize: "15px", color: t.textMuted, textAlign: "center", margin: "0 0 8px" }}>
+              <p style={{ ...INTRO_BODY, fontSize: TYPE_SCALE.base, color: t.textMuted }}>
                 {tr("onboarding.pin.alreadySet")}
               </p>
             )}
@@ -523,159 +362,35 @@ export function OnboardingWizard({
           </>
         );
 
-      case "prayer":
-        return (
-          <div className="flex items-center gap-3 w-full">
-            <div className="flex-1"><GhostButton label={tr("onboarding.no")} onClick={() => savePrayer(false)} /></div>
-            <div className="flex-1"><PrimaryButton label={tr("onboarding.yes")} onClick={() => savePrayer(true)} /></div>
-          </div>
-        );
-
-      case "decision":
-        return (
-          <div className="flex items-center gap-3 w-full">
-            <div className="flex-1"><GhostButton label={tr("onboarding.decision.no")} onClick={() => { setExtended(false); goNext(sequence.filter(s => !s.extendedOnly)); }} /></div>
-            <div className="flex-1"><PrimaryButton label={tr("onboarding.yes")} onClick={() => { setExtended(true); goNext(sequence); }} /></div>
-          </div>
-        );
-
-      case "theme":
-        return (
-          <>
-            <div className="grid grid-cols-2 gap-4 w-full" style={{ marginBottom: "8px" }}>
-              <OptionCard
-                selected={!selDark}
-                onClick={() => applyTheme(false)}
-                icon={<Sun size={22} style={{ color: t.primary }} />}
-                label={tr("onboarding.theme.light")}
-              />
-              <OptionCard
-                selected={selDark}
-                onClick={() => applyTheme(true)}
-                icon={<Moon size={22} style={{ color: t.primary }} />}
-                label={tr("onboarding.theme.dark")}
-              />
-            </div>
-            <PrimaryButton label={tr("onboarding.next")} onClick={() => goNext()} />
-          </>
-        );
-
-      case "dataClear":
-        return (
-          <>
-            <div className="grid grid-cols-3 gap-4 w-full" style={{ marginBottom: "8px" }}>
-              <OptionCard selected={selPolicy === "daily"} onClick={() => savePolicy("daily")} icon={<DatabaseZap size={22} style={{ color: t.primary }} />} label={tr("onboarding.dataClear.daily")} />
-              <OptionCard selected={selPolicy === "24h-idle"} onClick={() => savePolicy("24h-idle")} icon={<DatabaseZap size={22} style={{ color: t.primary }} />} label={tr("onboarding.dataClear.idle")} />
-              <OptionCard selected={selPolicy === "discharge"} onClick={() => savePolicy("discharge")} icon={<DatabaseZap size={22} style={{ color: t.primary }} />} label={tr("onboarding.dataClear.discharge")} />
-            </div>
-            <p style={{ fontFamily, fontSize: "14px", color: t.textMuted, textAlign: "center", margin: "0 0 4px" }}>
-              {tr("onboarding.dataClear.note")}
-            </p>
-            <PrimaryButton label={tr("onboarding.next")} disabled={!selPolicy} onClick={() => goNext()} />
-          </>
-        );
-
-      case "notifications":
-        return (
-          <>
-            <div className="grid grid-cols-2 gap-4 w-full" style={{ marginBottom: "8px" }}>
-              <OptionCard
-                selected={selSound === "sound"}
-                onClick={() => { setSelSound("sound"); localStorage.setItem("careinn-notification-sound", "sound"); }}
-                icon={<Volume2 size={22} style={{ color: t.primary }} />}
-                label={tr("onboarding.notifications.sound")}
-              />
-              <OptionCard
-                selected={selSound === "silent"}
-                onClick={() => { setSelSound("silent"); localStorage.setItem("careinn-notification-sound", "silent"); }}
-                icon={<VolumeX size={22} style={{ color: t.primary }} />}
-                label={tr("onboarding.notifications.silent")}
-              />
-            </div>
-            <PrimaryButton label={tr("onboarding.next")} disabled={!selSound} onClick={() => goNext()} />
-          </>
-        );
-
-      case "bluetooth":
-        return (
-          <div className="flex items-center gap-3 w-full">
-            <div className="flex-1"><GhostButton label={tr("onboarding.no")} onClick={() => goNext()} /></div>
-            <div className="flex-1"><PrimaryButton label={tr("onboarding.yes")} onClick={() => setOverlay("bluetooth")} /></div>
-          </div>
-        );
-
-      case "screensaver":
-        return (
-          <>
-            <div className="grid grid-cols-4 gap-4 w-full" style={{ marginBottom: "8px" }}>
-              <OptionCard selected={selSaver === "30s"} onClick={() => saveSaver("30s")} label={tr("onboarding.screensaver.30s")} />
-              <OptionCard selected={selSaver === "1m"} onClick={() => saveSaver("1m")} label={tr("onboarding.screensaver.1m")} />
-              <OptionCard selected={selSaver === "5m"} onClick={() => saveSaver("5m")} label={tr("onboarding.screensaver.5m")} />
-              <OptionCard selected={selSaver === "10m"} onClick={() => saveSaver("10m")} label={tr("onboarding.screensaver.10m")} />
-            </div>
-            <PrimaryButton label={tr("onboarding.next")} disabled={!selSaver} onClick={() => goNext()} />
-          </>
-        );
-
       case "consent":
         return (
           <>
-            <div className="flex flex-col gap-3 w-full" style={{ marginBottom: "8px" }}>
-              {/* Fakeeh and Burjeel drop the welcome-slideshow
-                  acknowledgement; other brands still gate on it. */}
-              {!shortFlow && !consentGateEnabled && (
-                <ConsentCheckbox
-                  checked={tourSeen}
-                  onToggle={() => setTourSeen(!tourSeen)}
-                  before={tr("onboarding.consent.tour.before")}
-                  link={tr("onboarding.consent.tour.link")}
-                  after={tr("onboarding.consent.tour.after")}
-                  onLinkClick={onStartSlideshow}
-                />
-              )}
+            <div className="flex flex-col gap-3 w-full">
               <ConsentCheckbox
                 checked={termsAgreed}
-                /* With the gate (Burjeel): tapping anywhere on the row opens
-                   ConsentGate and never toggles the box — the box is ticked
-                   only by Accept, and tapping again just reopens the gate.
-                   Other brands keep the direct toggle. */
-                onToggle={consentGateEnabled ? () => setShowConsentGate(true) : () => setTermsAgreed(!termsAgreed)}
+                /* Burjeel: the row never toggles the box — it opens the
+                 * admission ConsentGate, which checks the box only on Accept
+                 * and reopens (never unchecks) on a later tap. */
+                onToggle={needsConsent ? () => setOverlay("consent") : () => setTermsAgreed(!termsAgreed)}
                 before={tr("onboarding.consent.terms.before")}
                 link={tr("onboarding.consent.terms.link")}
                 after={tr("onboarding.consent.terms.after")}
-                onLinkClick={consentGateEnabled ? () => setShowConsentGate(true) : undefined}
+                onLinkClick={needsConsent ? () => setOverlay("consent") : undefined}
               />
             </div>
             <div className="flex items-center gap-3 w-full">
-              <div className="flex-1"><GhostButton label={tr("onboarding.consent.startWithTour")} onClick={() => consentReady && finish(true)} /></div>
-              <div className="flex-1"><PrimaryButton label={tr("onboarding.consent.startNow")} disabled={!consentReady} onClick={() => finish(false)} /></div>
+              <div className="flex-1"><GhostButton label={tr("onboarding.consent.startWithTour")} disabled={needsConsent ? !termsAgreed : undefined} onClick={() => termsAgreed && finish(true)} /></div>
+              <div className="flex-1"><PrimaryButton label={tr("onboarding.consent.startNow")} disabled={!termsAgreed} onClick={() => finish(false)} /></div>
             </div>
           </>
         );
     }
   };
 
-  const skipConfig = useMemo(() => {
-    switch (stepId) {
-      case "displayName":
-        return {
-          label: tr("onboarding.skip"),
-          onClick: () => saveDisplayName("skipped"),
-        };
-      case "screensaver":
-        return {
-          label: tr("onboarding.skip"),
-          onClick: () => goNext(),
-        };
-      default:
-        return null;
-    }
-  }, [stepId, tr]);
-
   const Icon = STEP_ICONS[stepId];
-  const stepIndexInFull = sequence.findIndex(s => s.id === stepId);
-  const totalSteps = sequence.length;
-  const progress = totalSteps > 1 ? (stepIndexInFull + 1) / totalSteps : 1;
+  const isWelcome = stepId === "welcome";
+  const totalSteps = STEP_SEQUENCE.length;
+  const progress = totalSteps > 1 ? (stepIndex + 1) / totalSteps : 1;
 
   const HeaderButton = ({ onClick, children, ariaLabel }: { onClick: () => void; children: React.ReactNode; ariaLabel: string }) => (
     <button
@@ -696,7 +411,7 @@ export function OnboardingWizard({
 
   return (
     <div
-      className="ob-root fixed inset-0 z-[8000] flex flex-col overflow-hidden"
+      className="fixed inset-0 z-[8000] flex flex-col overflow-hidden"
       dir={dir}
       style={{
         display: hidden ? "none" : "flex",
@@ -715,74 +430,26 @@ export function OnboardingWizard({
         .ob-scroll::-webkit-scrollbar-track { background: transparent; }
         .ob-scroll::-webkit-scrollbar-thumb { background: ${t.borderDefault}; border-radius: 100px; border: 3px solid transparent; background-clip: content-box; }
         @keyframes obStepIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Step body: centred while it fits, scrolls from the top when it
-           doesn't. Auto margins are the "safe" centring — a step taller
-           than the card can never be pushed up out of reach. */
-        .ob-body { flex: 1 0 auto !important; justify-content: flex-start !important; }
-        .ob-step { margin-top: auto; margin-bottom: auto; }
-
-        /* ── Small screens (phones, small tablets in portrait) ── */
-        @media (max-width: 640px) {
-          .ob-header { gap: 10px !important; padding: 14px 14px 10px !important; }
-          .ob-header-divider, .ob-header-icon, .ob-subtitle { display: none !important; }
-          .ob-title { font-size: 20px !important; line-height: 24px !important; }
-          .ob-content { padding: 0 10px 10px !important; }
-          .ob-progress { gap: 10px !important; padding: 14px 14px 0 !important; }
-          .ob-progress-label { min-width: 0 !important; font-size: 12px !important; }
-          .ob-body { padding: 18px 16px 76px !important; align-items: center !important; }
-          .ob-step-icon { width: 60px !important; height: 60px !important; margin-bottom: 14px !important; }
-          .ob-step-title { font-size: 21px !important; line-height: 27px !important; margin-bottom: 16px !important; }
-          .ob-hero { display: none !important; }
-          .ob-skip { left: 16px !important; right: auto !important; bottom: 16px !important; }
-          .ob-root .grid-cols-2 { grid-template-columns: 1fr !important; }
-          .ob-root .grid-cols-3, .ob-root .grid-cols-4 { grid-template-columns: repeat(2, 1fr) !important; }
-          .ob-root .grid { gap: 10px !important; }
-        }
-        /* Very short windows: the white card no longer has to fit the screen.
-           The whole page scrolls instead, so nothing is squeezed or clipped. */
-        @media (max-height: 560px) {
-          .ob-root { overflow-y: auto !important; }
-          .ob-content, .ob-scroll { flex: none !important; min-height: 0 !important; overflow: visible !important; }
-          .ob-body { flex: none !important; padding-top: 18px !important; padding-bottom: 72px !important; }
-          .ob-header { gap: 10px !important; padding: 12px 16px 10px !important; }
-          .ob-header-divider, .ob-header-icon, .ob-subtitle, .ob-hero { display: none !important; }
-          .ob-title { font-size: 20px !important; line-height: 24px !important; }
-          .ob-step-icon { width: 56px !important; height: 56px !important; margin-bottom: 12px !important; }
-          .ob-step-title { font-size: 22px !important; line-height: 28px !important; margin-bottom: 16px !important; }
-        }
-        /* Short landscape screens: tighter vertical rhythm */
-        @media (max-height: 700px) and (min-width: 641px) {
-          .ob-header { padding-top: 16px !important; padding-bottom: 12px !important; }
-          .ob-content { padding-bottom: 16px !important; }
-          .ob-body { padding-top: 20px !important; padding-bottom: 72px !important; }
-          .ob-step-icon { width: 64px !important; height: 64px !important; margin-bottom: 14px !important; }
-          .ob-step-title { margin-bottom: 16px !important; }
-        }
       `}</style>
 
       {/* ─── Page header (white on brand gradient) ─── */}
-      <div className="ob-header shrink-0 flex items-center gap-5 px-10 pt-8 pb-5 relative z-10">
-        <HeaderButton
-          onClick={() => {
-            if (stepId !== "consent") {
-              setStepId("consent");
-            }
-          }}
-          ariaLabel={tr("general.close")}
-        >
+      <div className="shrink-0 flex items-center gap-5 px-10 pt-8 pb-5 relative z-10">
+        {/* Home — leaves the wizard for the main screen from any step. Answers
+            already made are persisted as they are chosen, so setup can be
+            resumed later from My Preferences. */}
+        <HeaderButton onClick={onExit} ariaLabel={tr("general.home")}>
           <Home size={22} style={{ color: "#fff" }} />
         </HeaderButton>
-        <div className="ob-header-divider" style={{ width: "1.5px", height: "32px", backgroundColor: "rgba(255,255,255,0.18)", borderRadius: "1px" }} />
+        <div style={{ width: "1.5px", height: "32px", backgroundColor: "rgba(255,255,255,0.18)", borderRadius: "1px" }} />
         <div className="flex items-center gap-4 flex-1 min-w-0">
-          <div className="ob-header-icon flex items-center justify-center shrink-0" style={{ width: "52px", height: "52px", borderRadius: "14px", backgroundColor: "rgba(255,255,255,0.12)" }}>
+          <div className="flex items-center justify-center shrink-0" style={{ width: "52px", height: "52px", borderRadius: "14px", backgroundColor: "rgba(255,255,255,0.12)" }}>
             <SlidersHorizontal size={24} style={{ color: "#fff" }} />
           </div>
           <div className="min-w-0">
-            <h2 className="ob-title" style={{ fontFamily, fontSize: "30px", fontWeight: 800, color: "#FFFFFF", lineHeight: "34px" }}>
+            <h2 style={{ fontFamily, fontSize: "30px", fontWeight: 800, color: "#FFFFFF", lineHeight: "34px" }}>
               {tr("onboarding.header.title")}
             </h2>
-            <p className="ob-subtitle" style={{ fontFamily, fontSize: "15px", color: "rgba(255,255,255,0.6)", marginTop: "2px" }}>
+            <p style={{ fontFamily, fontSize: "15px", color: "rgba(255,255,255,0.6)", marginTop: "2px" }}>
               {tr("onboarding.header.subtitle")}
             </p>
           </div>
@@ -808,7 +475,7 @@ export function OnboardingWizard({
       </div>
 
       {/* ─── Content — large white rounded card ─── */}
-      <div className="ob-content flex-1 min-h-0 px-10 pb-8 relative z-10 flex flex-col">
+      <div className="flex-1 min-h-0 px-10 pb-8 relative z-10 flex flex-col">
         <div
           className="ob-scroll flex-1 min-h-0 flex flex-col overflow-y-auto relative"
           style={{
@@ -818,35 +485,6 @@ export function OnboardingWizard({
             border: t.cardBorder,
           }}
         >
-          {/* Welcome step split hero image (fades out smoothly) */}
-          <div
-            className="ob-hero absolute inset-y-0 w-1/2 overflow-hidden pointer-events-none z-0"
-            style={{
-              right: 0,
-              left: "auto",
-              opacity: stepId === "welcome" ? 1 : 0,
-              transition: "opacity 0.4s ease-in-out",
-            }}
-          >
-            <img
-              src={t.heroImageUrl}
-              alt="Hospital Hero"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                objectPosition: t.heroCropPosition || "50% 50%",
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: `linear-gradient(to left, transparent 0%, ${t.surface} 100%)`,
-              }}
-            />
-          </div>
-
           {/* Stacked background images for smooth cross-fade transition */}
           {Object.entries(STEP_BACKGROUNDS).map(([id, src]) => {
             const isActive = stepId === id;
@@ -866,7 +504,7 @@ export function OnboardingWizard({
           })}
 
           {/* progress strip */}
-          <div className="ob-progress shrink-0 flex items-center gap-4 px-10 pt-7 relative z-10">
+          <div className="shrink-0 flex items-center gap-4 px-10 pt-7 relative z-10">
             {stepIndex > 0 ? (
               <button
                 onClick={goBack}
@@ -876,45 +514,80 @@ export function OnboardingWizard({
               >
                 <ChevronLeft size={22} style={{ color: t.textHeading, transform: isRTL ? "rotate(180deg)" : "" }} />
               </button>
-            ) : <div style={{ width: "44px" }} />}
+            ) : <div className="shrink-0" style={{ width: "44px", height: "44px" }} />}
             <div className="flex-1">
               <div style={{ height: "8px", borderRadius: "100px", backgroundColor: t.tileInactiveBg, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${progress * 100}%`, backgroundColor: t.primary, borderRadius: "100px", transition: "width 0.25s ease" }} />
               </div>
             </div>
-            <span className="ob-progress-label shrink-0" style={{ fontFamily, fontSize: "14px", fontWeight: 700, color: t.textMuted, minWidth: "72px", textAlign: isRTL ? "left" : "right" }}>
-              {tr("onboarding.progress", stepIndexInFull + 1, totalSteps)}
+            <span className="shrink-0" style={{ fontFamily, fontSize: "14px", fontWeight: 700, color: t.textMuted, minWidth: "72px", textAlign: isRTL ? "left" : "right" }}>
+              {tr("onboarding.progress", stepIndex + 1, totalSteps)}
             </span>
           </div>
 
           {/* centered step body */}
           <div
-            className="ob-body flex-1 min-h-0 flex flex-col justify-center px-10 py-8 relative z-10"
+            className="flex-1 min-h-0 flex flex-col justify-center items-center relative z-10"
             style={{
-              alignItems: stepId === "welcome" ? "flex-start" : "center",
-              paddingLeft: stepId === "welcome" ? "8%" : "2.5rem",
-              paddingRight: "2.5rem",
-              direction: stepId === "welcome" ? "ltr" : undefined,
+              paddingTop: SPACE[4],
+              paddingBottom: SPACE[4],
+              /* The welcome photo is pinned to the right edge in both reading
+                 directions, so the text panel is the half of the card the photo
+                 does not cover and the column centres inside that half rather
+                 than inside the whole card. */
+              paddingLeft: isWelcome ? 0 : SPACE[5],
+              paddingRight: isWelcome ? HERO_SHARE : SPACE[5],
             }}
           >
-            <div 
-              key={stepId} 
-              className="ob-step flex flex-col items-center w-full" 
-              style={{ 
-                maxWidth: "620px", 
+            {/* Welcome step photo panel. It sits in the body rather than the
+                card so it starts below the progress strip instead of running
+                under the step counter and swallowing it. */}
+            <div
+              className="absolute inset-y-0 w-1/2 overflow-hidden pointer-events-none z-0"
+              style={{
+                right: 0,
+                left: "auto",
+                opacity: isWelcome ? 1 : 0,
+                transition: "opacity 0.4s ease-in-out",
+              }}
+            >
+              <img
+                src={t.heroImageUrl}
+                alt="Hospital Hero"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  objectPosition: t.heroCropPosition || "50% 50%",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background: `linear-gradient(to left, transparent 0%, ${t.surface} 100%)`,
+                }}
+              />
+            </div>
+
+            <div
+              key={stepId}
+              className="flex flex-col items-center w-full relative z-10"
+              style={{
+                maxWidth: CONTENT_MAX_W,
+                gap: SPACE[3],
                 animation: "obStepIn 0.25s ease-out",
-                direction: stepId === "welcome" && isRTL ? "rtl" : undefined,
               }}
             >
               <div
-                className="ob-step-icon flex items-center justify-center"
-                style={{ width: "80px", height: "80px", borderRadius: t.radiusFull, backgroundColor: t.primarySubtle, marginBottom: "22px" }}
+                className="flex items-center justify-center shrink-0"
+                style={{ width: "96px", height: "96px", borderRadius: t.radiusFull, backgroundColor: t.primarySubtle }}
               >
                 {typeof Icon === "string" ? (
                   <div
                     style={{
-                      width: "38px",
-                      height: "38px",
+                      width: "44px",
+                      height: "44px",
                       backgroundColor: t.primary,
                       WebkitMaskImage: `url(${Icon})`,
                       maskImage: `url(${Icon})`,
@@ -927,46 +600,17 @@ export function OnboardingWizard({
                     }}
                   />
                 ) : (
-                  <Icon size={38} style={{ color: t.primary }} />
+                  <Icon size={44} style={{ color: t.primary }} />
                 )}
               </div>
               <h3
-                className="ob-step-title"
-                style={{ fontFamily, fontSize: "28px", fontWeight: 800, color: t.textHeading, textAlign: "center", lineHeight: "34px", marginBottom: "24px" }}
+                style={{ fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.extrabold, color: t.textHeading, textAlign: "center", lineHeight: LEADING.snug, margin: 0 }}
               >
                 {tr(`onboarding.${stepId}.title`)}
               </h3>
-              <div className="w-full flex flex-col gap-4">{renderStep()}</div>
+              <div className="w-full flex flex-col" style={{ gap: SPACE[3] }}>{renderStep()}</div>
             </div>
 
-            {skipConfig && (
-              <div
-                className="ob-skip"
-                style={{
-                  position: "absolute",
-                  bottom: "24px",
-                  left: "40px",
-                }}
-              >
-                <button
-                  onClick={skipConfig.onClick}
-                  className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
-                  style={{
-                    height: "44px",
-                    padding: "0 22px",
-                    backgroundColor: "transparent",
-                    borderRadius: t.radiusMd,
-                    border: `1.5px solid ${t.borderDefault}`,
-                    color: t.textMuted,
-                    fontFamily,
-                    fontWeight: 700,
-                    fontSize: "15px",
-                  }}
-                >
-                  {skipConfig.label}
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -983,36 +627,15 @@ export function OnboardingWizard({
         />
       )}
 
-      {/* Reused Bluetooth pairing flow (existing SettingsPanel dialog) */}
-      {overlay === "bluetooth" && (
-        <BluetoothDialog
-          onClose={() => { setOverlay(null); goNext(); }}
-          connectedId={btDevice}
-          onConnect={(id) => setBtDevice(id)}
-          onDisconnect={() => {
-            if (isAndroidApp() && btDevice) bluetoothBridge.disconnect(btDevice);
-            setBtDevice(null);
-          }}
+      {/* Burjeel admission consent — Accept checks the terms box; Reject just
+          closes the gate and leaves the box as it was. */}
+      {overlay === "consent" && (
+        <ConsentGate
+          onAccept={() => { setTermsAgreed(true); setOverlay(null); }}
+          onReject={() => setOverlay(null)}
         />
       )}
 
-      {/* Admission consent form, opened from the terms link on the consent step.
-          Accept: tick the terms box + persist acceptance, then close. Reject:
-          just close (checkbox stays unchecked, patient is NOT logged out). */}
-      {showConsentGate && (
-        <ConsentGate
-          onAccept={() => {
-            try {
-              localStorage.setItem("admission-consent-accepted", "true");
-            } catch (e) {
-              console.error(e);
-            }
-            setTermsAgreed(true);
-            setShowConsentGate(false);
-          }}
-          onReject={() => setShowConsentGate(false)}
-        />
-      )}
     </div>
   );
 }
