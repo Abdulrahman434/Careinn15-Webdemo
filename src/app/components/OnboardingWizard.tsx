@@ -167,7 +167,13 @@ export function OnboardingWizard({
     () => (readLS("careinn-screensaver-timeout") as any) || null
   );
   const [tourSeen, setTourSeen] = useState(() => !!readLS("careinn-consent-tour-seen"));
-  const [termsAgreed, setTermsAgreed] = useState(() => !!readLS("careinn-consent-terms-agreed"));
+  // Where an admission-consent gate is required (Burjeel), the terms box must
+  // start unchecked every session and may only be ticked by Accepting the gate
+  // — so no stale "careinn-consent-terms-agreed"/"admission-consent-accepted"
+  // value pre-checks it. Other brands keep the prior restore-from-storage.
+  const [termsAgreed, setTermsAgreed] = useState(() =>
+    requiresAdmissionConsent(activeConfigId) ? false : !!readLS("careinn-consent-terms-agreed")
+  );
 
   /* reused native flows rendered on top of the wizard */
   const [overlay, setOverlay] = useState<"pin" | "bluetooth" | null>(null);
@@ -627,7 +633,11 @@ export function OnboardingWizard({
               )}
               <ConsentCheckbox
                 checked={termsAgreed}
-                onToggle={() => setTermsAgreed(!termsAgreed)}
+                /* With the gate (Burjeel): tapping anywhere on the row opens
+                   ConsentGate and never toggles the box — the box is ticked
+                   only by Accept, and tapping again just reopens the gate.
+                   Other brands keep the direct toggle. */
+                onToggle={consentGateEnabled ? () => setShowConsentGate(true) : () => setTermsAgreed(!termsAgreed)}
                 before={tr("onboarding.consent.terms.before")}
                 link={tr("onboarding.consent.terms.link")}
                 after={tr("onboarding.consent.terms.after")}
