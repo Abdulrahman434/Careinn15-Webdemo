@@ -4,35 +4,53 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Admission Consent (Dummy)</title>
+<!-- Same web fonts as the app (see src/styles/fonts.css), so the text inside
+     this framed form matches the app font passed in from the host. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;500;600;700;800&family=Montserrat:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&family=Almarai:wght@300;400;700;800&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  :root { --ink:#2b2230; --muted:#6d6373; --plum:#7a1f4d; --paper:#ffffff; --line:#e6dfe9; --tint:#f7f3f8; }
+  :root { --ink:#2b2230; --muted:#6d6373; --plum:#7a1f4d; --paper:#ffffff; --line:#e6dfe9; --tint:#f7f3f8;
+    /* Overridden at runtime with the app font the host passes in. */
+    --doc-font: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
   @media (prefers-color-scheme: dark) {
     :root { --ink:#eee8f0; --muted:#b3a8b8; --plum:#e08ab4; --paper:#1d1721; --line:#3a303f; --tint:#262029; }
   }
   * { box-sizing: border-box; }
+  /* html stays the rem anchor (title/headings/disclaimer scale from it); body
+     copy is set a touch smaller so more of the document fits comfortably. */
+  html { font-size:15px; }
   html, body { margin:0; background:var(--paper); color:var(--ink);
-    font:15px/1.6 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
-  main { max-width: 760px; margin: 0 auto; padding: 24px 28px 36px; }
-  h1 { font-size: 1.5rem; font-weight:700; line-height:1.25; margin:0 0 4px; color:var(--plum); }
-  .sub { color:var(--muted); margin:0 0 20px; font-size:.87rem; }
-  h2 { font-size:1.1rem; font-weight:700; line-height:1.3; margin:20px 0 6px; }
-  p, li { margin:0 0 8px; }
-  ul { padding-inline-start: 20px; margin:0 0 8px; }
-  /* Arabic translation block: a tinted separator, but matched to the English
-     type scale and spacing so both languages read as one document. */
-  .ar { direction: rtl; text-align: right; background:var(--tint); border-radius:10px;
-    padding:16px 18px; margin-top:24px;
-    font-family: "Segoe UI", "Noto Naskh Arabic", Tahoma, sans-serif; line-height:1.7; }
-  .ar h2:first-child { margin-top:0; }
-  .ar h2 { margin:18px 0 6px; }
-  .ar p { margin:0 0 8px; }
-  .end { margin-top:24px; padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font-size:.87rem; text-align:center; }
+    line-height:1.55; font-family: var(--doc-font); }
+  /* Bottom padding so the final section clears the fixed footer. */
+  main { max-width: 760px; margin: 0 auto; padding: 22px 32px 44px; }
+
+  /* Title block — the one clearly dominant element, with the disclaimer just
+     under it in muted italics and a hairline rule separating it from the body. */
+  h1 { font-size: 1.6rem; font-weight:800; line-height:1.25; margin:0 0 6px;
+    color:var(--plum); letter-spacing:-0.01em; }
+  .sub { color:var(--muted); margin:0 0 4px; font-size:.9rem; font-style:italic; }
+  .rule { height:1px; background:var(--line); border:0; margin:13px 0 16px; }
+
+  /* Section headings — a clear step above body text, not oversized. */
+  h2 { font-size:1.1rem; font-weight:700; line-height:1.3; margin:18px 0 6px; color:var(--ink); }
+  /* Body copy ~7% smaller than headings' rem base, still roomy to read. */
+  p { font-size:14px; line-height:1.55; margin:0 0 8px; }
+  ul { padding-inline-start: 22px; margin:4px 0 8px; }
+  li { font-size:14px; line-height:1.5; margin:0 0 5px; }
+
+  /* Only one language shows at a time; the host toggles which. Arabic reads
+     right-to-left and needs a little more line height for natural wrapping. */
+  #ar { display:none; direction: rtl; text-align: right; }
+  #ar h2 { line-height:1.4; }
+  #ar p { line-height:1.85; }
+  #ar li { line-height:1.8; }
 </style>
 </head>
 <body>
-<main id="doc">
+<main id="en" dir="ltr">
   <h1>Consent to Admission and Treatment</h1>
-  <p class="sub">Sample document for testing only. Not a legal or medical document.</p>
+  <hr class="rule">
 
   <h2>1. Purpose</h2>
   <p>This form explains what you agree to when you are admitted to the hospital and use the patient app during your stay. Please read all of it before you continue.</p>
@@ -62,29 +80,74 @@
 
   <h2>8. Your acknowledgement</h2>
   <p>By selecting Accept in the app, you confirm that you have read and understood this form, that you had the chance to ask questions, and that you agree to the terms above.</p>
+</main>
 
-  <section class="ar" lang="ar" dir="rtl">
-    <h2>الموافقة على الدخول والعلاج</h2>
-    <p>هذا المستند للتجربة فقط وليس مستنداً قانونياً أو طبياً.</p>
-    <h2>الغرض</h2>
-    <p>يوضح هذا النموذج ما توافق عليه عند دخولك المستشفى واستخدامك تطبيق المريض خلال فترة إقامتك. يرجى قراءته كاملاً قبل المتابعة.</p>
-    <h2>الموافقة على الرعاية</h2>
-    <p>توافق على قيام فريق الرعاية بتقييمك وفحصك وعلاجك حسب الحاجة خلال فترة الإقامة. يحق لك طرح الأسئلة في أي وقت.</p>
-    <h2>معلوماتك</h2>
-    <p>يجمع المستشفى معلوماتك الشخصية والصحية ويحفظها لتقديم الرعاية وإدارة الإقامة والالتزام بالمتطلبات القانونية، ولا تتم مشاركتها إلا مع من يحتاجها لرعايتك.</p>
-    <h2>إقرارك</h2>
-    <p>باختيارك «موافق» في التطبيق، فإنك تؤكد أنك قرأت هذا النموذج وفهمته وأنك توافق على ما ورد فيه.</p>
-  </section>
+<main id="ar" lang="ar" dir="rtl">
+  <h1>الموافقة على الدخول والعلاج</h1>
+  <hr class="rule">
 
-  <div class="end" id="end">End of document</div>
+  <h2>١. الغرض</h2>
+  <p>يوضّح هذا النموذج ما توافق عليه عند دخولك المستشفى واستخدامك تطبيق المريض خلال فترة إقامتك. يُرجى قراءته كاملاً قبل المتابعة.</p>
+
+  <h2>٢. الموافقة على الرعاية</h2>
+  <p>توافق على قيام فريق الرعاية بتقييمك وفحصك وعلاجك حسب الحاجة خلال فترة إقامتك. ويمكنك طرح الأسئلة حول أي إجراء في أي وقت، كما يمكنك سحب الموافقة على إجراء معيّن بإبلاغ ممرّضك أو طبيبك.</p>
+
+  <h2>٣. معلوماتك</h2>
+  <p>يجمع المستشفى معلوماتك الشخصية والصحية ويحفظها لتقديم الرعاية وإدارة دخولك والوفاء بالمتطلبات القانونية. ولا تتم مشاركة معلوماتك إلا مع الموظفين الذين يحتاجونها لرعايتك، ومع الأطراف الأخرى حيثما يقتضي القانون ذلك.</p>
+  <ul>
+    <li>تُحفظ سجلاتك بسرية وأمان.</li>
+    <li>يمكنك طلب نسخة من سجلاتك عبر المستشفى.</li>
+    <li>تقتصر المعلومات المعروضة في التطبيق على دخولك أنت وحدك.</li>
+  </ul>
+
+  <h2>٤. استخدام تطبيق المريض</h2>
+  <p>يتيح لك التطبيق الاطلاع على تفاصيل دخولك وطلباتك وإشعاراتك، وهو لا يغني عن التحدث إلى فريق الرعاية. وفي حالات الطوارئ، استخدم زر الاستدعاء بجوار سريرك بدلاً من التطبيق.</p>
+
+  <h2>٥. المتعلّقات والأشياء الثمينة</h2>
+  <p>يُنصح بترك الأشياء الثمينة في المنزل. ولا يتحمّل المستشفى مسؤولية الأغراض التي تحتفظ بها معك ما لم يتم تسليمها وتسجيلها لدى الموظفين.</p>
+
+  <h2>٦. الزوّار والمرافقون</h2>
+  <p>قد تُطبَّق ساعات الزيارة وقواعد المرافقين الخاصة بقسمك. ويجب على المرافق الذي يبقى معك تسجيل بياناته لدى مكتب الدخول.</p>
+
+  <h2>٧. المسؤولية المالية</h2>
+  <p>تدرك أن الرسوم غير المغطّاة من قِبل تأمينك أو الجهة الكفيلة قد تكون مستحقة الدفع عليك. ويمكن لموظف الدخول شرح تغطيتك والتكاليف التقديرية.</p>
+
+  <h2>٨. إقرارك</h2>
+  <p>باختيارك «موافق» في التطبيق، فإنك تؤكد أنك قرأت هذا النموذج وفهمته، وأنه أُتيحت لك الفرصة لطرح الأسئلة، وأنك توافق على الشروط الواردة أعلاه.</p>
 </main>
 
 <script>
-  // Tells the parent app when the user has reached the bottom of this page.
-  // Works inside an iframe (cross-origin safe) via postMessage.
+  // Reports scroll position to the parent app and receives the language/font
+  // to show. Works inside an iframe (cross-origin safe) via postMessage.
+  //
+  //   out: { source:'consent-form', type:'ready'|'progress'|'scrolled-to-end', value? }
+  //   in : { source:'consent-form-host', type:'set-lang', lang:'en'|'ar', font? }
   (function () {
     var sent = false;
     var THRESHOLD = 24; // px of tolerance from the very bottom
+    var params = new URLSearchParams(location.search);
+    var lang = params.get('lang') === 'ar' ? 'ar' : 'en';
+    var font = params.get('font') || '';
+
+    function byId(id) { return document.getElementById(id); }
+
+    function applyFont(f) {
+      if (f) { document.documentElement.style.setProperty('--doc-font', f); }
+    }
+
+    function applyLang(next) {
+      lang = next === 'ar' ? 'ar' : 'en';
+      var en = byId('en'), ar = byId('ar');
+      if (en) en.style.display = lang === 'ar' ? 'none' : 'block';
+      if (ar) ar.style.display = lang === 'ar' ? 'block' : 'none';
+      document.documentElement.setAttribute('lang', lang);
+      document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+      // A new language is a new document: back to the top, and the end must be
+      // reached again before the parent re-enables Accept.
+      sent = false;
+      window.scrollTo(0, 0);
+      check();
+    }
 
     function atBottom() {
       var el = document.scrollingElement || document.documentElement;
@@ -102,8 +165,22 @@
       notify('progress', { value: progress() });
       if (!sent && atBottom()) { sent = true; notify('scrolled-to-end'); }
     }
+
     window.addEventListener('scroll', check, { passive: true });
     window.addEventListener('resize', check);
+    window.addEventListener('message', function (ev) {
+      var d = ev.data;
+      if (!d || d.source !== 'consent-form-host') return;
+      if (d.type === 'set-lang') {
+        if (d.font) applyFont(d.font);
+        applyLang(d.lang);
+      }
+    });
+
+    // Apply the initial language/font immediately (DOM is parsed — this script
+    // is at the end of <body>), then re-check once fonts and layout settle.
+    applyFont(font);
+    applyLang(lang);
     window.addEventListener('load', function () { notify('ready'); check(); });
   })();
 </script>

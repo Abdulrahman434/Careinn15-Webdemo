@@ -1,30 +1,37 @@
 import { useEffect, useRef, useState } from "react";
+import { FileCheck2, Check, AlertTriangle } from "lucide-react";
+import { ModalHeader } from "./primitives";
+import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "./ThemeContext";
 import { useLocale } from "./i18n";
-import { SHADOW } from "./ThemeContext";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * Admission consent gate
  *
- * Shown once, after the onboarding/welcome flow and before the patient reaches
- * the home screen. The consent document itself lives in an <iframe> (NOT a PDF
- * viewer) and reports its own scroll position to us via window.postMessage:
+ * Shown after the onboarding consent step (Burjeel only). The consent document
+ * itself lives in an <iframe> (NOT a PDF viewer) and reports its own scroll
+ * position to us via window.postMessage:
  *
  *   { source: "consent-form", type: "ready" | "progress" | "scrolled-to-end", value?: number }
  *
  * The Accept button stays disabled until the form reports "scrolled-to-end",
  * so the patient cannot continue without scrolling the whole document.
  *
- * Colors are fixed to the consent document's own brand (plum #7a1f4d) rather
- * than theme tokens, so the gate matches the framed form 1:1 regardless of
- * which hospital brand is active.
+ * Chrome (header, footer, pill buttons, EN/AR toggle, fonts and tokens) is
+ * shared with the Care Partner Agreement dialog — same ModalHeader, same
+ * ConfirmDialog, same TYPE_SCALE / WEIGHT / SHADOW scale and theme tokens — so
+ * the two popups read as one product.
  *
- * The Accept / Reject buttons mirror the welcome-screen "Start now" /
- * "Start with a tour" buttons (OnboardingWizard PrimaryButton / GhostButton):
- * a solid primary pill and a white outline pill, fully rounded (9999px). The
- * disabled state is a faded (0.4 opacity) version, as on the welcome screen.
+ * Language: the EN/AR toggle in ModalHeader flips the app locale, which drives
+ * this gate's labels and direction (useLocale) AND the language shown inside
+ * the iframe. The host tells the iframe which language and font to render via a
+ * `?lang=&font=` query on first load, and a postMessage afterwards:
+ *
+ *   { source: "consent-form-host", type: "set-lang", lang: "en" | "ar", font }
+ *
+ * On a language change the document scrolls back to the top and Accept is
+ * disabled again until the end of the newly shown language is reached.
  * ═══════════════════════════════════════════════════════════════════════════ */
-
-const PLUM = "#7a1f4d";
 
 /* Hospitals that require the admission consent step before the home screen.
  * Add more config ids here as other hospitals adopt the flow. The ids match
@@ -56,12 +63,24 @@ interface ConsentGateProps {
 }
 
 export function ConsentGate({ src = "/consent-form.html", onAccept, onReject }: ConsentGateProps) {
-  const { t, dir, fontFamily } = useLocale();
+  const { theme, darkMode } = useTheme();
+  const { t, locale, dir, fontFamily } = useLocale();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [progress, setProgress] = useState(0);
   const [reachedEnd, setReachedEnd] = useState(false);
   const [confirmingReject, setConfirmingReject] = useState(false);
 
+  /* The form has English and Arabic; every other locale (e.g. Urdu) reads the
+     English document, matching the EN/AR-only toggle in the header. */
+  const formLang: "en" | "ar" = locale === "ar" ? "ar" : "en";
+
+  /* Built once, so toggling the language does NOT reload the iframe — the
+     language change is a postMessage, not a new src. */
+  const initialSrc = useRef(
+    `${src}${src.includes("?") ? "&" : "?"}lang=${formLang}&font=${encodeURIComponent(fontFamily)}`,
+  ).current;
+
+  /* Incoming scroll reports from the framed document. */
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       // Only trust messages coming from THIS iframe's document, and only ones
@@ -82,55 +101,68 @@ export function ConsentGate({ src = "/consent-form.html", onAccept, onReject }: 
     return () => window.removeEventListener("message", onMessage);
   }, []);
 
+  /* Language change (via the header toggle): tell the iframe to switch, and
+     require the patient to reach the end of the newly shown language again.
+     Skipped on first mount — the iframe already got lang+font via its src. */
+  const firstRun = useRef(true);
+  useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
+    setReachedEnd(false);
+    setProgress(0);
+    iframeRef.current?.contentWindow?.postMessage(
+      { source: "consent-form-host", type: "set-lang", lang: formLang, font: fontFamily },
+      "*",
+    );
+  }, [formLang, fontFamily]);
+
+  /* The X and the Reject button do the same thing: ask before leaving without
+     accepting. */
+  const requestReject = () => setConfirmingReject(true);
+
   return (
     <div
       dir={dir}
+      className="fixed inset-0 flex items-center justify-center"
       style={{
-        position: "fixed",
-        inset: 0,
         zIndex: 100000,
-        background: "rgba(0,0,0,0.55)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        backgroundColor: theme.overlay,
+        backdropFilter: "blur(4px)",
+        WebkitBackdropFilter: "blur(4px)",
         padding: "32px",
         fontFamily,
       }}
     >
       <div
+        className="relative flex flex-col"
         style={{
-          display: "flex",
-          flexDirection: "column",
-          width: "100%",
-          maxWidth: "900px",
+          width: "min(900px, 92%)",
           height: "100%",
           maxHeight: "96%",
-          background: "#ffffff",
-          borderRadius: "16px",
+          borderRadius: theme.radiusXl,
+          backgroundColor: theme.surface,
+          border: theme.cardBorder,
+          boxShadow: SHADOW.xl,
           overflow: "hidden",
-          boxShadow: "0 24px 60px rgba(0,0,0,0.35)",
         }}
       >
-        {/* Header */}
-        <div
-          style={{
-            padding: "20px 28px",
-            color: "#ffffff",
-            background: PLUM,
-            fontSize: "22px",
-            fontWeight: 700,
-          }}
-        >
-          {t("admissionConsent.title")}
-        </div>
+        {/* Shared header: tinted icon tile, title, EN/AR toggle, close (X). The
+            X closes without accepting (behaves like Reject). */}
+        <ModalHeader
+          icon={FileCheck2}
+          title={t("admissionConsent.title")}
+          onClose={requestReject}
+        />
 
-        {/* Thin progress bar */}
-        <div style={{ height: "4px", background: "#efe7ee" }}>
+        {/* Thin progress bar under the header */}
+        <div className="shrink-0" style={{ height: "4px", backgroundColor: theme.surfaceInset }}>
           <div
             style={{
               height: "100%",
               width: `${Math.round(progress * 100)}%`,
-              background: PLUM,
+              backgroundColor: theme.primary,
               transition: "width 0.15s ease-out",
             }}
           />
@@ -139,138 +171,101 @@ export function ConsentGate({ src = "/consent-form.html", onAccept, onReject }: 
         {/* Framed consent document */}
         <iframe
           ref={iframeRef}
-          src={src}
+          src={initialSrc}
           title={t("admissionConsent.title")}
           style={{ flex: 1, width: "100%", border: "none" }}
         />
 
-        {/* Footer: hint + reject/accept */}
+        {/* Footer: hint on the left, Reject / Accept pills on the right —
+            matching the Care Partner Agreement footer. */}
         <div
+          className="shrink-0 flex items-center justify-between gap-3"
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "20px",
             padding: "18px 28px",
-            borderTop: "1px solid #e6dfe9",
-            background: "#ffffff",
+            borderTop: `1px solid ${theme.borderDefault}`,
+            backgroundColor: theme.surfaceInset,
           }}
         >
-          <span style={{ fontSize: "15px", lineHeight: 1.4, color: "#5a5160" }}>
-            {t("admissionConsent.hint")}
+          <span className="flex items-center gap-2" style={{ flex: 1, minWidth: 0 }}>
+            {!reachedEnd && (
+              <>
+                <AlertTriangle size={17} style={{ color: theme.warningOn }} strokeWidth={2.4} className="shrink-0" />
+                <span
+                  style={{
+                    fontFamily,
+                    fontSize: TYPE_SCALE.sm,
+                    fontWeight: WEIGHT.semibold,
+                    color: darkMode ? theme.textBody : theme.textMuted,
+                  }}
+                >
+                  {t("admissionConsent.hint")}
+                </span>
+              </>
+            )}
           </span>
-          <div style={{ display: "flex", flexShrink: 0, gap: "12px" }}>
-            {/* Secondary / outline — matches welcome "Start with a tour" (GhostButton):
-                white background, subtle border, gray text, fully rounded pill. */}
-            <button
-              type="button"
-              disabled={!reachedEnd}
-              onClick={() => setConfirmingReject(true)}
-              style={{
-                padding: "14px 28px",
-                borderRadius: "9999px",
-                border: "1.5px solid #e6dfe9",
-                fontSize: "17px",
-                fontWeight: 600,
-                color: "#6d6373",
-                background: "transparent",
-                opacity: reachedEnd ? 1 : 0.4,
-                cursor: reachedEnd ? "pointer" : "not-allowed",
-                transition: "opacity 0.2s ease",
-              }}
-            >
-              {t("admissionConsent.reject")}
-            </button>
-            {/* Primary — matches welcome "Start now" (PrimaryButton):
-                solid primary, bold text, soft shadow, fully rounded pill. */}
-            <button
-              type="button"
-              disabled={!reachedEnd}
-              onClick={onAccept}
-              style={{
-                padding: "14px 28px",
-                borderRadius: "9999px",
-                border: "none",
-                fontSize: "17px",
-                fontWeight: 700,
-                color: "#ffffff",
-                background: PLUM,
-                boxShadow: reachedEnd ? SHADOW.md : "none",
-                opacity: reachedEnd ? 1 : 0.4,
-                cursor: reachedEnd ? "pointer" : "not-allowed",
-                transition: "opacity 0.2s ease, box-shadow 0.2s ease",
-              }}
-            >
-              {t("admissionConsent.accept")}
-            </button>
-          </div>
+
+          {/* Secondary / outline pill */}
+          <button
+            type="button"
+            disabled={!reachedEnd}
+            onClick={requestReject}
+            className="cursor-pointer active:scale-[0.98] transition-transform"
+            style={{
+              minHeight: "54px",
+              padding: "0 26px",
+              borderRadius: theme.radiusFull,
+              backgroundColor: "transparent",
+              border: `1.5px solid ${theme.borderDefault}`,
+              fontFamily,
+              fontSize: TYPE_SCALE.base,
+              fontWeight: WEIGHT.medium,
+              color: theme.textMuted,
+              outline: "none",
+              opacity: reachedEnd ? 1 : 0.45,
+              cursor: reachedEnd ? "pointer" : "not-allowed",
+            }}
+          >
+            {t("admissionConsent.reject")}
+          </button>
+
+          {/* Primary pill with a check icon */}
+          <button
+            type="button"
+            disabled={!reachedEnd}
+            onClick={onAccept}
+            className="flex items-center gap-2 cursor-pointer active:scale-[0.98] transition-transform"
+            style={{
+              minHeight: "54px",
+              padding: "0 28px",
+              borderRadius: theme.radiusFull,
+              backgroundColor: theme.primary,
+              border: "none",
+              outline: "none",
+              fontFamily,
+              fontSize: TYPE_SCALE.base,
+              fontWeight: WEIGHT.semibold,
+              color: theme.brandOnPrimary,
+              boxShadow: reachedEnd ? SHADOW.md : "none",
+              opacity: reachedEnd ? 1 : 0.45,
+              cursor: reachedEnd ? "pointer" : "not-allowed",
+            }}
+          >
+            <Check size={20} strokeWidth={3} />
+            {t("admissionConsent.accept")}
+          </button>
         </div>
       </div>
 
-      {/* Reject confirmation */}
-      {confirmingReject && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 1,
-            background: "rgba(0,0,0,0.45)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "32px",
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: "440px",
-              background: "#ffffff",
-              borderRadius: "16px",
-              padding: "28px",
-              boxShadow: "0 24px 60px rgba(0,0,0,0.35)",
-            }}
-          >
-            <p style={{ margin: "0 0 24px", fontSize: "18px", color: "#2b2230", lineHeight: 1.5 }}>
-              {t("admissionConsent.confirm.message")}
-            </p>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-              <button
-                type="button"
-                onClick={() => setConfirmingReject(false)}
-                style={{
-                  padding: "12px 24px",
-                  borderRadius: "12px",
-                  border: `2px solid ${PLUM}`,
-                  fontSize: "16px",
-                  fontWeight: 700,
-                  color: PLUM,
-                  background: "transparent",
-                  cursor: "pointer",
-                }}
-              >
-                {t("admissionConsent.confirm.goBack")}
-              </button>
-              <button
-                type="button"
-                onClick={onReject}
-                style={{
-                  padding: "12px 24px",
-                  borderRadius: "12px",
-                  border: "none",
-                  fontSize: "16px",
-                  fontWeight: 700,
-                  color: "#ffffff",
-                  background: PLUM,
-                  cursor: "pointer",
-                }}
-              >
-                {t("admissionConsent.confirm.yesReject")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Reject confirmation — shared dialog, in front of the gate. */}
+      <ConfirmDialog
+        visible={confirmingReject}
+        variant="danger"
+        message={t("admissionConsent.confirm.message")}
+        confirmLabel={t("admissionConsent.confirm.yesReject")}
+        cancelLabel={t("admissionConsent.confirm.goBack")}
+        onConfirm={onReject}
+        onCancel={() => setConfirmingReject(false)}
+      />
     </div>
   );
 }
