@@ -2620,12 +2620,9 @@ function BedsideScreen() {
         />
       )}
 
-      {/* Admission consent — after onboarding/welcome, before the home screen.
-          Only for hospitals that require it (see requiresAdmissionConsent); not
-          shown to guest sessions (they are not admitted patients). */}
-      {requiresAdmissionConsent(activeConfigId) && !showOnboarding && !consentAccepted && !guestSession && (
-        <ConsentGate onAccept={handleConsentAccept} onReject={handleConsentReject} />
-      )}
+      {/* Admission consent is no longer shown automatically after onboarding.
+          It is now opened from the "Terms & Conditions" link on the consent
+          step of the OnboardingWizard (Burjeel only — see requiresAdmissionConsent). */}
 
       <Toaster position="bottom-center" />
     </div>

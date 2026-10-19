@@ -8,6 +8,7 @@ import {
   FileCheck2, Check, ChevronLeft, Home,
 } from "lucide-react";
 import { useNurseStore } from "./NurseDataStore";
+import { ConsentGate, requiresAdmissionConsent } from "./ConsentGate";
 import { markOnboardingComplete } from "../lib/onboardingStore";
 import { isAccountSet } from "../lib/accountAuth";
 import { MyPreferencesDialog } from "./MyAccountDialog";
@@ -171,6 +172,12 @@ export function OnboardingWizard({
   /* reused native flows rendered on top of the wizard */
   const [overlay, setOverlay] = useState<"pin" | "bluetooth" | null>(null);
   const [btDevice, setBtDevice] = useState<string | null>(null);
+
+  /* Admission consent form, opened from the "Terms & Conditions" link on the
+   * consent step (Burjeel only — other brands have no gate and the link is a
+   * no-op, as before). Accepting checks the terms box; rejecting just closes. */
+  const [showConsentGate, setShowConsentGate] = useState(false);
+  const consentGateEnabled = requiresAdmissionConsent(activeConfigId);
 
   const sequence = useMemo(() => sequenceFor(activeConfigId), [activeConfigId]);
   const shortFlow = activeConfigId === "dsfh";
@@ -624,6 +631,7 @@ export function OnboardingWizard({
                 before={tr("onboarding.consent.terms.before")}
                 link={tr("onboarding.consent.terms.link")}
                 after={tr("onboarding.consent.terms.after")}
+                onLinkClick={consentGateEnabled ? () => setShowConsentGate(true) : undefined}
               />
             </div>
             <div className="flex items-center gap-3 w-full">
@@ -973,6 +981,24 @@ export function OnboardingWizard({
             if (isAndroidApp() && btDevice) bluetoothBridge.disconnect(btDevice);
             setBtDevice(null);
           }}
+        />
+      )}
+
+      {/* Admission consent form, opened from the terms link on the consent step.
+          Accept: tick the terms box + persist acceptance, then close. Reject:
+          just close (checkbox stays unchecked, patient is NOT logged out). */}
+      {showConsentGate && (
+        <ConsentGate
+          onAccept={() => {
+            try {
+              localStorage.setItem("admission-consent-accepted", "true");
+            } catch (e) {
+              console.error(e);
+            }
+            setTermsAgreed(true);
+            setShowConsentGate(false);
+          }}
+          onReject={() => setShowConsentGate(false)}
         />
       )}
     </div>
