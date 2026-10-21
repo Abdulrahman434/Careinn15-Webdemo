@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
+import { useNurseStore } from "./NurseDataStore";
 
 // ─── Shared Clinical Store ────────────────────────────────────────────────────
 // A simple module-level singleton so nurse and doctor interfaces share the same

@@ -267,7 +267,7 @@ export function PatientGreeting({
       >
         <AutoCarousel
           images={heroImages}
-          objectPosition={theme.heroCropPosition || "50% 15%"}
+          objectPosition={theme.welcomeImagePosition || theme.heroCropPosition || "50% 15%"}
           objectFit="cover"
           intervalSeconds={theme.slideshowInterval}
           onImageClick={onImageTap}

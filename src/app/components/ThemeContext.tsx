@@ -302,6 +302,7 @@ export interface ThemeConfig {
   heroImageUrl: string;      // hospital exterior photo (1920×600 recommended)
   heroImageUrls: string[];   // multiple hero images for carousel
   heroCropPosition: string;  // object-position for hero image crop, e.g. "50% 15%"
+  welcomeImagePosition?: string; // object-position for the welcome card photo; falls back to heroCropPosition
   slideshowInterval: number; // custom interval for slides in seconds
   heroOpacity: number;       // background photo opacity, percent 0–100 (default 40)
   location: string;
@@ -488,6 +489,7 @@ function buildTheme(core: {
   heroImageUrl: string;
   heroImageUrls?: string[];
   heroCropPosition?: string;
+  welcomeImagePosition?: string;
   slideshowInterval?: number;
   heroOpacity?: number;
   primary: string;
@@ -527,10 +529,11 @@ function buildTheme(core: {
     remoteControl: c.remoteControl,
     logoUrlOnDark: c.logoUrlDark || "",
     patientGuidePdf: c.patientGuidePdf,
-    logoUrl: (dark && c.logoUrlDark) || c.logoUrl || (c.id === "dsfh" ? DSFH_LOGO : c.id === "burjeel" ? burjeelLogo : c.id === "slh" ? slhLogo : c.id === "dallah" ? dallahLogo : c.id === "caremed" ? caremedLogo : c.id === "imc" ? imcLogo : c.id === "careinn" ? careinnLogo : c.id === "prime" ? primeLogo : c.id === "kauh" ? kauhLogo : c.id === "andalusia" ? andalusiaLogo : ""),
-    heroImageUrl: c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : c.id === "kauh" ? kauhHero : c.id === "andalusia" ? andalusiaHero : ""),
-    heroImageUrls: c.heroImageUrls && c.heroImageUrls.length > 0 ? c.heroImageUrls : [c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : c.id === "kauh" ? kauhHero : c.id === "andalusia" ? andalusiaHero : "")],
+    logoUrl: (dark && c.logoUrlDark) || c.logoUrl || (c.id === "dsfh" ? DSFH_LOGO : c.id === "burjeel" ? burjeelLogo : c.id === "slh" ? slhLogo : c.id === "dallah" ? dallahLogo : c.id === "caremed" ? caremedLogo : c.id === "imc" ? imcLogo : c.id === "careinn" ? careinnLogo : c.id === "prime" ? primeLogo : c.id === "kauh" ? kauhLogo : c.id === "andalusia" ? andalusiaLogo : c.id === "qumc" ? qumcLogo : c.id === "ksumc" ? ksumcLogo : ""),
+    heroImageUrl: c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : c.id === "kauh" ? kauhHero : c.id === "andalusia" ? andalusiaHero : c.id === "qumc" ? qumcHero : c.id === "ksumc" ? ksumcHero : ""),
+    heroImageUrls: c.heroImageUrls && c.heroImageUrls.length > 0 ? c.heroImageUrls : [c.heroImageUrl || (c.id === "dsfh" ? DSFH_HERO : c.id === "burjeel" ? burjeelHero : c.id === "slh" ? slhHero : c.id === "dallah" ? dallahHero : c.id === "caremed" ? caremedHero : c.id === "imc" ? imcHero : c.id === "careinn" ? careinnHero : c.id === "prime" ? primeHero : c.id === "kauh" ? kauhHero : c.id === "andalusia" ? andalusiaHero : c.id === "qumc" ? qumcHero : c.id === "ksumc" ? ksumcHero : "")],
     heroCropPosition: c.heroCropPosition || "50% 15%",
+    welcomeImagePosition: c.welcomeImagePosition,
     slideshowInterval: c.slideshowInterval || 5,
     heroOpacity: c.heroOpacity ?? 40,
     location: (c as any).location || "Riyadh",
@@ -1105,6 +1108,13 @@ import kauhHero from "../../assets/kauh-hero.webp";
 import andalusiaLogo from "../../assets/Andalusia.webp";
 import andalusiaHero from "../../assets/andalusia-hero.webp";
 
+import qumcLogo from "../../assets/qumc-logo.webp";
+import qumcLogoDark from "../../assets/qumc-logo-white.webp";
+import qumcHero from "../../assets/qumc-hero.webp";
+
+import ksumcLogo from "../../assets/ksumc-logo.webp";
+import ksumcHero from "../../assets/ksumc-hero.webp";
+
 /* Canonical built-in asset URLs — used as fallbacks for DSFH */
 export const DSFH_LOGO = logoImage;
 export const DSFH_HERO = hospitalImg;
@@ -1306,6 +1316,52 @@ export const ANDALUSIA_CORE: HospitalCoreConfig = {
   location: "Saudi Arabia",
 };
 
+export const QUMC_CORE: HospitalCoreConfig = {
+  id: "qumc",
+  hospitalName: "Qassim University Medical Center",
+  hospitalShortName: "QUMC",
+  fontFamily: "'Mulish', sans-serif",
+  fontFamilyAr: "'Almarai', sans-serif",
+  logoUrl: qumcLogo,
+  logoUrlDark: qumcLogoDark,
+  hospitalWebsiteUrl: "https://qumc.edu.sa/departments/aatd",
+  heroImageUrl: qumcHero,
+  heroImageUrls: ["/hospitals/qumc.png"],
+  heroCropPosition: "50% 70%",
+  welcomeImagePosition: "center 70%",
+  primary: "#0F4C81",
+  primaryDark: "#0C3B65",
+  primaryLight: "#E0E8EF",
+  accent: "#009688",
+  accentDark: "#00756A",
+  accentLight: "#DEF1F0",
+  location: "Buraydah",
+  country: "Saudi Arabia",
+};
+
+export const KSUMC_CORE: HospitalCoreConfig = {
+  id: "ksumc",
+  hospitalName: "King Saud University Medical City",
+  hospitalShortName: "KSUMC",
+  fontFamily: "'Mulish', sans-serif",
+  fontFamilyAr: "'Almarai', sans-serif",
+  logoUrl: ksumcLogo,
+  hospitalWebsiteUrl: "https://medicalcity.ksu.edu.sa/en",
+  heroImageUrl: ksumcHero,
+  heroImageUrls: ["/hospitals/ksumc-welcome.jpg"],
+  heroCropPosition: "50% 40%",
+  welcomeImagePosition: "center 12%",
+  primary: "#0084BD",
+  primaryDark: "#006793",
+  primaryLight: "#DEEFF6",
+  // KSU Grey carries icons and accents; the cream (#E3E0D2) is too light to
+  // read on white, so it is kept to surfaces via accentLight.
+  accent: "#748995",
+  accentLight: "#E3E0D2",
+  location: "Riyadh",
+  country: "Saudi Arabia",
+};
+
 /** All built-in hospital presets (always available, never deleted) */
 export const BUILTIN_PRESETS: HospitalCoreConfig[] = [
   DSFH_CORE,
@@ -1318,6 +1374,8 @@ export const BUILTIN_PRESETS: HospitalCoreConfig[] = [
   PRIME_CORE,
   KAUH_CORE,
   ANDALUSIA_CORE,
+  QUMC_CORE,
+  KSUMC_CORE,
 ];
 
 
@@ -1350,6 +1408,7 @@ export interface HospitalCoreConfig {
   heroImageUrl: string;
   heroImageUrls?: string[];
   heroCropPosition?: string;
+  welcomeImagePosition?: string;
   slideshowInterval?: number;
   heroOpacity?: number;      // background photo opacity, percent 0–100 (default 40)
   primary: string;
@@ -1743,7 +1802,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const saveConfigFn = useCallback((config: HospitalCoreConfig) => {
-    const hasBuiltinAssets = ["dsfh", "burjeel", "slh", "dallah", "caremed", "careinn", "prime", "kauh", "andalusia"].includes(config.id);
+    const hasBuiltinAssets = ["dsfh", "burjeel", "slh", "dallah", "caremed", "careinn", "prime", "kauh", "andalusia", "qumc", "ksumc"].includes(config.id);
     const toSave = hasBuiltinAssets
       ? {
         ...config,
