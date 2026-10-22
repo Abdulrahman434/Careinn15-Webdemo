@@ -1,5 +1,5 @@
 import { ModalHeader } from "./primitives";
-import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, LEADING, primaryRgba, TEXT_STYLE, SPACE, DISCHARGE_MILESTONE_RING } from "./ThemeContext";
+import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, LEADING, primaryRgba, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { ApiImage } from "./ApiImage";
 import { useLocale, type Locale, textDirection } from "./i18n";
 import { useNurseStore, type SectionKey, nurseActions } from "./NurseDataStore";
@@ -1260,15 +1260,14 @@ function CarePlanSlide({ theme, isExpanded = false }: { theme: any; isExpanded?:
   );
 }
 
-/* Fakeeh only: discharge follows the milestones of Fakeeh's HIS, each with
-   its legend ring colour. Settlement is one step that shows whichever applies
-   (Required or Not Required). Demo progress: the first two are done and the
-   settlement step is under way. */
+/* Fakeeh only: discharge follows the milestones of Fakeeh's HIS. Settlement
+   is one step that shows whichever applies (Required or Not Required). Demo
+   progress: the first two are done and the settlement step is under way. */
 const FAKEEH_DISCHARGE = [
-  { id: "fk-dc-1", labelKey: "care.discharge.fk.readyForAdt", ring: DISCHARGE_MILESTONE_RING.readyForAdt, done: true },
-  { id: "fk-dc-2", labelKey: "care.discharge.fk.financialClearance", ring: DISCHARGE_MILESTONE_RING.financialClearance, done: true },
-  { id: "fk-dc-3", labelKey: "care.discharge.fk.settlementNotRequired", ring: DISCHARGE_MILESTONE_RING.settlementNotRequired, done: false, active: true },
-  { id: "fk-dc-4", labelKey: "care.discharge.fk.adtDone", ring: DISCHARGE_MILESTONE_RING.adtDone, done: false },
+  { id: "fk-dc-1", labelKey: "care.discharge.fk.readyForAdt", done: true },
+  { id: "fk-dc-2", labelKey: "care.discharge.fk.financialClearance", done: true },
+  { id: "fk-dc-3", labelKey: "care.discharge.fk.settlementNotRequired", done: false, active: true },
+  { id: "fk-dc-4", labelKey: "care.discharge.fk.adtDone", done: false },
 ];
 
 /* ─── Discharge Process Slide ───
@@ -1446,17 +1445,7 @@ function TimelineSlide({
                    the card body and the engagement surface are both `surface`. */
                 style={{ width: "24px", height: "24px", backgroundColor: theme.surface, borderRadius: theme.radiusFull }}
               >
-                {step.ring ? (
-                  /* Milestone ring (Fakeeh): its own legend colour once reached
-                     or under way; grey until then. */
-                  <div
-                    className="w-5 h-5 rounded-full"
-                    style={{
-                      border: `4px solid ${step.done || step.active ? step.ring : theme.borderDefault}`,
-                      backgroundColor: theme.surface,
-                    }}
-                  />
-                ) : step.done ? (
+                {step.done ? (
                   <CheckCircle2 size={18} style={{ color: theme.successOn }} />
                 ) : step.active ? (
                   <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: theme.primary }}>
