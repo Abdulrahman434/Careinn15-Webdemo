@@ -46,6 +46,7 @@ export type IptvChannel = {
   url: string;
   nameAr?: string;
   logo?: string;
+  category?: string;
 };
 
 /* ─── Detection ─── */
@@ -653,6 +654,7 @@ export function useIptvChannels() {
             nameAr: nameAr,
             url:    ch.channel_url ?? ch.url ?? "",
             logo:   rewriteImageUrl(ch.channel_image ?? ch.logo ?? ""),
+            category: ch.category ?? ch.category_name ?? ch.genre,
           };
         })
         .filter((ch: IptvChannel) => ch.url); // skip channels with no URL
@@ -715,6 +717,7 @@ async function fetchWebIptvChannels(): Promise<IptvChannel[]> {
               nameAr: ch.name_ar ?? ch.title_ar ?? ch.name,
               url: ch.channel_url ?? ch.url ?? "",
               logo: ch.channel_image ?? ch.logo ?? "",
+              category: ch.category ?? ch.category_name ?? ch.genre,
             })).filter((c: any) => c.url);
           }
         }

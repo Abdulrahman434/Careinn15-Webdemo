@@ -8,13 +8,14 @@ interface InternalPageHeaderProps {
   subtitle?: string;
   icon: React.ReactNode;
   onClose: () => void;
+  leadingIcon?: React.ReactNode;
   rightAction?: React.ReactNode;
   /** Off only where the trio cannot work — a screen that owns the whole
    *  display, say. Every internal page shows them by default. */
   demoControls?: boolean;
 }
 
-export function InternalPageHeader({ title, subtitle, icon, onClose, rightAction, demoControls = true }: InternalPageHeaderProps) {
+export function InternalPageHeader({ title, subtitle, icon, onClose, leadingIcon, rightAction, demoControls = true }: InternalPageHeaderProps) {
   const { theme } = useTheme();
   const { isRTL, fontFamily } = useLocale();
   return (
@@ -36,7 +37,7 @@ export function InternalPageHeader({ title, subtitle, icon, onClose, rightAction
           WebkitTapHighlightColor: 'transparent',
         }}
       >
-        <Home size={22} style={{ color: "#fff" }} />
+        {leadingIcon ?? <Home size={22} style={{ color: "#fff" }} />}
       </button>
       {/* Divider */}
       <div className="iph-divider" style={{ width: "1.5px", height: "32px", backgroundColor: "rgba(255,255,255,0.18)", borderRadius: "1px" }} />
