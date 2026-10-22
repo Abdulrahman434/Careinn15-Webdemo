@@ -4,7 +4,7 @@ import { useLocale } from "./i18n";
 import { DemoControls } from "./DemoControls";
 
 interface InternalPageHeaderProps {
-  title: string;
+  title: React.ReactNode;
   subtitle?: string;
   icon: React.ReactNode;
   onClose: () => void;

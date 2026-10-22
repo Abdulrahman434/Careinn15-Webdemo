@@ -1,8 +1,23 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
-import { Tv, ArrowLeft, ArrowRight, RefreshCw, Square, AlertCircle } from "lucide-react";
+import { 
+  Tv, 
+  ArrowLeft, 
+  ArrowRight, 
+  RefreshCw, 
+  Square, 
+  AlertCircle,
+  SkipBack,
+  SkipForward,
+  Volume2,
+  VolumeX,
+  Maximize2,
+  Minimize2,
+  Radio,
+  Layers
+} from "lucide-react";
 import { useIptvChannels, iptv, isAndroidApp, useAndroidEvent, IptvChannel, _setIptvPlayingId } from "../utils/androidBridge";
 import { ApiImage } from "./ApiImage";
 import { TV_CHANNELS, TvChannel, TvChannelCategory } from "../data/tvChannels";
@@ -50,14 +65,356 @@ function matchKnownChannel(name: string, nameAr?: string): TvChannel | undefined
   });
 }
 
+/**
+ * Fullscreen simulated channel player view.
+ * Shown when kiosk bridge is not present (or in browser preview simulation mode).
+ */
+function ChannelPlayerSimulation({
+  channel,
+  channelIndex,
+  totalChannels,
+  onClose,
+  onNext,
+  onPrev,
+  onStop,
+}: {
+  channel: DisplayIptvChannel;
+  channelIndex: number;
+  totalChannels: number;
+  onClose: () => void;
+  onNext: () => void;
+  onPrev: () => void;
+  onStop: () => void;
+}) {
+  const { locale, isRTL, fontFamily } = useLocale();
+  const [isMuted, setIsMuted] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const resetHideTimer = useCallback(() => {
+    setShowControls(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => {
+      setShowControls(false);
+    }, 4500);
+  }, []);
+
+  useEffect(() => {
+    resetHideTimer();
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, [channel.id, resetHideTimer]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      resetHideTimer();
+      if (e.key === "Escape") {
+        onClose();
+      } else if (e.key === "ArrowRight" || e.key === "PageDown") {
+        if (isRTL) onPrev();
+        else onNext();
+      } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+        if (isRTL) onNext();
+        else onPrev();
+      } else if (e.key === "m" || e.key === "M") {
+        setIsMuted((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, onNext, onPrev, isRTL, resetHideTimer]);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+      setIsFullscreen(false);
+    }
+  };
+
+  return (
+    <div
+      onPointerMove={resetHideTimer}
+      onClick={resetHideTimer}
+      className="absolute inset-0 z-[60] flex flex-col justify-between overflow-hidden select-none"
+      style={{
+        background: "radial-gradient(circle at 50% 45%, #1e293b 0%, #0b1120 70%, #020617 100%)",
+        animation: "simFadeIn 0.25s ease-out",
+      }}
+    >
+      {/* Background subtle TV scanline effect */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-20"
+        style={{
+          backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)",
+        }}
+      />
+
+      {/* Floating Top Bar */}
+      <div
+        className={`relative z-20 flex items-center justify-between px-10 pt-8 pb-4 transition-opacity duration-300 ${
+          showControls ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        <button
+          onClick={onClose}
+          type="button"
+          className="flex items-center gap-3 px-5 py-3 cursor-pointer active:scale-95 transition-all text-white rounded-xl backdrop-blur-md"
+          style={{
+            backgroundColor: "rgba(255,255,255,0.12)",
+            border: "1px solid rgba(255,255,255,0.18)",
+            fontFamily,
+          }}
+        >
+          {isRTL ? <ArrowRight size={20} /> : <ArrowLeft size={20} />}
+          <span className="text-base font-semibold">
+            {locale === "ar" ? "دليل القنوات" : "Channels Guide"}
+          </span>
+        </button>
+
+        {/* Channel Indicator Badge */}
+        <div className="flex items-center gap-3 px-6 py-2.5 rounded-full backdrop-blur-md bg-black/50 border border-white/15">
+          <span className="relative flex h-3 w-3 items-center justify-center">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600 shadow-[0_0_10px_rgba(239,68,68,1)]" />
+          </span>
+          <span className="text-xs font-black tracking-widest text-red-400 uppercase">
+            LIVE
+          </span>
+          <span className="text-white/40">|</span>
+          <span className="text-sm font-bold text-white tabular-nums tracking-wide">
+            CH {String(channelIndex + 1).padStart(2, "0")}
+          </span>
+          <span className="text-white/40">•</span>
+          <span className="text-sm font-semibold text-white/90">
+            {locale === "ar" ? channel.nameAr : channel.name}
+          </span>
+        </div>
+
+        {/* Stop TV Button */}
+        <button
+          onClick={onStop}
+          type="button"
+          className="flex items-center gap-2 px-6 py-3 cursor-pointer active:scale-95 transition-all text-white rounded-xl shadow-lg"
+          style={{
+            backgroundColor: "#ef4444",
+            border: "none",
+            fontFamily,
+          }}
+        >
+          <Square size={18} color="#fff" fill="#fff" />
+          <span className="text-base font-semibold">
+            {locale === "ar" ? "إيقاف البث" : "Stop TV"}
+          </span>
+        </button>
+      </div>
+
+      {/* Center Simulated Broadcast Screen */}
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-8">
+        <div className="flex flex-col items-center max-w-xl text-center">
+          {/* Logo Card with subtle glow */}
+          <div
+            className="w-72 aspect-video rounded-2xl p-4 mb-6 flex items-center justify-center shadow-2xl transition-transform duration-500 hover:scale-105"
+            style={{
+              backgroundColor: "#ffffff",
+              boxShadow: "0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(59, 130, 246, 0.2)",
+              border: "2px solid rgba(255, 255, 255, 0.3)",
+            }}
+          >
+            {channel.logo ? (
+              <ApiImage
+                src={channel.logo}
+                alt={channel.name}
+                loading="eager"
+                draggable={false}
+                className="w-full h-full object-contain"
+                fallback={
+                  <div className="flex items-center justify-center">
+                    <Tv size={64} color="#64748b" strokeWidth={1.5} />
+                  </div>
+                }
+              />
+            ) : (
+              <Tv size={64} color="#64748b" strokeWidth={1.5} />
+            )}
+          </div>
+
+          {/* Channel Name */}
+          <h2
+            className="text-4xl font-black text-white tracking-tight mb-2 drop-shadow-md"
+            style={{ fontFamily }}
+          >
+            {locale === "ar" ? channel.nameAr : channel.name}
+          </h2>
+
+          {/* Subtitle bilingual */}
+          <p className="text-lg text-white/60 font-medium mb-6">
+            {locale === "ar" ? channel.name : channel.nameAr}
+          </p>
+
+          {/* Live broadcast animation & status */}
+          <div className="flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 mb-3">
+            <div className="flex items-end gap-1 h-4">
+              <span className="w-1 bg-emerald-400 rounded-full animate-bounce h-3" />
+              <span className="w-1 bg-emerald-400 rounded-full animate-bounce h-4" style={{ animationDelay: "150ms" }} />
+              <span className="w-1 bg-emerald-400 rounded-full animate-bounce h-2" style={{ animationDelay: "300ms" }} />
+              <span className="w-1 bg-emerald-400 rounded-full animate-bounce h-4" style={{ animationDelay: "450ms" }} />
+            </div>
+            <span className="text-sm font-semibold text-emerald-400">
+              {locale === "ar" ? "جاري البث المباشر (وضع المحاكاة)" : "Live Channel Simulation Active"}
+            </span>
+          </div>
+
+          <div className="text-xs text-white/40 tracking-wider uppercase font-semibold flex items-center gap-2">
+            <span>1080p FHD</span>
+            <span>•</span>
+            <span>60 FPS</span>
+            <span>•</span>
+            <span>Dolby Digital Stereo</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating Bottom Controls Bar */}
+      <div
+        className={`relative z-20 px-10 pb-8 pt-4 transition-opacity duration-300 ${
+          showControls ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        <div
+          className="max-w-4xl mx-auto flex items-center justify-between px-8 py-4 rounded-2xl backdrop-blur-xl shadow-2xl"
+          style={{
+            backgroundColor: "rgba(15, 23, 42, 0.8)",
+            border: "1px solid rgba(255, 255, 255, 0.15)",
+          }}
+        >
+          {/* Left: Channel Info */}
+          <div className="flex items-center gap-3">
+            <span
+              className="text-2xl font-black text-white tabular-nums px-3 py-1 rounded-lg"
+              style={{ backgroundColor: "rgba(255,255,255,0.1)" }}
+            >
+              {String(channelIndex + 1).padStart(2, "0")}
+            </span>
+            <div className="flex flex-col">
+              <span className="text-base font-bold text-white leading-tight">
+                {locale === "ar" ? channel.nameAr : channel.name}
+              </span>
+              <span className="text-xs text-white/50 capitalize font-medium">
+                {channel.category} • {channelIndex + 1} / {totalChannels}
+              </span>
+            </div>
+          </div>
+
+          {/* Center: Previous / Stop / Next navigation */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={onPrev}
+              type="button"
+              title={locale === "ar" ? "القناة السابقة" : "Previous Channel"}
+              className="w-12 h-12 flex items-center justify-center rounded-xl cursor-pointer active:scale-95 transition-all text-white"
+              style={{
+                backgroundColor: "rgba(255,255,255,0.12)",
+                border: "1px solid rgba(255,255,255,0.15)",
+              }}
+            >
+              {isRTL ? <SkipForward size={22} /> : <SkipBack size={22} />}
+            </button>
+
+            <button
+              onClick={onStop}
+              type="button"
+              title={locale === "ar" ? "إيقاف البث" : "Stop TV"}
+              className="w-12 h-12 flex items-center justify-center rounded-xl cursor-pointer active:scale-95 transition-all text-white bg-red-600 hover:bg-red-500 shadow-md"
+            >
+              <Square size={20} fill="#fff" />
+            </button>
+
+            <button
+              onClick={onNext}
+              type="button"
+              title={locale === "ar" ? "القناة التالية" : "Next Channel"}
+              className="w-12 h-12 flex items-center justify-center rounded-xl cursor-pointer active:scale-95 transition-all text-white"
+              style={{
+                backgroundColor: "rgba(255,255,255,0.12)",
+                border: "1px solid rgba(255,255,255,0.15)",
+              }}
+            >
+              {isRTL ? <SkipBack size={22} /> : <SkipForward size={22} />}
+            </button>
+          </div>
+
+          {/* Right: Audio / Fullscreen / Guide */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsMuted((prev) => !prev)}
+              type="button"
+              title={isMuted ? "Unmute" : "Mute"}
+              className="w-11 h-11 flex items-center justify-center rounded-xl cursor-pointer active:scale-95 transition-all text-white"
+              style={{
+                backgroundColor: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.12)",
+              }}
+            >
+              {isMuted ? <VolumeX size={20} color="#ef4444" /> : <Volume2 size={20} />}
+            </button>
+
+            <button
+              onClick={toggleFullscreen}
+              type="button"
+              title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+              className="w-11 h-11 flex items-center justify-center rounded-xl cursor-pointer active:scale-95 transition-all text-white"
+              style={{
+                backgroundColor: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.12)",
+              }}
+            >
+              {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+            </button>
+
+            <button
+              onClick={onClose}
+              type="button"
+              title={locale === "ar" ? "قائمة القنوات" : "Channel List"}
+              className="px-4 h-11 flex items-center gap-2 rounded-xl cursor-pointer active:scale-95 transition-all text-white font-semibold text-sm"
+              style={{
+                backgroundColor: "rgba(255,255,255,0.12)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                fontFamily,
+              }}
+            >
+              <Layers size={18} />
+              <span>{locale === "ar" ? "القنوات" : "Guide"}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes simFadeIn {
+          from { opacity: 0; transform: scale(0.99); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export function IptvChannels({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
   const { t, fontFamily, locale, isRTL } = useLocale();
   const { channels, loading, error, reload } = useIptvChannels();
   const [playingId, setPlayingId] = useState<number | null>(null);
+  const [simulatedChannel, setSimulatedChannel] = useState<DisplayIptvChannel | null>(null);
 
-  // Sync playingId with native events. The playChannelList path emits
-  // `index` + `total`; the legacy playIptv path emits only `url` + `channel`.
+  const isAndroid = isAndroidApp();
+
+  // Sync playingId with native events.
   useAndroidEvent<{ url: string; channel: string; index?: number; total?: number }>(
     "iptv-playing",
     (d) => {
@@ -75,6 +432,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
 
   useAndroidEvent("iptv-stopped", () => {
     setPlayingId(null);
+    setSimulatedChannel(null);
     _setIptvPlayingId(null);
   });
 
@@ -101,39 +459,72 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
     });
   }, [channels]);
 
-  // If running in web preview and server returned no channels, provide TV_CHANNELS as a preview fallback
+  // When kiosk is not there or no server channels are present, fallback to hardcoded TV_CHANNELS
   const displaySource = useMemo(() => {
     if (enrichedChannels.length > 0) return enrichedChannels;
-    if (!isAndroidApp() && !loading && !error) {
-      return TV_CHANNELS.map((ch, idx) => ({
-        id: idx + 1,
-        name: ch.name,
-        nameAr: ch.nameAr,
-        url: "",
-        logo: ch.logo,
-        category: ch.category,
-        originalIndex: idx,
-      }));
-    }
-    return [];
-  }, [enrichedChannels, loading, error]);
+    // Fallback to hardcoded list when kiosk is not there or no channels returned
+    return TV_CHANNELS.map((ch, idx) => ({
+      id: idx + 1,
+      name: ch.name,
+      nameAr: ch.nameAr,
+      url: "",
+      logo: ch.logo,
+      category: ch.category,
+      originalIndex: idx,
+    }));
+  }, [enrichedChannels]);
 
   const handlePlayList = (originalIndex: number) => {
     const channel = displaySource[originalIndex] ?? channels[originalIndex];
     if (!channel) return;
-    if (playingId === channel.id) {
+
+    if (playingId === channel.id && simulatedChannel?.id === channel.id) {
       iptv.stop();
       setPlayingId(null);
+      setSimulatedChannel(null);
       _setIptvPlayingId(null);
+      return;
+    }
+
+    setPlayingId(channel.id);
+    _setIptvPlayingId(channel.id);
+
+    if (isAndroid && channels.length > 0) {
+      iptv.playList(channels, originalIndex);
     } else {
-      setPlayingId(channel.id);
-      _setIptvPlayingId(channel.id);
-      if (channels.length > 0) {
-        iptv.playList(channels, originalIndex);
-      } else if (channel.url) {
+      // When kiosk is not there: open channel page simulation!
+      setSimulatedChannel(channel);
+      if (channel.url) {
         iptv.play(channel as IptvChannel);
       }
     }
+  };
+
+  const handleStopAll = () => {
+    iptv.stop();
+    setPlayingId(null);
+    setSimulatedChannel(null);
+    _setIptvPlayingId(null);
+  };
+
+  const handleNextSimulation = () => {
+    if (!simulatedChannel) return;
+    const currentIdx = displaySource.findIndex((c) => c.id === simulatedChannel.id);
+    const nextIdx = (currentIdx + 1) % displaySource.length;
+    const nextCh = displaySource[nextIdx];
+    setSimulatedChannel(nextCh);
+    setPlayingId(nextCh.id);
+    _setIptvPlayingId(nextCh.id);
+  };
+
+  const handlePrevSimulation = () => {
+    if (!simulatedChannel) return;
+    const currentIdx = displaySource.findIndex((c) => c.id === simulatedChannel.id);
+    const prevIdx = (currentIdx - 1 + displaySource.length) % displaySource.length;
+    const prevCh = displaySource[prevIdx];
+    setSimulatedChannel(prevCh);
+    setPlayingId(prevCh.id);
+    _setIptvPlayingId(prevCh.id);
   };
 
   const [filter, setFilter] = useState<ChannelFilter>("all");
@@ -295,9 +686,24 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
         style={{ opacity: 0.08, mixBlendMode: "luminosity", userSelect: "none" }}
       />
 
-      {/* Header — the Media page's header; the leading arrow returns to Media */}
+      {/* Header — with glowing red dot beside the LIVE TV title */}
       <InternalPageHeader
-        title={`${t("hub.media")} - ${locale === "ar" ? "البث المباشر" : "Live TV"}`}
+        title={
+          <div className="flex items-center gap-3">
+            <span>{`${t("hub.media")} - ${locale === "ar" ? "البث المباشر" : "Live TV"}`}</span>
+            {/* Pulsing red dot indication */}
+            <span className="relative flex h-3 w-3 items-center justify-center" title="Live Broadcast">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-80" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600 shadow-[0_0_8px_rgba(239,68,68,0.9)]" />
+            </span>
+            {playingId !== null && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase bg-red-500/20 text-red-300 border border-red-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                {locale === "ar" ? "مباشر" : "LIVE"}
+              </span>
+            )}
+          </div>
+        }
         icon={<Tv size={26} strokeWidth={2} />}
         onClose={onClose}
         leadingIcon={isRTL
@@ -305,30 +711,53 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
           : <ArrowLeft size={22} style={{ color: "#fff" }} />}
         rightAction={
           <>
+            {/* If playing or simulated, show button to re-open player or stop */}
             {playingId !== null && (
-              <button
-                onClick={() => iptv.stop()}
-                className="flex items-center gap-2 px-6 cursor-pointer active:scale-95 transition-transform"
-                style={{
-                  height: "52px",
-                  backgroundColor: "#ef4444",
-                  borderRadius: "12px",
-                  border: "none",
-                  outline: "none",
-                }}
-              >
-                <Square size={20} color="#fff" fill="#fff" />
-                <span
+              <>
+                {!simulatedChannel && (
+                  <button
+                    onClick={() => {
+                      const cur = displaySource.find((c) => c.id === playingId);
+                      if (cur) setSimulatedChannel(cur);
+                    }}
+                    className="flex items-center gap-2 px-5 cursor-pointer active:scale-95 transition-transform text-white rounded-xl"
+                    style={{
+                      height: "52px",
+                      backgroundColor: "rgba(255,255,255,0.12)",
+                      border: "1px solid rgba(255,255,255,0.18)",
+                    }}
+                  >
+                    <Tv size={18} />
+                    <span className="text-sm font-semibold">
+                      {locale === "ar" ? "عرض البث" : "Watch"}
+                    </span>
+                  </button>
+                )}
+
+                <button
+                  onClick={handleStopAll}
+                  className="flex items-center gap-2 px-6 cursor-pointer active:scale-95 transition-transform"
                   style={{
-                    fontFamily: fontFamily,
-                    fontSize: TYPE_SCALE.base,
-                    fontWeight: WEIGHT.semibold,
-                    color: "#fff",
+                    height: "52px",
+                    backgroundColor: "#ef4444",
+                    borderRadius: "12px",
+                    border: "none",
+                    outline: "none",
                   }}
                 >
-                  {t("tv.stop") || (locale === "ar" ? "إيقاف البث" : "Stop TV")}
-                </span>
-              </button>
+                  <Square size={20} color="#fff" fill="#fff" />
+                  <span
+                    style={{
+                      fontFamily: fontFamily,
+                      fontSize: TYPE_SCALE.base,
+                      fontWeight: WEIGHT.semibold,
+                      color: "#fff",
+                    }}
+                  >
+                    {t("tv.stop") || (locale === "ar" ? "إيقاف البث" : "Stop TV")}
+                  </span>
+                </button>
+              </>
             )}
 
             <button
@@ -439,23 +868,6 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
-        {/* Empty state */}
-        {!loading && displaySource.length === 0 && !error && (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Tv size={56} color="rgba(255,255,255,0.4)" />
-            <p
-              style={{
-                fontFamily: fontFamily,
-                fontSize: TYPE_SCALE.xl,
-                fontWeight: WEIGHT.semibold,
-                color: "rgba(255,255,255,0.7)",
-              }}
-            >
-              {t("tv.noChannels") || (locale === "ar" ? "لا توجد قنوات متاحة" : "No channels available")}
-            </p>
-          </div>
-        )}
-
         {/* Channels Grid / Pages */}
         {displaySource.length > 0 && (
           numPages > 1 ? (
@@ -511,6 +923,19 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
           )
         )}
       </div>
+
+      {/* Channel Page Simulation Overlay (when kiosk is not there or channel is opened in simulation) */}
+      {simulatedChannel && (
+        <ChannelPlayerSimulation
+          channel={simulatedChannel}
+          channelIndex={displaySource.findIndex((c) => c.id === simulatedChannel.id)}
+          totalChannels={displaySource.length}
+          onClose={() => setSimulatedChannel(null)}
+          onNext={handleNextSimulation}
+          onPrev={handlePrevSimulation}
+          onStop={handleStopAll}
+        />
+      )}
 
       <style>{`
         @keyframes spin {
