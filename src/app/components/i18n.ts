@@ -803,6 +803,12 @@ const translations: Record<string, TranslationEntry> = {
   "care.labs.locked.setPin": { en: "Set a PIN", ar: "تعيين رمز سري", ur: "پن مقرر کریں" },
   "care.labs.pin.create": { en: "Choose a 4-digit PIN", ar: "اختر رمزًا سريًا من أربعة أرقام", ur: "4 ہندسوں کا پن منتخب کریں" },
   "care.labs.pin.confirm": { en: "Enter the PIN again", ar: "أدخل الرمز السري مرة أخرى", ur: "پن دوبارہ درج کریں" },
+  /* Fakeeh discharge milestones (names as in Fakeeh's HIS legend) */
+  "care.discharge.fk.readyForAdt": { en: "Ready For ADT Discharge", ar: "جاهز لإجراءات الخروج", ur: "ڈسچارج (ADT) کے لیے تیار" },
+  "care.discharge.fk.financialClearance": { en: "Financial Clearance Done", ar: "تم الإخلاء المالي", ur: "مالی کلیئرنس مکمل" },
+  "care.discharge.fk.settlementNotRequired": { en: "Settlement Not Required", ar: "لا تتطلب تسوية", ur: "تصفیہ درکار نہیں" },
+  "care.discharge.fk.settlementRequired": { en: "Settlement Required", ar: "تتطلب تسوية", ur: "تصفیہ درکار ہے" },
+  "care.discharge.fk.adtDone": { en: "ADT Done", ar: "تم الخروج", ur: "ڈسچارج مکمل" },
   "care.discharge.orderIssued": { en: "Discharge Order Issued", ar: "صدور أمر الخروج", ur: "ڈسچارج آرڈر جاری" },
   "care.discharge.medsOrdered": { en: "Medications Ordered", ar: "طلب الأدوية", ur: "ادویات کا آرڈر" },
   "care.discharge.medsDispensed": { en: "Medications Dispensed by Pharmacy", ar: "صرف الأدوية من الصيدلية", ur: "فارمیسی سے ادویات کی فراہمی" },

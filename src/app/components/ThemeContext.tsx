@@ -254,6 +254,16 @@ export const TEXT_STYLE = {
  * fills the pill behind it — alpha, so it settles onto light and dark alike.
  * `clearDay` is the amber the pill has always worn; the rest are its siblings.
  * Keys are the WeatherKind union in TopBar.tsx. */
+/** Fakeeh's discharge milestones keep the ring colours of Fakeeh's own HIS
+ *  discharge legend, so the bedside screen and the ward system agree. */
+export const DISCHARGE_MILESTONE_RING = {
+  readyForAdt: "#F2731C",          // Ready For ADT Discharge — orange
+  financialClearance: "#D4C21F",   // Financial Clearance Done — yellow
+  settlementNotRequired: "#22B573", // Settlement Not Required — green-teal
+  settlementRequired: "#E0243B",    // Settlement Required — red
+  adtDone: "#3DBE29",              // ADT Done — green
+} as const;
+
 export const WEATHER_TINT = {
   clearDay:    { icon: "#E8A530", tint: "rgba(232,165,48,0.10)" },
   clearNight:  { icon: "#7C8CDE", tint: "rgba(124,140,222,0.12)" },
