@@ -717,10 +717,13 @@ export function IptvChannelsRail({ onClose }: { onClose: () => void }) {
                         className="tv-card relative flex flex-col cursor-pointer select-none"
                         style={{
                           padding: 10,
-                          backgroundColor: isPressed ? theme.primarySubtle : theme.surface,
+                          /* Pressed = the home hub cards' press: brand fill, white text. */
+                          backgroundColor: isPressed ? theme.primary : theme.surface,
                           borderRadius: theme.radiusLg,
-                          border: isPlaying ? `3px solid ${theme.primary}` : `1.5px solid ${theme.borderSubtle}`,
-                          boxShadow: isPressed ? `0 0 0 3px ${theme.primary}` : isPlaying ? SHADOW.lg : SHADOW.sm,
+                          border: isPressed
+                            ? `1.5px solid ${theme.primary}`
+                            : isPlaying ? `3px solid ${theme.primary}` : `1.5px solid ${theme.borderSubtle}`,
+                          boxShadow: isPressed ? `0px 2px 8px 0px ${theme.primarySubtle}` : isPlaying ? SHADOW.lg : SHADOW.sm,
                           transform: isPressed ? "scale(0.96)" : "scale(1)",
                           outline: "none",
                         }}
@@ -734,8 +737,8 @@ export function IptvChannelsRail({ onClose }: { onClose: () => void }) {
                               marginInlineStart: 4,
                               padding: "5px 9px",
                               borderRadius: theme.radiusSm,
-                              backgroundColor: theme.surfaceInset,
-                              color: theme.textMuted,
+                              backgroundColor: isPressed ? "rgba(255,255,255,0.2)" : theme.surfaceInset,
+                              color: isPressed ? theme.textInverse : theme.textMuted,
                               fontFamily,
                               fontSize: TYPE_SCALE.sm,
                               fontWeight: WEIGHT.semibold,
@@ -802,7 +805,7 @@ export function IptvChannelsRail({ onClose }: { onClose: () => void }) {
                               fontSize: "16px",
                               fontWeight: WEIGHT.bold,
                               lineHeight: 1.3,
-                              color: isPlaying ? theme.primaryOn : theme.textHeading,
+                              color: isPressed ? theme.textInverse : isPlaying ? theme.primaryOn : theme.textHeading,
                             }}
                           >
                             {isPlaying ? `${t("tv.nowPlaying")} · ${name}` : name}
