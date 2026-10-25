@@ -3,6 +3,7 @@ import { getAuthorizedCards, getNurseCardUid } from "./utils/nfc";
 import { isTvDevice } from "./utils/deviceDetect";
 import { ThemeProvider, useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "./components/ThemeContext";
 import { IptvChannels } from "./components/IptvChannels";
+import { IptvChannelsRail } from "./components/IptvChannelsRail";
 import { useSipCallState } from "./utils/androidBridge";
 import { useLocale, translateWithLocale } from "./components/i18n";
 import { TopBar } from "./components/TopBar";
@@ -2156,7 +2157,10 @@ function BedsideScreen() {
 
         {/* IPTV Channels Overlay */}
         {showIptv && (
-          <IptvChannels onClose={() => setShowIptv(false)} />
+          /* Burjeel trials the category-rail Live TV; other hospitals keep the paged grid. */
+          theme.id === "burjeel"
+            ? <IptvChannelsRail onClose={() => setShowIptv(false)} />
+            : <IptvChannels onClose={() => setShowIptv(false)} />
         )}
 
         {/* About Us Modal — inside scaled container for consistent sizing */}
@@ -2366,7 +2370,10 @@ function BedsideScreen() {
 
         {/* IPTV Channels Overlay */}
         {showIptv && (
-          <IptvChannels onClose={() => setShowIptv(false)} />
+          /* Burjeel trials the category-rail Live TV; other hospitals keep the paged grid. */
+          theme.id === "burjeel"
+            ? <IptvChannelsRail onClose={() => setShowIptv(false)} />
+            : <IptvChannels onClose={() => setShowIptv(false)} />
         )}
 
         {/* Tools */}
