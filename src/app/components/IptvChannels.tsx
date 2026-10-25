@@ -706,7 +706,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
                       >
                         {/* Number and favourite get their own row so neither
                             ever covers a logo. */}
-                        <div className="flex items-center justify-between" style={{ height: 40 }}>
+                        <div className="flex items-center justify-between" style={{ height: 44, marginBottom: 6 }}>
                           <span
                             className="tabular-nums"
                             style={{
@@ -734,7 +734,6 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
                             style={{
                               width: 44,
                               height: 44,
-                              marginInlineEnd: -4,
                               borderRadius: theme.radiusFull,
                               backgroundColor: isFavourite ? theme.primarySubtle : "transparent",
                               border: "none",
