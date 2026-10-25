@@ -505,7 +505,13 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
                           </button>
                         </div>
 
-                        <div className="w-full aspect-video overflow-hidden flex items-center justify-center" style={{ padding: 4 }}>
+                        {/* Logo tile stays white in dark mode too: channel
+                            logos are drawn for white (many are JPGs with a
+                            white box, some are black on transparent). */}
+                        <div
+                          className="w-full aspect-video overflow-hidden flex items-center justify-center"
+                          style={{ padding: 6, borderRadius: theme.radiusMd, backgroundColor: "#fff" }}
+                        >
                           {channel.logo ? (
                             <ApiImage
                               src={channel.logo}
