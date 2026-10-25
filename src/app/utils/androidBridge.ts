@@ -46,6 +46,8 @@ export type IptvChannel = {
   url: string;
   nameAr?: string;
   logo?: string;
+  /** Lower-case genre ("news", "sports"…) when the server sends one. */
+  category?: string;
 };
 
 /* ─── Detection ─── */
@@ -653,6 +655,7 @@ export function useIptvChannels() {
             nameAr: nameAr,
             url:    ch.channel_url ?? ch.url ?? "",
             logo:   rewriteImageUrl(ch.channel_image ?? ch.logo ?? ""),
+            category: channelCategory(ch),
           };
         })
         .filter((ch: IptvChannel) => ch.url); // skip channels with no URL
@@ -677,6 +680,13 @@ export function useIptvChannels() {
   }, [reload]);
 
   return { channels, loading, error, reload };
+}
+
+/* The IPTV API has no fixed genre field yet; take whichever one a server sends. */
+function channelCategory(ch: any): string | undefined {
+  const raw = ch.category ?? ch.channel_category ?? ch.genre;
+  const name = typeof raw === "string" ? raw : raw?.name;
+  return typeof name === "string" && name.trim() ? name.trim().toLowerCase() : undefined;
 }
 
 async function fetchWebIptvChannels(): Promise<IptvChannel[]> {
@@ -715,6 +725,7 @@ async function fetchWebIptvChannels(): Promise<IptvChannel[]> {
               nameAr: ch.name_ar ?? ch.title_ar ?? ch.name,
               url: ch.channel_url ?? ch.url ?? "",
               logo: ch.channel_image ?? ch.logo ?? "",
+              category: channelCategory(ch),
             })).filter((c: any) => c.url);
           }
         }
