@@ -3,7 +3,7 @@ import { InternalPageHeader } from "./InternalPageHeader";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE, TEXT_STYLE, LEADING } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import {
-  Tv, ArrowLeft, ArrowRight, RefreshCw, Square, Search, X, Heart, History, LayoutGrid,
+  Tv, ArrowLeft, ArrowRight, RefreshCw, Square, Search, X, Heart, LayoutGrid,
   Newspaper, Trophy, Baby, BookOpen, Clapperboard, Compass, Music, Globe,
   SkipBack, SkipForward, Volume2, VolumeX, Maximize2, Minimize2, Layers,
 } from "lucide-react";
@@ -11,10 +11,8 @@ import { useIptvChannels, iptv, isAndroidApp, useAndroidEvent, IptvChannel, _set
 import { ApiImage } from "./ApiImage";
 import { PREVIEW_CHANNELS } from "../data/tvChannels";
 
-/* Patient-kept lists. Keys are channel ids as strings, newest first for recent. */
+/* The patient's favourites, as channel ids (strings). */
 const FAVOURITES_KEY = "careinn-iptv-favourites";
-const RECENT_KEY = "careinn-iptv-recent";
-const RECENT_MAX = 12;
 
 /* Known genres, in rail order. Anything else a server sends follows them,
    alphabetically, under its own name. */
@@ -24,7 +22,7 @@ const CATEGORY_ICON: Record<string, typeof Tv> = {
   movies: Clapperboard, documentary: Compass, music: Music, international: Globe,
 };
 
-type Section = "favourites" | "recent" | "all" | `cat:${string}`;
+type Section = "favourites" | "all" | `cat:${string}`;
 
 function readIds(key: string): string[] {
   try {
@@ -284,7 +282,6 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
   const { channels, loading, error, reload } = useIptvChannels();
   const [playingId, setPlayingId] = useState<number | null>(null);
   const [favourites, setFavourites] = useState<string[]>(() => readIds(FAVOURITES_KEY));
-  const [recent, setRecent] = useState<string[]>(() => readIds(RECENT_KEY));
   const [section, setSection] = useState<Section>("all");
   const [query, setQuery] = useState("");
   const gridRef = useRef<HTMLDivElement>(null);
@@ -293,14 +290,6 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
   const connected = channels.length > 0 && !error;
   const preview = !loading && !connected;
   const shown = preview ? PREVIEW_CHANNELS : channels;
-
-  const markWatched = (id: number) => {
-    setRecent(prev => {
-      const next = [String(id), ...prev.filter(k => k !== String(id))].slice(0, RECENT_MAX);
-      writeIds(RECENT_KEY, next);
-      return next;
-    });
-  };
 
   // Sync playingId with native events. The playChannelList path emits
   // `index` + `total`; the legacy playIptv path emits only `url` + `channel`.
@@ -316,7 +305,6 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
       }
       setPlayingId(id);
       _setIptvPlayingId(id);
-      if (id !== null) markWatched(id);
     }
   );
 
@@ -330,7 +318,6 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
   const simulate = (channel: IptvChannel) => {
     setSimChannel(channel);
     setPlayingId(channel.id);
-    markWatched(channel.id);
   };
 
   // Closing the simulated player keeps the channel "on", like the real one;
@@ -397,11 +384,9 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
 
   const byId = useMemo(() => new Map(shown.map(c => [String(c.id), c])), [shown]);
   const favouriteChannels = favourites.map(k => byId.get(k)).filter((c): c is IptvChannel => !!c);
-  const recentChannels = recent.map(k => byId.get(k)).filter((c): c is IptvChannel => !!c);
 
   const listFor = (s: Section): IptvChannel[] => {
     if (s === "favourites") return favouriteChannels;
-    if (s === "recent") return recentChannels;
     if (s === "all") return shown;
     const cat = s.slice(4);
     return shown.filter(c => c.category === cat);
@@ -422,29 +407,19 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
     gridRef.current?.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
   };
 
-  // An emptied Recently watched (channel list changed) falls back to All.
-  useEffect(() => {
-    if (section === "recent" && recentChannels.length === 0) setSection("all");
-  }, [section, recentChannels.length]);
-
   const heading = trimmed
     ? t("tv.results")
     : section === "favourites" ? t("tv.cat.favourites")
-    : section === "recent" ? t("tv.cat.recent")
     : section === "all" ? t("tv.cat.all")
     : categoryLabel(section.slice(4));
 
   const emptyText = trimmed
     ? t("tv.empty.search")
     : section === "favourites" ? t("tv.empty.favourites")
-    : section === "recent" ? t("tv.empty.recent")
     : t("tv.noChannels");
 
   const railItems: { key: Section; Icon: typeof Tv; label: string; count: number }[] = [
     { key: "favourites", Icon: Heart, label: t("tv.cat.favourites"), count: favouriteChannels.length },
-    ...(recentChannels.length > 0
-      ? [{ key: "recent" as Section, Icon: History, label: t("tv.cat.recent"), count: recentChannels.length }]
-      : []),
     { key: "all", Icon: LayoutGrid, label: t("tv.cat.all"), count: shown.length },
     ...categories.map(c => ({
       key: `cat:${c}` as Section,
@@ -454,8 +429,9 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
     })),
   ];
 
+  // Same size as the language / dark mode / fullscreen buttons beside them.
   const glassButton: CSSProperties = {
-    height: "52px",
+    height: "44px",
     borderRadius: "12px",
     backgroundColor: "rgba(255,255,255,0.12)",
     border: "1px solid rgba(255,255,255,0.15)",
@@ -523,9 +499,9 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
               disabled={loading}
               aria-label={t("conn.refresh")}
               className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform disabled:opacity-50"
-              style={{ ...glassButton, width: "52px" }}
+              style={{ ...glassButton, width: "44px" }}
             >
-              <RefreshCw size={22} style={{ color: "#fff" }} className={loading ? "animate-spin" : ""} />
+              <RefreshCw size={20} style={{ color: "#fff" }} className={loading ? "animate-spin" : ""} />
             </button>
           </>
         }

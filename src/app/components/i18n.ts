@@ -494,7 +494,6 @@ const translations: Record<string, TranslationEntry> = {
   "tv.removeFavourite": { en: "Remove from favourites", ar: "إزالة من المفضلة", ur: "پسندیدہ سے ہٹائیں" },
   "tv.cat.all": { en: "All channels", ar: "كل القنوات", ur: "تمام چینلز" },
   "tv.cat.favourites": { en: "Favourites", ar: "المفضلة", ur: "پسندیدہ" },
-  "tv.cat.recent": { en: "Recently watched", ar: "شوهدت مؤخراً", ur: "حال ہی میں دیکھے گئے" },
   "tv.cat.general": { en: "General", ar: "عامة", ur: "عمومی" },
   "tv.cat.news": { en: "News", ar: "أخبار", ur: "خبریں" },
   "tv.cat.sports": { en: "Sports", ar: "رياضة", ur: "کھیل" },
@@ -513,7 +512,6 @@ const translations: Record<string, TranslationEntry> = {
   "tv.mute": { en: "Mute", ar: "كتم الصوت", ur: "آواز بند کریں" },
   "tv.unmute": { en: "Unmute", ar: "تشغيل الصوت", ur: "آواز کھولیں" },
   "tv.empty.favourites": { en: "Tap the heart on any channel to keep it here.", ar: "اضغط على القلب في أي قناة لتجدها هنا.", ur: "کسی بھی چینل پر دل دبائیں تاکہ وہ یہاں رہے۔" },
-  "tv.empty.recent": { en: "Channels you watch will appear here.", ar: "ستظهر هنا القنوات التي تشاهدها.", ur: "آپ جو چینلز دیکھیں گے وہ یہاں نظر آئیں گے۔" },
   "tv.empty.search": { en: "No channel matches your search.", ar: "لا توجد قناة تطابق بحثك.", ur: "آپ کی تلاش سے کوئی چینل نہیں ملا۔" },
   "tv.preview": { en: "Preview — channels play on the bedside screen", ar: "معاينة — تعمل القنوات على شاشة السرير", ur: "پیش نظارہ — چینلز بیڈ سائیڈ اسکرین پر چلتے ہیں" },
 
