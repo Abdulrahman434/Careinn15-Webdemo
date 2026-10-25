@@ -47,7 +47,7 @@ import { useApiPdfApps, API_CATEGORY_MAP, getPackagesCache } from "../lib/hospit
 import edgeLogo from "../../assets/edge_logo.webp";
 import chromeIcon from "../../assets/272d9a4c809b16af18cfbe153fa4edc5816536b3.webp";
 import saudiGazetteLogo from "../../assets/5a0099c6364ba06a603226f636904e61c8e17c07.webp";
-import iptvIcon from "../../assets/e66dff686b2ee163965b5d28c8ab0d919a5e5307.webp";
+import iptvIcon from "../../assets/screens/iptv.webp";
 import mbcIcon from "../../assets/c22249e2a0a3b6e2cac9fa73410c844f9f2ec1b4.webp";
 import primeVideoIcon from "../../assets/c217a833e98f558d1368435c8c539345a42deab7.webp";
 import netflixIcon from "../../assets/d894e26ef6abdd4628417d2b8281a2fa7079fafc.webp";
