@@ -323,8 +323,6 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
     setPlayingId(channel.id);
   };
 
-  // Closing the simulated player keeps the channel "on", like the real one;
-  // Stop ends it.
   const stopAll = () => {
     if (!isAndroid || preview) {
       setSimChannel(null);
@@ -339,6 +337,19 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
     if (!simChannel) return;
     const i = shown.findIndex(c => c.id === simChannel.id);
     simulate(shown[(i + delta + shown.length) % shown.length]);
+  };
+
+  /* Touch feedback: the card the finger is on, and the one just tapped —
+     held for a beat before the player covers the screen so the press is seen. */
+  const [pressedId, setPressedId] = useState<number | null>(null);
+  const [launchingId, setLaunchingId] = useState<number | null>(null);
+  const tapChannel = (channel: IptvChannel) => {
+    if (launchingId !== null) return;
+    setLaunchingId(channel.id);
+    setTimeout(() => {
+      setLaunchingId(null);
+      handlePlay(channel);
+    }, 160);
   };
 
   const handlePlay = (channel: IptvChannel) => {
@@ -463,8 +474,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
       />
 
       <style>{`
-        .tv-card { transition: transform .15s ease; -webkit-tap-highlight-color: transparent; }
-        .tv-card:active { transform: scale(0.97); }
+        .tv-card { transition: transform .12s ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         .tv-search::placeholder { color: ${theme.textDisabled}; }
         .tv-search-box:focus-within { border-color: var(--tv-primary) !important; }
         .tv-scroll::-webkit-scrollbar { width: 10px; }
@@ -690,6 +700,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
                 <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr))" }}>
                   {visible.map(channel => {
                     const isPlaying = playingId === channel.id;
+                    const isPressed = pressedId === channel.id || launchingId === channel.id;
                     const isFavourite = favourites.includes(String(channel.id));
                     const name = locale === "ar" ? (channel.nameAr || channel.name) : channel.name;
                     return (
@@ -697,15 +708,20 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
                         key={channel.id}
                         role="button"
                         tabIndex={0}
-                        onClick={() => handlePlay(channel)}
-                        onKeyDown={e => { if (e.key === "Enter") handlePlay(channel); }}
+                        onClick={() => tapChannel(channel)}
+                        onKeyDown={e => { if (e.key === "Enter") tapChannel(channel); }}
+                        onPointerDown={() => setPressedId(channel.id)}
+                        onPointerUp={() => setPressedId(null)}
+                        onPointerLeave={() => setPressedId(null)}
+                        onPointerCancel={() => setPressedId(null)}
                         className="tv-card relative flex flex-col cursor-pointer select-none"
                         style={{
                           padding: 10,
-                          backgroundColor: theme.surface,
+                          backgroundColor: isPressed ? theme.primarySubtle : theme.surface,
                           borderRadius: theme.radiusLg,
                           border: isPlaying ? `3px solid ${theme.primary}` : `1.5px solid ${theme.borderSubtle}`,
-                          boxShadow: isPlaying ? SHADOW.lg : SHADOW.sm,
+                          boxShadow: isPressed ? `0 0 0 3px ${theme.primary}` : isPlaying ? SHADOW.lg : SHADOW.sm,
+                          transform: isPressed ? "scale(0.96)" : "scale(1)",
                           outline: "none",
                         }}
                       >
@@ -808,7 +824,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
           number={numberOf.get(simChannel.id) ?? ""}
           total={shown.length}
           category={simChannel.category ? categoryLabel(simChannel.category) : ""}
-          onClose={() => setSimChannel(null)}
+          onClose={stopAll}
           onNext={() => stepSim(1)}
           onPrev={() => stepSim(-1)}
           onStop={stopAll}
