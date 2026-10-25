@@ -40,11 +40,75 @@ function writeIds(key: string, ids: string[]) {
   try { localStorage.setItem(key, JSON.stringify(ids)); } catch {}
 }
 
+/* ── Logo normalising ──────────────────────────────────────────────────
+   Channel logos arrive with any amount of white or transparent margin and
+   in any shape, so the same box made them look big, small, very big. Each
+   logo is trimmed to its ink once (cached per URL), then sized by optical
+   area: a wide wordmark gets more width, a square mark less, and all read
+   the same weight. An image the canvas can't read (cross-origin) still
+   gets the area sizing, untrimmed. */
+type LogoFit = { url: string; aspect: number };
+const logoFits = new Map<string, LogoFit>();
+const TRIM_SAMPLE = 256;   // analyse at this size — fast, precise enough
+const TRIM_MAX_OUT = 480;  // keep the trimmed copy small; tiles are ~240px
+const LOGO_AREA = 100 * 100; // optical area in the 240 × 130 tile box
+const LOGO_BOX_W = 240, LOGO_BOX_H = 130;
+
+function fitLogo(img: HTMLImageElement): LogoFit {
+  const w = img.naturalWidth, h = img.naturalHeight;
+  const whole = { url: img.currentSrc || img.src, aspect: w / h || 1 };
+  try {
+    const k = Math.min(1, TRIM_SAMPLE / Math.max(w, h));
+    const sw = Math.max(1, Math.round(w * k)), sh = Math.max(1, Math.round(h * k));
+    const probe = document.createElement("canvas");
+    probe.width = sw; probe.height = sh;
+    const pctx = probe.getContext("2d", { willReadFrequently: true });
+    if (!pctx) return whole;
+    pctx.drawImage(img, 0, 0, sw, sh);
+    const d = pctx.getImageData(0, 0, sw, sh).data;
+    let x0 = sw, y0 = sh, x1 = -1, y1 = -1;
+    for (let y = 0; y < sh; y++) {
+      for (let x = 0; x < sw; x++) {
+        const i = (y * sw + x) * 4;
+        // Background = see-through, or near-white (JPEG boxes carry noise).
+        const bg = d[i + 3] < 16 || (d[i] > 228 && d[i + 1] > 228 && d[i + 2] > 228);
+        if (bg) continue;
+        if (x < x0) x0 = x; if (x > x1) x1 = x;
+        if (y < y0) y0 = y; if (y > y1) y1 = y;
+      }
+    }
+    if (x1 < 0) return whole;
+    const nx0 = Math.max(0, Math.floor(x0 / k) - 1), ny0 = Math.max(0, Math.floor(y0 / k) - 1);
+    const nx1 = Math.min(w, Math.ceil((x1 + 1) / k) + 1), ny1 = Math.min(h, Math.ceil((y1 + 1) / k) + 1);
+    const cw = nx1 - nx0, ch = ny1 - ny0;
+    const o = Math.min(1, TRIM_MAX_OUT / Math.max(cw, ch));
+    const out = document.createElement("canvas");
+    out.width = Math.max(1, Math.round(cw * o)); out.height = Math.max(1, Math.round(ch * o));
+    out.getContext("2d")?.drawImage(img, nx0, ny0, cw, ch, 0, 0, out.width, out.height);
+    return { url: out.toDataURL("image/png"), aspect: cw / ch };
+  } catch {
+    return whole;
+  }
+}
+
+/* Width of the logo as a share of the tile, for equal optical area,
+   capped so no logo runs to the tile's edge. */
+function logoWidthPct(aspect: number) {
+  let w = Math.sqrt(LOGO_AREA * aspect), h = w / aspect;
+  const s = Math.min(1, (LOGO_BOX_W * 0.86) / w, (LOGO_BOX_H * 0.8) / h);
+  w *= s; h *= s;
+  return (w / LOGO_BOX_W) * 100;
+}
+
 /* A channel's logo, or its name set as a wordmark when the server (or the
    preview line-up) has no logo for it — always on the white tile. */
 function ChannelLogo({ channel, size }: { channel: IptvChannel; size: "card" | "player" }) {
   const { theme } = useTheme();
   const { fontFamily, locale } = useLocale();
+  const [fit, setFit] = useState<LogoFit | undefined>(() => channel.logo ? logoFits.get(channel.logo) : undefined);
+  useEffect(() => {
+    setFit(channel.logo ? logoFits.get(channel.logo) : undefined);
+  }, [channel.logo]);
   const name = locale === "ar" ? (channel.nameAr || channel.name) : channel.name;
   const wordmark = (
     <span
@@ -66,6 +130,18 @@ function ChannelLogo({ channel, size }: { channel: IptvChannel; size: "card" | "
     </span>
   );
   if (!channel.logo) return wordmark;
+  const logoKey = channel.logo;
+  if (fit) {
+    return (
+      <img
+        src={fit.url}
+        alt={channel.name}
+        draggable={false}
+        style={{ width: `${logoWidthPct(fit.aspect)}%`, aspectRatio: String(fit.aspect), objectFit: "contain" }}
+      />
+    );
+  }
+  // First sight of this logo: load it unseen, measure, then show it fitted.
   return (
     <ApiImage
       src={channel.logo}
@@ -73,6 +149,12 @@ function ChannelLogo({ channel, size }: { channel: IptvChannel; size: "card" | "
       loading={size === "player" ? "eager" : "lazy"}
       draggable={false}
       className="w-full h-full object-contain"
+      style={{ opacity: 0 }}
+      onLoad={e => {
+        const f = fitLogo(e.currentTarget);
+        logoFits.set(logoKey, f);
+        setFit(f);
+      }}
       fallback={wordmark}
     />
   );
