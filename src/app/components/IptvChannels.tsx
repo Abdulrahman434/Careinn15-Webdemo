@@ -13,6 +13,9 @@ import { PREVIEW_CHANNELS } from "../data/tvChannels";
 
 /* The patient's favourites, as channel ids (strings). */
 const FAVOURITES_KEY = "careinn-iptv-favourites";
+/* Favourites are parked for now: off hides the heart on each card and the
+   Favourites entry in the rail. Flip back on to bring them back as built. */
+const SHOW_FAVOURITES = false;
 
 /* Known genres, in rail order. Anything else a server sends follows them,
    alphabetically, under its own name. */
@@ -419,7 +422,9 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
     : t("tv.noChannels");
 
   const railItems: { key: Section; Icon: typeof Tv; label: string; count: number }[] = [
-    { key: "favourites", Icon: Heart, label: t("tv.cat.favourites"), count: favouriteChannels.length },
+    ...(SHOW_FAVOURITES
+      ? [{ key: "favourites" as Section, Icon: Heart, label: t("tv.cat.favourites"), count: favouriteChannels.length }]
+      : []),
     { key: "all", Icon: LayoutGrid, label: t("tv.cat.all"), count: shown.length },
     ...categories.map(c => ({
       key: `cat:${c}` as Section,
@@ -658,7 +663,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
 
             <div ref={gridRef} className="tv-scroll flex-1 min-h-0 overflow-y-auto px-8 pb-8" style={{ overscrollBehavior: "contain" }}>
               {loading && channels.length === 0 ? (
-                <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(6, minmax(0, 1fr))" }}>
+                <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr))" }}>
                   {Array.from({ length: 18 }).map((_, i) => (
                     <div
                       key={i}
@@ -682,7 +687,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
                   </p>
                 </div>
               ) : (
-                <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(6, minmax(0, 1fr))" }}>
+                <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr))" }}>
                   {visible.map(channel => {
                     const isPlaying = playingId === channel.id;
                     const isFavourite = favourites.includes(String(channel.id));
@@ -724,7 +729,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
                             {numberOf.get(channel.id)}
                           </span>
 
-                          {/* Favourite toggle */}
+                          {SHOW_FAVOURITES && (
                           <button
                             type="button"
                             onClick={e => { e.stopPropagation(); toggleFavourite(channel.id); }}
@@ -747,6 +752,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
                               strokeWidth={2.2}
                             />
                           </button>
+                          )}
                         </div>
 
                         {/* Logo tile stays white in dark mode too: channel
