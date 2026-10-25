@@ -482,8 +482,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
       />
 
       <style>{`
-        .tv-card { transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
-        .tv-card:hover { border-color: var(--tv-primary); box-shadow: ${SHADOW.md}; transform: translateY(-3px); }
+        .tv-card { transition: transform .15s ease; -webkit-tap-highlight-color: transparent; }
         .tv-card:active { transform: scale(0.97); }
         .tv-search::placeholder { color: ${theme.textDisabled}; }
         .tv-search-box:focus-within { border-color: var(--tv-primary) !important; }
