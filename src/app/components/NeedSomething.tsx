@@ -428,20 +428,6 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
     const bottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
     setScrollEdge((prev) => (prev.top === top && prev.bottom === bottom ? prev : { top, bottom }));
   }, []);
-  /* Row height follows the space the grid has: two full rows plus a slice
-     of the third, so a patient can see there is more below without any
-     arrow telling them. */
-  /* Measured on the area that holds the grid AND the selection bar, not on
-     the grid itself — so the bar sliding in never resizes the cards. */
-  const [gridViewH, setGridViewH] = useState(0);
-  useEffect(() => {
-    const area = gridScrollRef.current?.parentElement?.parentElement;
-    if (!area) return;
-    const ro = new ResizeObserver(() => setGridViewH(area.clientHeight));
-    ro.observe(area);
-    return () => ro.disconnect();
-  }, []);
-
   /* Ticks belong to the category they were made in. */
   useEffect(() => { setPicked([]); }, [tab]);
 
@@ -717,17 +703,12 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       onAnimationComplete={updateScrollEdge}
                       className="grid w-full"
                       style={{
-                        gridTemplateColumns: tab !== "request" ? "repeat(3, 1fr)" : "repeat(4, 1fr)",
-                        /* More than two rows: 2 rows + ~35% of the next one.
-                           Two or fewer: the two rows share the space, as the
-                           paged grid did. */
-                        gridAutoRows: gridViewH > 0
-                          ? `${Math.floor(
-                              allGridItems.length > (tab !== "request" ? 6 : 8)
-                                ? (gridViewH - 2 * 20) / 2.35
-                                : (gridViewH * 0.92 - 20) / 2,
-                            )}px`
-                          : "200px",
+                        /* One frame for every tab: 4 per row, 245 tall — the
+                           height a 16:9 photo plus its label needs at this
+                           width. Icon-only tabs use the same frame, so cards
+                           never change size when the patient switches tab. */
+                        gridTemplateColumns: "repeat(4, 1fr)",
+                        gridAutoRows: "245px",
                         columnGap: "24px",
                         rowGap: "20px",
                         padding: "4px 4px 0",
@@ -783,12 +764,13 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                             </div>
                           )}
                           {card.image ? (
-                            /* Product photo — fills the top of the card, flexes to available height */
+                            /* Product photo — the box has the photo's own 16:9
+                               shape, so the whole photo shows at every size and
+                               the product keeps its margin (no crop, no zoom). */
                             <>
                               <div
                                 style={{
-                                  flex: 1,
-                                  minHeight: 0,
+                                  aspectRatio: "16 / 9",
                                   overflow: "hidden",
                                   backgroundColor: "#f5f5f5",
                                 }}
@@ -823,52 +805,45 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                               </div>
                             </>
                           ) : isCompactCard ? (
-                            /* Compact card (Report / Room Care) — white bg, circle icon, stacked text */
-                            <div
-                              className="flex flex-col items-center justify-center"
-                              style={{ flex: 1, minHeight: 0, padding: "20px 12px 14px" }}
-                            >
+                            /* Icon art — fills the same 16:9 slot as a photo:
+                               a soft field tinted with the card's colour (brand,
+                               or red for Report an Issue), a ring, and the icon in
+                               the full colour. Drawn from the theme, so it follows
+                               every hospital's brand. */
+                            <>
                               <div
+                                className="flex items-center justify-center"
                                 style={{
-                                  width: 88,
-                                  height: 88,
-                                  borderRadius: "50%",
-                                  backgroundColor: accentSubtle,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  marginBottom: 12,
+                                  aspectRatio: "16 / 9",
+                                  background: `linear-gradient(135deg, color-mix(in srgb, ${accentColor} 5%, #fff), color-mix(in srgb, ${accentColor} 13%, #fff))`,
                                 }}
                               >
-                                <CardIcon size={42} color={accentColor} strokeWidth={2.2} />
-                              </div>
-                              <span
-                                style={{
-                                  ...TEXT_STYLE.cardTitle,
-                                  fontFamily,
-                                  color: theme.textHeading,
-                                  display: "block",
-                                  textAlign: "center",
-                                }}
-                              >
-                                {t(card.key)}
-                              </span>
-                              {card.subtitle && (
-                                <span
+                                <div
+                                  className="flex items-center justify-center"
                                   style={{
-                                    fontFamily,
-                                    fontSize: TYPE_SCALE.sm,
-                                    color: theme.textMuted,
-                                    display: "block",
-                                    marginTop: 6,
-                                    lineHeight: 1.3,
-                                    textAlign: "center",
+                                    width: 126,
+                                    height: 126,
+                                    borderRadius: "50%",
+                                    border: `12px solid color-mix(in srgb, ${accentColor} 15%, #fff)`,
+                                    backgroundColor: `color-mix(in srgb, ${accentColor} 6%, #fff)`,
                                   }}
                                 >
-                                  {t(card.subtitle)}
+                                  <CardIcon size={60} color={accentColor} strokeWidth={1.6} />
+                                </div>
+                              </div>
+                              <div className="shrink-0 text-center" style={{ padding: "10px 8px 12px" }}>
+                                <span
+                                  style={{
+                                    ...TEXT_STYLE.cardTitle,
+                                    fontFamily,
+                                    color: theme.textHeading,
+                                    display: "block",
+                                  }}
+                                >
+                                  {t(card.key)}
                                 </span>
-                              )}
-                            </div>
+                              </div>
+                            </>
                           ) : (
                             /* Request fallback icon box */
                             <>
