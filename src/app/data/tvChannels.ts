@@ -1,27 +1,123 @@
-/* TV channels shown on the Live TV page. One line per channel; `logo` is
-   served from public/channels/. */
-export type TvChannelCategory = "general" | "news" | "sports" | "kids" | "religious";
+import type { IptvChannel } from "../utils/androidBridge";
 
-export interface TvChannel {
-  name: string;
-  nameAr: string;
-  logo: string;
-  category: TvChannelCategory;
-}
+/* Shown when the hospital's channel list can't be loaded (browser, server
+   down) so the Live TV screen still has its real look, at the size a large
+   hospital line-up reaches. Not playable: no stream address. Logos are
+   served from public/channels/; a channel without one shows its name. */
+const C = (name: string, nameAr: string, category: string, logo = ""): Omit<IptvChannel, "id"> =>
+  ({ name, nameAr, category, logo: logo && `/channels/${logo}`, url: "" });
 
-export const TV_CHANNELS: TvChannel[] = [
-  { name: "MBC1",                nameAr: "إم بي سي 1",             logo: "/channels/mbc1.jpg",            category: "general" },
-  { name: "MBC Drama",           nameAr: "إم بي سي دراما",         logo: "/channels/mbc-drama.png",       category: "general" },
-  { name: "MBC Bollywood",       nameAr: "إم بي سي بوليوود",       logo: "/channels/mbc-bollywood.jpg",   category: "general" },
-  { name: "MBC 2",               nameAr: "إم بي سي 2",             logo: "/channels/mbc-2.png",           category: "general" },
-  { name: "MBC Action",          nameAr: "إم بي سي أكشن",          logo: "/channels/mbc-action.png",      category: "general" },
-  { name: "MBC 3",               nameAr: "إم بي سي 3",             logo: "/channels/mbc-3.png",           category: "general" },
-  { name: "Al Ekhbaria",         nameAr: "الإخبارية",              logo: "/channels/al-ekhbaria.png",     category: "news" },
-  { name: "Saudi CH For Quran",  nameAr: "القناة السعودية للقرآن", logo: "/channels/saudi-quran.png",     category: "religious" },
-  { name: "Saudi CH For Sunnah", nameAr: "القناة السعودية للسنة",  logo: "/channels/saudi-sunnah.jpg",    category: "religious" },
-  { name: "KSA SPORTS 1",        nameAr: "السعودية الرياضية 1",    logo: "/channels/ksa-sports-1.jpg",    category: "sports" },
-  { name: "KSA SPORTS 2",        nameAr: "السعودية الرياضية 2",    logo: "/channels/ksa-sports-2.jpg",    category: "sports" },
-  { name: "Abu Dhabi TV HD",     nameAr: "أبوظبي HD",              logo: "/channels/abu-dhabi-tv.jpg",    category: "general" },
-  { name: "Al Emarat TV HD",     nameAr: "الإمارات HD",            logo: "/channels/al-emarat-tv.jpg",    category: "general" },
-  { name: "Majid Kids TV HD",    nameAr: "ماجد للأطفال HD",        logo: "/channels/majd-kids-tv.png",    category: "kids" },
+const LINEUP: Omit<IptvChannel, "id">[] = [
+  C("MBC1",                    "إم بي سي 1",                  "general",     "mbc1.jpg"),
+  C("MBC Drama",               "إم بي سي دراما",              "general",     "mbc-drama.png"),
+  C("MBC Bollywood",           "إم بي سي بوليوود",            "movies",      "mbc-bollywood.jpg"),
+  C("MBC 2",                   "إم بي سي 2",                  "movies",      "mbc-2.png"),
+  C("MBC Action",              "إم بي سي أكشن",               "movies",      "mbc-action.png"),
+  C("MBC 3",                   "إم بي سي 3",                  "kids",        "mbc-3.png"),
+  C("Al Ekhbaria",             "الإخبارية",                   "news",        "al-ekhbaria.png"),
+  C("Saudi CH For Quran",      "القناة السعودية للقرآن",      "religious",   "saudi-quran.png"),
+  C("Saudi CH For Sunnah",     "القناة السعودية للسنة",       "religious",   "saudi-sunnah.jpg"),
+  C("KSA SPORTS 1",            "السعودية الرياضية 1",         "sports",      "ksa-sports-1.jpg"),
+  C("KSA SPORTS 2",            "السعودية الرياضية 2",         "sports",      "ksa-sports-2.jpg"),
+  C("Abu Dhabi TV HD",         "أبوظبي HD",                   "general",     "abu-dhabi-tv.jpg"),
+  C("Al Emarat TV HD",         "الإمارات HD",                 "general",     "al-emarat-tv.jpg"),
+  C("Majid Kids TV HD",        "ماجد للأطفال HD",             "kids",        "majd-kids-tv.png"),
+
+  C("Saudi TV 1",              "السعودية الأولى",             "general"),
+  C("SBC",                     "إس بي سي",                    "general"),
+  C("Thikrayat",               "ذكريات",                      "general"),
+  C("MBC 4",                   "إم بي سي 4",                  "general"),
+  C("MBC 5",                   "إم بي سي 5",                  "general"),
+  C("MBC Masr",                "إم بي سي مصر",                "general"),
+  C("Rotana Khalijia",         "روتانا خليجية",               "general"),
+  C("Rotana Drama",            "روتانا دراما",                "general"),
+  C("Rotana Classic",          "روتانا كلاسيك",               "general"),
+  C("Dubai TV",                "تلفزيون دبي",                 "general"),
+  C("Sama Dubai",              "سما دبي",                     "general"),
+  C("Sharjah TV",              "تلفزيون الشارقة",             "general"),
+  C("Ajman TV",                "تلفزيون عجمان",               "general"),
+  C("Qatar TV",                "تلفزيون قطر",                 "general"),
+  C("Kuwait TV",               "تلفزيون الكويت",              "general"),
+  C("Oman TV",                 "تلفزيون عُمان",               "general"),
+  C("Bahrain TV",              "تلفزيون البحرين",             "general"),
+  C("LBC",                     "إل بي سي",                    "general"),
+  C("Al Hayat",                "الحياة",                      "general"),
+  C("Zee Alwan",               "زي ألوان",                    "general"),
+
+  C("Rotana Cinema",           "روتانا سينما",                "movies"),
+  C("Rotana Aflam",            "روتانا أفلام",                "movies"),
+  C("MBC Max",                 "إم بي سي ماكس",               "movies"),
+  C("Zee Aflam",               "زي أفلام",                    "movies"),
+
+  C("Al Arabiya",              "العربية",                     "news"),
+  C("Al Hadath",               "الحدث",                       "news"),
+  C("Al Jazeera",              "الجزيرة",                     "news"),
+  C("Al Jazeera Mubasher",     "الجزيرة مباشر",               "news"),
+  C("Sky News Arabia",         "سكاي نيوز عربية",             "news"),
+  C("Asharq News",             "الشرق للأخبار",               "news"),
+  C("BBC Arabic",              "بي بي سي عربي",               "news"),
+  C("France 24 Arabic",        "فرانس 24 عربي",               "news"),
+  C("RT Arabic",               "آر تي عربي",                  "news"),
+  C("DW Arabic",               "دي دبليو عربية",              "news"),
+  C("Al Mashhad",              "المشهد",                      "news"),
+  C("Al Qahera News",          "القاهرة الإخبارية",           "news"),
+  C("CNBC Arabia",             "سي إن بي سي عربية",           "news"),
+  C("CNN International",       "سي إن إن الدولية",            "news"),
+  C("BBC World News",          "بي بي سي وورلد نيوز",         "news"),
+  C("Bloomberg",               "بلومبرغ",                     "news"),
+
+  C("KSA SPORTS 3",            "السعودية الرياضية 3",         "sports"),
+  C("SSC 1",                   "إس إس سي 1",                  "sports"),
+  C("SSC 2",                   "إس إس سي 2",                  "sports"),
+  C("SSC 3",                   "إس إس سي 3",                  "sports"),
+  C("SSC 4",                   "إس إس سي 4",                  "sports"),
+  C("SSC 5",                   "إس إس سي 5",                  "sports"),
+  C("beIN Sports News",        "بي إن سبورتس الإخبارية",      "sports"),
+  C("Abu Dhabi Sports 1",      "أبوظبي الرياضية 1",           "sports"),
+  C("Abu Dhabi Sports 2",      "أبوظبي الرياضية 2",           "sports"),
+  C("Dubai Sports",            "دبي الرياضية",                "sports"),
+  C("Sharjah Sports",          "الشارقة الرياضية",            "sports"),
+  C("Al Kass",                 "الكأس",                       "sports"),
+  C("Oman Sports",             "عُمان الرياضية",              "sports"),
+  C("Bahrain Sports",          "البحرين الرياضية",            "sports"),
+  C("Kuwait Sport",            "الكويت الرياضية",             "sports"),
+
+  C("Spacetoon",               "سبيستون",                     "kids"),
+  C("Cartoon Network Arabic",  "كرتون نتورك بالعربية",        "kids"),
+  C("Baraem",                  "براعم",                       "kids"),
+  C("Jeem TV",                 "جيم",                         "kids"),
+  C("Nickelodeon Arabia",      "نيكلوديون",                   "kids"),
+  C("Disney Junior",           "ديزني جونيور",                "kids"),
+  C("Toyor Al Janah",          "طيور الجنة",                  "kids"),
+  C("Cartoonito",              "كرتونيتو",                    "kids"),
+
+  C("Iqraa",                   "اقرأ",                        "religious"),
+  C("Al Majd Holy Quran",      "المجد للقرآن الكريم",         "religious"),
+  C("Al Resalah",              "الرسالة",                     "religious"),
+  C("Noor Dubai",              "نور دبي",                     "religious"),
+  C("Al Nas",                  "الناس",                       "religious"),
+  C("Huda TV",                 "هدى",                         "religious"),
+
+  C("National Geographic AD",  "ناشيونال جيوغرافيك أبوظبي",   "documentary"),
+  C("Nat Geo Wild",            "ناشيونال جيوغرافيك وايلد",    "documentary"),
+  C("Al Jazeera Documentary",  "الجزيرة الوثائقية",           "documentary"),
+  C("Asharq Documentary",      "الشرق الوثائقية",             "documentary"),
+  C("Discovery Channel",       "ديسكفري",                     "documentary"),
+  C("Animal Planet",           "أنيمال بلانيت",               "documentary"),
+
+  C("Rotana Music",            "روتانا موسيقى",               "music"),
+  C("Rotana Clip",             "روتانا كليب",                 "music"),
+  C("Mazzika",                 "مزيكا",                       "music"),
+  C("Wanasah",                 "وناسة",                       "music"),
+
+  C("Geo News",                "جيو نيوز",                    "international"),
+  C("ARY Digital",             "إيه آر واي ديجيتال",          "international"),
+  C("PTV Home",                "بي تي في هوم",                "international"),
+  C("Zee TV",                  "زي تي في",                    "international"),
+  C("Star Plus",               "ستار بلس",                    "international"),
+  C("Sony TV",                 "سوني تي في",                  "international"),
+  C("Asianet",                 "آسيانت",                      "international"),
+  C("NHK World",               "إن إتش كي وورلد",             "international"),
 ];
+
+export const PREVIEW_CHANNELS: IptvChannel[] = LINEUP.map((c, i) => ({ ...c, id: -(i + 1) }));

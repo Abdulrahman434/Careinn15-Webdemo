@@ -936,14 +936,16 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
           the canvas. The page is a flex column instead: top bar and patient
           bar are flex: none, this region is flex: 1 with min-height: 0, and
           the card fills exactly what is left of the canvas. ─── */}
-      {/* pb-10, not pb-3: the footer's buttons sat within 12px of the bottom
-          edge of the screen, which on a wall- or arm-mounted terminal is the
-          hardest band for a patient in bed to see and to reach. Lifting the
-          whole card costs the body a little height and buys the two actions
-          that end every step a clear margin. */}
-      <div className="flex-1 min-h-0 px-12 pt-3 pb-10 relative flex flex-col">
+      {/* The shared internal-page panel (Patient Services, Feedback, Live TV):
+          48 at the sides, 8 under the header, 32 at the bottom — never pb-3,
+          where the footer's buttons sat within 12px of the screen edge, the
+          hardest band for a patient in bed to see and reach. */}
+      <div className="flex-1 min-h-0 px-12 pt-2 pb-8 relative flex flex-col">
         {isFlow && (
-          <div className="flex-1 min-h-0 flex flex-col rounded-[30px] overflow-hidden" style={{ backgroundColor: SHEET, boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
+          <div
+            className="flex-1 min-h-0 flex flex-col overflow-hidden"
+            style={{ backgroundColor: SHEET, borderRadius: theme.radiusXl, boxShadow: SHADOW.xl, border: theme.cardBorder }}
+          >
             {showPatientBar ? renderPatientBar(true) : null}
             <Stepper current={stepIndex} fontFamily={fontFamily} isRTL={isRTL} />
             <div className="flex-1 min-h-0 overflow-hidden">
