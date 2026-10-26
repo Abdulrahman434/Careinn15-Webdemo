@@ -608,6 +608,9 @@ const translations: Record<string, TranslationEntry> = {
   "shortcut.academy": { en: "Academy", ar: "الأكاديمية", ur: "اکیڈمی" },
   "shortcut.adminPortal": { en: "Admin Portal", ar: "بوابة الإدارة", ur: "ایڈمن پورٹل" },
   "shortcut.roomControl": { en: "Room Control", ar: "التحكم بالغرفة", ur: "کمرے کا کنٹرول" },
+  "shortcut.more": { en: "More", ar: "المزيد", ur: "مزید" },
+  "shortcut.moreTitle": { en: "More shortcuts", ar: "اختصارات أخرى", ur: "مزید شارٹ کٹس" },
+  "shortcut.moreSubtitle": { en: "Tap a shortcut to open it", ar: "اضغط على أي اختصار لفتحه", ur: "کھولنے کے لیے کسی شارٹ کٹ پر ٹیپ کریں" },
 
   /* ─── Room Control ─── */
   "room.title": { en: "Room Control", ar: "التحكم بالغرفة", ur: "کمرے کا کنٹرول" },

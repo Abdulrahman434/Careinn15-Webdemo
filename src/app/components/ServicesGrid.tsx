@@ -4,7 +4,7 @@ import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./Theme
 import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
 import svgPaths from "../../imports/svg-ca68x68c4i";
-import { type LucideIcon, BookMarked, Stethoscope, BookOpenText, MessageSquareMore, Utensils } from "lucide-react";
+import { type LucideIcon, BookMarked, Stethoscope, BookOpenText, MessageSquareMore, Utensils, LayoutGrid, X } from "lucide-react";
 import roomControlIcon from "@/assets/screens/room-control-2-alpha.webp";
 import quranIcon from "@/assets/5303963df7d14bbca33ccffa43f982a464344809.webp";
 import mirrorIcon from "@/assets/0ab7565691ddb8401a21da44af1864e8f4058536.webp";
@@ -1142,6 +1142,21 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
   const shortcutItems = getShortcutItems(theme.id, theme.patientGuidePdf);
   const visibleServices = guestMode ? GUEST_SERVICE_ITEMS : serviceItems;
 
+  /* The rail holds 4 rows. With more shortcuts, the 4th row becomes "More",
+     which opens the rest in a panel — nothing is squeezed or dropped. */
+  const RAIL_ROWS = 4;
+  const overflow = shortcutItems.length > RAIL_ROWS;
+  const moreItems = overflow ? shortcutItems.slice(RAIL_ROWS - 1) : [];
+  const moreItem: ShortcutItem = { labelKey: "shortcut.more", icon: "", url: "__more", lucideIcon: LayoutGrid };
+  const railItems = overflow ? [...shortcutItems.slice(0, RAIL_ROWS - 1), moreItem] : shortcutItems;
+  const [showMore, setShowMore] = useState(false);
+
+  const launchShortcut = (item: ShortcutItem) => {
+    if (item.labelKey === "shortcut.mirror" && onLaunchTool) onLaunchTool("mirror");
+    else if ((item.url === "roomcontrol" || item.url === "patientguide") && onLaunchTool) onLaunchTool(item.url);
+    else if (item.url) window.open(item.url, "_blank", "noopener,noreferrer");
+  };
+
   const handleTileTap = (
     e: React.MouseEvent<HTMLElement> | undefined,
     tileId: string,
@@ -1253,23 +1268,80 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
           padding: "16px",
         }}
       >
-        {/* Vertical tiles */}
+        {/* Vertical tiles — each row keeps its own height (148, shrinking only
+            if the rail is short). Fewer shortcuts leave space at the bottom
+            rather than stretching the rows. */}
         <div className="flex flex-col gap-2 flex-1">
-          {shortcutItems.map((item) => (
+          {railItems.map((item) => (
+            <div key={item.labelKey} className="min-h-0" style={{ flex: "0 1 148px" }}>
+            {item === moreItem ? (
+              <ShortcutTileCompact item={item} onTap={() => setShowMore(true)} onLongPress={() => {}} isLocked={false} />
+            ) : (
             <ShortcutTileCompact
-              key={item.labelKey}
               item={item}
-              onTap={(e) => handleTileTap(e, item.labelKey, t(item.labelKey), undefined, lockedIds.has(item.labelKey), () => {
-                if (item.labelKey === "shortcut.mirror" && onLaunchTool) onLaunchTool("mirror");
-                else if ((item.url === "roomcontrol" || item.url === "patientguide") && onLaunchTool) onLaunchTool(item.url);
-                else if (item.url) window.open(item.url, "_blank", "noopener,noreferrer");
-              })}
+              onTap={(e) => handleTileTap(e, item.labelKey, t(item.labelKey), undefined, lockedIds.has(item.labelKey), () => launchShortcut(item))}
               onLongPress={() => handleTileLongPress(item.labelKey, t(item.labelKey), lockedIds.has(item.labelKey))}
               isLocked={lockedIds.has(item.labelKey)}
             />
+            )}
+            </div>
           ))}
         </div>
       </div>
+
+      {showMore && (
+        <div
+          className="fixed inset-0 z-[9000] flex items-center justify-center"
+          onClick={() => setShowMore(false)}
+          style={{ backgroundColor: theme.overlay, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+        >
+          {/* Same panel anatomy as the weather panel: icon, title and a
+              line under it, close, a divider, then the content. */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex flex-col overflow-hidden"
+            style={{ backgroundColor: theme.surface, borderRadius: theme.radiusXl, boxShadow: SHADOW.xl, border: theme.cardBorder }}
+          >
+            <div className="flex items-center gap-4" style={{ padding: "26px 32px", borderBottom: `1px solid ${theme.borderSubtle}` }}>
+              <div
+                className="flex items-center justify-center shrink-0"
+                style={{ width: 56, height: 56, borderRadius: theme.radiusMd, backgroundColor: theme.primarySubtle }}
+              >
+                <LayoutGrid size={28} color={theme.primaryOn} strokeWidth={2} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 style={{ ...TEXT_STYLE.sectionTitle, color: theme.textHeading, margin: 0 }}>{t("shortcut.moreTitle")}</h2>
+                <p style={{ ...TEXT_STYLE.body, color: theme.textMuted, margin: "2px 0 0" }}>{t("shortcut.moreSubtitle")}</p>
+              </div>
+              <button
+                onClick={() => setShowMore(false)}
+                aria-label={t("general.close")}
+                className="flex items-center justify-center shrink-0 cursor-pointer active:scale-95 transition-transform"
+                style={{ width: 56, height: 56, borderRadius: theme.radiusFull, backgroundColor: theme.tileInactiveBg, border: "none", outline: "none" }}
+              >
+                <X size={26} color={theme.textHeading} strokeWidth={2.2} />
+              </button>
+            </div>
+            {/* Up to 3 rows show, plus the top of a 4th peeking out so it's
+                clear the list scrolls. */}
+            <div
+              className="grid overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden"
+              style={{ gridTemplateColumns: `repeat(${Math.min(moreItems.length, 4)}, 200px)`, gap: SPACE[2], padding: SPACE[4], maxHeight: 148 * 3 + 16 * 3 + 56 + 64, overscrollBehavior: "contain", scrollbarWidth: "none" }}
+            >
+              {moreItems.map((item) => (
+                <div key={item.labelKey} style={{ height: 148 }}>
+                  <ShortcutTileCompact
+                    item={item}
+                    onTap={(e) => handleTileTap(e, item.labelKey, t(item.labelKey), undefined, lockedIds.has(item.labelKey), () => { setShowMore(false); launchShortcut(item); })}
+                    onLongPress={() => handleTileLongPress(item.labelKey, t(item.labelKey), lockedIds.has(item.labelKey))}
+                    isLocked={lockedIds.has(item.labelKey)}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Survey — separate card, same height as services row (190px).
           In guest mode it renders in the shortened services row instead. */}
