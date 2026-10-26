@@ -425,8 +425,34 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
      held for a beat before the player covers the screen so the press is seen. */
   const [pressedId, setPressedId] = useState<number | null>(null);
   const [launchingId, setLaunchingId] = useState<number | null>(null);
+  /* A finger that lands to scroll must not light a card up. Like Android's
+     own lists: show the press only after the finger has rested 100 ms
+     without moving, and drop it once it moves past the touch slop. A quick
+     tap still gets the pressed look through launchingId. */
+  const touch = useRef<{ id: number; x: number; y: number; moved: boolean; timer: ReturnType<typeof setTimeout> | null } | null>(null);
+  const PRESS_DELAY = 100, TOUCH_SLOP = 10;
+  const pressStart = (e: React.PointerEvent, id: number) => {
+    if (touch.current?.timer) clearTimeout(touch.current.timer);
+    touch.current = {
+      id, x: e.clientX, y: e.clientY, moved: false,
+      timer: setTimeout(() => setPressedId(id), PRESS_DELAY),
+    };
+  };
+  const pressMove = (e: React.PointerEvent) => {
+    const t = touch.current;
+    if (!t || t.moved) return;
+    if (Math.hypot(e.clientX - t.x, e.clientY - t.y) > TOUCH_SLOP) {
+      t.moved = true;
+      if (t.timer) clearTimeout(t.timer);
+      setPressedId(null);
+    }
+  };
+  const pressEnd = () => {
+    if (touch.current?.timer) clearTimeout(touch.current.timer);
+    setPressedId(null);
+  };
   const tapChannel = (channel: IptvChannel) => {
-    if (launchingId !== null) return;
+    if (launchingId !== null || touch.current?.moved) return;
     setLaunchingId(channel.id);
     setTimeout(() => {
       setLaunchingId(null);
@@ -792,10 +818,11 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
                         tabIndex={0}
                         onClick={() => tapChannel(channel)}
                         onKeyDown={e => { if (e.key === "Enter") tapChannel(channel); }}
-                        onPointerDown={() => setPressedId(channel.id)}
-                        onPointerUp={() => setPressedId(null)}
-                        onPointerLeave={() => setPressedId(null)}
-                        onPointerCancel={() => setPressedId(null)}
+                        onPointerDown={e => pressStart(e, channel.id)}
+                        onPointerMove={pressMove}
+                        onPointerUp={pressEnd}
+                        onPointerLeave={pressEnd}
+                        onPointerCancel={e => { if (touch.current) touch.current.moved = true; pressEnd(); }}
                         className="tv-card relative flex flex-col cursor-pointer select-none"
                         style={{
                           padding: 10,
