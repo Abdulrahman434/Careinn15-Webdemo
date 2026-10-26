@@ -14,6 +14,12 @@ import dallahPodcastIcon from "@/assets/dallah-podcast.webp";
 import patientPortalIcon from "@/assets/patient-portal.webp";
 import burjeelLogo from "@/assets/c8626cd3ed1ce90e9b3bab4a5f97a7315203f204.webp";
 import careinnAdminPortalIcon from "@/assets/careinn-admin-icon.webp";
+import whatsappIcon from "@/assets/7583d2073e01dcd488456b25bc53248baf8547e8.webp";
+import teamsIcon from "@/assets/1ac7892907f2161179b2b2d788a241b1b3d30e2c.webp";
+import zoomIcon from "@/assets/12632c3f9bb8c4baff556d00098b0a9ee6fcca9e.webp";
+import meetIcon from "@/assets/9203106d98b7787c9ddb7620fde397d13b7d3929.webp";
+import youtubeIcon from "@/assets/910e8eb5a121f2bbb217c5d1ed740eeb1ce01ca5.webp";
+import translatorIcon from "@/assets/0ffb58a0f7bbdbc1f2367e04b7accc575718f6d4.webp";
 import { Lock } from "lucide-react";
 import { useLockedApps } from "../lib/lockedApps";
 import { useLongPress } from "../lib/useLongPress";
@@ -84,6 +90,15 @@ const getShortcutItems = (hospitalId: string, patientGuidePdf?: string): Shortcu
     patientGuidePdf
       ? { labelKey: "shortcut.patientGuide", icon: "", url: "patientguide", lucideIcon: BookMarked }
       : podcastData,
+    // CareInn is the showcase: its longer list demonstrates the More panel.
+    ...(hospitalId === "careinn" ? [
+      { labelKey: "shortcut.whatsapp", icon: whatsappIcon, url: "https://web.whatsapp.com" },
+      { labelKey: "shortcut.teams", icon: teamsIcon, url: "https://teams.microsoft.com" },
+      { labelKey: "shortcut.zoom", icon: zoomIcon, url: "https://zoom.us" },
+      { labelKey: "shortcut.meet", icon: meetIcon, url: "https://meet.google.com" },
+      { labelKey: "shortcut.youtube", icon: youtubeIcon, url: "https://www.youtube.com" },
+      { labelKey: "shortcut.translator", icon: translatorIcon, url: "https://translate.google.com" },
+    ] : []),
   ];
   return items.filter((item): item is ShortcutItem => item !== null);
 };
