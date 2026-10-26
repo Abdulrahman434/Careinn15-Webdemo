@@ -27,6 +27,38 @@ const CATEGORY_ICON: Record<string, typeof Tv> = {
 
 type Section = "favourites" | "all" | `cat:${string}`;
 
+/* Hospital servers rarely send a genre or a logo. Fill the gaps so the rail
+   still has categories: a channel we know (same name as one in the preview
+   line-up) takes its logo and genre; anything else gets a genre guessed
+   from its name, General when nothing matches. */
+const normName = (s: string) => s.toLowerCase().replace(/\bhd\b/g, "").replace(/[^a-z0-9\u0600-\u06ff]/g, "");
+const KNOWN_BY_NAME = new Map<string, IptvChannel>();
+for (const c of PREVIEW_CHANNELS) {
+  KNOWN_BY_NAME.set(normName(c.name), c);
+  if (c.nameAr) KNOWN_BY_NAME.set(normName(c.nameAr), c);
+}
+
+function guessCategory(name: string, nameAr = ""): string {
+  const text = `${name} ${nameAr}`.toLowerCase();
+  if (/(sport|رياض|كورة|كأس|كاس|دوري)/.test(text)) return "sports";
+  if (/(news|أخبار|إخبار|اخبار|حدث|عربية|جزيرة|cnn|bbc)/.test(text)) return "news";
+  if (/(quran|sunnah|قرآن|القران|سنة|دعوة|إسلام|islam|iqraa|اقرأ)/.test(text)) return "religious";
+  if (/(kid|أطفال|اطفال|طفل|كرتون|cartoon|junior|disney|majid|ماجد|spacetoon|سبيستون)/.test(text)) return "kids";
+  if (/(movie|cinema|aflam|أفلام|افلام|سينما)/.test(text)) return "movies";
+  if (/(documentary|discovery|geographic|nat geo|animal|وثائقي)/.test(text)) return "documentary";
+  if (/(music|clip|موسيقى|مزيكا|كليب)/.test(text)) return "music";
+  return "general";
+}
+
+function withDefaults(ch: IptvChannel): IptvChannel {
+  const known = KNOWN_BY_NAME.get(normName(ch.name)) ?? (ch.nameAr ? KNOWN_BY_NAME.get(normName(ch.nameAr)) : undefined);
+  return {
+    ...ch,
+    logo: ch.logo || known?.logo || "",
+    category: ch.category || known?.category || guessCategory(ch.name, ch.nameAr),
+  };
+}
+
 function readIds(key: string): string[] {
   try {
     const v = JSON.parse(localStorage.getItem(key) ?? "[]");
@@ -374,7 +406,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
   const isAndroid = isAndroidApp();
   const connected = channels.length > 0 && !error;
   const preview = !loading && !connected;
-  const shown = preview ? PREVIEW_CHANNELS : channels;
+  const shown = useMemo(() => (preview ? PREVIEW_CHANNELS : channels.map(withDefaults)), [preview, channels]);
 
   // Sync playingId with native events. The playChannelList path emits
   // `index` + `total`; the legacy playIptv path emits only `url` + `channel`.
