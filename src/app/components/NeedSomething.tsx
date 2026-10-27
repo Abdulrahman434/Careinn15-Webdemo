@@ -42,7 +42,7 @@ import imgDentalKit from "../../assets/Housekeeping/dental kit.webp";
 import imgComb from "../../assets/Housekeeping/comb.webp";
 import imgWetWipes from "../../assets/Housekeeping/wet wipes.webp";
 import imgNonSlipSocks from "../../assets/Housekeeping/non-slip socks.webp";
-import imgChair from "../../assets/Housekeeping/wooden chair.webp";
+import imgChair from "../../assets/Housekeeping/visitor-chair.png";
 
 /**
  * Patient Services — "I Need Something" flow.
@@ -768,13 +768,14 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                           {card.image ? (
                             /* Product photo — the box has the photo's own 16:9
                                shape, so the whole photo shows at every size and
-                               the product keeps its margin (no crop, no zoom). */
+                               the product keeps its margin (no crop, no zoom).
+                               Photos are cut out (transparent), so the product
+                               sits straight on the card surface. */
                             <>
                               <div
                                 style={{
                                   aspectRatio: "16 / 9",
                                   overflow: "hidden",
-                                  backgroundColor: "#f5f5f5",
                                 }}
                               >
                                 <img
