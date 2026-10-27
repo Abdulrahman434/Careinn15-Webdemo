@@ -246,7 +246,7 @@ const translations: Record<string, TranslationEntry> = {
   "need.item.crutches": { en: "Crutches", ar: "عكازات طبية", ur: "بیساکھیاں" },
   "need.item.walkingcane": { en: "Walking Cane", ar: "عكاز", ur: "چھڑی" },
   "need.item.walker": { en: "Walker", ar: "مشّاية", ur: "واکر" },
-  "need.item.chair": { en: "Chair", ar: "كرسي", ur: "کرسی" },
+  "need.item.chair": { en: "Visitor Chair", ar: "كرسي الزائر", ur: "ملاقاتی کی کرسی" },
   "need.item.dentalkit": { en: "Dental Kit", ar: "طقم أسنان", ur: "دانتوں کا سامان" },
   "need.item.comb": { en: "Comb", ar: "مشط", ur: "کنگھی" },
   "need.item.wetwipes": { en: "Wet Wipes", ar: "مناديل مبللة", ur: "گیلے وائپس" },
