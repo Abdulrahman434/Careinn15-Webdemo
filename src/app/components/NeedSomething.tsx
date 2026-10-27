@@ -11,7 +11,7 @@ import {
   AirVent, Lightbulb, Tv, ShowerHead, Plug,
   Ear, Eye, Accessibility, ShieldCheck, BookOpen, PersonStanding,
   Scissors, Brush, Droplets, Sparkles, Trash2, Languages, HeartHandshake,
-  Stethoscope, Wifi, ConciergeBell, MessageSquareWarning,
+  Stethoscope, Wifi, ConciergeBell, MessageSquareWarning, Armchair,
   createLucideIcon, type LucideIcon,
 } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW, SPACE, LEADING } from "./ThemeContext";
@@ -42,6 +42,7 @@ import imgDentalKit from "../../assets/Housekeeping/dental kit.webp";
 import imgComb from "../../assets/Housekeeping/comb.webp";
 import imgWetWipes from "../../assets/Housekeeping/wet wipes.webp";
 import imgNonSlipSocks from "../../assets/Housekeeping/non-slip socks.webp";
+import imgChair from "../../assets/Housekeeping/wooden chair.webp";
 
 /**
  * Patient Services — "I Need Something" flow.
@@ -156,6 +157,7 @@ const REQUEST_ITEMS: CardDef[] = [
   { key: "need.item.comb", emoji: "💇", Icon: Scissors, image: imgComb },
   { key: "need.item.wetwipes", emoji: "🧴", Icon: Droplets, image: imgWetWipes },
   { key: "need.item.walker", emoji: "🚶", Icon: PersonStanding, image: imgWalker },
+  { key: "need.item.chair", emoji: "🪑", Icon: Armchair, image: imgChair },
 ];
 
 const REPORT_ITEMS: CardDef[] = [
