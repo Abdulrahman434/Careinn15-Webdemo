@@ -764,14 +764,13 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                           {card.image ? (
                             /* Product photo — the box has the photo's own 16:9
                                shape, so the whole photo shows at every size and
-                               the product keeps its margin (no crop, no zoom).
-                               Photos are cut out (transparent), so the product
-                               sits straight on the card surface. */
+                               the product keeps its margin (no crop, no zoom). */
                             <>
                               <div
                                 style={{
                                   aspectRatio: "16 / 9",
                                   overflow: "hidden",
+                                  backgroundColor: "#f5f5f5",
                                 }}
                               >
                                 <img
