@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Sun, SunDim, Lightbulb, LightbulbOff, Wind, Snowflake, Thermometer, Power, Pause, ChevronUp, ChevronDown } from "lucide-react";
-import { useTheme, WEIGHT, SHADOW } from "./ThemeContext";
+import { useTheme, WEIGHT, SHADOW, TEXT_STYLE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { InternalPageHeader } from "./InternalPageHeader";
+import { ApiImage } from "./ApiImage";
 
 type TabKey = "lights" | "curtains" | "ac";
 
@@ -319,47 +320,107 @@ function AcTab({ theme, fontFamily, t }: { theme: any; fontFamily: string; t: an
 /* ══════════════════════════════════════════════════════════════════════
  * MAIN ROOM CONTROL
  * ══════════════════════════════════════════════════════════════════════ */
-const TABS: { key: TabKey; labelKey: string; icon: React.ReactNode }[] = [
-  { key: "lights", labelKey: "room.tab.lights", icon: <Lightbulb size={20} /> },
-  { key: "curtains", labelKey: "room.tab.curtains", icon: <CurtainOpenIcon size={20} /> },
-  { key: "ac", labelKey: "room.tab.ac", icon: <AcIcon size={20} /> },
+const TABS: { key: TabKey; labelKey: string; Icon: (p: { size?: number; color?: string }) => React.ReactNode }[] = [
+  { key: "lights", labelKey: "room.tab.lights", Icon: Lightbulb },
+  { key: "curtains", labelKey: "room.tab.curtains", Icon: CurtainOpenIcon },
+  { key: "ac", labelKey: "room.tab.ac", Icon: AcIcon },
 ];
 
+/* Same shell as Patient Services and Live TV: one large white card with the
+   categories stacked in a rail down the leading edge. */
 export function RoomControl({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
-  const { t, fontFamily } = useLocale();
+  const { t, fontFamily, isRTL } = useLocale();
   const [activeTab, setActiveTab] = useState<TabKey>("lights");
+  const activeLabelKey = TABS.find(tab => tab.key === activeTab)!.labelKey;
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col"
-      style={{ backgroundColor: theme.background, animation: "rcIn 0.25s ease-out" }}>
-      <div className="shrink-0" style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.primaryDark})`, paddingBottom: "20px" }}>
-        <InternalPageHeader title={t("room.title")} icon={<AcIcon size={26} color="#fff" />} onClose={onClose} />
-        <div className="mx-12" style={{ backgroundColor: "rgba(255,255,255,0.12)", borderRadius: "16px", padding: "4px", display: "flex" }}>
-          {TABS.map(tab => {
-            const active = activeTab === tab.key;
-            return (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                className="flex-1 flex items-center justify-center gap-3 cursor-pointer transition-all"
-                style={{
-                  height: "50px", borderRadius: "13px",
-                  background: active ? "rgba(255,255,255,0.22)" : "transparent",
-                  border: "none", outline: "none",
-                  boxShadow: active ? "0 2px 12px rgba(0,0,0,0.12)" : "none",
-                }}>
-                <div style={{ color: active ? "#fff" : "rgba(255,255,255,0.55)" }}>{tab.icon}</div>
-                <span style={{ fontFamily, fontSize: "15px", fontWeight: active ? WEIGHT.bold : WEIGHT.medium, color: active ? "#fff" : "rgba(255,255,255,0.55)" }}>
-                  {t(tab.labelKey)}
-                </span>
-              </button>
-            );
-          })}
+    <div className="absolute inset-0 z-50 flex flex-col overflow-hidden" dir={isRTL ? "rtl" : "ltr"}
+      style={{ background: theme.pageGradientFlat, fontFamily, animation: "rcIn 0.25s ease-out" }}>
+      <ApiImage
+        src={theme.heroImageUrl}
+        alt=""
+        aria-hidden
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+        style={{ opacity: 0.08, mixBlendMode: "luminosity", userSelect: "none" }}
+      />
+      <InternalPageHeader title={t("room.title")} icon={<AcIcon size={26} color="#fff" />} onClose={onClose} />
+
+      <div className="flex-1 min-h-0 px-12 pt-2 pb-8 relative z-10 flex flex-col">
+        <div
+          className="flex-1 min-h-0 flex overflow-hidden"
+          style={{
+            backgroundColor: theme.surface,
+            borderRadius: theme.radiusXl,
+            boxShadow: SHADOW.xl,
+            border: theme.cardBorder,
+          }}
+        >
+          <nav
+            className="shrink-0 flex flex-col gap-2 py-7 px-5"
+            style={{
+              width: 320,
+              backgroundColor: theme.surfaceInset,
+              borderInlineEnd: `1px solid ${theme.borderSubtle}`,
+            }}
+          >
+            {TABS.map(tab => {
+              const active = activeTab === tab.key;
+              const TIcon = tab.Icon;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className="flex items-center gap-3 w-full cursor-pointer active:scale-[0.98] transition-transform"
+                  style={{
+                    minHeight: 64,
+                    padding: "10px 14px",
+                    borderRadius: theme.radiusMd,
+                    backgroundColor: active ? theme.primary : "transparent",
+                    border: "none",
+                    outline: "none",
+                    boxShadow: active ? SHADOW.md : "none",
+                    textAlign: "start",
+                  }}
+                >
+                  <span
+                    className="shrink-0 flex items-center justify-center"
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: theme.radiusSm,
+                      backgroundColor: active ? "rgba(255,255,255,0.18)" : theme.primarySubtle,
+                    }}
+                  >
+                    <TIcon size={20} color={active ? theme.textInverse : theme.primaryOn} />
+                  </span>
+                  <span
+                    className="flex-1 min-w-0"
+                    style={{
+                      ...TEXT_STYLE.buttonSm,
+                      fontFamily,
+                      color: active ? theme.textInverse : theme.textHeading,
+                      lineHeight: 1.25,
+                    }}
+                  >
+                    {t(tab.labelKey)}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="flex-1 min-w-0 min-h-0 overflow-y-auto px-8 py-7 flex flex-col" style={{ scrollbarWidth: "none" }}>
+            <h3 className="shrink-0 mb-5" style={{ ...TEXT_STYLE.pageTitle, fontFamily, color: theme.textHeading }}>
+              {t(activeLabelKey)}
+            </h3>
+            <div className="flex-1 min-h-0">
+              {activeTab === "lights" && <LightsTab theme={theme} fontFamily={fontFamily} t={t} />}
+              {activeTab === "curtains" && <CurtainsTab theme={theme} fontFamily={fontFamily} t={t} />}
+              {activeTab === "ac" && <AcTab theme={theme} fontFamily={fontFamily} t={t} />}
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="flex-1 overflow-y-auto px-12 py-6" style={{ scrollbarWidth: "none" }}>
-        {activeTab === "lights" && <LightsTab theme={theme} fontFamily={fontFamily} t={t} />}
-        {activeTab === "curtains" && <CurtainsTab theme={theme} fontFamily={fontFamily} t={t} />}
-        {activeTab === "ac" && <AcTab theme={theme} fontFamily={fontFamily} t={t} />}
       </div>
       <style>{`@keyframes rcIn { from { opacity:0; } to { opacity:1; } }`}</style>
     </div>
