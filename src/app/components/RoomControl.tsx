@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Sun, SunDim, Lightbulb, LightbulbOff, Wind, Snowflake, Thermometer, Power, Pause, ChevronUp, ChevronDown } from "lucide-react";
-import { useTheme, WEIGHT, SHADOW, TEXT_STYLE } from "./ThemeContext";
+import { useTheme, WEIGHT, SHADOW, TEXT_STYLE, TYPE_SCALE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { ApiImage } from "./ApiImage";
@@ -39,6 +39,49 @@ function Toggle({ on, onToggle, accent, size = "normal" }: { on: boolean; onTogg
   );
 }
 
+/* ── Shared card pieces — one look across Lights, Curtains and Climate ── */
+
+/* Every tappable tile: brand gradient when on, a white bordered card when off. */
+function tileStyle(on: boolean, theme: any): React.CSSProperties {
+  return {
+    background: on ? `linear-gradient(145deg, ${theme.primary}, ${theme.primaryDark})` : theme.surface,
+    border: on ? `1px solid transparent` : theme.borderCard,
+    boxShadow: on ? `0 6px 24px ${theme.primary}35` : SHADOW.md,
+  };
+}
+
+/* The panels that hold tiles (All Lights row, each curtain, Climate panels). */
+function panelStyle(theme: any): React.CSSProperties {
+  return { backgroundColor: theme.surface, borderRadius: theme.radiusXl, border: theme.borderCard, boxShadow: SHADOW.md };
+}
+
+function CardIconBox({ on, theme, children }: { on: boolean; theme: any; children: React.ReactNode }) {
+  return (
+    <div className="shrink-0 flex items-center justify-center" style={{
+      width: "52px", height: "52px", borderRadius: theme.radiusMd,
+      background: on ? `linear-gradient(135deg, ${theme.primary}, ${theme.primaryDark})` : theme.primarySubtle,
+      boxShadow: on ? `0 4px 16px ${theme.primary}30` : "none", transition: "all 0.3s",
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function CardHeading({ title, sub, theme, fontFamily }: { title: string; sub: string; theme: any; fontFamily: string }) {
+  return (
+    <div>
+      <p style={{ ...TEXT_STYLE.subtitle, fontFamily, color: theme.textHeading }}>{title}</p>
+      <p style={{ ...TEXT_STYLE.caption, fontFamily, color: theme.textMuted, marginTop: 2 }}>{sub}</p>
+    </div>
+  );
+}
+
+function PanelLabel({ children, theme, fontFamily }: { children: React.ReactNode; theme: any; fontFamily: string }) {
+  return (
+    <p style={{ ...TEXT_STYLE.label, fontFamily, color: theme.textMuted, marginBottom: "14px" }}>{children}</p>
+  );
+}
+
 /* ══════════════════════════════════════════════════════════════════════
  * LIGHTS TAB
  * ══════════════════════════════════════════════════════════════════════ */
@@ -55,20 +98,13 @@ function LightsTab({ theme, fontFamily, t }: { theme: any; fontFamily: string; t
   return (
     <div className="flex flex-col gap-5 h-full">
       {/* Master Toggle */}
-      <div style={{ backgroundColor: theme.surface, borderRadius: theme.radiusXl, border: theme.cardBorder, boxShadow: SHADOW.md, padding: "20px 28px" }}>
+      <div style={{ ...panelStyle(theme), padding: "20px 28px" }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center" style={{
-              width: "52px", height: "52px", borderRadius: "14px",
-              background: allOn ? `linear-gradient(135deg, ${theme.primary}, ${theme.primaryDark})` : theme.surfaceElevated,
-              boxShadow: allOn ? `0 4px 20px ${theme.primary}35` : "none", transition: "all 0.3s",
-            }}>
-              {allOn ? <Sun size={26} color="#fff" /> : <LightbulbOff size={26} color={theme.textMuted} />}
-            </div>
-            <div>
-              <p style={{ fontFamily, fontSize: "17px", fontWeight: WEIGHT.bold, color: theme.textHeading }}>{t("room.light.allLights")}</p>
-              <p style={{ fontFamily, fontSize: "13px", color: theme.textMuted }}>{zones.filter(z => z.on).length} / {zones.length} {t("room.active")}</p>
-            </div>
+            <CardIconBox on={allOn} theme={theme}>
+              {allOn ? <Sun size={26} color={theme.textInverse} /> : <LightbulbOff size={26} color={theme.primaryOn} />}
+            </CardIconBox>
+            <CardHeading title={t("room.light.allLights")} sub={`${zones.filter(z => z.on).length} / ${zones.length} ${t("room.active")}`} theme={theme} fontFamily={fontFamily} />
           </div>
           <Toggle on={allOn} accent={theme.primary} onToggle={() => setZones(p => p.map(z => ({ ...z, on: !allOn })))} />
         </div>
@@ -83,26 +119,24 @@ function LightsTab({ theme, fontFamily, t }: { theme: any; fontFamily: string; t
               className="cursor-pointer active:scale-[0.97] transition-all flex flex-col items-center justify-center gap-4"
               style={{
                 borderRadius: theme.radiusXl, outline: "none",
-                background: zone.on ? `linear-gradient(145deg, ${theme.primary}, ${theme.primaryDark})` : theme.surface,
-                border: zone.on ? "none" : theme.cardBorder,
-                boxShadow: zone.on ? `0 8px 32px ${theme.primary}30` : SHADOW.md,
+                ...tileStyle(zone.on, theme),
                 padding: "24px",
               }}>
               <div style={{
-                width: "68px", height: "68px", borderRadius: "50%",
-                backgroundColor: zone.on ? "rgba(255,255,255,0.2)" : theme.surfaceElevated,
+                width: "68px", height: "68px", borderRadius: theme.radiusFull,
+                backgroundColor: zone.on ? "rgba(255,255,255,0.2)" : theme.primarySubtle,
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <Icon size={30} color={zone.on ? "#fff" : theme.textMuted} />
+                <Icon size={30} color={zone.on ? theme.textInverse : theme.primaryOn} />
               </div>
-              <span style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.bold, color: zone.on ? "#fff" : theme.textHeading }}>
+              <span style={{ ...TEXT_STYLE.subtitle, fontFamily, color: zone.on ? theme.textInverse : theme.textHeading }}>
                 {t(zone.nameKey)}
               </span>
               <div style={{
-                padding: "6px 24px", borderRadius: "20px",
-                backgroundColor: zone.on ? "rgba(255,255,255,0.2)" : theme.surfaceElevated,
-                color: zone.on ? "#fff" : theme.textMuted,
-                fontFamily, fontSize: "13px", fontWeight: WEIGHT.semibold,
+                ...TEXT_STYLE.label, fontFamily,
+                padding: "6px 24px", borderRadius: theme.radiusFull,
+                backgroundColor: zone.on ? "rgba(255,255,255,0.2)" : theme.primarySubtle,
+                color: zone.on ? theme.textInverse : theme.primaryOn,
               }}>{zone.on ? "ON" : "OFF"}</div>
             </button>
           );
@@ -122,7 +156,6 @@ function CurtainsTab({ theme, fontFamily, t }: { theme: any; fontFamily: string;
   ]);
   const setState = (id: string, state: "open" | "half" | "closed") =>
     setCurtains(p => p.map(c => c.id === id ? { ...c, state } : c));
-  const accent = theme.primary;
   const actions = [
     { key: "open" as const, labelKey: "room.curtain.open", icon: <ChevronUp size={30} strokeWidth={2.5} /> },
     { key: "half" as const, labelKey: "room.curtain.half", icon: <Pause size={26} strokeWidth={2.5} /> },
@@ -133,27 +166,16 @@ function CurtainsTab({ theme, fontFamily, t }: { theme: any; fontFamily: string;
     <div className="flex flex-col gap-5 h-full">
       {curtains.map(curtain => (
         <div key={curtain.id} style={{
+          ...panelStyle(theme),
           flex: 1, padding: "28px", display: "flex", flexDirection: "column",
-          backgroundColor: theme.surface, borderRadius: theme.radiusXl,
-          border: theme.cardBorder, boxShadow: SHADOW.md,
         }}>
           <div className="flex items-center gap-4 mb-6">
-            <div style={{
-              width: "52px", height: "52px", borderRadius: "14px",
-              background: curtain.state !== "closed" ? `linear-gradient(135deg, ${accent}, ${theme.primaryDark})` : theme.surfaceElevated,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: curtain.state !== "closed" ? `0 4px 16px ${accent}30` : "none",
-            }}>
+            <CardIconBox on={curtain.state !== "closed"} theme={theme}>
               {curtain.state === "closed"
-                ? <CurtainClosedIcon size={26} color={theme.textMuted} />
-                : <CurtainOpenIcon size={26} color="#fff" />}
-            </div>
-            <div>
-              <p style={{ fontFamily, fontSize: "17px", fontWeight: WEIGHT.bold, color: theme.textHeading }}>{t(curtain.nameKey)}</p>
-              <p style={{ fontFamily, fontSize: "13px", color: theme.textMuted }}>
-                {curtain.state === "half" ? t("room.curtain.half") : t(`room.curtain.${curtain.state}`)}
-              </p>
-            </div>
+                ? <CurtainClosedIcon size={26} color={theme.primaryOn} />
+                : <CurtainOpenIcon size={26} color={theme.textInverse} />}
+            </CardIconBox>
+            <CardHeading title={t(curtain.nameKey)} sub={t(`room.curtain.${curtain.state}`)} theme={theme} fontFamily={fontFamily} />
           </div>
           <div className="flex gap-4 flex-1 items-stretch">
             {actions.map(a => {
@@ -162,15 +184,12 @@ function CurtainsTab({ theme, fontFamily, t }: { theme: any; fontFamily: string;
                 <button key={a.key} onClick={() => setState(curtain.id, a.key)}
                   className="flex-1 flex flex-col items-center justify-center gap-3 cursor-pointer active:scale-95 transition-all"
                   style={{
-                    borderRadius: theme.radiusXl, outline: "none", minHeight: "90px",
-                    /* Same card as an unlit light tile, so every option reads as its own card. */
-                    background: active ? `linear-gradient(145deg, ${accent}, ${theme.primaryDark})` : theme.surface,
-                    border: active ? "none" : theme.cardBorder,
-                    color: active ? "#fff" : theme.textMuted,
-                    boxShadow: active ? `0 6px 24px ${accent}35` : SHADOW.md,
+                    ...tileStyle(active, theme),
+                    borderRadius: theme.radiusLg, outline: "none", minHeight: "90px",
+                    color: active ? theme.textInverse : theme.primaryOn,
                   }}>
                   {a.icon}
-                  <span style={{ fontFamily, fontSize: "14px", fontWeight: WEIGHT.semibold }}>{t(a.labelKey)}</span>
+                  <span style={{ ...TEXT_STYLE.label, fontFamily, color: active ? theme.textInverse : theme.textHeading }}>{t(a.labelKey)}</span>
                 </button>
               );
             })}
@@ -190,40 +209,41 @@ function AcTab({ theme, fontFamily, t }: { theme: any; fontFamily: string; t: an
   const [fanSpeed, setFanSpeed] = useState(2);
   const [mode, setMode] = useState<"cool" | "heat" | "fan">("cool");
   const modes = [
-    { key: "cool" as const, labelKey: "room.ac.cool", icon: Snowflake, color: "#38BDF8" },
-    { key: "heat" as const, labelKey: "room.ac.heat", icon: Thermometer, color: "#FB923C" },
-    { key: "fan" as const, labelKey: "room.ac.fan", icon: Wind, color: "#A78BFA" },
+    { key: "cool" as const, labelKey: "room.ac.cool", icon: Snowflake },
+    { key: "heat" as const, labelKey: "room.ac.heat", icon: Thermometer },
+    { key: "fan" as const, labelKey: "room.ac.fan", icon: Wind },
   ];
   const fans = [
     { level: 1, labelKey: "room.ac.low" },
     { level: 2, labelKey: "room.ac.medium" },
     { level: 3, labelKey: "room.ac.high" },
   ];
-  const mc = modes.find(m => m.key === mode)!;
   const dim = acOn ? 1 : 0.35;
+  const stepButton: React.CSSProperties = {
+    ...tileStyle(false, theme),
+    width: "56px", height: "56px", borderRadius: theme.radiusFull, opacity: dim,
+    outline: "none", fontSize: TYPE_SCALE.lg, color: theme.textHeading, fontWeight: WEIGHT.bold,
+    pointerEvents: acOn ? "auto" : "none",
+  };
 
   return (
     <div className="flex gap-6 h-full">
       {/* Left — Temperature */}
-      <div className="flex-1 flex flex-col items-center justify-center" style={{
-        backgroundColor: theme.surface, borderRadius: theme.radiusXl,
-        border: theme.cardBorder, boxShadow: SHADOW.md, padding: "32px",
-      }}>
+      <div className="flex-1 flex flex-col items-center justify-center" style={{ ...panelStyle(theme), padding: "32px" }}>
         {/* Temp Ring */}
         <div style={{ opacity: dim, transition: "opacity 0.3s", pointerEvents: acOn ? "auto" : "none" }}>
           <div style={{
-            width: "220px", height: "220px", borderRadius: "50%", padding: "5px",
+            width: "220px", height: "220px", borderRadius: theme.radiusFull, padding: "5px",
             background: acOn
-              ? `conic-gradient(${mc.color} ${((temp - 16) / 14) * 100}%, ${theme.surfaceElevated} 0%)`
-              : theme.surfaceElevated,
-            boxShadow: acOn ? `0 0 40px ${mc.color}15` : "none",
+              ? `conic-gradient(${theme.primary} ${((temp - 16) / 14) * 100}%, ${theme.primarySubtle} 0%)`
+              : theme.primarySubtle,
           }}>
             <div style={{
-              width: "100%", height: "100%", borderRadius: "50%", backgroundColor: theme.surface,
+              width: "100%", height: "100%", borderRadius: theme.radiusFull, backgroundColor: theme.surface,
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
             }}>
               <span style={{ fontFamily, fontSize: "58px", fontWeight: WEIGHT.bold, color: theme.textHeading, lineHeight: 1 }}>{temp}</span>
-              <span style={{ fontFamily, fontSize: "16px", color: theme.textMuted, marginTop: "4px" }}>°C</span>
+              <span style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textMuted, marginTop: "4px" }}>°C</span>
             </div>
           </div>
         </div>
@@ -232,43 +252,28 @@ function AcTab({ theme, fontFamily, t }: { theme: any; fontFamily: string; t: an
         <div className="flex items-center gap-5 mt-7">
           <button onClick={() => acOn && setTemp(p => Math.max(16, p - 1))}
             className="cursor-pointer active:scale-90 transition-all flex items-center justify-center"
-            style={{
-              width: "56px", height: "56px", borderRadius: "50%", opacity: dim,
-              background: theme.surfaceElevated, border: theme.cardBorder,
-              outline: "none", fontSize: "26px", color: theme.textHeading, fontWeight: WEIGHT.bold,
-              pointerEvents: acOn ? "auto" : "none",
-            }}>−</button>
+            style={stepButton}>−</button>
 
           {/* Big Power Button */}
           <button onClick={() => setAcOn(!acOn)}
             className="cursor-pointer active:scale-90 transition-all flex items-center justify-center"
             style={{
-              width: "72px", height: "72px", borderRadius: "50%",
-              background: acOn ? `linear-gradient(135deg, ${mc.color}, ${mc.color}CC)` : theme.surfaceElevated,
-              border: acOn ? "none" : `2px solid rgba(120,120,140,0.3)`,
-              outline: "none",
-              boxShadow: acOn ? `0 6px 24px ${mc.color}40` : "none",
+              ...tileStyle(acOn, theme),
+              width: "72px", height: "72px", borderRadius: theme.radiusFull, outline: "none",
             }}>
-            <Power size={28} color={acOn ? "#fff" : theme.textMuted} />
+            <Power size={28} color={acOn ? theme.textInverse : theme.primaryOn} />
           </button>
 
           <button onClick={() => acOn && setTemp(p => Math.min(30, p + 1))}
             className="cursor-pointer active:scale-90 transition-all flex items-center justify-center"
-            style={{
-              width: "56px", height: "56px", borderRadius: "50%", opacity: dim,
-              background: theme.surfaceElevated, border: theme.cardBorder,
-              outline: "none", fontSize: "26px", color: theme.textHeading, fontWeight: WEIGHT.bold,
-              pointerEvents: acOn ? "auto" : "none",
-            }}>+</button>
+            style={stepButton}>+</button>
         </div>
       </div>
 
       {/* Right — Mode + Fan (always visible, dimmed when off) */}
-      <div className="flex flex-col gap-5" style={{ width: "280px", opacity: dim, transition: "opacity 0.3s", pointerEvents: acOn ? "auto" : "none" }}>
-        <div style={{ flex: 1, padding: "24px", backgroundColor: theme.surface, borderRadius: theme.radiusXl, border: theme.cardBorder, boxShadow: SHADOW.md }}>
-          <p style={{ fontFamily, fontSize: "12px", fontWeight: WEIGHT.bold, color: theme.textMuted, letterSpacing: "1.5px", marginBottom: "14px" }}>
-            {t("room.ac.mode")}
-          </p>
+      <div className="flex flex-col gap-5" style={{ width: "320px", opacity: dim, transition: "opacity 0.3s", pointerEvents: acOn ? "auto" : "none" }}>
+        <div style={{ ...panelStyle(theme), flex: 1, padding: "24px" }}>
+          <PanelLabel theme={theme} fontFamily={fontFamily}>{t("room.ac.mode")}</PanelLabel>
           <div className="flex flex-col gap-3">
             {modes.map(m => {
               const active = mode === m.key;
@@ -277,13 +282,11 @@ function AcTab({ theme, fontFamily, t }: { theme: any; fontFamily: string; t: an
                 <button key={m.key} onClick={() => setMode(m.key)}
                   className="flex items-center gap-4 cursor-pointer active:scale-[0.97] transition-all"
                   style={{
-                    height: "58px", borderRadius: "16px", paddingInline: "20px",
-                    background: active ? `${m.color}18` : theme.surfaceElevated,
-                    border: active ? `2px solid ${m.color}50` : `2px solid transparent`,
-                    outline: "none",
+                    ...tileStyle(active, theme),
+                    height: "58px", borderRadius: theme.radiusMd, paddingInline: "20px", outline: "none",
                   }}>
-                  <Icon size={22} color={active ? m.color : theme.textMuted} />
-                  <span style={{ fontFamily, fontSize: "15px", fontWeight: WEIGHT.semibold, color: active ? m.color : theme.textMuted }}>
+                  <Icon size={22} color={active ? theme.textInverse : theme.primaryOn} />
+                  <span style={{ ...TEXT_STYLE.label, fontFamily, color: active ? theme.textInverse : theme.textHeading }}>
                     {t(m.labelKey)}
                   </span>
                 </button>
@@ -291,10 +294,8 @@ function AcTab({ theme, fontFamily, t }: { theme: any; fontFamily: string; t: an
             })}
           </div>
         </div>
-        <div style={{ padding: "24px", backgroundColor: theme.surface, borderRadius: theme.radiusXl, border: theme.cardBorder, boxShadow: SHADOW.md }}>
-          <p style={{ fontFamily, fontSize: "12px", fontWeight: WEIGHT.bold, color: theme.textMuted, letterSpacing: "1.5px", marginBottom: "14px" }}>
-            {t("room.ac.fanSpeed")}
-          </p>
+        <div style={{ ...panelStyle(theme), padding: "24px" }}>
+          <PanelLabel theme={theme} fontFamily={fontFamily}>{t("room.ac.fanSpeed")}</PanelLabel>
           <div className="flex gap-3">
             {fans.map(f => {
               const active = fanSpeed === f.level;
@@ -302,13 +303,12 @@ function AcTab({ theme, fontFamily, t }: { theme: any; fontFamily: string; t: an
                 <button key={f.level} onClick={() => setFanSpeed(f.level)}
                   className="flex-1 flex flex-col items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
                   style={{
-                    height: "64px", borderRadius: "14px", border: "none", outline: "none",
-                    background: active ? mc.color : theme.surfaceElevated,
-                    color: active ? "#fff" : theme.textMuted,
-                    boxShadow: active ? `0 4px 20px ${mc.color}35` : "none",
+                    ...tileStyle(active, theme),
+                    height: "64px", borderRadius: theme.radiusMd, outline: "none",
+                    color: active ? theme.textInverse : theme.primaryOn,
                   }}>
                   <Wind size={16} />
-                  <span style={{ fontFamily, fontSize: "12px", fontWeight: WEIGHT.semibold }}>{t(f.labelKey)}</span>
+                  <span style={{ ...TEXT_STYLE.label, fontFamily, color: active ? theme.textInverse : theme.textHeading }}>{t(f.labelKey)}</span>
                 </button>
               );
             })}
