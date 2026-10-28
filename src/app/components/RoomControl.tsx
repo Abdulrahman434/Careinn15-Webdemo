@@ -162,10 +162,12 @@ function CurtainsTab({ theme, fontFamily, t }: { theme: any; fontFamily: string;
                 <button key={a.key} onClick={() => setState(curtain.id, a.key)}
                   className="flex-1 flex flex-col items-center justify-center gap-3 cursor-pointer active:scale-95 transition-all"
                   style={{
-                    borderRadius: "20px", border: "none", outline: "none", minHeight: "90px",
-                    background: active ? `linear-gradient(145deg, ${accent}, ${theme.primaryDark})` : theme.surfaceElevated,
+                    borderRadius: theme.radiusXl, outline: "none", minHeight: "90px",
+                    /* Same card as an unlit light tile, so every option reads as its own card. */
+                    background: active ? `linear-gradient(145deg, ${accent}, ${theme.primaryDark})` : theme.surface,
+                    border: active ? "none" : theme.cardBorder,
                     color: active ? "#fff" : theme.textMuted,
-                    boxShadow: active ? `0 6px 24px ${accent}35` : "none",
+                    boxShadow: active ? `0 6px 24px ${accent}35` : SHADOW.md,
                   }}>
                   {a.icon}
                   <span style={{ fontFamily, fontSize: "14px", fontWeight: WEIGHT.semibold }}>{t(a.labelKey)}</span>
