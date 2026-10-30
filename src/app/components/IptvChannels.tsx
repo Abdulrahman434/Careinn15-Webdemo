@@ -132,36 +132,17 @@ function logoWidthPct(aspect: number) {
   return (w / LOGO_BOX_W) * 100;
 }
 
-/* A channel's logo, or its name set as a wordmark when the server (or the
-   preview line-up) has no logo for it — always on the white tile. */
+/* A channel's logo, or a TV icon when the server (or the preview line-up)
+   has no logo for it or the logo fails to load — always on the white tile.
+   The channel's name is already printed under the tile. */
 function ChannelLogo({ channel, size }: { channel: IptvChannel; size: "card" | "player" }) {
   const { theme } = useTheme();
-  const { fontFamily, locale } = useLocale();
   const [fit, setFit] = useState<LogoFit | undefined>(() => channel.logo ? logoFits.get(channel.logo) : undefined);
   useEffect(() => {
     setFit(channel.logo ? logoFits.get(channel.logo) : undefined);
   }, [channel.logo]);
-  const name = locale === "ar" ? (channel.nameAr || channel.name) : channel.name;
-  const wordmark = (
-    <span
-      className="text-center"
-      style={{
-        fontFamily,
-        fontSize: size === "player" ? TYPE_SCALE["2xl"] : name.length > 14 ? TYPE_SCALE.base : TYPE_SCALE.md,
-        fontWeight: WEIGHT.extrabold,
-        lineHeight: LEADING.tight,
-        color: theme.primary,
-        padding: "0 8px",
-        display: "-webkit-box",
-        WebkitLineClamp: 2,
-        WebkitBoxOrient: "vertical",
-        overflow: "hidden",
-      }}
-    >
-      {name}
-    </span>
-  );
-  if (!channel.logo) return wordmark;
+  const noLogo = <Tv size={size === "player" ? 96 : 48} color={theme.primary} strokeWidth={1.6} aria-hidden />;
+  if (!channel.logo) return noLogo;
   const logoKey = channel.logo;
   if (fit) {
     return (
@@ -187,7 +168,7 @@ function ChannelLogo({ channel, size }: { channel: IptvChannel; size: "card" | "
         logoFits.set(logoKey, f);
         setFit(f);
       }}
-      fallback={wordmark}
+      fallback={noLogo}
     />
   );
 }
