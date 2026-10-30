@@ -42,7 +42,7 @@ import imgDentalKit from "../../assets/Housekeeping/dental kit.webp";
 import imgComb from "../../assets/Housekeeping/comb.webp";
 import imgWetWipes from "../../assets/Housekeeping/wet wipes.webp";
 import imgNonSlipSocks from "../../assets/Housekeeping/non-slip socks.webp";
-import imgChair from "../../assets/Housekeeping/wooden chair.webp";
+import imgChair from "../../assets/Housekeeping/visitor-chair-cream.jpg";
 
 /**
  * Patient Services — "I Need Something" flow.
@@ -51,7 +51,7 @@ import imgChair from "../../assets/Housekeeping/wooden chair.webp";
  * Its visual language deliberately mirrors the Meal Ordering module
  * (FoodOrdering.tsx): a brand-gradient canvas, a white internal page header, a
  * large rounded white content card, icon-led white sub-cards with soft borders
- * and hover lift, pill navigation tabs, and modern dialogs.
+ * and press feedback, pill navigation tabs, and modern dialogs.
  *
  * Branding rule (same as Layout 1 / Layout 2): every colour, font and asset is
  * inherited from the active Hospital Config token system — nothing is
@@ -464,7 +464,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
       style={{
         background: theme.pageGradientFlat,
         fontFamily,
-        // CSS vars used by the hover/focus rules below (keeps colours brand-driven)
+        // CSS vars used by the focus rules below (keeps colours brand-driven)
         ["--ns-primary" as any]: theme.primary,
       } as CSSProperties}
     >
@@ -478,13 +478,9 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
       />
 
       <style>{`
-        .ns-card { transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
-        .ns-card:hover { border-color: var(--ns-primary); box-shadow: ${SHADOW.md}; transform: translateY(-4px); }
-        .ns-card:active { transform: scale(0.985); }
-        .ns-card img { transition: transform .4s cubic-bezier(.25,.46,.45,.94); }
-        .ns-card:hover img { transform: scale(1.06); }
-        .ns-iconbox { transition: background-color .2s ease; }
-        .ns-card:hover .ns-iconbox { background-color: color-mix(in srgb, var(--ns-primary) 18%, #fff); }
+        /* Touch screen: no hover states (they stick after a tap) — press feedback only. */
+        .ns-card { transition: transform .15s ease; }
+        .ns-card:active { transform: scale(0.97); }
         .ns-textarea::placeholder { color: ${theme.textDisabled}; }
         .ns-textarea:focus { border-color: var(--ns-primary) !important; }
         .ns-scroll::-webkit-scrollbar { width: 10px; }
