@@ -705,8 +705,12 @@ async function fetchWebIptvChannels(): Promise<IptvChannel[]> {
     ];
 
     for (const ep of endpoints) {
+      /* A server that never answers would leave Live TV on "loading" for good;
+         give up after a few seconds so the screen falls back to the preview. */
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 5000);
       try {
-        const res = await fetch(ep);
+        const res = await fetch(ep, { signal: ctrl.signal });
         if (res.ok) {
           const data = await res.json();
           const arr = Array.isArray(data) ? data : data.channels || data.results || [];
@@ -721,7 +725,12 @@ async function fetchWebIptvChannels(): Promise<IptvChannel[]> {
             })).filter((c: any) => c.url);
           }
         }
-      } catch {}
+      } catch {
+        // Timed out: the other endpoints are on the same silent host.
+        if (ctrl.signal.aborted) break;
+      } finally {
+        clearTimeout(timer);
+      }
     }
   } catch {}
   return [];
