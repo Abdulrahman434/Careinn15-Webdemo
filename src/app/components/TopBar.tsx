@@ -8,6 +8,7 @@ import { useLocale } from "./i18n";
 import { getPrayerTimes, PRAYER_KEYS, PRAYER_NAMES, getPrayerStatus, localizeDigits, prayerTimeParts } from "../utils/prayerUtils";
 import { Prayer } from "adhan";
 import { ConnectionStatus } from "./ConnectionStatus";
+import { LOCALE_NAME } from "./DemoControls";
 import { useLongPress } from "../lib/useLongPress";
 import { useNurseStore, nurseActions } from "./NurseDataStore";
 import { fetchPatientForDevice } from "../lib/hospitalApi";
@@ -57,6 +58,7 @@ const SHOW_CONNECTION_INDICATORS = false;
 
 export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onMaghribTap, onIshaTap, onWeatherTap, onSettingsTap, onBellTap, unreadCount = 3, logoUrl, hideSettings = false, greeting }: { showPrayer?: boolean; onFajrTap?: () => void; onDhuhrTap?: () => void; onAsrTap?: () => void; onMaghribTap?: () => void; onIshaTap?: () => void; onWeatherTap?: () => void; onSettingsTap?: () => void; onBellTap?: () => void; unreadCount?: number; logoUrl?: string; hideSettings?: boolean; greeting?: string }) {
   const { theme, castDevice, setLocale, locale: currentLocale, darkMode, setDarkMode } = useTheme();
+  const nextLocale = currentLocale === "en" ? "ar" : "en";
   const { t, locale, isRTL, fontFamily } = useLocale();
   const [time, setTime] = useState(new Date());
   const [prayerData, setPrayerData] = useState(() => getPrayerStatus(new Date()));
@@ -457,21 +459,28 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
         <div className="relative">
           <button
             data-nav="true"
-            onClick={() => {
-              if (currentLocale === "en") setLocale("ar");
-              else setLocale("en");
-            }}
-            className="rounded-full cursor-pointer flex items-center justify-center transition-transform active:scale-90"
-            style={{ 
-              backgroundColor: theme.primarySubtle, 
-              width: theme.touchTargetMin, 
+            onClick={() => setLocale(nextLocale)}
+            className="rounded-full cursor-pointer flex items-center justify-center gap-2 transition-transform active:scale-90"
+            style={{
+              backgroundColor: theme.primarySubtle,
               height: theme.touchTargetMin,
+              padding: "0 16px",
               outline: 'none',
               border: 'none',
+              color: theme.primaryOn,
             }}
-            aria-label="Language"
+            aria-label={`Switch to ${LOCALE_NAME[nextLocale]}`}
           >
-            <Globe size={20} style={{ color: theme.primaryOn }} />
+            {/* Names the language a tap switches to, in that language — see DemoControls. */}
+            <Globe size={18} />
+            <span style={{
+              fontFamily: nextLocale === "en" ? theme.fontFamily : theme.fontFamilyAr,
+              fontSize: TYPE_SCALE.base,
+              fontWeight: WEIGHT.bold,
+              lineHeight: 1,
+            }}>
+              {LOCALE_NAME[nextLocale]}
+            </span>
           </button>
         </div>
 

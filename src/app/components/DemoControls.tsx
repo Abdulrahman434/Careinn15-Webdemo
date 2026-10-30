@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Globe, Moon, Sun, Maximize, Minimize } from "lucide-react";
-import { useTheme } from "./ThemeContext";
+import { useTheme, TYPE_SCALE, WEIGHT, LEADING } from "./ThemeContext";
 import { type Locale } from "./i18n";
 
 /**
@@ -18,8 +18,11 @@ import { type Locale } from "./i18n";
 /* Two languages, one tap. The switch is a toggle everywhere in the system —
    the home top bar has always worked this way — so it flips between English
    and Arabic and never lands the demo in a third language nobody asked for.
-   Urdu is still chosen deliberately, from Settings. */
-const LOCALE_NAME: Record<Locale, string> = { en: "English", ar: "العربية", ur: "اردو" };
+   Urdu is still chosen deliberately, from Settings.
+   The button names the language a tap switches TO, written in that language
+   — a globe alone told patients nothing, and the one who needs Arabic can
+   read "العربية" on an English screen. */
+export const LOCALE_NAME: Record<Locale, string> = { en: "English", ar: "العربية", ur: "اردو" };
 
 export function DemoControls({
   compact = false,
@@ -86,9 +89,17 @@ export function DemoControls({
         title={`Switch to ${LOCALE_NAME[next]}`}
         aria-label={`Switch to ${LOCALE_NAME[next]}`}
         className="cursor-pointer active:scale-95 transition-transform"
-        style={btn}
+        style={{ ...btn, width: "auto", gap: "8px", padding: compact ? "0 12px" : "0 14px" }}
       >
-        <Globe size={glyph} />
+        <Globe size={glyph - 2} />
+        <span style={{
+          fontFamily: next === "en" ? theme.fontFamily : theme.fontFamilyAr,
+          fontSize: compact ? TYPE_SCALE.sm : TYPE_SCALE.base,
+          fontWeight: WEIGHT.bold,
+          lineHeight: LEADING.none,
+        }}>
+          {LOCALE_NAME[next]}
+        </span>
       </button>
 
       <button
