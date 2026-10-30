@@ -42,7 +42,7 @@ import imgDentalKit from "../../assets/Housekeeping/dental kit.webp";
 import imgComb from "../../assets/Housekeeping/comb.webp";
 import imgWetWipes from "../../assets/Housekeeping/wet wipes.webp";
 import imgNonSlipSocks from "../../assets/Housekeeping/non-slip socks.webp";
-import imgChair from "../../assets/Housekeeping/visitor-chair.png";
+import imgChair from "../../assets/Housekeeping/visitor-chair-cream.jpg";
 
 /**
  * Patient Services — "I Need Something" flow.
