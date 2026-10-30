@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Moon, Sun, Maximize, Minimize } from "lucide-react";
+import { Globe, Moon, Sun, Maximize, Minimize } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, LEADING } from "./ThemeContext";
 import { type Locale } from "./i18n";
 
@@ -89,8 +89,9 @@ export function DemoControls({
         title={`Switch to ${LOCALE_NAME[next]}`}
         aria-label={`Switch to ${LOCALE_NAME[next]}`}
         className="cursor-pointer active:scale-95 transition-transform"
-        style={btn}
+        style={{ ...btn, width: "auto", gap: "8px", padding: compact ? "0 10px" : "0 12px" }}
       >
+        <Globe size={glyph} style={{ flexShrink: 0 }} />
         <span style={{
           fontFamily: theme.fontFamily,
           fontSize: compact ? TYPE_SCALE.sm : TYPE_SCALE.base,

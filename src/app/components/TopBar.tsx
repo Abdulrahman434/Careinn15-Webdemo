@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ApiImage } from "./ApiImage";
-import { Settings, Bell, Cast, AlertTriangle, Moon, Sun, Cloud, CloudSun, CloudMoon,
+import { Settings, Globe, Bell, Cast, AlertTriangle, Moon, Sun, Cloud, CloudSun, CloudMoon,
          CloudDrizzle, CloudRain, CloudLightning, CloudSnow, CloudFog, Haze, Wind } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE, WEATHER_TINT } from "./ThemeContext";
 import { WeatherKind, WEATHER_GLYPH, weatherKind } from "../lib/weather";
@@ -460,25 +460,22 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
           <button
             data-nav="true"
             onClick={() => setLocale(nextLocale)}
-            className="rounded-full cursor-pointer flex items-center justify-center transition-transform active:scale-90"
+            className="rounded-full cursor-pointer flex items-center justify-center gap-2 transition-transform active:scale-90"
             style={{
               backgroundColor: theme.primarySubtle,
-              width: theme.touchTargetMin,
               height: theme.touchTargetMin,
+              padding: `0 ${SPACE[2]}`,
               outline: 'none',
               border: 'none',
               color: theme.primaryOn,
             }}
             aria-label={`Switch to ${LOCALE_NAME[nextLocale]}`}
           >
-            {/* The code of the language a tap switches to, in the same circle
-                as its neighbours — see DemoControls. */}
-            <span style={{
-              fontFamily: theme.fontFamily,
-              fontSize: TYPE_SCALE.base,
-              fontWeight: WEIGHT.semibold,
-              lineHeight: 1,
-            }}>
+            {/* The code of the language a tap switches to. Built like the
+                weather pill beside it — icon first, same gap, padding and
+                text style — so the bar has one pill shape, not two. */}
+            <Globe size={20} strokeWidth={1.8} style={{ flexShrink: 0 }} />
+            <span style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.bodyEmphasis, lineHeight: 1 }}>
               {LOCALE_CODE[nextLocale]}
             </span>
           </button>
