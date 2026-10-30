@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ApiImage } from "./ApiImage";
-import { Settings, Globe, Bell, Cast, AlertTriangle, Moon, Sun, Cloud, CloudSun, CloudMoon,
+import { Settings, Bell, Cast, AlertTriangle, Moon, Sun, Cloud, CloudSun, CloudMoon,
          CloudDrizzle, CloudRain, CloudLightning, CloudSnow, CloudFog, Haze, Wind } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE, WEATHER_TINT } from "./ThemeContext";
 import { WeatherKind, WEATHER_GLYPH, weatherKind } from "../lib/weather";
@@ -8,7 +8,7 @@ import { useLocale } from "./i18n";
 import { getPrayerTimes, PRAYER_KEYS, PRAYER_NAMES, getPrayerStatus, localizeDigits, prayerTimeParts } from "../utils/prayerUtils";
 import { Prayer } from "adhan";
 import { ConnectionStatus } from "./ConnectionStatus";
-import { LOCALE_NAME } from "./DemoControls";
+import { LOCALE_NAME, LOCALE_CODE } from "./DemoControls";
 import { useLongPress } from "../lib/useLongPress";
 import { useNurseStore, nurseActions } from "./NurseDataStore";
 import { fetchPatientForDevice } from "../lib/hospitalApi";
@@ -460,26 +460,26 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
           <button
             data-nav="true"
             onClick={() => setLocale(nextLocale)}
-            className="rounded-full cursor-pointer flex items-center justify-center gap-2 transition-transform active:scale-90"
+            className="rounded-full cursor-pointer flex items-center justify-center transition-transform active:scale-90"
             style={{
               backgroundColor: theme.primarySubtle,
+              width: theme.touchTargetMin,
               height: theme.touchTargetMin,
-              padding: "0 16px",
               outline: 'none',
               border: 'none',
               color: theme.primaryOn,
             }}
             aria-label={`Switch to ${LOCALE_NAME[nextLocale]}`}
           >
-            {/* Names the language a tap switches to, in that language — see DemoControls. */}
-            <Globe size={18} />
+            {/* The code of the language a tap switches to, in the same circle
+                as its neighbours — see DemoControls. */}
             <span style={{
-              fontFamily: nextLocale === "en" ? theme.fontFamily : theme.fontFamilyAr,
+              fontFamily: theme.fontFamily,
               fontSize: TYPE_SCALE.base,
-              fontWeight: WEIGHT.bold,
+              fontWeight: WEIGHT.semibold,
               lineHeight: 1,
             }}>
-              {LOCALE_NAME[nextLocale]}
+              {LOCALE_CODE[nextLocale]}
             </span>
           </button>
         </div>
