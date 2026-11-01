@@ -27,6 +27,7 @@ import {
   Settings,
   Bluetooth,
   Trash2,
+  LogOut,
   ChevronRight,
   Minus,
   Plus,
@@ -62,6 +63,8 @@ import { MyPreferencesDialog } from "./MyAccountDialog";
 import { PinDialog } from "./PinDialog";
 import { isAccountSet } from "../lib/accountAuth";
 import { resetAppLockTutorial } from "../lib/appLockTutorialStore";
+import { ConfirmDialog } from "./ConfirmDialog";
+import { useGuestMode } from "../lib/guestMode";
 
 /* ═══════════════════════════════════════════════════════════════
  * All colors/fonts/radii in this file come from ThemeContext.
@@ -1625,6 +1628,8 @@ export function SettingsPanel({
   const { theme: t, darkMode, setDarkMode, castDevice, setCastDevice, locale: currentLocale, setLocale, prayerAlarm, setPrayerAlarm } = useTheme();
   const { t: tr, isRTL, fontFamily, locale } = useLocale();
   const { logout } = useAuth();
+  const { isGuest } = useGuestMode();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const deviceInfo = useDeviceInfo();
   const nurseState = useNurseStore();
 
@@ -2080,6 +2085,30 @@ export function SettingsPanel({
             </span>
           </button>
 
+          {/* Log out — moved off the home top bar: signing the screen out to
+              the access code is a staff step, so it lives with the other
+              staff-type action here. Hidden for guests, who have no session. */}
+          {!isGuest && (
+            <button
+              data-no-remote
+              onClick={() => setShowLogoutConfirm(true)}
+              className="flex items-center justify-center gap-3 w-full cursor-pointer active:scale-[0.96] transition-transform"
+              style={{
+                height: "56px",
+                flexShrink: 0,
+                borderRadius: t.radiusLg,
+                backgroundColor: t.errorSubtle,
+                border: "none",
+                color: t.errorOn,
+              }}
+            >
+              <LogOut size={20} style={{ transform: isRTL ? "scaleX(-1)" : undefined }} />
+              <span style={{ fontFamily: t.fontFamily, fontSize: "16px", fontWeight: 700 }}>
+                {tr("general.logout")}
+              </span>
+            </button>
+          )}
+
           {/* Room & Device info */}
           <div
             className="flex flex-col items-center gap-1"
@@ -2218,6 +2247,19 @@ export function SettingsPanel({
           }}
         />
       )}
+
+      <ConfirmDialog
+        visible={showLogoutConfirm}
+        title={tr("general.logout")}
+        message={tr("settings.account.overview.removeConfirm")}
+        confirmLabel={tr("general.logout")}
+        variant="danger"
+        onConfirm={() => {
+          setShowLogoutConfirm(false);
+          logout();
+        }}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
 
       {showLangDialog && (
         <LanguageDialog

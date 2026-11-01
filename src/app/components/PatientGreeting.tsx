@@ -4,15 +4,15 @@ import { isAndroidApp, getDeviceInfo } from "../utils/androidBridge";
 import { useTheme, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
-import { HelpCircle, LogOut } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import { AutoCarousel } from "./AutoCarousel";
 import { useNurseStore } from "./NurseDataStore";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { useGuestMode } from "../lib/guestMode";
-import { useAuth } from "./AuthContext";
 import svgPaths from "../../imports/svg-ca68x68c4i";
 import { getSavedHeroImage, isSlideshowEnabled } from "../lib/backgroundPrefs";
 import { usePatientInfo } from "../lib/usePatientInfo";
+import { clearUserDataAndReload } from "../lib/clearAllData";
 
 function AboutUsIcon({ color }: { color?: string }) {
   const { theme } = useTheme();
@@ -35,7 +35,23 @@ function AboutUsIcon({ color }: { color?: string }) {
   );
 }
 
-export function PatientGreeting({ 
+/* Cleaning brush for Clear My Data — the "clean up" mark cleaners use
+   (Material's cleaning_services, the CCleaner-style brush) instead of a
+   trash can, which reads as deleting something of the patient's.
+   Lucide "brush-cleaning" (ISC), inlined: it is newer than the
+   lucide-react version this project pins. */
+function BrushCleaningIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden>
+      <path d="m16 22-1-4" />
+      <path d="M19 14a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v1a1 1 0 0 0 1 1" />
+      <path d="M19 14H5l-1.973 6.767A1 1 0 0 0 4 22h16a1 1 0 0 0 .973-1.233z" />
+      <path d="m8 22 1-4" />
+    </svg>
+  );
+}
+
+export function PatientGreeting({
   onOpenAboutUs, 
   onOpenTour, 
   fillImage,
@@ -49,12 +65,11 @@ export function PatientGreeting({
   onImageTap?: (url: string) => void;
 }) {
   const [pressed, setPressed] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showSignOutAppsConfirm, setShowSignOutAppsConfirm] = useState(false);
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
   const rippleElements = useRipple(theme.primarySubtle).rippleElements;
   const { isGuest } = useGuestMode();
-  const { logout } = useAuth();
   // Read below by the name tap, which opens the care team. The import was
   // here and the hook was never called, so tapping the patient's own name
   // threw rather than showing who is looking after them.
@@ -110,7 +125,7 @@ export function PatientGreeting({
     >
       {rippleElements}
 
-      {/* Help / App Tour + Logout buttons */}
+      {/* Help / App Tour */}
       <div
         className="absolute flex items-center z-10"
         style={{ [isRTL ? "left" : "right"]: SPACE[2], top: SPACE[2], gap: SPACE[1] }}
@@ -132,26 +147,6 @@ export function PatientGreeting({
       >
         <HelpCircle size={20} style={{ color: theme.primaryOn }} strokeWidth={2} />
       </button>
-      {!isGuest && (
-        <button
-          className="flex items-center justify-center rounded-full cursor-pointer active:scale-90 transition-transform"
-          style={{
-            width: theme.touchTargetMin,
-            height: theme.touchTargetMin,
-            backgroundColor: theme.errorSubtle,
-            border: "none",
-            outline: "none",
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowLogoutConfirm(true);
-          }}
-          aria-label={t("general.logout")}
-          title={t("general.logout")}
-        >
-          <LogOut size={20} style={{ color: theme.errorOn }} strokeWidth={2} />
-        </button>
-      )}
       </div>
 
       {/* Text content */}
@@ -316,17 +311,49 @@ export function PatientGreeting({
         </div>
       )}
 
+      {/* Clear My Data — the patient-facing clear, as the quiet partner of
+          About Us. Only the light clear (apps, browser, logins); the factory
+          reset stays staff-only in Settings. */}
+      <div className="mx-4 mb-4" style={{ position: "relative", zIndex: 10 }}>
+        <button
+          data-nav="true"
+          className="flex items-center justify-center gap-2.5 w-full py-3 cursor-pointer active:scale-[0.96] transition-transform duration-150"
+          style={{
+            backgroundColor: theme.primarySubtle,
+            border: "none",
+            outline: "none",
+            borderRadius: theme.radiusMd,
+            color: theme.primaryOn,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowSignOutAppsConfirm(true);
+          }}
+        >
+          <BrushCleaningIcon size={20} />
+          <span
+            style={{
+              fontFamily: fontFamily,
+              ...TEXT_STYLE.buttonSm,
+              letterSpacing: "0.3px",
+            }}
+          >
+            {t("settings.clearData.btn.clearMyData")}
+          </span>
+        </button>
+      </div>
+
       <ConfirmDialog
-        visible={showLogoutConfirm}
-        title={t("general.logout")}
-        message={t("settings.account.overview.removeConfirm")}
-        confirmLabel={t("general.logout")}
+        visible={showSignOutAppsConfirm}
+        title={t("settings.clearData.clearMyData.title")}
+        message={t("settings.clearData.clearMyData.desc")}
+        confirmLabel={t("settings.clearData.btn.clearMyData")}
         variant="danger"
         onConfirm={() => {
-          setShowLogoutConfirm(false);
-          logout();
+          setShowSignOutAppsConfirm(false);
+          clearUserDataAndReload();
         }}
-        onCancel={() => setShowLogoutConfirm(false)}
+        onCancel={() => setShowSignOutAppsConfirm(false)}
       />
     </div>
   );
