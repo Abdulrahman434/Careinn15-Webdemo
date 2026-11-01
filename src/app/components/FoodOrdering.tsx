@@ -2219,10 +2219,11 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
              the three cards stop reading as one row of equals. Only an order
              already with the kitchen earns a different badge, because that is
              a different fact about the day, not a selection. */
-          /* A sent order is filled and ticked; an open window is an outline in
-             the brand teal. They were both a green tint, which made "Order
-             placed" and "Open for ordering" read as the same state at a
-             glance — the colour, the fill and the tick now separate them. */
+          /* Both are green — "available" and "done" are both good news — but a
+             sent order is tinted and ticked while an open window is an outline
+             only, so the fill and the tick still tell them apart at a glance.
+             successOn is contrast-checked against the card in light and dark
+             mode for every brand, so the green reads whatever the hospital. */
           let statusBorder = "transparent";
           let statusTick = false;
           if (dayOrderable) {
@@ -2234,7 +2235,7 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
               statusTick = true;
               statusText = isRTL ? "تم إرسال الطلب" : "Order placed";
             } else if (windowState === "open") {
-              statusBg = "transparent"; statusColor = TEAL_ON; statusBorder = TEAL;
+              statusBg = "transparent"; statusColor = theme.successOn; statusBorder = theme.successOn;
               statusText = isRTL ? "متاح للطلب" : "Open for ordering";
             } else if (windowState === "before") {
               statusBg = CHIP_WARN; statusColor = ON_WARN;
