@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { fetchPatientForDevice } from "../lib/hospitalApi";
 import { isAndroidApp, getDeviceInfo } from "../utils/androidBridge";
-import { useTheme, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
+import { useTheme, WEIGHT, SHADOW, TEXT_STYLE, SPACE, LEADING } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
 import { HelpCircle } from "lucide-react";
@@ -151,12 +151,16 @@ export function PatientGreeting({
 
       {/* Text content */}
       <div style={{ padding: `${theme.cardPadding} ${theme.cardPadding} ${SPACE[2]} ${theme.cardPadding}` }}>
+        {/* "Hello" shares the row with the corner buttons, so the name below
+            starts clear of them and can use the card's full width. */}
         <p
+          className="flex items-center"
           style={{
             fontFamily: fontFamily,
             ...TEXT_STYLE.subtitle,
             fontWeight: WEIGHT.medium,
             color: theme.textMuted,
+            minHeight: `calc(${SPACE[2]} + ${theme.touchTargetMin} - ${theme.cardPadding})`,
           }}
         >
           {t("general.hello")}
@@ -167,8 +171,15 @@ export function PatientGreeting({
             style={{
               fontFamily: fontFamily,
               ...TEXT_STYLE.display,
+              /* One line always — a long name ends in "…" rather than wrap.
+                 The clip that makes the "…" also cut Arabic descenders (ح, ع)
+                 at display leading, so Arabic/Urdu get room below the line. */
+              ...(isRTL && { lineHeight: LEADING.normal, letterSpacing: 0 }),
               fontWeight: WEIGHT.extrabold,
               color: theme.textHeading,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}
             onClick={() => {
               const careTeam = nurseStore.careTeam.filter(m => m.visible);
@@ -183,17 +194,6 @@ export function PatientGreeting({
             {displayName}
           </p>
         )}
-        <div style={{ paddingTop: SPACE[1] }}>
-          <p
-            style={{
-              fontFamily: fontFamily,
-              ...TEXT_STYLE.body,
-              color: theme.textMuted,
-              margin: 0,
-            }}
-          >{t("general.welcome", theme.hospitalShortName)}</p>
-        </div>
-
         {/* Badges: [MRN] [Room] [Bed] */}
         {!isGuest && (
           <div className="flex items-center flex-wrap gap-2" style={{ paddingTop: SPACE[2] }}>
@@ -252,7 +252,7 @@ export function PatientGreeting({
       {/* Hospital image */}
       <div
         className={`overflow-hidden mx-4 mb-4 ${fillImage ? "flex-1 min-h-[120px]" : "shrink-0"} ${
-          onImageTap ? "cursor-pointer hover:brightness-105 active:scale-[0.99] transition-all duration-200" : ""
+          onImageTap ? "cursor-pointer active:scale-[0.99] transition-all duration-200" : ""
         }`}
         style={{
           height: fillImage ? undefined : SPACE[12],
