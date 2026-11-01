@@ -356,6 +356,10 @@ const TEAL_DARK = "var(--fo-primary-dark)";
 const TEAL_DARK_RGB = "var(--fo-primary-dark-rgb)";
 const SECONDARY = "var(--fo-secondary)";
 const GREEN = "#3FC168";
+/* "Open for ordering": one green for light and dark alike. Picked midway in
+   lightness so it measures ~4:1 on the white card and on the dark one — no
+   per-mode value to keep in step. */
+const OPEN_GREEN = "#1A9447";
 /* Neutral surfaces, ink and status chips. Values come from `foVars` below so
    this screen follows light/dark instead of being a fixed white sheet. */
 const SHEET = "var(--fo-sheet)";
@@ -2222,8 +2226,8 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
           /* Both are green — "available" and "done" are both good news — but a
              sent order is tinted and ticked while an open window is an outline
              only, so the fill and the tick still tell them apart at a glance.
-             successOn is contrast-checked against the card in light and dark
-             mode for every brand, so the green reads whatever the hospital. */
+             The open green is one fixed value that reads on the white card
+             and the dark one alike, whatever the hospital. */
           let statusBorder = "transparent";
           let statusTick = false;
           if (dayOrderable) {
@@ -2235,7 +2239,7 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
               statusTick = true;
               statusText = isRTL ? "تم إرسال الطلب" : "Order placed";
             } else if (windowState === "open") {
-              statusBg = "transparent"; statusColor = theme.successOn; statusBorder = theme.successOn;
+              statusBg = "transparent"; statusColor = OPEN_GREEN; statusBorder = OPEN_GREEN;
               statusText = isRTL ? "متاح للطلب" : "Open for ordering";
             } else if (windowState === "before") {
               statusBg = CHIP_WARN; statusColor = ON_WARN;
