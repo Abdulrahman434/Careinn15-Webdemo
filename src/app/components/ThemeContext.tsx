@@ -1078,6 +1078,9 @@ import hospitalImg from "../../assets/fakeeh-jeddah-hero.webp";
 
 import burjeelLogo from "../../assets/logos/burjeel-logo.png";
 import burjeelHero from "../../assets/6c870dc0bd960be4275cdbc07d5394bb50ec781e.webp";
+import burjeelWp1 from "../../assets/bg/wp-1.jpg";
+import burjeelWp2 from "../../assets/bg/wp-2.jpg";
+import burjeelWp3 from "../../assets/bg/wp-3.jpg";
 import slhLogo from "../../assets/000bda4db783fe15cbd489d69579eb6e0e831a8a.webp";
 import slhLogoDark from "../../assets/logos/slh-logo-dark.webp";
 import slhHero from "../../assets/e956f98cfa0d9f06f0dd2befe535fed91ed51d1e.webp";
@@ -1146,6 +1149,7 @@ export const BURJEEL_CORE: HospitalCoreConfig = {
   logoUrl: burjeelLogo,
   hospitalWebsiteUrl: "https://burjeel.com/abu-dhabi/",
   heroImageUrl: burjeelHero,
+  heroImageUrls: [burjeelHero, burjeelWp1, burjeelWp2, burjeelWp3],
   // Brand book: Pantone 235 C and "Burjeel One" Pantone 7562 C. The tonal
   // variants are left to buildTheme so they follow these two.
   primary: "#871C55",
@@ -1708,6 +1712,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         heroImageUrl: hasBuiltinAssets
           ? (saved.heroImageUrl && isUserProvidedUrl(saved.heroImageUrl) ? saved.heroImageUrl : preset.heroImageUrl)
           : (saved.heroImageUrl || preset.heroImageUrl),
+        // Saving strips bundled photos, so an empty saved list keeps the preset's.
+        heroImageUrls: saved.heroImageUrls?.length ? saved.heroImageUrls : preset.heroImageUrls,
       };
     });
     // Add any user-created configs that aren't built-in presets
