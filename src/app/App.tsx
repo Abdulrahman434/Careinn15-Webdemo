@@ -1966,12 +1966,16 @@ function BedsideScreen() {
                         </>
                       ) : (
                         <>
-                          <PatientGreeting
-                            onOpenAboutUs={() => setShowAboutUs(true)}
-                            onOpenTour={() => setShowTour(true)}
-                            showAboutUs={v.show_about_us}
-                            onImageTap={(url) => setCtaMediaConfig({ type: "image", url, title: t("general.aboutUs") })}
-                          />
+                          {/* Greeting and CareMe split the column 50/50; the photo takes the slack */}
+                          <div className="flex-1 min-h-0 flex flex-col">
+                            <PatientGreeting
+                              onOpenAboutUs={() => setShowAboutUs(true)}
+                              onOpenTour={() => setShowTour(true)}
+                              fillImage
+                              showAboutUs={v.show_about_us}
+                              onImageTap={(url) => setCtaMediaConfig({ type: "image", url, title: t("general.aboutUs") })}
+                            />
+                          </div>
                           <div className="flex-1 min-h-0 flex flex-col">
                             {(!isGuest || careMeUnlocked) ? (
                               <CareMe onExpand={() => setShowCareMeExpanded(true)} onOpenPreferences={() => setShowPreferenceForm(true)} />
@@ -2030,11 +2034,14 @@ function BedsideScreen() {
                         </>
                       ) : (
                         <>
-                          <PatientGreeting
-                            onOpenAboutUs={() => setShowAboutUs(true)}
-                            onOpenTour={() => setShowTour(true)}
-                            onImageTap={(url) => setCtaMediaConfig({ type: "image", url, title: t("general.aboutUs") })}
-                          />
+                          <div className="flex-1 min-h-0 flex flex-col">
+                            <PatientGreeting
+                              onOpenAboutUs={() => setShowAboutUs(true)}
+                              onOpenTour={() => setShowTour(true)}
+                              fillImage
+                              onImageTap={(url) => setCtaMediaConfig({ type: "image", url, title: t("general.aboutUs") })}
+                            />
+                          </div>
                           <div className="flex-1 min-h-0 flex flex-col">
                             {(!isGuest || careMeUnlocked) ? (
                               <CareMe onExpand={() => setShowCareMeExpanded(true)} onOpenPreferences={() => setShowPreferenceForm(true)} />
