@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { fetchPatientForDevice } from "../lib/hospitalApi";
 import { isAndroidApp, getDeviceInfo } from "../utils/androidBridge";
 import { useTheme, WEIGHT, SHADOW, TEXT_STYLE, SPACE, LEADING } from "./ThemeContext";
@@ -62,9 +62,23 @@ export function PatientGreeting({
   onOpenTour?: () => void; 
   fillImage?: boolean;
   showAboutUs?: boolean;
-  onImageTap?: (url: string) => void;
+  onImageTap?: (url: string, images: string[], index: number, origin?: { x: number; y: number }) => void;
 }) {
   const [pressed, setPressed] = useState(false);
+  /* Where the photo sits on the canvas, as percentages — the gallery grows
+     out of that spot, so the first tap teaches that the photo opens. */
+  const photoRef = useRef<HTMLDivElement>(null);
+  const photoOrigin = () => {
+    const el = photoRef.current;
+    const canvas = document.getElementById("careinn-canvas");
+    if (!el || !canvas) return undefined;
+    const r = el.getBoundingClientRect();
+    const c = canvas.getBoundingClientRect();
+    return {
+      x: ((r.left + r.width / 2 - c.left) / c.width) * 100,
+      y: ((r.top + r.height / 2 - c.top) / c.height) * 100,
+    };
+  };
   const [showSignOutAppsConfirm, setShowSignOutAppsConfirm] = useState(false);
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
@@ -251,6 +265,7 @@ export function PatientGreeting({
 
       {/* Hospital image */}
       <div
+        ref={photoRef}
         className={`overflow-hidden mx-4 mb-4 ${fillImage ? "flex-1 min-h-[120px]" : "shrink-0"} ${
           onImageTap ? "cursor-pointer active:scale-[0.99] transition-all duration-200" : ""
         }`}
@@ -265,7 +280,9 @@ export function PatientGreeting({
           objectPosition={theme.welcomeImagePosition || theme.heroCropPosition || "50% 15%"}
           objectFit="cover"
           intervalSeconds={theme.slideshowInterval}
-          onImageClick={onImageTap}
+          onImageClick={onImageTap ? (url, i) => onImageTap(url, heroImages, i, photoOrigin()) : undefined}
+          showDots={!!onImageTap}
+          drift
         />
       </div>
 
