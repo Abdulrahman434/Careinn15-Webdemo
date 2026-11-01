@@ -481,31 +481,6 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
           </button>
         </div>
 
-        {/* Dark mode — beside the language switch, the same pairing the
-            internal screens use: what the screen says, then how it looks.
-            It was reachable only from Settings, two taps away from the one
-            place a patient actually notices the room is dark. */}
-        <div className="relative">
-          <button
-            data-nav="true"
-            onClick={() => setDarkMode(!darkMode)}
-            className="rounded-full cursor-pointer flex items-center justify-center transition-transform active:scale-90"
-            style={{
-              backgroundColor: theme.primarySubtle,
-              width: theme.touchTargetMin,
-              height: theme.touchTargetMin,
-              outline: 'none',
-              border: 'none',
-            }}
-            aria-label={darkMode ? "Light mode" : "Dark mode"}
-            title={darkMode ? "Light mode" : "Dark mode"}
-          >
-            {darkMode
-              ? <Sun size={20} style={{ color: theme.primaryOn }} />
-              : <Moon size={20} style={{ color: theme.primaryOn }} />}
-          </button>
-        </div>
-
         {/* Notifications Bell */}
         <div className="relative">
           <button
