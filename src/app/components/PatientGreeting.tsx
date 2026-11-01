@@ -107,6 +107,14 @@ export function PatientGreeting({
     return theme.heroImageUrls ?? [];
   });
 
+  // Follow the hospital's photos when the brand changes (e.g. after login).
+  const themeHeroKey = (theme.heroImageUrls ?? []).join("|");
+  useEffect(() => {
+    const saved = getSavedHeroImage();
+    setHeroImages(saved && !isSlideshowEnabled() ? [saved] : theme.heroImageUrls ?? []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [themeHeroKey]);
+
   useEffect(() => {
     const onHeroChange = (e: Event) => {
       const url = (e as CustomEvent<string | null>).detail;
