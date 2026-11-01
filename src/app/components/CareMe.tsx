@@ -1638,8 +1638,10 @@ function ResultsPinGate({ theme, isExpanded = false, titleKey, onUnlock }: {
           outline: "none",
         }}
       >
+        {/* shrink-0: in a short card the column squeezed this square's
+            height and flattened it into a lozenge. */}
         <div
-          className="flex items-center justify-center"
+          className="flex items-center justify-center shrink-0"
           style={{
             width: isExpanded ? "72px" : "56px",
             height: isExpanded ? "72px" : "56px",
@@ -3976,7 +3978,9 @@ export function CareMe({ onExpand, onOpenPreferences }: { onExpand?: () => void;
               dir={dir}
               style={{
                 width: `${100 / extendedSlides.length}%`,
-                padding: CARD_PAD.bodySlide,
+                /* The vitals grid never scrolls, so it doesn't need the bottom
+                   breathing room the scrolling slides keep — its tiles take it. */
+                padding: slide.key === "observations" ? "12px 22px 4px" : CARD_PAD.bodySlide,
                 pointerEvents: isBlurred ? "none" : "auto",
               }}
             >
