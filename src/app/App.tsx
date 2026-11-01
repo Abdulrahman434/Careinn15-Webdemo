@@ -8,6 +8,7 @@ import { useLocale, translateWithLocale } from "./components/i18n";
 import { TopBar } from "./components/TopBar";
 import { NewsTicker } from "./components/NewsTicker";
 import { PatientGreeting } from "./components/PatientGreeting";
+import { HeroGallery } from "./components/HeroGallery";
 import { GuestGreeting, GuestPatientServices } from "./components/GuestHome";
 import { ServicesGrid, ShortcutsColumn, HubGridCompact, ServiceCardsRow } from "./components/ServicesGrid";
 import { useCmsHospital, useCmsSectionVisibility } from '../lib/useCmsContent';
@@ -424,7 +425,7 @@ function BedsideScreen() {
   const [showSurvey, setShowSurvey] = useState(false);
   const [surveyInitialPath, setSurveyInitialPath] = useState<"hub" | "survey" | "concern" | "appreciation">("hub");
   const [ctaPdfConfig, setCtaPdfConfig] = useState<{ url: string; title: string } | null>(null);
-  const [ctaMediaConfig, setCtaMediaConfig] = useState<{ type: "image" | "video"; url: string; title: string } | null>(null);
+  const [ctaMediaConfig, setCtaMediaConfig] = useState<{ type: "image" | "video"; url: string; title: string; images?: string[]; index?: number; origin?: { x: number; y: number } } | null>(null);
   const [showAboutUs, setShowAboutUs] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -1914,7 +1915,7 @@ function BedsideScreen() {
                               onOpenTour={() => setShowTour(true)}
                               fillImage
                               showAboutUs={v.show_about_us}
-                              onImageTap={(url) => setCtaMediaConfig({ type: "image", url, title: t("general.aboutUs") })}
+                              onImageTap={(url, images, index, origin) => setCtaMediaConfig({ type: "image", url, title: theme.hospitalName, images, index, origin })}
                             />
                           )}
                         </div>
@@ -1977,7 +1978,7 @@ function BedsideScreen() {
                               onOpenTour={() => setShowTour(true)}
                               fillImage
                               showAboutUs={v.show_about_us}
-                              onImageTap={(url) => setCtaMediaConfig({ type: "image", url, title: t("general.aboutUs") })}
+                              onImageTap={(url, images, index, origin) => setCtaMediaConfig({ type: "image", url, title: theme.hospitalName, images, index, origin })}
                             />
                           </div>
                           <div className="flex-1 min-h-0 flex flex-col">
@@ -2043,7 +2044,7 @@ function BedsideScreen() {
                               onOpenAboutUs={() => setShowAboutUs(true)}
                               onOpenTour={() => setShowTour(true)}
                               fillImage
-                              onImageTap={(url) => setCtaMediaConfig({ type: "image", url, title: t("general.aboutUs") })}
+                              onImageTap={(url, images, index, origin) => setCtaMediaConfig({ type: "image", url, title: theme.hospitalName, images, index, origin })}
                             />
                           </div>
                           <div className="flex-1 min-h-0 flex flex-col">
@@ -2436,7 +2437,16 @@ function BedsideScreen() {
       )}
 
       {/* Media Viewer Modal from CTA */}
-      {ctaMediaConfig && (
+      {/* Greeting-card photos open as their own slideshow, on the one tapped */}
+      {ctaMediaConfig?.images?.length ? (
+        <HeroGallery
+          images={ctaMediaConfig.images}
+          startIndex={ctaMediaConfig.index}
+          origin={ctaMediaConfig.origin}
+          title={ctaMediaConfig.title}
+          onClose={() => setCtaMediaConfig(null)}
+        />
+      ) : ctaMediaConfig && (
         <MediaViewerModal
           onClose={() => setCtaMediaConfig(null)}
           type={ctaMediaConfig.type}
