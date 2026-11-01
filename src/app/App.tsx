@@ -1822,11 +1822,15 @@ function BedsideScreen() {
         ) : (
           <>
             {/* Decorative hospital background photo — subtle texture */}
+            {/* The photo and the two watermarks below are background: z -1
+                (the scaled canvas is their stacking context) keeps them under
+                the top bar and news tape too, which have no z-index of their
+                own — at 0 they washed both a shade off their true colours. */}
             <AutoCarousel
               images={[theme.heroImageUrl]}
               opacity={darkMode ? 0.03 : 0.08}
               objectPosition={theme.heroCropPosition}
-              style={{ zIndex: 0 }}
+              style={{ zIndex: -1 }}
             />
             {/* Decorative hospital symbol watermarks */}
             <img
@@ -1841,7 +1845,7 @@ function BedsideScreen() {
                 bottom: "-160px",
                 opacity: darkMode ? 0.015 : 0.03,
                 transform: "rotate(-15deg)",
-                zIndex: 0,
+                zIndex: -1,
               }}
             />
             <img
@@ -1856,7 +1860,7 @@ function BedsideScreen() {
                 top: "-60px",
                 opacity: darkMode ? 0.012 : 0.025,
                 transform: "rotate(160deg)",
-                zIndex: 0,
+                zIndex: -1,
               }}
             />
 
