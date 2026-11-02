@@ -87,6 +87,8 @@ import { AccountLockScreen } from "./components/AccountLockScreen";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { useGuestMode, guestModeStore } from "./lib/guestMode";
 import { CareMePinDialog } from "./components/CareMePinDialog";
+import { useProtectedServiceGate } from "./components/ProtectedServiceGate";
+import { PROTECT_MEAL_ORDERING } from "./lib/pin/pinConfig";
 import { Lock, Megaphone, AlertTriangle } from "lucide-react";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
@@ -538,6 +540,29 @@ function BedsideScreen() {
   const [showBlankPage, setShowBlankPage] = useState(false);
   const [showIptv, setShowIptv] = useState(false);
 
+  /* Patient PIN gate for CareMe / Consultation / Patient Services (+ Meal
+     Ordering behind PROTECT_MEAL_ORDERING). See ProtectedServiceGate.tsx. */
+  const pinGate = useProtectedServiceGate();
+  const careMeLocked = pinGate.locked && !guestSession;
+  const openCareMeExpanded = () => pinGate.guard("careMe", () => setShowCareMeExpanded(true));
+  const openFoodOrder = (view?: "order" | "my-orders") =>
+    pinGate.guard("mealOrdering", () => { setFoodOrderInitialView(view); setShowFoodOrder(true); });
+  const openNeedSomething = (tab?: "request" | "report" | "mine") =>
+    pinGate.guard("patientServices", () => { setNeedSomethingInitialTab(tab); setShowNeedSomething(true); });
+  // For long-lived listeners (toast taps, notification CTAs) — always current.
+  const openFoodOrderRef = useRef(openFoodOrder);
+  openFoodOrderRef.current = openFoodOrder;
+  const openNeedSomethingRef = useRef(openNeedSomething);
+  openNeedSomethingRef.current = openNeedSomething;
+
+  // Safety net: whatever path opened a protected screen, it closes while locked.
+  useEffect(() => {
+    if (!pinGate.locked) return;
+    if (showCareMeExpanded) setShowCareMeExpanded(false);
+    if (showNeedSomething) setShowNeedSomething(false);
+    if (PROTECT_MEAL_ORDERING && showFoodOrder) setShowFoodOrder(false);
+  }, [pinGate.locked, showCareMeExpanded, showNeedSomething, showFoodOrder]);
+
 
   /* Tomorrow's meals, reminded on the hour.
    *
@@ -867,9 +892,10 @@ function BedsideScreen() {
     lockActiveRef.current =
       isLocked ||
       showCareMePinDialog ||
+      pinGate.prompting ||
       !!lockMenuApp ||
       (showTasbih && isAccountSet());
-  }, [isLocked, showCareMePinDialog, lockMenuApp, showTasbih]);
+  }, [isLocked, showCareMePinDialog, pinGate.prompting, lockMenuApp, showTasbih]);
 
   // Initialize history state once on mount
   useEffect(() => {
@@ -1167,8 +1193,7 @@ function BedsideScreen() {
 
           // Meal reminder: "Order Now" opens Meal Ordering
           if (actionType === "read" && prev.ctaAction === "open-meal-ordering") {
-            setFoodOrderInitialView(undefined);
-            setShowFoodOrder(true);
+            openFoodOrderRef.current();
           }
 
           // Handle CTA Actions if present and user clicked "read" (main CTA button)
@@ -1402,11 +1427,13 @@ function BedsideScreen() {
     } else if (categoryKey === "Call") {
       setShowCall(true);
     } else if (categoryKey === "Order Food") {
-      setShowFoodOrder(true);
+      openFoodOrder();
     } else if (categoryKey === "Housekeeping") {
-      setShowNeedSomething(true);
+      openNeedSomething();
     } else if (categoryKey === "Consultation") {
-      window.open("https://intracare.icare.medoment.com/login?mrnEncrypted=1611605&deviceId=Rom1", "_blank", "noopener,noreferrer");
+      pinGate.guard("consultation", () => {
+        window.open("https://intracare.icare.medoment.com/login?mrnEncrypted=1611605&deviceId=Rom1", "_blank", "noopener,noreferrer");
+      });
     } else {
       setOpenCategory(categoryKey);
     }
@@ -1476,17 +1503,13 @@ function BedsideScreen() {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<string>).detail;
       if (detail === "housekeeping-requests") {
-        setNeedSomethingInitialTab("mine");
-        setShowNeedSomething(true);
+        openNeedSomethingRef.current("mine");
       } else if (detail === "housekeeping") {
-        setNeedSomethingInitialTab(undefined);
-        setShowNeedSomething(true);
+        openNeedSomethingRef.current(undefined);
       } else if (detail === "meal-orders") {
-        setFoodOrderInitialView("my-orders");
-        setShowFoodOrder(true);
+        openFoodOrderRef.current("my-orders");
       } else if (detail === "meal") {
-        setFoodOrderInitialView(undefined);
-        setShowFoodOrder(true);
+        openFoodOrderRef.current(undefined);
       }
     };
     window.addEventListener("toast-navigate", handler);
@@ -1799,9 +1822,9 @@ function BedsideScreen() {
               onOpenSurvey={() => setShowSurvey(true)}
               onLaunchTool={(id) => setActiveTool(id as any)}
               onOpenAboutUs={() => setShowAboutUs(true)}
-              onShowCareMeExpanded={() => setShowCareMeExpanded(true)}
+              onShowCareMeExpanded={openCareMeExpanded}
               onShowIptv={() => setShowIptv(true)}
-              onShowFoodOrder={() => setShowFoodOrder(true)}
+              onShowFoodOrder={() => openFoodOrder()}
               onShowCall={() => setShowCall(true)}
               onOpenNotifications={() => setShowNotifications(true)}
               unreadCount={getUnreadCount()}
@@ -1814,7 +1837,7 @@ function BedsideScreen() {
           <KidsHomescreen
             onOpenCategory={handleOpenCategory}
             onLaunchTool={(id) => setActiveTool(id as any)}
-            onShowCareMeExpanded={() => setShowCareMeExpanded(true)}
+            onShowCareMeExpanded={openCareMeExpanded}
             onOpenSettings={() => setShowSettings(true)}
             onOpenNotifications={() => setShowNotifications(true)}
             onOpenSurvey={() => setShowSurvey(true)}
@@ -1922,10 +1945,10 @@ function BedsideScreen() {
                         <div className="flex-1 min-w-0 min-h-0 flex flex-col">
                           {guestSession ? (
                             <GuestPatientServices />
-                          ) : (!isGuest || careMeUnlocked) ? (
-                            <CareMe onExpand={() => setShowCareMeExpanded(true)} onOpenPreferences={() => setShowPreferenceForm(true)} />
+                          ) : ((!isGuest || careMeUnlocked) && !careMeLocked) ? (
+                            <CareMe onExpand={openCareMeExpanded} onOpenPreferences={() => setShowPreferenceForm(true)} />
                           ) : (
-                            <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />
+                            <CareMeLockedPlaceholder onTap={careMeLocked ? () => pinGate.guard("careMe", () => {}) : () => setShowCareMePinDialog(true)} />
                           )}
                         </div>
                       </div>
@@ -1982,10 +2005,10 @@ function BedsideScreen() {
                             />
                           </div>
                           <div className="flex-1 min-h-0 flex flex-col">
-                            {(!isGuest || careMeUnlocked) ? (
-                              <CareMe onExpand={() => setShowCareMeExpanded(true)} onOpenPreferences={() => setShowPreferenceForm(true)} />
+                            {((!isGuest || careMeUnlocked) && !careMeLocked) ? (
+                              <CareMe onExpand={openCareMeExpanded} onOpenPreferences={() => setShowPreferenceForm(true)} />
                             ) : (
-                              <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />
+                              <CareMeLockedPlaceholder onTap={careMeLocked ? () => pinGate.guard("careMe", () => {}) : () => setShowCareMePinDialog(true)} />
                             )}
                           </div>
                         </>
@@ -2048,10 +2071,10 @@ function BedsideScreen() {
                             />
                           </div>
                           <div className="flex-1 min-h-0 flex flex-col">
-                            {(!isGuest || careMeUnlocked) ? (
-                              <CareMe onExpand={() => setShowCareMeExpanded(true)} onOpenPreferences={() => setShowPreferenceForm(true)} />
+                            {((!isGuest || careMeUnlocked) && !careMeLocked) ? (
+                              <CareMe onExpand={openCareMeExpanded} onOpenPreferences={() => setShowPreferenceForm(true)} />
                             ) : (
-                              <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />
+                              <CareMeLockedPlaceholder onTap={careMeLocked ? () => pinGate.guard("careMe", () => {}) : () => setShowCareMePinDialog(true)} />
                             )}
                           </div>
                         </>
@@ -2287,7 +2310,7 @@ function BedsideScreen() {
         )}
 
         {/* CareMe Expanded Overlay */}
-        {showCareMeExpanded && (!isGuest || careMeUnlocked) && (
+        {showCareMeExpanded && (!isGuest || careMeUnlocked) && !pinGate.locked && (
           <CareMeExpanded onClose={() => setShowCareMeExpanded(false)} onOpenPreferences={() => setShowPreferenceForm(true)} />
         )}
 
@@ -2470,6 +2493,8 @@ function BedsideScreen() {
         }}
         onClose={() => setIsLocked(false)}
       />
+
+      {pinGate.element}
 
       {showCareMePinDialog && (
         <CareMePinDialog
