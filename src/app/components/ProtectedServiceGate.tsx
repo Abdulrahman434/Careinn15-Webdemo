@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { useNurseStore } from "./NurseDataStore";
 import { PatientPinPrompt } from "./PatientPinDialogs";
-import { PROTECTED_SERVICES, PROTECT_MEAL_ORDERING } from "../lib/pin/pinConfig";
-import { usePinSession } from "../lib/pin/pinSession";
+import { PROTECTED_SERVICES, PROTECT_MEAL_ORDERING, PIN_INACTIVITY_LOCK_MS } from "../lib/pin/pinConfig";
+import { usePinSession, pinSession } from "../lib/pin/pinSession";
 import { getPinService, usePinOnline } from "../lib/pin/pinClient";
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -16,6 +16,10 @@ import { getPinService, usePinOnline } from "../lib/pin/pinClient";
  *   patient, PIN, session locked   → PatientPinPrompt, then opens
  *   PIN status unknown (offline before the first answer) → prompt, which
  *     shows "Connection needed" — fail closed.
+ *
+ * The session relocks after PIN_INACTIVITY_LOCK_MS of inactivity (here), when
+ * the screensaver appears (App.tsx), and on every page load (pinSession is
+ * memory-only).
  *
  * Everything else (Media, Games, Reading, …) never passes through here.
  *
@@ -46,6 +50,31 @@ export function useProtectedServiceGate() {
   useEffect(() => {
     if (isPatient && hasPin === null && online) void getPinService().getLockState();
   }, [isPatient, hasPin, online]);
+
+  // Relock after PIN_INACTIVITY_LOCK_MS without a touch, key or scroll. The
+  // elapsed time is also checked when the page becomes visible again, because
+  // timers can stall while the kiosk shows another app on top of the WebView.
+  useEffect(() => {
+    if (!unlocked) return;
+    let last = Date.now();
+    let timer = setTimeout(() => pinSession.lock(), PIN_INACTIVITY_LOCK_MS);
+    const activity = () => {
+      last = Date.now();
+      clearTimeout(timer);
+      timer = setTimeout(() => pinSession.lock(), PIN_INACTIVITY_LOCK_MS);
+    };
+    const visible = () => {
+      if (document.visibilityState === "visible" && Date.now() - last >= PIN_INACTIVITY_LOCK_MS) pinSession.lock();
+    };
+    const events = ["pointerdown", "mousemove", "keydown", "touchstart", "wheel", "scroll"];
+    events.forEach(e => window.addEventListener(e, activity, { passive: true, capture: true }));
+    document.addEventListener("visibilitychange", visible);
+    return () => {
+      clearTimeout(timer);
+      events.forEach(e => window.removeEventListener(e, activity, { capture: true }));
+      document.removeEventListener("visibilitychange", visible);
+    };
+  }, [unlocked]);
 
   const [pending, setPending] = useState(false);
   const pendingOpen = useRef<(() => void) | null>(null);

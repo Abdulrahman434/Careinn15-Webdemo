@@ -81,7 +81,6 @@ import { getPrayerStatus, PRAYER_NAMES, formatPrayerTime } from "./utils/prayerU
 import { Prayer } from "adhan";
 type PrayerValue = (typeof Prayer)[keyof typeof Prayer];
 type PrayerKey = Exclude<PrayerValue, typeof Prayer.Sunrise>;
-import { isAccountSet } from "./lib/accountAuth";
 import { useNetworkStatus } from "./lib/networkStatus";
 import { AccountLockScreen } from "./components/AccountLockScreen";
 import { OfflineBanner } from "./components/OfflineBanner";
@@ -89,6 +88,7 @@ import { useGuestMode, guestModeStore } from "./lib/guestMode";
 import { CareMePinDialog } from "./components/CareMePinDialog";
 import { useProtectedServiceGate } from "./components/ProtectedServiceGate";
 import { PROTECT_MEAL_ORDERING } from "./lib/pin/pinConfig";
+import { pinSession } from "./lib/pin/pinSession";
 import { Lock, Megaphone, AlertTriangle } from "lucide-react";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
@@ -893,9 +893,8 @@ function BedsideScreen() {
       isLocked ||
       showCareMePinDialog ||
       pinGate.prompting ||
-      !!lockMenuApp ||
-      (showTasbih && isAccountSet());
-  }, [isLocked, showCareMePinDialog, pinGate.prompting, lockMenuApp, showTasbih]);
+      !!lockMenuApp;
+  }, [isLocked, showCareMePinDialog, pinGate.prompting, lockMenuApp]);
 
   // Initialize history state once on mount
   useEffect(() => {
@@ -909,11 +908,6 @@ function BedsideScreen() {
         // Lock is active — push state back immediately
         window.history.pushState({ careinnLock: true }, "");
 
-        // If on Tasbih with an account set, transition to lock screen instead of home
-        if (showTasbih && isAccountSet()) {
-          setIsLocked(true);
-          setShowTasbih(false);
-        }
         return;
       }
 
@@ -982,10 +976,12 @@ function BedsideScreen() {
     };
   }, [anyOtherOverlayOpen]);
 
-  // Re-lock CareMe whenever the screensaver appears in guest mode
+  // Re-lock CareMe whenever the screensaver appears in guest mode, and lock
+  // the patient PIN session so protected services need the PIN on wake.
   useEffect(() => {
     if (showTasbih) {
       guestModeStore.relockCareMe();
+      pinSession.lock();
     }
   }, [showTasbih]);
 
@@ -2340,12 +2336,12 @@ function BedsideScreen() {
 
         {/* Tasbih Screen Saver */}
         {showTasbih && (() => {
+          /* Waking never shows a full-screen lock any more: Media, Games and
+             Reading stay open, and protected services were already locked
+             when the saver appeared (see the showTasbih effect). */
           const closeSaver = () => {
-            if (isAccountSet()) {
-              setIsLocked(true);
-            } else {
-              setShowTasbih(false);
-            }
+            pinSession.lock();
+            setShowTasbih(false);
           };
           // A brand can choose the ambient clock or supply a video; otherwise the tasbih.
           if (theme.screensaverStyle === "ambient") return <AmbientScreenSaver onClose={closeSaver} />;
