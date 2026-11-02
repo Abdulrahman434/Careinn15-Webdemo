@@ -22,6 +22,9 @@ export function PinDialog({
   footer,
   /* Sized for the panel this runs on — see pinMetrics.ts. */
   width = PIN_METRICS.card,
+  length,
+  disabled,
+  body,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -37,6 +40,12 @@ export function PinDialog({
   /** Optional action under the keypad, e.g. "Continue as Guest". */
   footer?: React.ReactNode;
   width?: number;
+  /** Digits to collect; the keypad defaults to 4. */
+  length?: number;
+  /** Keypad ignores input (request running, lockout). */
+  disabled?: boolean;
+  /** Shown in place of the keypad, e.g. an offline or error message. */
+  body?: React.ReactNode;
 }) {
   const { theme: t } = useTheme();
   const { t: tr, fontFamily } = useLocale();
@@ -130,7 +139,9 @@ export function PinDialog({
         {hint}
 
         <div className="w-full">
-          <PinKeypad pin={pin} setPin={setPin} error={error} onComplete={onComplete} />
+          {body ?? (
+            <PinKeypad pin={pin} setPin={setPin} error={error} onComplete={onComplete} length={length} disabled={disabled} />
+          )}
         </div>
 
         {footer}

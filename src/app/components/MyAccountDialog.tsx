@@ -148,34 +148,43 @@ export function PinKeypad({
   setPin,
   error,
   onComplete,
+  length = 4,
+  disabled = false,
 }: {
   pin: string;
   setPin: React.Dispatch<React.SetStateAction<string>>;
   error: boolean;
   onComplete: (completedPin: string) => void;
+  /** Digits to collect. 4 for the device / care-team PINs, PIN_LENGTH (6)
+   *  for the patient PIN. */
+  length?: number;
+  /** Ignore input, e.g. while a PIN request is running or during a lockout. */
+  disabled?: boolean;
 }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLocale();
   const { pressedKey, flash } = usePressFlash();
 
   const handleDigit = (d: string) => {
-    if (pin.length < 4) {
+    if (disabled) return;
+    if (pin.length < length) {
       const newPin = pin + d;
       setPin(newPin);
-      if (newPin.length === 4) {
+      if (newPin.length === length) {
         onComplete(newPin);
       }
     }
   };
 
   const handleDelete = () => {
+    if (disabled) return;
     setPin((p) => p.slice(0, -1));
   };
 
   return (
     <>
       <div dir="ltr" className="flex items-center justify-center gap-4" style={{ padding: "20px 0 18px 0" }}>
-        {[0, 1, 2, 3].map((i) => (
+        {Array.from({ length }, (_, i) => i).map((i) => (
           <div
             key={i}
             style={{
@@ -208,9 +217,10 @@ export function PinKeypad({
               return (
                 <button
                   key={ki}
-                  onPointerDown={() => flash(key)}
+                  disabled={disabled}
+                  onPointerDown={() => { if (!disabled) flash(key); }}
                   onClick={() => (key === "del" ? handleDelete() : handleDigit(key))}
-                  className="flex items-center justify-center cursor-pointer"
+                  className={disabled ? "flex items-center justify-center" : "flex items-center justify-center cursor-pointer"}
                   style={{
                     width: PIN_METRICS.key,
                     height: PIN_METRICS.key,
@@ -220,7 +230,8 @@ export function PinKeypad({
                       : (key === "del" ? t.accentSubtle : t.tileInactiveBg),
                     border: "none",
                     transform: isPressed ? "scale(0.92)" : "scale(1)",
-                    transition: "background-color 0.15s, transform 0.15s",
+                    transition: "background-color 0.15s, transform 0.15s, opacity 0.15s",
+                    opacity: disabled ? 0.45 : 1,
                   }}
                 >
                   <span

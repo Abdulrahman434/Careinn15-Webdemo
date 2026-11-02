@@ -1,5 +1,6 @@
 import { clearAccount } from "./accountAuth";
 import { lockedAppsStore } from "./lockedApps";
+import { PIN_STORAGE_KEYS } from "./pin/pinConfig";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * Onboarding preference store — three-tier localStorage model
@@ -37,13 +38,22 @@ const DEVICE_KEYS = new Set<string>([
   "careinn-last-cloud-contact",
 ]);
 
+/** The wizard step to resume at after a refresh (OnboardingWizard). Holds
+ *  {step, extended} only — never PIN digits. Removed when onboarding ends. */
+export const ONBOARDING_PROGRESS_KEY = "careinn-onboarding-progress";
+
 /** PIN + app-lock storage (lib/accountAuth + lib/lockedApps).
  *  Part of SETUP: preserved by clearUserData(), removed by clearEverything(). */
-const PIN_LOCK_KEYS = ["careinn-account", "careinn-locked-apps"] as const;
+const PIN_LOCK_KEYS = [
+  "careinn-account",
+  "careinn-locked-apps",
+  PIN_STORAGE_KEYS.mockServerState, // patient PIN lockout state — no PIN in it
+] as const;
 
 const SETUP_KEYS = [
   "careinn-onboarding-complete",
   "careinn-onboarding-admit-ref",
+  ONBOARDING_PROGRESS_KEY,
   "careinn-locale",
   "careinn-display-name",
   "careinn-display-name-ar",
@@ -103,4 +113,5 @@ export function isOnboardingComplete(currentAdmitRef: string | null): boolean {
 export function markOnboardingComplete(admitRef: string | null): void {
   localStorage.setItem("careinn-onboarding-complete", "true");
   localStorage.setItem("careinn-onboarding-admit-ref", admitRef ?? "");
+  localStorage.removeItem(ONBOARDING_PROGRESS_KEY);
 }

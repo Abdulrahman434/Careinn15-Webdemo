@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTheme, SHADOW, buildTheme } from "./ThemeContext";
 import { useLocale, type Locale } from "./i18n";
 import { toast } from "sonner";
@@ -8,9 +8,11 @@ import {
   FileCheck2, Check, ChevronLeft, Home,
 } from "lucide-react";
 import { useNurseStore } from "./NurseDataStore";
-import { markOnboardingComplete } from "../lib/onboardingStore";
-import { isAccountSet } from "../lib/accountAuth";
-import { MyPreferencesDialog } from "./MyAccountDialog";
+import { markOnboardingComplete, ONBOARDING_PROGRESS_KEY } from "../lib/onboardingStore";
+import { PatientPinSetup } from "./PatientPinDialogs";
+import { usePinSession } from "../lib/pin/pinSession";
+import { getPinService } from "../lib/pin/pinClient";
+import { useAuth } from "./AuthContext";
 import { BluetoothDialog } from "./SettingsPanel";
 import { bluetooth as bluetoothBridge, isAndroidApp } from "../utils/androidBridge";
 
@@ -108,6 +110,11 @@ const readLS = (k: string): string | null => {
   try { return localStorage.getItem(k); } catch { return null; }
 };
 
+/** Where a refresh mid-wizard resumes. Never holds PIN digits. */
+const readProgress = (): { step?: StepId; extended?: boolean } => {
+  try { return JSON.parse(readLS(ONBOARDING_PROGRESS_KEY) || "{}") || {}; } catch { return {}; }
+};
+
 export function OnboardingWizard({
   admitRef,
   onComplete,
@@ -144,8 +151,16 @@ export function OnboardingWizard({
   const fontFamily = t.fontFamily;
   const nurseStore = useNurseStore();
 
-  const [stepId, setStepId] = useState<StepId>("welcome");
-  const [extended, setExtended] = useState(() => readLS("careinn-data-clear-policy") != null);
+  const [savedProgress] = useState(readProgress);
+  const [stepId, setStepId] = useState<StepId>(() => savedProgress.step ?? "welcome");
+  const [extended, setExtended] = useState(
+    () => savedProgress.extended ?? readLS("careinn-data-clear-policy") != null
+  );
+
+  /* The PIN is for signed-in patients only; guests never see the step. */
+  const { isGuest: authGuest } = useAuth();
+  const isPatient = !authGuest && !!nurseStore.patient?.mrn;
+  const { hasPin } = usePinSession();
 
   /* per-step answers — pre-filled from storage so re-opening shows current choices */
   const [selLocale, setSelLocale] = useState<Locale>(() => (readLS("careinn-locale") as Locale) || locale || "en");
@@ -172,7 +187,10 @@ export function OnboardingWizard({
   const [overlay, setOverlay] = useState<"pin" | "bluetooth" | null>(null);
   const [btDevice, setBtDevice] = useState<string | null>(null);
 
-  const sequence = useMemo(() => sequenceFor(activeConfigId), [activeConfigId]);
+  const sequence = useMemo(
+    () => sequenceFor(activeConfigId).filter(s => s.id !== "pin" || isPatient),
+    [activeConfigId, isPatient]
+  );
   const shortFlow = activeConfigId === "dsfh";
   // Without the slideshow checkbox, consent rests on the terms alone.
   const consentReady = shortFlow ? termsAgreed : (tourSeen && termsAgreed);
@@ -181,6 +199,20 @@ export function OnboardingWizard({
     [sequence, extended]
   );
   const stepIndex = visibleSteps.findIndex(s => s.id === stepId);
+
+  // A restored step that no longer applies (branch or guest changed) → start over.
+  useEffect(() => {
+    if (stepIndex < 0) setStepId(visibleSteps[0].id);
+  }, [stepIndex, visibleSteps]);
+
+  useEffect(() => {
+    try { localStorage.setItem(ONBOARDING_PROGRESS_KEY, JSON.stringify({ step: stepId, extended })); } catch { /* ignore */ }
+  }, [stepId, extended]);
+
+  // Ask the service whether this patient already has a PIN ("already set" note).
+  useEffect(() => {
+    if (isPatient && stepId === "pin") void getPinService().getLockState();
+  }, [isPatient, stepId]);
 
   const goNext = (fromSteps?: StepDef[]) => {
     const steps = fromSteps ?? visibleSteps;
@@ -496,7 +528,7 @@ export function OnboardingWizard({
       case "pin":
         return (
           <>
-            {isAccountSet() && (
+            {hasPin === true && (
               <p style={{ fontFamily, fontSize: "15px", color: t.textMuted, textAlign: "center", margin: "0 0 8px" }}>
                 {tr("onboarding.pin.alreadySet")}
               </p>
@@ -951,15 +983,14 @@ export function OnboardingWizard({
         </div>
       </div>
 
-      {/* Reused PIN setup flow (existing MyPreferencesDialog machinery) */}
+      {/* Patient PIN setup (6 digits, PinService). Advances only once the
+          service has confirmed the save; closing it keeps the patient on
+          this step with nothing saved. */}
       {overlay === "pin" && (
-        <MyPreferencesDialog
-          open
-          mode="pin-setup"
-          onClose={() => {
-            setOverlay(null);
-            if (isAccountSet()) goNext();
-          }}
+        <PatientPinSetup
+          onDone={() => { setOverlay(null); goNext(); }}
+          onCancel={() => setOverlay(null)}
+          onGoHome={() => setOverlay(null)}
         />
       )}
 
