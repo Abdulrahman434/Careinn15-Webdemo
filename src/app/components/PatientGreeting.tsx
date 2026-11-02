@@ -368,7 +368,7 @@ export function PatientGreeting({
           className="flex items-center justify-center gap-2.5 w-full py-3 cursor-pointer active:scale-[0.96] transition-transform duration-150"
           style={{
             backgroundColor: theme.primarySubtle,
-            border: "none",
+            border: `1.5px solid color-mix(in srgb, ${theme.primaryOn} 40%, transparent)`,
             outline: "none",
             borderRadius: theme.radiusMd,
             color: theme.primaryOn,
