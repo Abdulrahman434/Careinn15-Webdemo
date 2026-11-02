@@ -1060,7 +1060,6 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                         outline: "none",
                       }}
                     >
-                      <card.Icon size={17} color={theme.primaryOn} strokeWidth={2} />
                       <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.primaryOn }}>
                         {t(card.key)}
                       </span>
