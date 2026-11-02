@@ -74,6 +74,14 @@ const AuthContext = createContext<AuthContextType>({
   verifyPatientIdentity: async () => false,
 });
 
+/** DEMO / TEST ONLY. Lets Forgot PIN accept the built-in demo patient's MRN
+ *  while no real patient is admitted on this device. On under `npm run dev`;
+ *  in a build only when VITE_ENABLE_DEMO_PATIENT=true is set at build time.
+ *  Off by default — a hospital build must leave the variable unset. Even when
+ *  on, a real admission's passcode always takes precedence (see below). */
+const ALLOW_DEMO_PATIENT_REAUTH: boolean =
+  import.meta.env.DEV === true || import.meta.env.VITE_ENABLE_DEMO_PATIENT === "true";
+
 /** Strict MRN comparison for re-authentication: letters/digits only, case-
  *  and leading-zero-insensitive, otherwise exact. (isMrnPasscodeMatch, used
  *  at sign-in, also accepts suffix matches, so a single digit can pass.) */
@@ -297,12 +305,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     //   printed on the wristband — add DOB or a one-time code) and issue a
     //   short-lived reset token that requestReset()/setPin() must present.
     try {
+      // A shared hospital code is never patient identity, even if it happens
+      // to equal an MRN. Normalised exactly as login() does. Without
+      // crypto.subtle (plain-http origin) this check is skipped; the MRN
+      // comparison below still never matches a hospital code.
+      const raw = code.toLowerCase().trim();
+      const base = raw.endsWith("-hospital") ? raw.slice(0, -9) : raw;
+      if (window.isSecureContext && crypto?.subtle) {
+        const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(base));
+        const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+        if (HASHED_PASSWORD_MAP[hex]) return false;
+      }
+      // Only written from a real patient record (HL7 lookup, MRN login, nurse edit).
+      const realPasscode = localStorage.getItem("careinn-active-mrn-passcode") || "";
+      if (realPasscode) return sameMrn(code, realPasscode);
+      // No real admission: the store holds the built-in demo patient.
+      if (!ALLOW_DEMO_PATIENT_REAUTH) return false;
       const { nurseActions } = await import("./NurseDataStore");
-      const candidates = [
-        nurseActions.get()?.patient?.mrn || "",
-        localStorage.getItem("careinn-active-mrn-passcode") || "",
-      ];
-      return candidates.some(target => target && sameMrn(code, target));
+      const demoMrn = nurseActions.get()?.patient?.mrn || "";
+      return !!demoMrn && sameMrn(code, demoMrn);
     } catch {
       return false;
     }
