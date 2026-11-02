@@ -2809,7 +2809,7 @@ function SlideIcon({ slideKey }: { slideKey: string }) {
 /* ─── CareMe Heart SVG from Figma ───
  * The mark takes the active brand's accessible foreground so it stays legible
  * on the card surface in both modes. */
-function HeartIcon() {
+export function HeartIcon() {
   const { theme } = useTheme();
   return (
     <div className="relative shrink-0 size-[20px]">

@@ -14,6 +14,7 @@ import svgPaths from "../../imports/svg-ca68x68c4i";
 import { getSavedHeroImage, isSlideshowEnabled } from "../lib/backgroundPrefs";
 import { usePatientInfo } from "../lib/usePatientInfo";
 import { clearUserDataAndReload } from "../lib/clearAllData";
+import { GuestLoginButton, cardSecondaryButtonStyle } from "./GuestHome";
 
 function AboutUsIcon({ color }: { color?: string }) {
   const { theme } = useTheme();
@@ -57,12 +58,17 @@ export function PatientGreeting({
   onOpenTour, 
   fillImage,
   showAboutUs = true,
-  onImageTap
+  onImageTap,
+  guest = false,
 }: { 
   onOpenAboutUs?: () => void; 
   onOpenTour?: () => void; 
   fillImage?: boolean;
   showAboutUs?: boolean;
+  /** Guest session ("Continue as Guest"): the same card, welcoming a guest —
+   *  no name or patient details, no Log out, and Patient Login in place of
+   *  Clear My Data. */
+  guest?: boolean;
   onImageTap?: (url: string, images: string[], index: number, origin?: { x: number; y: number }) => void;
 }) {
   const [pressed, setPressed] = useState(false);
@@ -172,7 +178,7 @@ export function PatientGreeting({
       >
         <HelpCircle size={20} style={{ color: theme.primaryOn }} strokeWidth={2} />
       </button>
-      {!isGuest && (
+      {!isGuest && !guest && (
         <button
           className="flex items-center justify-center rounded-full cursor-pointer active:scale-90 transition-transform"
           style={{
@@ -211,7 +217,7 @@ export function PatientGreeting({
         >
           {t("general.hello")}
         </p>
-        {!isGuest && (
+        {!isGuest && !guest && (
           <p
             className="cursor-pointer active:scale-[0.98] transition-transform"
             style={{
@@ -240,8 +246,38 @@ export function PatientGreeting({
             {displayName}
           </p>
         )}
+        {guest && (
+          <p
+            style={{
+              fontFamily: fontFamily,
+              ...TEXT_STYLE.display,
+              ...(isRTL && { lineHeight: LEADING.normal, letterSpacing: 0 }),
+              fontWeight: WEIGHT.extrabold,
+              color: theme.textHeading,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {t("guest.home.welcome")}
+          </p>
+        )}
+        {/* Guest: one chip saying which mode the screen is in, where the
+            patient's MRN / Room / Bed would be. */}
+        {guest && (
+          <div className="flex items-center flex-wrap gap-2" style={{ paddingTop: SPACE[1] }}>
+            <div
+              className="flex items-center px-3 py-1.5"
+              style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
+            >
+              <span style={{ fontFamily: fontFamily, ...TEXT_STYLE.pill, color: theme.primaryOn }}>
+                {t("guest.home.modeBadge")}
+              </span>
+            </div>
+          </div>
+        )}
         {/* Badges: [MRN] [Room] [Bed] */}
-        {!isGuest && (
+        {!isGuest && !guest && (
           <div className="flex items-center flex-wrap gap-2" style={{ paddingTop: SPACE[1] }}>
             <div
               className="flex items-center px-3 py-1.5 cursor-pointer active:scale-95 transition-transform"
@@ -365,16 +401,11 @@ export function PatientGreeting({
           About Us. Only the light clear (apps, browser, logins); the factory
           reset stays staff-only in Settings. */}
       <div className="mx-4 mb-4" style={{ position: "relative", zIndex: 10 }}>
+        {guest ? <GuestLoginButton /> : (
         <button
           data-nav="true"
           className="flex items-center justify-center gap-2.5 w-full py-3 cursor-pointer active:scale-[0.96] transition-transform duration-150"
-          style={{
-            backgroundColor: theme.primarySubtle,
-            border: `1.5px solid color-mix(in srgb, ${theme.primaryOn} 40%, transparent)`,
-            outline: "none",
-            borderRadius: theme.radiusMd,
-            color: theme.primaryOn,
-          }}
+          style={cardSecondaryButtonStyle(theme)}
           onClick={(e) => {
             e.stopPropagation();
             setShowSignOutAppsConfirm(true);
@@ -391,6 +422,7 @@ export function PatientGreeting({
             {t("settings.clearData.btn.clearMyData")}
           </span>
         </button>
+        )}
       </div>
 
       <ConfirmDialog

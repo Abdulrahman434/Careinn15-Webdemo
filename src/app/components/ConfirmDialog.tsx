@@ -12,6 +12,8 @@ interface ConfirmDialogProps {
   onConfirm: () => void;
   onCancel: () => void;
   variant?: "danger" | "primary";
+  /** The mark in the circle above the title; a warning triangle by default. */
+  icon?: React.ElementType;
 }
 
 export function ConfirmDialog({
@@ -23,6 +25,7 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
   variant = "primary",
+  icon: Icon = AlertTriangle,
 }: ConfirmDialogProps) {
   const { theme: t } = useTheme();
   const { t: tr, isRTL } = useLocale();
@@ -78,7 +81,7 @@ export function ConfirmDialog({
             backgroundColor: isDanger ? t.errorSubtle : t.primarySubtle,
           }}
         >
-          <AlertTriangle size={30} style={{ color: isDanger ? t.errorOn : t.primaryOn }} />
+          <Icon size={30} style={{ color: isDanger ? t.errorOn : t.primaryOn }} />
         </div>
 
         {title && (

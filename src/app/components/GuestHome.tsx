@@ -1,276 +1,147 @@
-import { useState } from "react";
-import { useTheme, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
+import type { CSSProperties } from "react";
+import { useTheme, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useAuth } from "./AuthContext";
-import { HeartPulse, LockKeyhole, LogIn, Sparkles, Stethoscope, User, Utensils } from "lucide-react";
+import { ConfirmDialog } from "./ConfirmDialog";
+import { HeartIcon } from "./CareMe";
+import { Heart, Lock, User } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * GUEST HOME — left sidebar for sessions entered via "Continue as Guest"
- * Replaces PatientGreeting + CareMe. Personalized services are shown as
- * locked previews; everything else on the dashboard stays fully accessible.
+ * GUEST HOME — pieces for sessions entered via "Continue as Guest".
+ * The dashboard keeps its patient layout: the greeting card is PatientGreeting
+ * in its `guest` form, CareMe becomes a locked "Patient Access" card, and the
+ * patient's own services stay in place but locked (see ServicesGrid). Anything
+ * locked offers the same way back: Patient Login.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-/* No neutral "muted surface" token exists — background/surface/surfaceElevated
- * are all #FFFFFF in light mode. borderDefault is the one neutral tint that
- * reads correctly over a card in both light and dark themes. */
-const neutralFill = (theme: { borderDefault: string }) => theme.borderDefault;
+/** The quiet card button — brand tint with a thin brand outline. Clear My Data
+ *  and Patient Login share it, so the two cards' bottom buttons match. */
+export function cardSecondaryButtonStyle(theme: { primarySubtle: string; primaryOn: string; radiusMd: string }): CSSProperties {
+  return {
+    backgroundColor: theme.primarySubtle,
+    border: `1.5px solid color-mix(in srgb, ${theme.primaryOn} 40%, transparent)`,
+    outline: "none",
+    borderRadius: theme.radiusMd,
+    color: theme.primaryOn,
+  };
+}
 
-/** Solid brand-filled "Patient Login" CTA. Returns to the access-code screen. */
-function PatientLoginButton() {
+/** Patient Login — ends the guest session and returns to the access-code screen. */
+export function GuestLoginButton({ fit = false }: { fit?: boolean }) {
   const { theme } = useTheme();
   const { t, fontFamily } = useLocale();
   const { logout } = useAuth();
-  const [pressed, setPressed] = useState(false);
 
   return (
     <button
       data-nav="true"
+      className={`flex items-center justify-center gap-2.5 ${fit ? "" : "w-full "}py-3 cursor-pointer active:scale-[0.96] transition-transform duration-150`}
+      style={{ ...cardSecondaryButtonStyle(theme), ...(fit && { paddingInline: SPACE[4] }) }}
       onClick={(e) => {
         e.stopPropagation();
         logout();
       }}
-      onPointerDown={() => setPressed(true)}
-      onPointerUp={() => setPressed(false)}
-      onPointerLeave={() => setPressed(false)}
-      className="flex items-center justify-center gap-2.5 w-full py-3 cursor-pointer transition-transform duration-150"
-      style={{
-        backgroundColor: pressed ? theme.primaryDark : theme.primary,
-        transform: pressed ? "scale(0.96)" : "scale(1)",
-        border: "none",
-        outline: "none",
-        borderRadius: theme.radiusMd,
-      }}
     >
-      <LogIn size={20} style={{ color: theme.textInverse }} strokeWidth={2} />
-      <span
-        style={{
-          fontFamily,
-          ...TEXT_STYLE.buttonSm,
-          color: theme.textInverse,
-          letterSpacing: "0.3px",
-        }}
-      >
+      <User size={20} strokeWidth={2} />
+      <span style={{ fontFamily, ...TEXT_STYLE.buttonSm, letterSpacing: "0.3px" }}>
         {t("guest.home.patientLogin")}
       </span>
     </button>
   );
 }
 
-/* ─── Top card: guest welcome ─── */
-export function GuestGreeting({ onOpenAboutUs, showAboutUs = true }: { onOpenAboutUs?: () => void; showAboutUs?: boolean }) {
+/** Asked when a guest taps a locked service: log in as the patient, or carry on. */
+export function GuestLoginPrompt({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const { t } = useLocale();
+  const { logout } = useAuth();
+
+  return (
+    <ConfirmDialog
+      visible={visible}
+      icon={Lock}
+      title={t("guest.locked.title")}
+      message={t("guest.locked.message")}
+      confirmLabel={t("guest.home.patientLogin")}
+      cancelLabel={t("lock.guest.button")}
+      onConfirm={() => {
+        onClose();
+        logout();
+      }}
+      onCancel={onClose}
+    />
+  );
+}
+
+/* ─── CareMe, locked for guests ───
+ * Same card, header and padding as CareMe, so the column keeps its shape; the
+ * body says what is behind it and how to get there. */
+export function GuestCareMeCard() {
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
+  const dir = isRTL ? "rtl" : "ltr";
 
   return (
     <div
-      className="relative overflow-hidden w-full shrink-0"
+      dir={dir}
+      className="flex flex-col overflow-hidden flex-1 min-h-0"
       style={{
-        textAlign: isRTL ? "right" : "left",
-        backgroundColor: theme.surface,
+        backgroundColor: theme.engagementSurface,
+        backgroundImage: theme.engagementCardGradient,
         borderRadius: theme.radiusCard,
         boxShadow: SHADOW.md,
-        border: theme.cardBorder,
-        padding: theme.cardPadding,
+        border: theme.engagementCardBorder,
       }}
     >
-      <p
-        style={{
-          fontFamily,
-          ...TEXT_STYLE.subtitle,
-          fontWeight: WEIGHT.medium,
-          color: theme.textMuted,
-        }}
-      >
-        {t("general.hello")}
-      </p>
-      <p
-        style={{
-          fontFamily,
-          ...TEXT_STYLE.display,
-          fontWeight: WEIGHT.extrabold,
-          color: theme.textHeading,
-        }}
-      >
-        {t("guest.home.welcome")}
-      </p>
-      <p
-        style={{
-          fontFamily,
-          ...TEXT_STYLE.body,
-          color: theme.textMuted,
-          margin: 0,
-          paddingTop: SPACE[1],
-        }}
-      >
-        {t("guest.home.subtitle")}
-      </p>
-
-      {/* Current session state — not a control, the user is already in guest mode */}
       <div
-        aria-current="true"
-        className="flex items-center justify-center gap-2.5 w-full py-3"
-        style={{
-          marginTop: SPACE[3],
-          backgroundColor: neutralFill(theme),
-          border: `1.5px solid ${theme.borderDefault}`,
-          borderRadius: theme.radiusMd,
-        }}
+        className="shrink-0 flex items-center justify-between gap-2"
+        style={{ padding: "22px 22px 12px", borderBottom: `1px solid ${theme.borderSubtle}` }}
       >
-        <User size={20} style={{ color: theme.textBody }} strokeWidth={2} />
-        <span
-          style={{
-            fontFamily,
-            ...TEXT_STYLE.buttonSm,
-            color: theme.textBody,
-            letterSpacing: "0.3px",
-          }}
-        >
-          {t("guest.home.modeBadge")}
-        </span>
+        <div className="flex items-center min-w-0" style={{ gap: "10px" }}>
+          <HeartIcon />
+          <span style={{ fontFamily: theme.fontFamily, ...TEXT_STYLE.sectionTitle, color: theme.textHeading }}>CareMe</span>
+        </div>
+        <Lock size={20} strokeWidth={2} style={{ color: theme.primaryOn }} />
       </div>
 
-      <div style={{ marginTop: SPACE[2] }}>
-        <PatientLoginButton />
-      </div>
-
-      {showAboutUs && (
-        <button
-          data-nav="true"
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenAboutUs?.();
-          }}
-          className="w-full cursor-pointer active:scale-95 transition-transform"
+      <div
+        className="flex-1 min-h-0 flex flex-col items-center justify-center text-center"
+        style={{ padding: `${SPACE[2]} ${SPACE[3]}`, gap: SPACE[1] }}
+      >
+        <div
+          className="relative flex items-center justify-center shrink-0"
           style={{
-            marginTop: SPACE[2],
-            background: "none",
-            border: "none",
-            outline: "none",
-            padding: SPACE[1],
+            width: SPACE[8],
+            height: SPACE[8],
+            borderRadius: theme.radiusFull,
+            backgroundColor: theme.primarySubtle,
+            marginBottom: SPACE[1],
           }}
         >
+          <Heart size={30} strokeWidth={2} style={{ color: theme.primaryOn }} />
           <span
+            className="absolute flex items-center justify-center"
             style={{
-              fontFamily,
-              ...TEXT_STYLE.buttonSm,
-              color: theme.primaryOn,
-              textDecoration: "underline",
-              textUnderlineOffset: "3px",
+              bottom: 10,
+              insetInlineEnd: 10,
+              width: 22,
+              height: 22,
+              borderRadius: theme.radiusFull,
+              backgroundColor: theme.surface,
             }}
           >
-            {t("general.aboutUs")}
+            <Lock size={13} strokeWidth={2.6} style={{ color: theme.primaryOn }} />
           </span>
-        </button>
-      )}
-    </div>
-  );
-}
-
-/* ─── Locked service preview tile ─── */
-function LockedServiceTile({ labelKey, icon: Icon }: { labelKey: string; icon: typeof HeartPulse }) {
-  const { theme } = useTheme();
-  const { t, isRTL, fontFamily } = useLocale();
-
-  return (
-    <div
-      aria-disabled="true"
-      className="relative flex flex-col items-center justify-center gap-2 w-full h-full min-h-0"
-      style={{
-        backgroundColor: neutralFill(theme),
-        borderRadius: theme.radiusLg,
-        border: `1px solid ${theme.borderSubtle}`,
-        padding: SPACE[1],
-      }}
-    >
-      {/* Lock marker */}
-      <div
-        className="absolute flex items-center justify-center"
-        style={{ top: SPACE[1], [isRTL ? "left" : "right"]: SPACE[1] }}
-      >
-        <LockKeyhole size={14} style={{ color: theme.textDisabled }} strokeWidth={2.2} />
-      </div>
-
-      <div
-        className="flex items-center justify-center shrink-0"
-        style={{
-          width: SPACE[6],
-          height: SPACE[6],
-          borderRadius: theme.radiusMd,
-          backgroundColor: theme.surface,
-        }}
-      >
-        <Icon size={26} style={{ color: theme.textDisabled }} strokeWidth={1.8} />
-      </div>
-
-      <span
-        style={{
-          fontFamily,
-          ...TEXT_STYLE.label,
-          fontWeight: WEIGHT.semibold,
-          color: theme.textDisabled,
-          textAlign: "center",
-        }}
-      >
-        {t(labelKey)}
-      </span>
-    </div>
-  );
-}
-
-/* ─── Second card: gated patient services ─── */
-export function GuestPatientServices() {
-  const { theme } = useTheme();
-  const { t, fontFamily } = useLocale();
-
-  return (
-    <div
-      className="flex flex-col w-full h-full min-h-0 overflow-hidden"
-      style={{
-        backgroundColor: theme.surface,
-        borderRadius: theme.radiusCard,
-        boxShadow: SHADOW.md,
-        border: theme.cardBorder,
-        padding: theme.cardPadding,
-        gap: SPACE[2],
-      }}
-    >
-      {/* Header + lock */}
-      <div className="flex items-center justify-between gap-2 shrink-0">
-        <span
-          style={{
-            fontFamily,
-            ...TEXT_STYLE.cardTitle,
-            fontWeight: WEIGHT.bold,
-            color: theme.textHeading,
-          }}
-        >
-          {t("guest.services.title")}
+        </div>
+        <span style={{ fontFamily, ...TEXT_STYLE.cardTitle, color: theme.textHeading }}>
+          {t("guest.careMe.access.title")}
         </span>
-        <LockKeyhole size={20} style={{ color: theme.textMuted }} strokeWidth={2} />
-      </div>
-
-      <p
-        className="shrink-0"
-        style={{
-          fontFamily,
-          ...TEXT_STYLE.helper,
-          color: theme.textMuted,
-          margin: 0,
-        }}
-      >
-        {t("guest.services.subtitle")}
-      </p>
-
-      {/* 2×2 locked previews */}
-      <div className="grid grid-cols-2 gap-3 flex-1 min-h-0">
-        <LockedServiceTile labelKey="care.title" icon={HeartPulse} />
-        <LockedServiceTile labelKey="service.orderFood" icon={Utensils} />
-        <LockedServiceTile labelKey="service.housekeeping" icon={Sparkles} />
-        <LockedServiceTile labelKey="service.consultation" icon={Stethoscope} />
-      </div>
-
-      <div className="shrink-0">
-        <PatientLoginButton />
+        <span style={{ fontFamily, ...TEXT_STYLE.body, color: theme.textMuted, maxWidth: 280 }}>
+          {t("guest.careMe.access.message")}
+        </span>
+        {/* Sized to its label and kept with the message it answers */}
+        <div style={{ marginTop: SPACE[2] }}>
+          <GuestLoginButton fit />
+        </div>
       </div>
     </div>
   );
