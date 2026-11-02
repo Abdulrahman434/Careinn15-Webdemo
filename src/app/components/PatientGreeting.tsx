@@ -318,8 +318,9 @@ export function PatientGreeting({
       </div>
 
       {/* About Us — pill below image */}
+      {/* mb-2: the two buttons read as one pair; the photo takes the space */}
       {showAboutUs && (
-        <div className="mx-4 mb-4" style={{ position: "relative", zIndex: 10 }}>
+        <div className="mx-4 mb-2" style={{ position: "relative", zIndex: 10 }}>
           <button
             data-nav="true"
             className="flex items-center justify-center gap-2.5 w-full py-3 cursor-pointer transition-transform duration-150"
