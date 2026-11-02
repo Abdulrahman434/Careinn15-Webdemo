@@ -1868,6 +1868,7 @@ const translations: Record<string, TranslationEntry> = {
   "patientPin.action.forgot": { en: "Forgot PIN?", ar: "نسيت رمز PIN؟", ur: "PIN بھول گئے؟" },
   "patientPin.action.login": { en: "Patient Login", ar: "تسجيل دخول المريض", ur: "مریض لاگ ان" },
   "patientPin.action.home": { en: "Home", ar: "الرئيسية", ur: "ہوم" },
+  "patientPin.action.cancel": { en: "Cancel", ar: "إلغاء", ur: "منسوخ کریں" },
 
   "onboarding.prayer.title": { en: "Would you like us to remind you at prayer times?", ar: "هل ترغب أن نذكّرك بأوقات الصلاة؟", ur: "کیا آپ چاہیں گے کہ ہم آپ کو نماز کے اوقات پر یاد دلائیں؟" },
 

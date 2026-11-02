@@ -182,8 +182,15 @@ function useVisibleViewport() {
 /* ═══════════════════ SHARED FORM STATE ═══════════════════
  * Both layouts submit the same way: the same login(), the same guest entry, the
  * same shake-and-clear on a bad code. Only the chrome around them differs. */
-function useLoginForm() {
-  const { login, loginAsGuest } = useAuth();
+/** Forgot-PIN mode: the same screen confirms the signed-in patient instead
+ *  of signing in, and its secondary button cancels instead of Guest. */
+export interface GateReauth {
+  onSuccess: () => void;
+  onCancel: () => void;
+}
+
+function useLoginForm(reauth?: GateReauth) {
+  const { login, loginAsGuest, verifyPatientIdentity } = useAuth();
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(false);
@@ -211,7 +218,7 @@ function useLoginForm() {
       setSubmitting(true);
       let valid = false;
       try {
-        valid = await login(password);
+        valid = reauth ? await verifyPatientIdentity(password) : await login(password);
       } finally {
         setSubmitting(false);
       }
@@ -221,17 +228,25 @@ function useLoginForm() {
         setShaking(true);
         setTimeout(() => setShaking(false), 600);
         setTimeout(() => setError(false), 3000);
+      } else if (reauth) {
+        setPassword("");
+        reauth.onSuccess();
       } else {
         setSuccess(true);
       }
     },
-    [password, submitting, login]
+    [password, submitting, login, reauth, verifyPatientIdentity]
   );
 
   const handleGuest = useCallback(() => {
+    if (reauth) { setPassword(""); reauth.onCancel(); return; }
     loginAsGuest();
     setSuccess(true);
-  }, [loginAsGuest]);
+  }, [loginAsGuest, reauth]);
+
+  /* In reauth mode the secondary button is Cancel. HospitalGate has no t(),
+     so the label is resolved here for both layouts. */
+  const secondaryLabel = reauth ? translateWithLocale("patientPin.action.cancel", readLocale()) : undefined;
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -255,12 +270,13 @@ function useLoginForm() {
     handleSubmit,
     handleGuest,
     handleChange,
+    secondaryLabel,
   };
 }
 
-export function PasswordGate() {
+export function PasswordGate({ reauth }: { reauth?: GateReauth } = {}) {
   const wallpaper = hospitalWallpaper();
-  return wallpaper ? <HospitalGate wallpaper={wallpaper} /> : <CareInnGate />;
+  return wallpaper ? <HospitalGate wallpaper={wallpaper} reauth={reauth} /> : <CareInnGate reauth={reauth} />;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -269,8 +285,8 @@ export function PasswordGate() {
  * sides live inside one rounded card inset from a pale ground, so nothing is
  * laid over the photograph and it keeps its own brightness.
  * ═══════════════════════════════════════════════════════════════════════════ */
-function CareInnGate() {
-  const f = useLoginForm();
+function CareInnGate({ reauth }: { reauth?: GateReauth }) {
+  const f = useLoginForm(reauth);
   const { nextLocale, cycleLocale, dir, fontFamily, t } = useGateLocale();
   const { viewport, visibleH, compact, narrow } = useVisibleViewport();
 
@@ -599,7 +615,7 @@ function CareInnGate() {
                     e.currentTarget.style.borderColor = LINE;
                   }}
                 >
-                  {t("lock.guest.button")}
+                  {f.secondaryLabel ?? t("lock.guest.button")}
                 </button>
               </form>
             </div>
@@ -647,8 +663,8 @@ function CareInnGate() {
  * The wallpapers keep their subject to the right of centre, so the card sits
  * left rather than covering it.
  * ═══════════════════════════════════════════════════════════════════════════ */
-function HospitalGate({ wallpaper }: { wallpaper: string }) {
-  const f = useLoginForm();
+function HospitalGate({ wallpaper, reauth }: { wallpaper: string; reauth?: GateReauth }) {
+  const f = useLoginForm(reauth);
   const { viewport, visibleH, compact } = useVisibleViewport();
   const [showSlideshow, setShowSlideshow] = useState(false);
 
@@ -927,7 +943,7 @@ function HospitalGate({ wallpaper }: { wallpaper: string }) {
                   e.currentTarget.style.background = "transparent";
                 }}
               >
-                Continue as Guest
+                {f.secondaryLabel ?? "Continue as Guest"}
               </button>
             </form>
           </div>

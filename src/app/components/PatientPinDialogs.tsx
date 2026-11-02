@@ -167,7 +167,7 @@ function FailureBody({
 type SetupStep = "loading" | "current" | "enter" | "confirm" | "saving" | "success" | Failure;
 
 export function PatientPinSetup({
-  onDone, onCancel, onGoLogin, onGoHome, onForgotPin,
+  onDone, onCancel, onGoLogin, onGoHome, onForgotPin, afterReauth = false,
 }: FailureProps & {
   /** The service confirmed the new PIN is saved. */
   onDone: () => void;
@@ -175,6 +175,10 @@ export function PatientPinSetup({
   onCancel: () => void;
   /** Shown on the "enter current PIN" step. */
   onForgotPin?: () => void;
+  /** Forgot-PIN path: the patient just re-confirmed on Patient Login, so skip
+   *  the current-PIN step. The old PIN is reset only when the new one is
+   *  confirmed — cancelling before that leaves the old PIN in place. */
+  afterReauth?: boolean;
 }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLocale();
@@ -198,10 +202,11 @@ export function PatientPinSetup({
     if (!alive.current) return;
     if (!r.ok) { setStep(failureFor(r) ?? "retry"); return; }
     setLockedUntil(r.value.lockedUntil);
+    if (afterReauth) { setStep("enter"); return; }
     if (r.value.hasPin && r.value.lockedUntil) setErrorKey("patientPin.error.locked");
     // Changing an existing PIN needs the current one first.
     setStep(r.value.hasPin ? "current" : "enter");
-  }, [svc]);
+  }, [svc, afterReauth]);
 
   useEffect(() => {
     alive.current = true;
@@ -254,6 +259,11 @@ export function PatientPinSetup({
     failedPhase.current = "new";
     setPin("");
     setStep("saving");
+    if (afterReauth) {
+      const reset = await svc.requestReset();
+      if (!alive.current) return;
+      if (!reset.ok) { clearDigits(); setStep(failureFor(reset) ?? "retry"); return; }
+    }
     const r = await svc.setPin(value);
     clearDigits();
     if (!alive.current) return;

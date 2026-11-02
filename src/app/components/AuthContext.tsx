@@ -56,6 +56,10 @@ interface AuthContextType extends AuthState {
   loginAsGuest: () => void;
   /** Log out and return to the password screen */
   logout: () => void;
+  /** Re-confirm the signed-in patient (Forgot PIN). True only for the
+   *  current patient's MRN / patient access code — never a hospital code.
+   *  Does not change the session. */
+  verifyPatientIdentity: (code: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -67,7 +71,17 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => false,
   loginAsGuest: () => {},
   logout: () => {},
+  verifyPatientIdentity: async () => false,
 });
+
+/** Strict MRN comparison for re-authentication: letters/digits only, case-
+ *  and leading-zero-insensitive, otherwise exact. (isMrnPasscodeMatch, used
+ *  at sign-in, also accepts suffix matches, so a single digit can pass.) */
+function sameMrn(input: string, target: string): boolean {
+  const norm = (s: string) => s.replace(/[^a-zA-Z0-9]/g, "").toLowerCase().replace(/^0+/, "");
+  const a = norm(input), b = norm(target);
+  return a.length > 0 && a === b;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>(() => {
@@ -277,8 +291,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     applyPendingUpdate();
   }, []);
 
+  const verifyPatientIdentity = useCallback(async (code: string): Promise<boolean> => {
+    if (authState.isGuest || !authState.isAuthenticated) return false;
+    // BACKEND-REQUIRED: re-authenticate the patient on the server (MRN alone is
+    //   printed on the wristband — add DOB or a one-time code) and issue a
+    //   short-lived reset token that requestReset()/setPin() must present.
+    try {
+      const { nurseActions } = await import("./NurseDataStore");
+      const candidates = [
+        nurseActions.get()?.patient?.mrn || "",
+        localStorage.getItem("careinn-active-mrn-passcode") || "",
+      ];
+      return candidates.some(target => target && sameMrn(code, target));
+    } catch {
+      return false;
+    }
+  }, [authState.isGuest, authState.isAuthenticated]);
+
   return (
-    <AuthContext.Provider value={{ ...authState, login, loginAsGuest, logout }}>
+    <AuthContext.Provider value={{ ...authState, login, loginAsGuest, logout, verifyPatientIdentity }}>
       {children}
     </AuthContext.Provider>
   );

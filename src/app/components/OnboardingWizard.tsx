@@ -10,6 +10,7 @@ import {
 import { useNurseStore } from "./NurseDataStore";
 import { markOnboardingComplete, ONBOARDING_PROGRESS_KEY } from "../lib/onboardingStore";
 import { PatientPinSetup } from "./PatientPinDialogs";
+import { useForgotPinFlow } from "./ProtectedServiceGate";
 import { usePinSession } from "../lib/pin/pinSession";
 import { getPinService } from "../lib/pin/pinClient";
 import { useAuth } from "./AuthContext";
@@ -161,6 +162,8 @@ export function OnboardingWizard({
   const { isGuest: authGuest } = useAuth();
   const isPatient = !authGuest && !!nurseStore.patient?.mrn;
   const { hasPin } = usePinSession();
+  // Forgot PIN from the "enter current PIN" step; a new PIN moves the wizard on.
+  const forgotPin = useForgotPinFlow((newPinSet) => { if (newPinSet) goNext(); });
 
   /* per-step answers — pre-filled from storage so re-opening shows current choices */
   const [selLocale, setSelLocale] = useState<Locale>(() => (readLS("careinn-locale") as Locale) || locale || "en");
@@ -991,8 +994,10 @@ export function OnboardingWizard({
           onDone={() => { setOverlay(null); goNext(); }}
           onCancel={() => setOverlay(null)}
           onGoHome={() => setOverlay(null)}
+          onForgotPin={() => { setOverlay(null); forgotPin.start(); }}
         />
       )}
+      {forgotPin.element}
 
       {/* Reused Bluetooth pairing flow (existing SettingsPanel dialog) */}
       {overlay === "bluetooth" && (
