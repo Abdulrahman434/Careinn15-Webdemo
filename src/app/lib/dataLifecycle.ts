@@ -49,6 +49,12 @@ export function startDataLifecycleWatchers(
     if (complete && (savedRef ?? "") !== (currentRef ?? "")) {
       clearEverything();
       onForceOnboarding(currentRef);
+      // clearEverything() only clears storage. The previous patient also lives
+      // in memory (NurseDataStore record + clinical data, meal orders, image
+      // cache, …) and some of those write themselves back to storage on their
+      // next update. Reloading is the one reset that reaches all of them; it
+      // cannot loop, because onboarding is no longer complete.
+      window.location.replace(window.location.href);
     }
   };
 

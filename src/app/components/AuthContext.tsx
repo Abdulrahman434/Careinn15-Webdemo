@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react";
 import { applyPendingUpdate } from "../lib/updateCheck";
+import { pinSession } from "../lib/pin/pinSession";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * AUTH CONTEXT — Password-based access control for hospital configurations
@@ -276,6 +277,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    // No PIN needed to log out. The PIN itself is kept for this stay, but the
+    // next sign-in starts locked.
+    pinSession.lock();
     setAuthState({
       isAuthenticated: false,
       password: null,

@@ -3,7 +3,7 @@ import type { PinService, PinResult, PinLockState } from "./PinService";
 import { MockPinService } from "./MockPinService";
 import { pinSession } from "./pinSession";
 import {
-  PIN_REQUEST_TIMEOUT_MS, PIN_RECONNECT_POLL_MS, LEGACY_PIN_HASH_KEY,
+  PIN_REQUEST_TIMEOUT_MS, PIN_RECONNECT_POLL_MS, LEGACY_PIN_HASH_KEY, PIN_STORAGE_KEYS,
 } from "./pinConfig";
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -156,6 +156,8 @@ const wrapped: PinService = {
   },
   async clearOnDischarge() {
     // Must work offline and must never throw: it only forgets things.
+    try { localStorage.removeItem(PIN_STORAGE_KEYS.owner); } catch { /* ignore */ }
+    pinSession.reset();
     try { await impl.clearOnDischarge(); } catch { /* still clear locally */ }
     consecutiveFailures = 0;
     pinSession.reset();
@@ -163,6 +165,33 @@ const wrapped: PinService = {
 };
 
 export function getPinService(): PinService { return wrapped; }
+
+/** Not secret (an MRN is printed on the wristband); only lets the device
+ *  notice that a different patient is now on this screen. */
+function patientFingerprint(mrn: string): string {
+  const s = mrn.replace(/[^a-zA-Z0-9]/g, "").toLowerCase().replace(/^0+/, "");
+  if (!s) return "";
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16);
+}
+
+/** Tie PIN state to the patient now on this screen. The same patient
+ *  (logout/login in one stay, room or bed change) keeps it; any different
+ *  patient — or an unknown previous owner — starts clean and inherits nothing.
+ *  // BACKEND-REQUIRED: scope the stored PIN, counters and unlock tokens to
+ *  //   patient + admission server-side, so this client check is only a
+ *  //   convenience and never the thing that separates two patients. */
+export function bindPinPatient(mrn: string): void {
+  const key = patientFingerprint(mrn);
+  if (!key) return;
+  let previous: string | null = null;
+  try { previous = localStorage.getItem(PIN_STORAGE_KEYS.owner); } catch { /* treat as unknown */ }
+  if (previous === key) return;
+  void wrapped.clearOnDischarge().then(() => {
+    try { localStorage.setItem(PIN_STORAGE_KEYS.owner, key); } catch { /* ignore */ }
+  });
+}
 
 /** Removes the pre-6-digit PIN hash (lib/accountAuth) from this device.
  *  Wired at startup in a later step, together with moving the per-app locks

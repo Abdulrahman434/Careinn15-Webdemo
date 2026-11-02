@@ -55,6 +55,9 @@ export const PIN_STORAGE_KEYS = {
   /** MockPinService's stand-in for server-side state: has-PIN flag, attempt
    *  counter, lock level, lock expiry. Removed on discharge. */
   mockServerState: "careinn-pin-mock-server",
+  /** Short fingerprint of the MRN the PIN state belongs to (not the MRN
+   *  itself). A different patient on this screen wipes all PIN state. */
+  owner: "careinn-pin-owner",
 } as const;
 
 /** The pre-6-digit local PIN store (lib/accountAuth). Holds a salted hash on

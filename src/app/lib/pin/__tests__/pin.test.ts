@@ -13,7 +13,7 @@ import { isWeakPin, validateNewPin } from "../pinPolicy";
 import { MockPinService } from "../MockPinService";
 import {
   getPinService, setPinServiceImpl, setPinRequestTimeoutForTests,
-  isPinOnline, retryPinConnection, purgeLegacyPinHash,
+  isPinOnline, retryPinConnection, purgeLegacyPinHash, bindPinPatient,
 } from "../pinClient";
 import { pinSession } from "../pinSession";
 import { PIN_LENGTH, PIN_STORAGE_KEYS, LEGACY_PIN_HASH_KEY } from "../pinConfig";
@@ -148,6 +148,40 @@ async function main() {
   await retryPinConnection();
   ls = await svc.getLockState();
   ok("new patient starts with no PIN", ls.ok && !ls.value.hasPin);
+
+  out("\n— patient binding (logout / room change / new patient) —");
+  const settle = () => new Promise(r => setTimeout(r, 0));
+  mock = newMock();
+  setPinServiceImpl(mock);
+  bindPinPatient("00-284619");
+  await settle();
+  await svc.setPin(GOOD_PIN);
+  await svc.verifyPin(GOOD_PIN);
+  const owner = testLocalStorage.getItem(PIN_STORAGE_KEYS.owner) ?? "";
+  ok("owner recorded", owner.length > 0);
+  ok("owner key does not contain the MRN", !owner.includes("284619"));
+
+  pinSession.lock(); // what logout() does
+  bindPinPatient("00-284619"); // same patient signs back in
+  await settle();
+  ls = await svc.getLockState();
+  ok("same patient after logout: PIN kept", ls.ok && ls.value.hasPin);
+  ok("same patient after logout: starts locked", !pinSession.get().unlocked);
+  bindPinPatient("284619"); // same MRN, different formatting (room/bed change refresh)
+  await settle();
+  ls = await svc.getLockState();
+  ok("same MRN written differently: PIN kept", ls.ok && ls.value.hasPin);
+  r = await svc.verifyPin(GOOD_PIN);
+  ok("same patient can still unlock", r.ok);
+
+  bindPinPatient("55-000111"); // a different patient on this screen
+  await settle();
+  ok("new patient: session reset", !pinSession.get().unlocked && pinSession.get().hasPin === null);
+  ls = await svc.getLockState();
+  ok("new patient: inherits no PIN", ls.ok && !ls.value.hasPin);
+  r = await svc.verifyPin(GOOD_PIN);
+  ok("new patient: old patient's PIN does not unlock", !r.ok);
+  ok("new patient: now owns the PIN state", testLocalStorage.getItem(PIN_STORAGE_KEYS.owner) !== owner);
 
   testLocalStorage.setItem(LEGACY_PIN_HASH_KEY, JSON.stringify({ pinHash: "x", pinSalt: "y" }));
   purgeLegacyPinHash();

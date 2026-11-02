@@ -6,7 +6,7 @@ import { PatientPinPrompt, PatientPinSetup } from "./PatientPinDialogs";
 import { PasswordGate } from "./PasswordGate";
 import { PROTECTED_SERVICES, PROTECT_MEAL_ORDERING, PIN_INACTIVITY_LOCK_MS } from "../lib/pin/pinConfig";
 import { usePinSession, pinSession } from "../lib/pin/pinSession";
-import { getPinService, usePinOnline } from "../lib/pin/pinClient";
+import { getPinService, usePinOnline, bindPinPatient } from "../lib/pin/pinClient";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * Protected services gate — CareMe, Consultation, Patient Services
@@ -86,6 +86,14 @@ export function useProtectedServiceGate() {
 
   /** True while protected content must not be on screen. */
   const locked = isGuest || (isPatient && !unlocked && hasPin !== false);
+
+  // Bind PIN state to the patient on screen. A different patient starts
+  // clean; the same patient (re-login, room/bed change) keeps it. Runs before
+  // the lock-state fetch below so a new patient never sees the old hasPin.
+  const mrn = nurse.patient?.mrn || "";
+  useEffect(() => {
+    if (isPatient && mrn) bindPinPatient(mrn);
+  }, [isPatient, mrn]);
 
   // Learn whether this patient has a PIN, so a patient without one is not
   // shown a lock. Retried when the connection comes back.

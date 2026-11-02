@@ -1,6 +1,7 @@
 import { clearAccount } from "./accountAuth";
 import { lockedAppsStore } from "./lockedApps";
 import { PIN_STORAGE_KEYS } from "./pin/pinConfig";
+import { getPinService } from "./pin/pinClient";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * Onboarding preference store — three-tier localStorage model
@@ -48,6 +49,7 @@ const PIN_LOCK_KEYS = [
   "careinn-account",
   "careinn-locked-apps",
   PIN_STORAGE_KEYS.mockServerState, // patient PIN lockout state — no PIN in it
+  PIN_STORAGE_KEYS.owner,           // which patient that state belongs to
 ] as const;
 
 const SETUP_KEYS = [
@@ -101,6 +103,9 @@ export function clearEverything(): void {
   // in-memory state and listeners update too (not just the raw keys).
   clearAccount();
   lockedAppsStore.reset();
+  // Patient PIN: stored state, lock state, unlocked session, cached hasPin.
+  // Never throws, works offline.
+  void getPinService().clearOnDischarge();
   window.dispatchEvent(new CustomEvent("display-name-changed"));
 }
 
