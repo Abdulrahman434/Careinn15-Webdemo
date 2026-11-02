@@ -9,7 +9,7 @@ import { TopBar } from "./components/TopBar";
 import { NewsTicker } from "./components/NewsTicker";
 import { PatientGreeting } from "./components/PatientGreeting";
 import { HeroGallery } from "./components/HeroGallery";
-import { GuestGreeting, GuestPatientServices } from "./components/GuestHome";
+import { GuestCareMeCard } from "./components/GuestHome";
 import { ServicesGrid, ShortcutsColumn, HubGridCompact, ServiceCardsRow } from "./components/ServicesGrid";
 import { useCmsHospital, useCmsSectionVisibility } from '../lib/useCmsContent';
 import { CareMe, CareMeExpanded } from "./components/CareMe";
@@ -1904,13 +1904,9 @@ function BedsideScreen() {
                       {/* Top: Greeting + CareMe horizontally */}
                       <div className="flex-1 flex flex-row gap-5 min-h-0">
                         <div className="flex-1 min-w-0 min-h-0 flex flex-col">
-                          {guestSession ? (
-                            <GuestGreeting
-                              onOpenAboutUs={() => setShowAboutUs(true)}
-                              showAboutUs={v.show_about_us}
-                            />
-                          ) : (
+                          {(
                             <PatientGreeting
+                              guest={guestSession}
                               onOpenAboutUs={() => setShowAboutUs(true)}
                               onOpenTour={() => setShowTour(true)}
                               fillImage
@@ -1921,7 +1917,7 @@ function BedsideScreen() {
                         </div>
                         <div className="flex-1 min-w-0 min-h-0 flex flex-col">
                           {guestSession ? (
-                            <GuestPatientServices />
+                            <GuestCareMeCard />
                           ) : (!isGuest || careMeUnlocked) ? (
                             <CareMe onExpand={() => setShowCareMeExpanded(true)} onOpenPreferences={() => setShowPreferenceForm(true)} />
                           ) : (
@@ -1959,21 +1955,13 @@ function BedsideScreen() {
                   <>
                     {/* Left Column — PatientGreeting + CareMe (guest: welcome + locked services) */}
                     <div className="flex flex-col gap-5 shrink-0 min-h-0 h-full" style={{ width: "400px" }}>
-                      {guestSession ? (
-                        <>
-                          <GuestGreeting
-                            onOpenAboutUs={() => setShowAboutUs(true)}
-                            showAboutUs={v.show_about_us}
-                          />
-                          <div className="flex-1 min-h-0 flex flex-col">
-                            <GuestPatientServices />
-                          </div>
-                        </>
-                      ) : (
+                      {/* Guest: the same two cards, in their guest form */}
+                      {(
                         <>
                           {/* Greeting and CareMe split the column 50/50; the photo takes the slack */}
                           <div className="flex-1 min-h-0 flex flex-col">
                             <PatientGreeting
+                              guest={guestSession}
                               onOpenAboutUs={() => setShowAboutUs(true)}
                               onOpenTour={() => setShowTour(true)}
                               fillImage
@@ -1982,7 +1970,9 @@ function BedsideScreen() {
                             />
                           </div>
                           <div className="flex-1 min-h-0 flex flex-col">
-                            {(!isGuest || careMeUnlocked) ? (
+                            {guestSession ? (
+                              <GuestCareMeCard />
+                            ) : (!isGuest || careMeUnlocked) ? (
                               <CareMe onExpand={() => setShowCareMeExpanded(true)} onOpenPreferences={() => setShowPreferenceForm(true)} />
                             ) : (
                               <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />
@@ -2030,17 +2020,11 @@ function BedsideScreen() {
                   <>
                     {/* Left Column — PatientGreeting + CareMe (guest: welcome + locked services) */}
                     <div className="flex flex-col gap-5 shrink-0 min-h-0 h-full" style={{ width: "400px" }}>
-                      {guestSession ? (
-                        <>
-                          <GuestGreeting onOpenAboutUs={() => setShowAboutUs(true)} />
-                          <div className="flex-1 min-h-0 flex flex-col">
-                            <GuestPatientServices />
-                          </div>
-                        </>
-                      ) : (
+                      {(
                         <>
                           <div className="flex-1 min-h-0 flex flex-col">
                             <PatientGreeting
+                              guest={guestSession}
                               onOpenAboutUs={() => setShowAboutUs(true)}
                               onOpenTour={() => setShowTour(true)}
                               fillImage
@@ -2048,7 +2032,9 @@ function BedsideScreen() {
                             />
                           </div>
                           <div className="flex-1 min-h-0 flex flex-col">
-                            {(!isGuest || careMeUnlocked) ? (
+                            {guestSession ? (
+                              <GuestCareMeCard />
+                            ) : (!isGuest || careMeUnlocked) ? (
                               <CareMe onExpand={() => setShowCareMeExpanded(true)} onOpenPreferences={() => setShowPreferenceForm(true)} />
                             ) : (
                               <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />

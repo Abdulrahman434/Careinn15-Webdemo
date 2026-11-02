@@ -25,6 +25,7 @@ import { useLockedApps } from "../lib/lockedApps";
 import { useLongPress } from "../lib/useLongPress";
 import { AppLockMenu } from "./AppLockMenu";
 import { LockBadge } from "./LockBadge";
+import { GuestLoginPrompt } from "./GuestHome";
 import { useGuestMode } from "../lib/guestMode";
 import { hasSeenAppLockTutorial } from "../lib/appLockTutorialStore";
 import { AppLockTutorialOverlay, TargetTileInfo } from "./AppLockTutorialOverlay";
@@ -135,9 +136,10 @@ const serviceItems = [
   { label: "Call", labelKey: "service.call", svgPaths: [svgPaths.p1a7ce800], clipId: "clip_call" },
 ];
 
-/* Guest sessions gate Consultation / Housekeeping / Meal Ordering behind login —
- * they render as locked previews in the sidebar instead. Call stays open. */
-const GUEST_SERVICE_ITEMS = serviceItems.filter((s) => s.label === "Call");
+/* Guest sessions keep every service tile in its usual place, but these three
+ * are the patient's own — they show locked, and a tap asks for patient login.
+ * Call stays open. */
+const GUEST_LOCKED_SERVICES = new Set(["Consultation", "Housekeeping", "Order Food"]);
 
 const surveyItem = {
   label: "Survey",
@@ -276,7 +278,7 @@ function HubCard({
 }
 
 /* ─── Service Card — CareMe / Call / Education ─── */
-function ServiceCard({ item, onTap, square, contained, compact, onLongPress, isLocked }: { item: (typeof serviceItems)[0] & { viewBox?: string }; onTap?: (e?: React.MouseEvent<HTMLElement>) => void; square?: boolean; contained?: boolean; compact?: boolean; onLongPress: () => void; isLocked: boolean }) {
+function ServiceCard({ item, onTap, square, contained, compact, onLongPress, isLocked, guestLocked }: { item: (typeof serviceItems)[0] & { viewBox?: string }; onTap?: (e?: React.MouseEvent<HTMLElement>) => void; square?: boolean; contained?: boolean; compact?: boolean; onLongPress: () => void; isLocked: boolean; /** Guest session: the patient's own service — dimmed, with a padlock. */ guestLocked?: boolean }) {
   const { theme } = useTheme();
   const { t, fontFamily } = useLocale();
   const { onPointerDown, rippleElements } = useRipple("rgba(255,255,255,0.12)");
@@ -316,6 +318,14 @@ function ServiceCard({ item, onTap, square, contained, compact, onLongPress, isL
     >
       {rippleElements}
       {isLocked && <LockBadge />}
+      {guestLocked && (
+        <Lock
+          size={compact ? 16 : 20}
+          strokeWidth={2.2}
+          className="absolute"
+          style={{ top: compact ? SPACE[1] : SPACE[2], insetInlineEnd: compact ? SPACE[1] : SPACE[2], color: pressed ? theme.textInverse : theme.primaryOn }}
+        />
+      )}
       {/* Icon */}
       <div
         className="flex items-center justify-center shrink-0"
@@ -325,6 +335,7 @@ function ServiceCard({ item, onTap, square, contained, compact, onLongPress, isL
           borderRadius: iconRadius,
           backgroundColor: pressed ? "rgba(255,255,255,0.2)" : theme.engagementFill,
           transition: "background-color 0.1s ease-out",
+          opacity: guestLocked && !pressed ? 0.5 : 1,
         }}
       >
         {item.lucideIcon ? (
@@ -364,6 +375,7 @@ function ServiceCard({ item, onTap, square, contained, compact, onLongPress, isL
           textAlign: "center",
           lineHeight: compact ? "14px" : undefined,
           transition: "color 0.1s ease-out",
+          opacity: guestLocked && !pressed ? 0.6 : 1,
         }}
       >
         {t(item.labelKey)}
@@ -938,7 +950,9 @@ export function ServicesGrid({
   const [setupTarget, setSetupTarget] = useState<{ id: string; name: string } | null>(null);
 
   const shortcutItems = getShortcutItems(theme.id, theme.patientGuidePdf);
-  const visibleServices = guestMode ? GUEST_SERVICE_ITEMS : serviceItems;
+  const visibleServices = serviceItems;
+  const [guestPrompt, setGuestPrompt] = useState(false);
+  const guestLocked = (label: string) => !!guestMode && GUEST_LOCKED_SERVICES.has(label);
   const gridGap = compact ? "gap-3" : "gap-6";
   const bottomHeight = compact ? "140px" : "192px";
 
@@ -1034,7 +1048,7 @@ export function ServicesGrid({
 
       {/* Bottom row — services (default) or shortcuts (swapped) */}
       <div
-        className={`grid ${guestMode && !swapped ? "grid-cols-2" : "grid-cols-4"} ${gridGap} shrink-0 items-center`}
+        className={`grid grid-cols-4 ${gridGap} shrink-0 items-center`}
         style={{ height: bottomHeight }}
       >
         {swapped
@@ -1074,26 +1088,19 @@ export function ServicesGrid({
                     item={item}
                     contained={contained}
                     compact={compact}
-                    onTap={(e) => handleTileTap(e, item.label, t(item.labelKey), undefined, lockedIds.has(item.label), () => onOpenCategory?.(item.label))}
-                    onLongPress={() => handleTileLongPress(item.label, t(item.labelKey), lockedIds.has(item.label))}
+                    onTap={(e) => guestLocked(item.label) ? setGuestPrompt(true) : handleTileTap(e, item.label, t(item.labelKey), undefined, lockedIds.has(item.label), () => onOpenCategory?.(item.label))}
+                    onLongPress={() => { if (!guestLocked(item.label)) handleTileLongPress(item.label, t(item.labelKey), lockedIds.has(item.label)); }}
                     isLocked={lockedIds.has(item.label)}
+                    guestLocked={guestLocked(item.label)}
                   />
                 ) : <div key={item.label} className="w-full h-full" />
               ))}
-              {/* Guest: Your Feedback moves here from the right rail, so the
-                  shortened row still fills its width. */}
-              {guestMode && (
-                <SurveyCardFilled
-                  compact={compact}
-                  onOpen={(e) => handleTileTap(e, "service.shareFeedback", t("service.shareFeedback"), undefined, lockedIds.has("service.shareFeedback"), () => onOpenSurvey?.())}
-                  onLongPress={() => handleTileLongPress("service.shareFeedback", t("service.shareFeedback"), lockedIds.has("service.shareFeedback"))}
-                  isLocked={lockedIds.has("service.shareFeedback")}
-                />
-              )}
             </>
           )
         }
       </div>
+
+      <GuestLoginPrompt visible={guestPrompt} onClose={() => setGuestPrompt(false)} />
 
       {lockMenu && (
         <AppLockMenu
@@ -1155,7 +1162,9 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
   const [setupTarget, setSetupTarget] = useState<{ id: string; name: string } | null>(null);
 
   const shortcutItems = getShortcutItems(theme.id, theme.patientGuidePdf);
-  const visibleServices = guestMode ? GUEST_SERVICE_ITEMS : serviceItems;
+  const visibleServices = serviceItems;
+  const [guestPrompt, setGuestPrompt] = useState(false);
+  const guestLocked = (label: string) => !!guestMode && GUEST_LOCKED_SERVICES.has(label);
 
   /* The rail holds 4 rows. With more shortcuts, the 4th row becomes "More",
      which opens the rest in a panel — nothing is squeezed or dropped. */
@@ -1215,9 +1224,10 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
                 item={item}
                 contained={contained}
                 compact
-                onTap={(e) => handleTileTap(e, item.label, t(item.labelKey), undefined, lockedIds.has(item.label), () => {})}
-                onLongPress={() => handleTileLongPress(item.label, t(item.labelKey), lockedIds.has(item.label))}
+                onTap={(e) => guestLocked(item.label) ? setGuestPrompt(true) : handleTileTap(e, item.label, t(item.labelKey), undefined, lockedIds.has(item.label), () => {})}
+                onLongPress={() => { if (!guestLocked(item.label)) handleTileLongPress(item.label, t(item.labelKey), lockedIds.has(item.label)); }}
                 isLocked={lockedIds.has(item.label)}
+                guestLocked={guestLocked(item.label)}
               />
             </div>
           ))}
@@ -1358,9 +1368,8 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
         </div>
       )}
 
-      {/* Survey — separate card, same height as services row (190px).
-          In guest mode it renders in the shortened services row instead. */}
-      {!guestMode && (
+      {/* Survey — separate card, same height as services row (190px). */}
+      {(
         <div className="shrink-0" style={{ height: "192px" }}>
           <SurveyCardFilled
             onOpen={(e) => handleTileTap(e, "service.shareFeedback", t("service.shareFeedback"), undefined, lockedIds.has("service.shareFeedback"), () => onOpenSurvey?.())}
@@ -1551,7 +1560,9 @@ export function ServiceCardsRow({
   const lockedIds = useLockedApps();
   const [lockMenu, setLockMenu] = useState<string | null>(null);
 
-  const visibleServices = guestMode ? GUEST_SERVICE_ITEMS : serviceItems;
+  const visibleServices = serviceItems;
+  const [guestPrompt, setGuestPrompt] = useState(false);
+  const guestLocked = (label: string) => !!guestMode && GUEST_LOCKED_SERVICES.has(label);
 
   const isServiceVisible = (label: string) => {
     if (label === "Consultation") return visibility.show_care_plan;
@@ -1561,31 +1572,24 @@ export function ServiceCardsRow({
   };
 
   return (
-    <div className={`grid ${guestMode ? "grid-cols-2" : "grid-cols-4"} gap-6 shrink-0 items-center`} style={{ height: "192px" }}>
+    <div className="grid grid-cols-4 gap-6 shrink-0 items-center" style={{ height: "192px" }}>
       {visibleServices.map((item) => (
         isServiceVisible(item.label) ? (
           <ServiceCard
             key={item.label}
             item={item}
             onTap={() => {
-              if (lockedIds.has(item.label)) setLockMenu(item.label + "__open");
+              if (guestLocked(item.label)) setGuestPrompt(true);
+              else if (lockedIds.has(item.label)) setLockMenu(item.label + "__open");
               else onOpenCategory?.(item.label);
             }}
-            onLongPress={() => setLockMenu(item.label)}
+            onLongPress={() => { if (!guestLocked(item.label)) setLockMenu(item.label); }}
             isLocked={lockedIds.has(item.label)}
+            guestLocked={guestLocked(item.label)}
           />
         ) : <div key={item.label} className="w-full h-full" />
       ))}
-      {guestMode && (
-        <SurveyCardFilled
-          onOpen={() => {
-            if (lockedIds.has("service.shareFeedback")) setLockMenu("service.shareFeedback__open");
-            else onOpenSurvey?.();
-          }}
-          onLongPress={() => setLockMenu("service.shareFeedback")}
-          isLocked={lockedIds.has("service.shareFeedback")}
-        />
-      )}
+      <GuestLoginPrompt visible={guestPrompt} onClose={() => setGuestPrompt(false)} />
       {lockMenu && (
         <AppLockMenu
           appId={lockMenu.replace("__open", "")}

@@ -1727,6 +1727,26 @@ const translations: Record<string, TranslationEntry> = {
     ar: "خدمات المريض",
     ur: "مریض کی خدمات"
   },
+  "guest.locked.title": {
+    en: "Patient login required",
+    ar: "يلزم تسجيل دخول المريض",
+    ur: "مریض کا لاگ ان درکار ہے"
+  },
+  "guest.locked.message": {
+    en: "This service is available after patient login.",
+    ar: "هذه الخدمة متاحة بعد تسجيل دخول المريض.",
+    ur: "یہ سروس مریض کے لاگ ان کے بعد دستیاب ہے۔"
+  },
+  "guest.careMe.access.title": {
+    en: "Patient Access",
+    ar: "خاص بالمريض",
+    ur: "مریض کی رسائی"
+  },
+  "guest.careMe.access.message": {
+    en: "CareMe is available after patient login.",
+    ar: "رعايتي متاحة بعد تسجيل دخول المريض.",
+    ur: "میری دیکھ بھال مریض کے لاگ ان کے بعد دستیاب ہے۔"
+  },
   "guest.services.subtitle": {
     en: "Login required to access personalized services.",
     ar: "يلزم تسجيل الدخول للوصول إلى الخدمات الشخصية.",
