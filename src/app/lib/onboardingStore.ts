@@ -70,6 +70,9 @@ const SETUP_KEYS = [
 const LIFECYCLE_KEYS = [
   "careinn-last-interaction-at",
   "careinn-last-scheduled-clear",
+  // Which meal reminders the screen has already said today. Wiping it made
+  // Clear My Data reload straight into "Meal ordering is open" again.
+  "careinn-meal-reminders-fired",
 ] as const;
 
 /** Wipes everything except Device config and Setup answers. */
