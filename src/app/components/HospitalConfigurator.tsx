@@ -544,8 +544,9 @@ function ConfigCard({
   isActive: boolean;
   isBuiltIn: boolean;
   onSwitch: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
+  /** Left out for a guest, who may switch hospitals but not change one. */
+  onEdit?: () => void;
+  onDelete?: () => void;
 }) {
   const { theme: t } = useTheme();
   return (
@@ -625,6 +626,7 @@ function ConfigCard({
             <Check size={14} style={{ color: "#fff" }} strokeWidth={3} />
           </div>
         )}
+        {onEdit && (
         <button
           onClick={onEdit}
           className="flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
@@ -638,7 +640,8 @@ function ConfigCard({
         >
           <Edit2 size={14} style={{ color: t.textMuted }} />
         </button>
-        {!isBuiltIn && (
+        )}
+        {!isBuiltIn && onDelete && (
           <button
             onClick={onDelete}
             className="flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
@@ -662,7 +665,7 @@ function ConfigCard({
 export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
   const { theme: t, allConfigs, activeConfigId, switchConfig, saveConfig, deleteConfig } =
     useTheme();
-  const { isFullAccess, lockedHospitalId } = useAuth();
+  const { isFullAccess, lockedHospitalId, isGuest } = useAuth();
 
   const [view, setView] = useState<"list" | "edit">("list");
   const [editingConfig, setEditingConfig] = useState<HospitalCoreConfig | null>(null);
@@ -837,7 +840,9 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
               style={{ padding: "20px 24px", scrollbarWidth: "none" }}
             >
               {Object.values(allConfigs)
-                .filter(c => isFullAccess || c.id === lockedHospitalId)
+                /* A guest has no hospital of their own, so they may switch
+                   between all of them — but only switch: no edit or delete. */
+                .filter(c => isFullAccess || isGuest || c.id === lockedHospitalId)
                 .map((config) => (
                   <ConfigCard
                     key={config.id}
@@ -845,8 +850,8 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
                     isActive={config.id === activeConfigId}
                     isBuiltIn={BUILTIN_PRESETS.some((p) => p.id === config.id)}
                     onSwitch={() => switchConfig(config.id)}
-                    onEdit={() => startEdit(config, false)}
-                    onDelete={() => deleteConfig(config.id)}
+                    onEdit={isGuest ? undefined : () => startEdit(config, false)}
+                    onDelete={isGuest ? undefined : () => deleteConfig(config.id)}
                   />
                 ))}
             </div>
@@ -854,7 +859,7 @@ export function HospitalConfigurator({ onClose }: { onClose: () => void }) {
             {/* Footer */}
             <div className="flex flex-col gap-2" style={{ padding: "16px 24px 24px 24px" }}>
               {/* Reset DSFH if modified */}
-              {isDsfhModified && (
+              {isDsfhModified && !isGuest && (
                 <button
                   onClick={handleResetDsfh}
                   className="flex items-center justify-center gap-2 w-full cursor-pointer active:scale-[0.97] transition-transform"
