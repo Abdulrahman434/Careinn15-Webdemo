@@ -4,11 +4,12 @@ import { isAndroidApp, getDeviceInfo } from "../utils/androidBridge";
 import { useTheme, WEIGHT, SHADOW, TEXT_STYLE, SPACE, LEADING } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, LogOut } from "lucide-react";
 import { AutoCarousel } from "./AutoCarousel";
 import { useNurseStore } from "./NurseDataStore";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { useGuestMode } from "../lib/guestMode";
+import { useAuth } from "./AuthContext";
 import svgPaths from "../../imports/svg-ca68x68c4i";
 import { getSavedHeroImage, isSlideshowEnabled } from "../lib/backgroundPrefs";
 import { usePatientInfo } from "../lib/usePatientInfo";
@@ -80,10 +81,12 @@ export function PatientGreeting({
     };
   };
   const [showSignOutAppsConfirm, setShowSignOutAppsConfirm] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
   const rippleElements = useRipple(theme.primarySubtle).rippleElements;
   const { isGuest } = useGuestMode();
+  const { logout } = useAuth();
   // Read below by the name tap, which opens the care team. The import was
   // here and the hook was never called, so tapping the patient's own name
   // threw rather than showing who is looking after them.
@@ -147,7 +150,7 @@ export function PatientGreeting({
     >
       {rippleElements}
 
-      {/* Help / App Tour */}
+      {/* Help / App Tour + Log out (Log out is also in Settings) */}
       <div
         className="absolute flex items-center z-10"
         style={{ [isRTL ? "left" : "right"]: SPACE[2], top: SPACE[2], gap: SPACE[1] }}
@@ -169,6 +172,26 @@ export function PatientGreeting({
       >
         <HelpCircle size={20} style={{ color: theme.primaryOn }} strokeWidth={2} />
       </button>
+      {!isGuest && (
+        <button
+          className="flex items-center justify-center rounded-full cursor-pointer active:scale-90 transition-transform"
+          style={{
+            width: theme.touchTargetMin,
+            height: theme.touchTargetMin,
+            backgroundColor: theme.errorSubtle,
+            border: "none",
+            outline: "none",
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowLogoutConfirm(true);
+          }}
+          aria-label={t("general.logout")}
+          title={t("general.logout")}
+        >
+          <LogOut size={20} style={{ color: theme.errorOn, transform: isRTL ? "scaleX(-1)" : undefined }} strokeWidth={2} />
+        </button>
+      )}
       </div>
 
       {/* Text content */}
@@ -379,6 +402,19 @@ export function PatientGreeting({
           clearUserDataAndReload();
         }}
         onCancel={() => setShowSignOutAppsConfirm(false)}
+      />
+
+      <ConfirmDialog
+        visible={showLogoutConfirm}
+        title={t("general.logout")}
+        message={t("settings.account.overview.removeConfirm")}
+        confirmLabel={t("general.logout")}
+        variant="danger"
+        onConfirm={() => {
+          setShowLogoutConfirm(false);
+          logout();
+        }}
+        onCancel={() => setShowLogoutConfirm(false)}
       />
     </div>
   );
