@@ -196,8 +196,9 @@ export function PatientGreeting({
 
       {/* Text content */}
       <div style={{ padding: `${theme.cardPadding} ${theme.cardPadding} ${SPACE[2]} ${theme.cardPadding}` }}>
-        {/* "Hello" shares the row with the corner buttons, so the name below
-            starts clear of them and can use the card's full width. */}
+        {/* "Hello" shares the row with the corner buttons, centred on them, so
+            the name below starts clear of them and can use the card's full
+            width. The row is just tall enough to put its centre on theirs. */}
         <p
           className="flex items-center"
           style={{
@@ -205,7 +206,7 @@ export function PatientGreeting({
             ...TEXT_STYLE.subtitle,
             fontWeight: WEIGHT.medium,
             color: theme.textMuted,
-            minHeight: `calc(${SPACE[2]} + ${theme.touchTargetMin} - ${theme.cardPadding})`,
+            minHeight: `calc((${SPACE[2]} + ${theme.touchTargetMin} / 2 - ${theme.cardPadding}) * 2)`,
           }}
         >
           {t("general.hello")}
@@ -241,7 +242,7 @@ export function PatientGreeting({
         )}
         {/* Badges: [MRN] [Room] [Bed] */}
         {!isGuest && (
-          <div className="flex items-center flex-wrap gap-2" style={{ paddingTop: SPACE[2] }}>
+          <div className="flex items-center flex-wrap gap-2" style={{ paddingTop: SPACE[1] }}>
             <div
               className="flex items-center px-3 py-1.5 cursor-pointer active:scale-95 transition-transform"
               style={{ backgroundColor: theme.primarySubtle, borderRadius: theme.radiusFull }}
