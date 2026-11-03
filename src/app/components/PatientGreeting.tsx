@@ -14,7 +14,7 @@ import svgPaths from "../../imports/svg-ca68x68c4i";
 import { getSavedHeroImage, isSlideshowEnabled } from "../lib/backgroundPrefs";
 import { usePatientInfo } from "../lib/usePatientInfo";
 import { clearUserDataAndReload } from "../lib/clearAllData";
-import { GuestLoginButton, cardSecondaryButtonStyle } from "./GuestHome";
+import { GuestLoginButton, cardSecondaryButtonStyle, CARD_SECONDARY_PRESS } from "./GuestHome";
 
 function AboutUsIcon({ color }: { color?: string }) {
   const { theme } = useTheme();
@@ -404,7 +404,7 @@ export function PatientGreeting({
         {guest ? <GuestLoginButton /> : (
         <button
           data-nav="true"
-          className="flex items-center justify-center gap-2.5 w-full py-3 cursor-pointer active:scale-[0.96] transition-transform duration-150"
+          className={`flex items-center justify-center gap-2.5 w-full py-3 cursor-pointer active:scale-[0.96] ${CARD_SECONDARY_PRESS}`}
           style={cardSecondaryButtonStyle(theme)}
           onClick={(e) => {
             e.stopPropagation();

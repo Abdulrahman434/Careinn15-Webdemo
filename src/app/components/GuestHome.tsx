@@ -16,9 +16,11 @@ import { Heart, Lock, User } from "lucide-react";
 
 /** The quiet card button — no fill, a thin brand outline drawn inside. Clear My Data
  *  and Patient Login share it, so the two cards' bottom buttons match. */
-export function cardSecondaryButtonStyle(theme: { primaryOn: string; radiusMd: string }): CSSProperties {
+export function cardSecondaryButtonStyle(theme: { primarySubtle: string; primaryOn: string; radiusMd: string }): CSSProperties {
   return {
-    backgroundColor: "transparent",
+    // No inline background: it would override the press fill. The press
+    // colour reaches CARD_SECONDARY_PRESS through this variable.
+    ["--card-btn-press" as string]: theme.primarySubtle,
     // Stroke drawn inside the edge (inset shadow, not a border), so the
     // button stays the same height as About Us.
     border: "none",
@@ -29,6 +31,9 @@ export function cardSecondaryButtonStyle(theme: { primaryOn: string; radiusMd: s
   };
 }
 
+/** Press feedback for cardSecondaryButtonStyle: the brand tint fills in while held. */
+export const CARD_SECONDARY_PRESS = "bg-transparent active:bg-[var(--card-btn-press)] transition-[transform,background-color] duration-150";
+
 /** Patient Login — ends the guest session and returns to the access-code screen. */
 export function GuestLoginButton({ fit = false }: { fit?: boolean }) {
   const { theme } = useTheme();
@@ -38,7 +43,7 @@ export function GuestLoginButton({ fit = false }: { fit?: boolean }) {
   return (
     <button
       data-nav="true"
-      className={`flex items-center justify-center gap-2.5 ${fit ? "" : "w-full "}py-3 cursor-pointer active:scale-[0.96] transition-transform duration-150`}
+      className={`flex items-center justify-center gap-2.5 ${fit ? "" : "w-full "}py-3 cursor-pointer active:scale-[0.96] ${CARD_SECONDARY_PRESS}`}
       style={{ ...cardSecondaryButtonStyle(theme), ...(fit && { paddingInline: SPACE[4] }) }}
       onClick={(e) => {
         e.stopPropagation();
