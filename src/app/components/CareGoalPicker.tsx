@@ -225,7 +225,7 @@ export function CareGoalPicker({
               className="cursor-pointer"
               style={{
                 padding: "12px 22px", borderRadius: t.radiusMd,
-                border: `1.5px solid color-mix(in srgb, ${t.textMuted} 45%, transparent)`, background: "none",
+                border: `1.5px solid color-mix(in srgb, ${t.textMuted} 50%, transparent)`, background: "none",
                 color: t.textHeading, fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold,
               }}
             >
