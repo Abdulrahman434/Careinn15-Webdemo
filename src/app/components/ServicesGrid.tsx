@@ -1054,7 +1054,7 @@ export function ServicesGrid({
       </div>
 
       {/* Small fixed gap between hub grid and bottom row */}
-      <div className="shrink-0" style={{ height: compact ? SPACE[2] : SPACE[4] }} />
+      <div className="shrink-0" style={{ height: compact ? SPACE[2] : SPACE[3] }} />
 
       {/* Bottom row — services (default) or shortcuts (swapped) */}
       <div
@@ -1225,7 +1225,7 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
   };
   if (swapped) {
     return (
-      <div className="flex flex-col h-full" style={{ gap: "36px" }}>
+      <div className="flex flex-col h-full" style={{ gap: SPACE[3] }}>
         {/* Services section — matches hub grid height (flex-1) */}
         <div className="flex flex-col gap-6 flex-1 min-h-0 justify-end">
           {visibleServices.map((item) => (
@@ -1292,7 +1292,7 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ gap: "36px" }}>
+    <div className="flex flex-col h-full" style={{ gap: SPACE[3] }}>
       {/* Shortcuts container — single white card behind all */}
       <div
         className="flex flex-col gap-3 flex-1 min-h-0"
