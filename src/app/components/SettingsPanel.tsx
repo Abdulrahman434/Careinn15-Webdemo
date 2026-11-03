@@ -29,7 +29,7 @@ import {
   Trash2,
   LogOut,
   ChevronRight,
-  ChevronDown,
+  Info,
   Minus,
   Plus,
   Check,
@@ -65,7 +65,7 @@ import { PinDialog } from "./PinDialog";
 import { isAccountSet } from "../lib/accountAuth";
 import { resetAppLockTutorial } from "../lib/appLockTutorialStore";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { RELEASES } from "../data/releaseNotes";
+import { RELEASES, CHANGE_TYPES } from "../data/releaseNotes";
 import { useGuestMode } from "../lib/guestMode";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2163,6 +2163,7 @@ export function SettingsPanel({
             <button
               onClick={() => setShowReleaseNotes((v) => !v)}
               aria-expanded={showReleaseNotes}
+              aria-label={tr("settings.whatsNew")}
               className="flex items-center gap-1 cursor-pointer active:scale-95 transition-transform"
               style={{
                 fontFamily: t.fontFamily,
@@ -2176,11 +2177,7 @@ export function SettingsPanel({
               }}
             >
               {versionDisplay}
-              <span style={{ color: t.primaryOn, fontWeight: 600 }}>· {tr("settings.whatsNew")}</span>
-              <ChevronDown
-                size={12}
-                style={{ color: t.primaryOn, transform: showReleaseNotes ? "rotate(180deg)" : undefined, transition: "transform 200ms" }}
-              />
+              <Info size={13} strokeWidth={2.2} style={{ color: t.primaryOn }} />
             </button>
 
             {/* Line 4: IP address */}
@@ -2255,13 +2252,34 @@ export function SettingsPanel({
                       {new Date(rel.date + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                     </span>
                   </div>
-                  <ul style={{ margin: 0, paddingLeft: "16px", listStyle: "disc" }}>
-                    {rel.changes.map((c, i) => (
-                      <li key={i} style={{ fontFamily: t.fontFamily, fontSize: "12px", lineHeight: 1.45, color: t.textBody, marginTop: i ? "4px" : 0 }}>
-                        {c}
-                      </li>
-                    ))}
-                  </ul>
+                  {/* Grouped New → Improved → Fixed; each line leads with its area */}
+                  {CHANGE_TYPES.map(({ type, label }) => {
+                    const items = rel.changes.filter((c) => c.type === type);
+                    if (items.length === 0) return null;
+                    return (
+                      <div key={type} className="flex flex-col" style={{ gap: "4px", marginTop: "2px" }}>
+                        <span
+                          style={{
+                            fontFamily: t.fontFamily,
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            letterSpacing: "0.8px",
+                            textTransform: "uppercase",
+                            color: t.primaryOn,
+                          }}
+                        >
+                          {label}
+                        </span>
+                        <ul style={{ margin: 0, paddingLeft: "16px", listStyle: "disc" }}>
+                          {items.map((c, i) => (
+                            <li key={i} style={{ fontFamily: t.fontFamily, fontSize: "12px", lineHeight: 1.45, color: t.textBody, marginTop: i ? "4px" : 0 }}>
+                              <b style={{ fontWeight: 700, color: t.textHeading }}>{c.area}</b> – {c.text}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
             </div>
