@@ -1919,18 +1919,18 @@ export function SettingsPanel({
               className="flex items-center w-full cursor-pointer active:scale-[0.99] transition-transform"
               style={{
                 gap: "14px", padding: "16px 18px", borderRadius: t.radiusLg,
-                backgroundColor: t.primary, border: "none",
+                backgroundColor: "transparent", border: `1.5px solid ${t.primary}`,
               }}
             >
               <div
                 className="flex items-center justify-center shrink-0"
-                style={{ width: "44px", height: "44px", borderRadius: "13px", backgroundColor: "rgba(255,255,255,0.18)" }}
+                style={{ width: "44px", height: "44px", borderRadius: "13px", backgroundColor: t.surfaceInset }}
               >
-                <Smartphone size={22} color={t.primaryOn} />
+                <Smartphone size={22} color={t.primary} />
               </div>
               <div className="flex-1 text-start">
-                <div style={{ fontSize: "17px", fontWeight: 700, color: t.primaryOn }}>{tr("remote.settings.title")}</div>
-                <div style={{ fontSize: "13px", color: t.primaryOn, opacity: 0.85 }}>{tr("remote.settings.subtitle")}</div>
+                <div style={{ fontSize: "17px", fontWeight: 700, color: t.textHeading }}>{tr("remote.settings.title")}</div>
+                <div style={{ fontSize: "13px", color: t.textMuted }}>{tr("remote.settings.subtitle")}</div>
               </div>
             </button>
           )}
