@@ -818,6 +818,7 @@ const translations: Record<string, TranslationEntry> = {
 
   "settings.room": { en: "Room", ar: "غرفة", ur: "کمرہ" },
   "settings.deviceId": { en: "Device ID", ar: "معرف الجهاز", ur: "ڈیوائس ID" },
+  "settings.whatsNew": { en: "What's new", ar: "ما الجديد", ur: "نیا کیا ہے" },
 
   /* ─── Admission / Discharge Labels ─── */
   "care.admitted": { en: "Admitted", ar: "تاريخ الدخول", ur: "داخلہ" },

@@ -29,6 +29,7 @@ import {
   Trash2,
   LogOut,
   ChevronRight,
+  ChevronDown,
   Minus,
   Plus,
   Check,
@@ -64,6 +65,7 @@ import { PinDialog } from "./PinDialog";
 import { isAccountSet } from "../lib/accountAuth";
 import { resetAppLockTutorial } from "../lib/appLockTutorialStore";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { RELEASES } from "../data/releaseNotes";
 import { useGuestMode } from "../lib/guestMode";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1656,6 +1658,9 @@ export function SettingsPanel({
   const nativeVer = isAndroidApp() ? getNativeAppVersion() : null;
   const appVerLabel = isAndroidApp() ? `V${nativeVer ?? "?"}` : "VWeb";
   const versionDisplay = `App ${appVerLabel} - UI V${UI_VERSION}`;
+  /* Release notes — the version line opens the list of what changed in each
+     version (newest first). See src/app/data/releaseNotes.ts. */
+  const [showReleaseNotes, setShowReleaseNotes] = useState(false);
 
   // Admin memory-reclaim indicator (updates when native fires memory-pressure)
   const [memStats, setMemStats] = useState(getMemoryStats());
@@ -2154,17 +2159,29 @@ export function SettingsPanel({
               {tr("settings.deviceId")}: {deviceIdDisplay}
             </span>
 
-            {/* Line 3: App + UI version (before IP) */}
-            <span
+            {/* Line 3: App + UI version (before IP) — tap for what changed */}
+            <button
+              onClick={() => setShowReleaseNotes((v) => !v)}
+              aria-expanded={showReleaseNotes}
+              className="flex items-center gap-1 cursor-pointer active:scale-95 transition-transform"
               style={{
                 fontFamily: t.fontFamily,
                 fontSize: "11px",
                 fontWeight: 500,
                 color: t.textDisabled,
+                background: "none",
+                border: "none",
+                outline: "none",
+                padding: "2px 6px",
               }}
             >
               {versionDisplay}
-            </span>
+              <span style={{ color: t.primaryOn, fontWeight: 600 }}>· {tr("settings.whatsNew")}</span>
+              <ChevronDown
+                size={12}
+                style={{ color: t.primaryOn, transform: showReleaseNotes ? "rotate(180deg)" : undefined, transition: "transform 200ms" }}
+              />
+            </button>
 
             {/* Line 4: IP address */}
             <span
@@ -2212,6 +2229,43 @@ export function SettingsPanel({
               </span>
             )}
           </div>
+
+          {/* Release notes — every version on main, newest first. Written in
+              English: they are for staff and the team, not the patient. */}
+          {showReleaseNotes && (
+            <div
+              dir="ltr"
+              className="flex flex-col"
+              style={{
+                gap: "12px",
+                padding: "14px 16px",
+                marginBottom: "8px",
+                borderRadius: t.radiusLg,
+                backgroundColor: t.surfaceInset,
+                textAlign: "left",
+              }}
+            >
+              {RELEASES.map((rel) => (
+                <div key={rel.version} className="flex flex-col" style={{ gap: "6px" }}>
+                  <div className="flex items-baseline justify-between" style={{ gap: "8px" }}>
+                    <span style={{ fontFamily: t.fontFamily, fontSize: "13px", fontWeight: 700, color: t.textHeading }}>
+                      V{rel.version}
+                    </span>
+                    <span style={{ fontFamily: t.fontFamily, fontSize: "11px", fontWeight: 500, color: t.textMuted }}>
+                      {new Date(rel.date + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: "16px", listStyle: "disc" }}>
+                    {rel.changes.map((c, i) => (
+                      <li key={i} style={{ fontFamily: t.fontFamily, fontSize: "12px", lineHeight: 1.45, color: t.textBody, marginTop: i ? "4px" : 0 }}>
+                        {c}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
