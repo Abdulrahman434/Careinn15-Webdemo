@@ -1895,7 +1895,7 @@ export function SettingsPanel({
 
         {/* Scrollable content */}
         <div
-          className="flex-1 flex flex-col gap-5"
+          className="flex-1 flex flex-col gap-4"
           style={{
             padding: "8px 24px 24px 24px",
             overflowY: "auto",
@@ -2054,7 +2054,10 @@ export function SettingsPanel({
 
           <div style={{ height: "1px", backgroundColor: t.borderDefault }} />
 
-          {/* Action Buttons — Language & Admin (open dialogs, not toggles) */}
+          {/* Action buttons — one grid, rows as close as the columns, like the
+              tiles above. */}
+          <div className="flex flex-col gap-2.5">
+          {/* Language & Care Team (open dialogs, not toggles) */}
           <div className="flex items-center gap-2.5">
             <ActionButton
               icon={<Globe size={20} style={{ color: t.primaryOn }} />}
@@ -2072,9 +2075,6 @@ export function SettingsPanel({
             />
           </div>
 
-          {/* No margin of its own: the column's gap already separates it, and
-              the two together made this row sit further from the pair above it
-              than from the button below. */}
           <div className="flex items-center gap-2.5">
             <ActionButton
               icon={<UserCircle size={20} style={{ color: t.primaryOn }} />}
@@ -2088,7 +2088,10 @@ export function SettingsPanel({
               onClick={() => setShowAccountDialog(true)}
             />
           </div>
+          </div>
 
+          {/* Clear Data and Log out sit as a pair, as close as the rows above. */}
+          <div className="flex flex-col gap-2.5">
           {/* Clear Data — no flex-1 spacer above it. A filler in a scrolling
               column takes every pixel of slack for itself, which pushed this
               button down and shoved the room and device lines past the bottom
@@ -2143,6 +2146,7 @@ export function SettingsPanel({
               </span>
             </button>
           )}
+          </div>
 
           {/* Room & Device info */}
           <div
