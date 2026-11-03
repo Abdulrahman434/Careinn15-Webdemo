@@ -1253,12 +1253,10 @@ export const CAREINN_CORE: HospitalCoreConfig = {
   hospitalWebsiteUrl: "",
   heroImageUrl: careinnHero,
   heroCropPosition: "50% 40%",
-  primary: "#1B2F5B",
-  primaryDark: "#152446",
-  primaryLight: "#e1e3e9",
-  accent: "#4A90D9",
-  accentDark: "#3970a9",
-  accentLight: "#e7f0fa",
+  // Brand guide: Pantone 534C navy and 305C light blue. Tonal variants are
+  // left out on purpose so buildTheme derives them from these two.
+  primary: "#16274D",
+  accent: "#4EBEE3",
   location: "Jeddah",
 };
 
