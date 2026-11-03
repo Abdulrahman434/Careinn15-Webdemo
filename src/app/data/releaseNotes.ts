@@ -35,6 +35,15 @@ export const CHANGE_TYPES: { type: ChangeType; label: string }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: "1.6.0",
+    date: "2026-11-03",
+    changes: [
+      { type: "improved", area: "Greeting card", text: "Clear My Data is outline only, with the outline inside the button, and fills with the brand tint while pressed. Patient Login matches." },
+      { type: "improved", area: "Settings", text: "Tighter spacing. The action buttons and the Clear Data / Log out pair sit closer together." },
+      { type: "fixed", area: "CareInn", text: "Brand colours restored: navy #16274D and light blue #4EBEE3." },
+    ],
+  },
+  {
     version: "1.5.0",
     date: "2026-11-03",
     changes: [
