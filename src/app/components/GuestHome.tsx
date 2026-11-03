@@ -14,13 +14,13 @@ import { Heart, Lock, User } from "lucide-react";
  * locked offers the same way back: Patient Login.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
-/** The quiet card button — brand tint with a thin brand outline drawn inside. Clear My Data
+/** The quiet card button — no fill, a thin brand outline drawn inside. Clear My Data
  *  and Patient Login share it, so the two cards' bottom buttons match. */
-export function cardSecondaryButtonStyle(theme: { primarySubtle: string; primaryOn: string; radiusMd: string }): CSSProperties {
+export function cardSecondaryButtonStyle(theme: { primaryOn: string; radiusMd: string }): CSSProperties {
   return {
-    backgroundColor: theme.primarySubtle,
-    // Stroke drawn inside the edge (inset shadow, not a border): the fill
-    // stops at the stroke and the button stays the same height as About Us.
+    backgroundColor: "transparent",
+    // Stroke drawn inside the edge (inset shadow, not a border), so the
+    // button stays the same height as About Us.
     border: "none",
     boxShadow: `inset 0 0 0 1.5px color-mix(in srgb, ${theme.primaryOn} 40%, transparent)`,
     outline: "none",
