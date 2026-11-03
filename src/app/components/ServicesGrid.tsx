@@ -385,7 +385,7 @@ function ServiceCard({ item, onTap, square, contained, compact, onLongPress, isL
 }
 
 /* ─── Survey Card — filled version for ShortcutsColumn ─── */
-function SurveyCardFilled({ onOpen, compact, onLongPress, isLocked }: { onOpen: (e?: React.MouseEvent<HTMLElement>) => void; compact?: boolean; onLongPress: () => void; isLocked: boolean }) {
+function SurveyCardFilled({ onOpen, compact, onLongPress, isLocked, guestLocked }: { onOpen: (e?: React.MouseEvent<HTMLElement>) => void; compact?: boolean; onLongPress: () => void; isLocked: boolean; /** Guest session: feedback is the patient's — dimmed, with a padlock. */ guestLocked?: boolean }) {
   const { theme } = useTheme();
   const { t, fontFamily } = useLocale();
   const { onPointerDown, rippleElements } = useRipple("rgba(255,255,255,0.12)");
@@ -419,6 +419,14 @@ function SurveyCardFilled({ onOpen, compact, onLongPress, isLocked }: { onOpen: 
       aria-label="Survey"
     >
       {rippleElements}
+      {guestLocked && (
+        <Lock
+          size={compact ? 16 : 20}
+          strokeWidth={2.2}
+          className="absolute"
+          style={{ top: compact ? SPACE[1] : SPACE[2], insetInlineEnd: compact ? SPACE[1] : SPACE[2], color: pressed ? theme.textInverse : theme.primaryOn }}
+        />
+      )}
       <div
         className="flex items-center justify-center shrink-0"
         style={{
@@ -427,6 +435,7 @@ function SurveyCardFilled({ onOpen, compact, onLongPress, isLocked }: { onOpen: 
           borderRadius: iconRadius,
           backgroundColor: pressed ? "rgba(255,255,255,0.2)" : theme.accent,
           transition: "background-color 0.15s",
+          opacity: guestLocked && !pressed ? 0.5 : 1,
         }}
       >
         <MessageSquareMore size={iconSize} color={pressed ? theme.textInverse : theme.brandOnAccent} strokeWidth={1.5} />
@@ -438,6 +447,7 @@ function SurveyCardFilled({ onOpen, compact, onLongPress, isLocked }: { onOpen: 
           fontWeight: WEIGHT.semibold,
           color: pressed ? theme.textInverse : theme.textHeading,
           transition: "color 0.15s",
+          opacity: guestLocked && !pressed ? 0.6 : 1,
         }}
       >{t("service.shareFeedback")}</span>
     </button>
@@ -1236,11 +1246,13 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
         {/* Share Feedback — fixed 192px to align with shortcuts row */}
         <div className="shrink-0" style={{ height: "192px" }}>
           <SurveyCardFilled
-            onOpen={(e) => handleTileTap(e, "service.shareFeedback", t("service.shareFeedback"), undefined, lockedIds.has("service.shareFeedback"), () => onOpenSurvey?.())}
-            onLongPress={() => handleTileLongPress("service.shareFeedback", t("service.shareFeedback"), lockedIds.has("service.shareFeedback"))}
+            onOpen={(e) => guestMode ? setGuestPrompt(true) : handleTileTap(e, "service.shareFeedback", t("service.shareFeedback"), undefined, lockedIds.has("service.shareFeedback"), () => onOpenSurvey?.())}
+            onLongPress={() => { if (!guestMode) handleTileLongPress("service.shareFeedback", t("service.shareFeedback"), lockedIds.has("service.shareFeedback")); }}
             isLocked={lockedIds.has("service.shareFeedback")}
+            guestLocked={!!guestMode}
           />
         </div>
+        <GuestLoginPrompt visible={guestPrompt} onClose={() => setGuestPrompt(false)} />
         {lockMenu && (
           <AppLockMenu
             appId={lockMenu.replace("__open", "")}
@@ -1372,12 +1384,14 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
       {(
         <div className="shrink-0" style={{ height: "192px" }}>
           <SurveyCardFilled
-            onOpen={(e) => handleTileTap(e, "service.shareFeedback", t("service.shareFeedback"), undefined, lockedIds.has("service.shareFeedback"), () => onOpenSurvey?.())}
-            onLongPress={() => handleTileLongPress("service.shareFeedback", t("service.shareFeedback"), lockedIds.has("service.shareFeedback"))}
+            onOpen={(e) => guestMode ? setGuestPrompt(true) : handleTileTap(e, "service.shareFeedback", t("service.shareFeedback"), undefined, lockedIds.has("service.shareFeedback"), () => onOpenSurvey?.())}
+            onLongPress={() => { if (!guestMode) handleTileLongPress("service.shareFeedback", t("service.shareFeedback"), lockedIds.has("service.shareFeedback")); }}
             isLocked={lockedIds.has("service.shareFeedback")}
+            guestLocked={!!guestMode}
           />
         </div>
       )}
+      <GuestLoginPrompt visible={guestPrompt} onClose={() => setGuestPrompt(false)} />
       {lockMenu && (
         <AppLockMenu
           appId={lockMenu.replace("__open", "")}
