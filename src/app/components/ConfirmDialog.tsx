@@ -121,11 +121,13 @@ export function ConfirmDialog({
               height: "54px",
               borderRadius: t.radiusLg,
               backgroundColor: "transparent",
-              border: `1.5px solid ${t.borderDefault}`,
+              /* The secondary action: brand outline at 40% and brand text —
+                 the neutral 6% edge it had was nearly invisible on white. */
+              border: `1.5px solid color-mix(in srgb, ${t.primaryOn} 40%, transparent)`,
               outline: "none",
             }}
           >
-            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogButton, color: t.textMuted }}>
+            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogButton, color: t.primaryOn }}>
               {cancelLabel || tr("general.cancel")}
             </span>
           </button>
