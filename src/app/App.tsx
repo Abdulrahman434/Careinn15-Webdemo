@@ -1881,12 +1881,15 @@ function BedsideScreen() {
             {/* News Ticker — paused while a full-screen saver or lock covers it */}
             <NewsTicker paused={showTasbih || isLocked} />
 
-            {/* Main Content — 32px gap below ticker */}
-            <div className="flex-1 flex flex-row gap-[40px] px-8 pt-8 pb-6 min-h-0" style={{ position: "relative", zIndex: 1 }}>
+            {/* Main Content — 32px gap below ticker. One spacing system: 32 at the
+                screen edges and between columns, 24 between cards inside a
+                column. Shortcuts (264) is exactly one hub card wide, and the
+                greeting column (400) one and a half. */}
+            <div className="flex-1 flex flex-row gap-[32px] px-8 pt-8 pb-6 min-h-0" style={{ position: "relative", zIndex: 1 }}>
               {patientAdmitted ? (
                 layoutVersion === 3 ? (
                   /* ─── V3 Layout: HubCards left, Greeting+CareMe center, Shortcuts right ─── */
-                  <div className="flex-1 flex flex-row gap-[40px] min-w-0 min-h-0">
+                  <div className="flex-1 flex flex-row gap-[32px] min-w-0 min-h-0">
                     {/* Left — 2×4 Hub Grid */}
                     <div className="flex flex-col shrink-0 min-h-0" style={{ width: "400px" }}>
                       <HubGridCompact
@@ -1939,7 +1942,7 @@ function BedsideScreen() {
                     </div>
 
                     {/* Right — Shortcuts */}
-                    <div className="flex flex-col shrink-0 min-h-0" style={{ width: "280px" }}>
+                    <div className="flex flex-col shrink-0 min-h-0" style={{ width: "264px" }}>
                       <ShortcutsColumn
                         onOpenSurvey={() => setShowSurvey(true)}
                         onLaunchTool={(id) => setActiveTool(id as any)}
@@ -1954,7 +1957,7 @@ function BedsideScreen() {
                 ) : layoutVersion === 1 ? (
                   <>
                     {/* Left Column — PatientGreeting + CareMe (guest: welcome + locked services) */}
-                    <div className="flex flex-col gap-5 shrink-0 min-h-0 h-full" style={{ width: "400px" }}>
+                    <div className="flex flex-col gap-6 shrink-0 min-h-0 h-full" style={{ width: "400px" }}>
                       {/* Guest: the same two cards, in their guest form */}
                       {(
                         <>
@@ -1983,7 +1986,7 @@ function BedsideScreen() {
                     </div>
 
                     {/* Center + Right Column */}
-                    <div className="flex-1 flex flex-row gap-[40px] min-w-0 min-h-0">
+                    <div className="flex-1 flex flex-row gap-[32px] min-w-0 min-h-0">
                       {/* Center — Engagement Grid */}
                       <div className="flex-1 min-w-0 flex flex-col gap-5 min-h-0">
                         <ServicesGrid
@@ -2002,7 +2005,7 @@ function BedsideScreen() {
                       </div>
 
                       {/* Right — Shortcuts */}
-                      <div className="flex flex-col shrink-0 min-h-0" style={{ width: "280px" }}>
+                      <div className="flex flex-col shrink-0 min-h-0" style={{ width: "264px" }}>
                         <ShortcutsColumn
                           onOpenSurvey={() => setShowSurvey(true)}
                           onLaunchTool={(id) => setActiveTool(id as any)}
@@ -2019,7 +2022,7 @@ function BedsideScreen() {
                   /* ─── V2 Layout: Shortcuts in container ─── */
                   <>
                     {/* Left Column — PatientGreeting + CareMe (guest: welcome + locked services) */}
-                    <div className="flex flex-col gap-5 shrink-0 min-h-0 h-full" style={{ width: "400px" }}>
+                    <div className="flex flex-col gap-6 shrink-0 min-h-0 h-full" style={{ width: "400px" }}>
                       {(
                         <>
                           <div className="flex-1 min-h-0 flex flex-col">
@@ -2044,7 +2047,7 @@ function BedsideScreen() {
                       )}
                     </div>
 
-                    <div className="flex-1 flex flex-row gap-[40px] min-w-0 min-h-0">
+                    <div className="flex-1 flex flex-row gap-[32px] min-w-0 min-h-0">
                       {/* Center — Hub grid with shortcuts at bottom */}
                       <div className="flex-1 min-w-0 flex flex-col gap-5 min-h-0">
                         <ServicesGrid
@@ -2064,7 +2067,7 @@ function BedsideScreen() {
                       </div>
 
                       {/* Right — Services stacked vertically */}
-                      <div className="flex flex-col shrink-0 min-h-0" style={{ width: "280px" }}>
+                      <div className="flex flex-col shrink-0 min-h-0" style={{ width: "264px" }}>
                         <ShortcutsColumn
                           contained
                           onOpenSurvey={() => setShowSurvey(true)}
