@@ -16,6 +16,10 @@ CareInn Hospital Bedside Screen — a React kiosk UI that runs on bedside termin
 
 There are no test or lint scripts defined. `tsconfig.json` has `noEmit: true` and `strict: true`; type-check via your editor / `tsc --noEmit`.
 
+## Releases
+
+Every push to `main` is a numbered version. Before pushing: bump `"version"` in `package.json` (shown as "UI V…" at the bottom of Settings) and add an entry with the same number at the top of `src/app/data/releaseNotes.ts`, listing the changes in plain words. Minor bump for visible changes, patch for fix-only pushes. Restart the dev server to see a new version number.
+
 ## Path alias
 
 `@/...` resolves to `src/...` (see `vite.config.ts` and `tsconfig.json`). `assetsInclude` is configured for `**/*.svg` and `**/*.csv` raw imports — do **not** add `.css`, `.ts`, or `.tsx` to that list.
