@@ -315,9 +315,9 @@ export function CarePartnerAgreement({
             className="cursor-pointer active:scale-[0.98] transition-transform"
             style={{
               minHeight: "54px", padding: "0 26px", borderRadius: t.radiusLg,
-              backgroundColor: "transparent", border: `1.5px solid color-mix(in srgb, ${t.primaryOn} 40%, transparent)`,
+              backgroundColor: "transparent", border: `1.5px solid color-mix(in srgb, ${t.textMuted} 45%, transparent)`,
               fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.medium,
-              color: t.primaryOn, outline: "none",
+              color: t.textMuted, outline: "none",
             }}
           >
             {tr("care.pcc.partner.cancel")}

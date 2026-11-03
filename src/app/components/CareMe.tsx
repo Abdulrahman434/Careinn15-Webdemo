@@ -3056,8 +3056,8 @@ function BoardComposer({ theme, dir, onCancel, onSave }: {
             className="cursor-pointer active:scale-[0.98] transition-transform"
             style={{
               minHeight: "54px", padding: "0 26px", borderRadius: theme.radiusLg,
-              backgroundColor: "transparent", border: `1.5px solid color-mix(in srgb, ${theme.primaryOn} 40%, transparent)`,
-              fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.medium, color: theme.primaryOn, outline: "none",
+              backgroundColor: "transparent", border: `1.5px solid color-mix(in srgb, ${theme.textMuted} 45%, transparent)`,
+              fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.medium, color: theme.textMuted, outline: "none",
             }}
           >
             {t("care.pcc.partner.cancel")}

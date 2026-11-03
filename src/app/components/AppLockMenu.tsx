@@ -162,8 +162,8 @@ export function AppLockMenu({
                 style={{
                   backgroundColor: "transparent",
                   borderRadius: t.radiusLg,
-                  border: `1.5px solid color-mix(in srgb, ${t.primaryOn} 40%, transparent)`,
-                  color: t.primaryOn,
+                  border: `1.5px solid color-mix(in srgb, ${t.textMuted} 45%, transparent)`,
+                  color: t.textMuted,
                   fontWeight: 600,
                   fontSize: TYPE_SCALE.base
                 }}
