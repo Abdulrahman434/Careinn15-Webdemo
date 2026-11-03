@@ -1661,6 +1661,12 @@ export function SettingsPanel({
   /* Release notes — the version line opens the list of what changed in each
      version (newest first). See src/app/data/releaseNotes.ts. */
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
+  /* The list grows with every version, so only the newest opens by itself;
+     older ones are one line each, and past the recent few they hide behind
+     "Older versions". */
+  const RECENT_RELEASES = 5;
+  const [openRelease, setOpenRelease] = useState<string | null>(RELEASES[0]?.version ?? null);
+  const [showOlderReleases, setShowOlderReleases] = useState(false);
   /* The notes open below the fold of the panel, so bring them into view —
      otherwise the tap looks like it did nothing. */
   const releaseNotesRef = useRef<HTMLDivElement>(null);
@@ -2261,18 +2267,32 @@ export function SettingsPanel({
                 textAlign: "left",
               }}
             >
-              {RELEASES.map((rel) => (
+              {(showOlderReleases ? RELEASES : RELEASES.slice(0, RECENT_RELEASES)).map((rel) => {
+                const isOpen = openRelease === rel.version;
+                return (
                 <div key={rel.version} className="flex flex-col" style={{ gap: "6px" }}>
-                  <div className="flex items-baseline justify-between" style={{ gap: "8px" }}>
-                    <span style={{ fontFamily: t.fontFamily, fontSize: "13px", fontWeight: 700, color: t.textHeading }}>
-                      V{rel.version}
+                  <button
+                    type="button"
+                    onClick={() => setOpenRelease(isOpen ? null : rel.version)}
+                    aria-expanded={isOpen}
+                    className="flex items-center justify-between w-full cursor-pointer active:opacity-60"
+                    style={{ gap: "8px", minHeight: "32px", padding: 0, border: "none", background: "transparent", textAlign: "left" }}
+                  >
+                    <span className="flex items-center" style={{ gap: "6px" }}>
+                      <ChevronRight
+                        size={14}
+                        style={{ color: t.textMuted, transform: isOpen ? "rotate(90deg)" : undefined, transition: "transform 150ms" }}
+                      />
+                      <span style={{ fontFamily: t.fontFamily, fontSize: "13px", fontWeight: 700, color: t.textHeading }}>
+                        V{rel.version}
+                      </span>
                     </span>
                     <span style={{ fontFamily: t.fontFamily, fontSize: "11px", fontWeight: 500, color: t.textMuted }}>
                       {new Date(rel.date + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                     </span>
-                  </div>
+                  </button>
                   {/* Grouped New → Improved → Fixed; each line leads with its area */}
-                  {CHANGE_TYPES.map(({ type, label }) => {
+                  {isOpen && CHANGE_TYPES.map(({ type, label }) => {
                     const items = rel.changes.filter((c) => c.type === type);
                     if (items.length === 0) return null;
                     return (
@@ -2300,7 +2320,21 @@ export function SettingsPanel({
                     );
                   })}
                 </div>
-              ))}
+                );
+              })}
+              {!showOlderReleases && RELEASES.length > RECENT_RELEASES && (
+                <button
+                  type="button"
+                  onClick={() => setShowOlderReleases(true)}
+                  className="w-full cursor-pointer active:opacity-60"
+                  style={{
+                    minHeight: "32px", padding: 0, border: "none", background: "transparent", textAlign: "left",
+                    fontFamily: t.fontFamily, fontSize: "12px", fontWeight: 700, color: t.primaryOn,
+                  }}
+                >
+                  Older versions ({RELEASES.length - RECENT_RELEASES})
+                </button>
+              )}
             </div>
           )}
         </div>
