@@ -1661,6 +1661,20 @@ export function SettingsPanel({
   /* Release notes — the version line opens the list of what changed in each
      version (newest first). See src/app/data/releaseNotes.ts. */
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
+  /* The notes open below the fold of the panel, so bring them into view —
+     otherwise the tap looks like it did nothing. */
+  const releaseNotesRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = releaseNotesRef.current;
+    if (!showReleaseNotes || !el) return;
+    // Scroll the panel's own scroller only. scrollIntoView would also scroll
+    // the page under the fixed 1920×1080 canvas and leave a blank band.
+    let box: HTMLElement | null = el.parentElement;
+    while (box && !/(auto|scroll)/.test(getComputedStyle(box).overflowY)) box = box.parentElement;
+    if (!box) return;
+    const top = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 16;
+    box.scrollTo({ top, behavior: "smooth" });
+  }, [showReleaseNotes]);
 
   // Admin memory-reclaim indicator (updates when native fires memory-pressure)
   const [memStats, setMemStats] = useState(getMemoryStats());
@@ -2215,6 +2229,7 @@ export function SettingsPanel({
               English: they are for staff and the team, not the patient. */}
           {showReleaseNotes && (
             <div
+              ref={releaseNotesRef}
               dir="ltr"
               className="flex flex-col"
               style={{
