@@ -315,7 +315,7 @@ export function CarePartnerAgreement({
             className="cursor-pointer active:scale-[0.98] transition-transform"
             style={{
               minHeight: "54px", padding: "0 26px", borderRadius: t.radiusLg,
-              backgroundColor: "transparent", border: `1.5px solid color-mix(in srgb, ${t.textMuted} 50%, transparent)`,
+              backgroundColor: "transparent", border: `1.5px solid color-mix(in srgb, ${t.textMuted} 35%, transparent)`,
               fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.medium,
               color: t.textMuted, outline: "none",
             }}

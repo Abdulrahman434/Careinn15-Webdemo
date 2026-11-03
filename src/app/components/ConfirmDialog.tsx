@@ -122,9 +122,9 @@ export function ConfirmDialog({
               borderRadius: t.radiusLg,
               backgroundColor: "transparent",
               /* The secondary action stays grey, but its edge is the muted
-                 text colour at 50% — the 6% border it had was nearly
+                 text colour at 35% — the 6% border it had was nearly
                  invisible on white. */
-              border: `1.5px solid color-mix(in srgb, ${t.textMuted} 50%, transparent)`,
+              border: `1.5px solid color-mix(in srgb, ${t.textMuted} 35%, transparent)`,
               outline: "none",
             }}
           >

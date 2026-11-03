@@ -141,7 +141,7 @@ export function AppLockSetupModal({
               <button
                 onClick={onClose}
                 className="w-full py-3.5 cursor-pointer active:scale-98 transition-all"
-                style={{ fontFamily, ...TEXT_STYLE.dialogButton, color: t.textMuted, backgroundColor: "transparent", borderRadius: t.radiusLg, border: `1.5px solid color-mix(in srgb, ${t.textMuted} 50%, transparent)` }}
+                style={{ fontFamily, ...TEXT_STYLE.dialogButton, color: t.textMuted, backgroundColor: "transparent", borderRadius: t.radiusLg, border: `1.5px solid color-mix(in srgb, ${t.textMuted} 35%, transparent)` }}
               >
                 {tr("appLock.cancel") || "Cancel"}
               </button>
