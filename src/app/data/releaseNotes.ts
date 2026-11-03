@@ -35,6 +35,13 @@ export const CHANGE_TYPES: { type: ChangeType; label: string }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: "1.7.0",
+    date: "2026-11-03",
+    changes: [
+      { type: "improved", area: "Settings", text: "Release notes stay short: the newest version is open, older ones are one line each (tap to open), and anything past the last 5 sits under \"Older versions\"." },
+    ],
+  },
+  {
     version: "1.6.0",
     date: "2026-11-03",
     changes: [
