@@ -535,10 +535,10 @@ const translations: Record<string, TranslationEntry> = {
   "tv.preview": { en: "Preview — channels play on the bedside screen", ar: "معاينة — تعمل القنوات على شاشة السرير", ur: "پیش نظارہ — چینلز بیڈ سائیڈ اسکرین پر چلتے ہیں" },
 
   /* ─── Care Plan Empty States ─── */
-  "careplan.emptyHeader": { en: "No Care Plan available", ar: "لا توجد خطة رعاية متاحة", ur: "کوئی کیئر پلان دستیاب نہیں ہے" },
-  "careplan.emptyDesc": { en: "Your Careplan will appear here once it has been allowed by your Care Team.", ar: "ستظهر خطة الرعاية الخاصة بك هنا بمجرد السماح بها من قبل فريق الرعاية.", ur: "آپ کی کیئر پلان یہاں ظاہر ہوگی جب آپ کی کیئر ٹیم اس کی اجازت دے گی۔" },
-  "discharge.emptyHeader": { en: "No discharge plan available", ar: "لا توجد خطة خروج متاحة", ur: "ڈسچارج پلان دستیاب نہیں ہے" },
-  "discharge.emptyDesc": { en: "Information about your discharge will appear here as you near the end of your stay.", ar: "ستظهر معلومات خروجك هنا مع اقتراب نهاية إقامتك.", ur: "آپ کے ڈسچارج کے بارے میں معلومات آپ کے قیام کے اختتام کے قریب هنا ستظهر۔" },
+  "careplan.emptyHeader": { en: "No Care Plan Yet", ar: "لا توجد خطة رعاية بعد", ur: "ابھی کوئی کیئر پلان نہیں" },
+  "careplan.emptyDesc": { en: "Your care team will add your steps here.", ar: "سيضيف فريق الرعاية خطواتك هنا.", ur: "آپ کی کیئر ٹیم آپ کے مراحل یہاں شامل کرے گی۔" },
+  "discharge.emptyHeader": { en: "No Discharge Plan Yet", ar: "لا توجد خطة خروج بعد", ur: "ابھی کوئی ڈسچارج پلان نہیں" },
+  "discharge.emptyDesc": { en: "Your discharge steps will appear here.", ar: "ستظهر خطوات خروجك هنا.", ur: "آپ کے ڈسچارج کے مراحل یہاں نظر آئیں گے۔" },
 
   "hub.social": { en: "Social", ar: "التواصل", ur: "سماجی" },
   "hub.social.desc": { en: "Stay connected", ar: "ابقَ على تواصل", ur: "رابطے میں رہیں" },
@@ -765,8 +765,8 @@ const translations: Record<string, TranslationEntry> = {
 
 
   /* ─── HIS Data Fallback & Demo Preview ─── */
-  "care.his.noInfo": { en: "No information provided from HIS", ar: "لا تتوفر معلومات من نظام المستشفى (HIS)", ur: "HIS سے کوئی معلومات فراہم نہیں کی گئیں" },
-  "care.his.noInfoSub": { en: "This section currently has no active data linked to your medical record.", ar: "هذا القسم لا يحتوي على بيانات نشطة مرتبطة بملفك الطبي حالياً.", ur: "اس سیکشن میں فی الحال آپ کے میڈیکل ریکارڈ سے مربوط کوئی فعال ڈیٹا نہیں ہے۔" },
+  "care.his.noInfo": { en: "No Data from HIS", ar: "لا توجد بيانات من HIS", ur: "HIS سے کوئی ڈیٹا نہیں" },
+  "care.his.noInfoSub": { en: "Nothing has been added yet.", ar: "لم تتم إضافة أي معلومات بعد.", ur: "ابھی کچھ شامل نہیں کیا گیا۔" },
   "care.his.checkDemo": { en: "Check demo look", ar: "معاينة العرض التوضيحي", ur: "ڈیمو لک دیکھیں" },
   "care.his.hideDemo": { en: "Back to HIS status", ar: "العودة لحالة النظام (HIS)", ur: "HIS کی حالت پر واپس جائیں" },
   "care.his.demoBadge": { en: "Demo Preview", ar: "معاينة تجريبية", ur: "ڈیمو کا پیش نظارہ" },
@@ -834,6 +834,7 @@ const translations: Record<string, TranslationEntry> = {
 
   /* ─── Admission / Discharge Labels ─── */
   "care.admitted": { en: "Admitted", ar: "تاريخ الدخول", ur: "داخلہ" },
+  "care.notSetYet": { en: "Not set yet", ar: "لم يُحدَّد بعد", ur: "ابھی طے نہیں" },
   "care.discharge": { en: "Expected discharge", ar: "الخروج المتوقع", ur: "متوقع ڈسچارج" },
   "care.mrn": { en: "MRN", ar: "رقم الملف", ur: "ایم آر این" },
   "care.room": { en: "Room", ar: "الغرفة", ur: "کمرہ" },
@@ -855,8 +856,8 @@ const translations: Record<string, TranslationEntry> = {
   "care.isolation.desc": { en: "Please follow the precautions posted at the door before entering", ar: "يرجى اتباع الإجراءات الموضحة على الباب قبل الدخول", ur: "داخل ہونے سے پہلے دروازے پر درج ہدایات پر عمل کریں" },
   "care.imaging.locked.title": { en: "Scans & Imaging Are Private", ar: "الأشعة والصور خاصة", ur: "اسکینز اور امیجنگ نجی ہیں" },
   "care.labs.locked.title": { en: "Lab Results Are Private", ar: "نتائج التحاليل خاصة", ur: "لیب رپورٹس نجی ہیں" },
-  "care.labs.locked.desc": { en: "Enter your PIN to view your results on this screen", ar: "أدخل رمزك السري لعرض نتائجك على هذه الشاشة", ur: "اس اسکرین پر اپنے نتائج دیکھنے کے لیے اپنا پن درج کریں" },
-  "care.labs.locked.noPin": { en: "Set a PIN so only you can open your results on this screen", ar: "قم بتعيين رمز سري حتى لا يتمكن أحد سواك من فتح نتائجك على هذه الشاشة", ur: "ایک پن مقرر کریں تاکہ صرف آپ ہی اس اسکرین پر اپنے نتائج کھول سکیں" },
+  "care.labs.locked.desc": { en: "Enter your PIN to see your results", ar: "أدخل رمزك السري لعرض نتائجك", ur: "اپنے نتائج دیکھنے کے لیے پن درج کریں" },
+  "care.labs.locked.noPin": { en: "Set a PIN to keep your results private", ar: "عيّن رمزًا سريًا لتبقى نتائجك خاصة", ur: "اپنے نتائج نجی رکھنے کے لیے پن مقرر کریں" },
   "care.labs.locked.unlock": { en: "Enter PIN", ar: "إدخال الرمز السري", ur: "پن درج کریں" },
   "care.labs.locked.setPin": { en: "Set a PIN", ar: "تعيين رمز سري", ur: "پن مقرر کریں" },
   "care.labs.pin.create": { en: "Choose a 4-digit PIN", ar: "اختر رمزًا سريًا من أربعة أرقام", ur: "4 ہندسوں کا پن منتخب کریں" },

@@ -158,11 +158,31 @@ export function PatientProfileTab({ role }: { role: "nurse" | "doctor" }) {
               <input
                 type="checkbox"
                 checked={store.isHisConnected}
-                onChange={(e) => nurseActions.setHisConnected(e.target.checked)}
+                onChange={(e) => nurseActions.setHisSimulated(e.target.checked)}
                 className="sr-only peer"
               />
               <div className="ni-switch"
                 style={{ backgroundColor: store.isHisConnected ? t.primary : undefined }} />
+            </label>
+          </div>
+          <div className="flex items-center justify-between p-4 rounded-xl border mt-4" style={{ backgroundColor: t.surfaceElevated, borderColor: t.borderDefault }}>
+            <div>
+              <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading }}>
+                Preview empty states
+              </span>
+              <span style={{ fontSize: "12px", color: t.textMuted }} className="block">
+                Care plan and discharge show as empty. Nothing is deleted; stays on until you turn it off
+              </span>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!store.previewEmpty}
+                onChange={(e) => nurseActions.setPreviewEmpty(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="ni-switch"
+                style={{ backgroundColor: store.previewEmpty ? t.primary : undefined }} />
             </label>
           </div>
           <div className="p-4 rounded-xl border mt-4" style={{ backgroundColor: t.surfaceElevated, borderColor: t.borderDefault }}>
@@ -189,6 +209,23 @@ export function PatientProfileTab({ role }: { role: "nurse" | "doctor" }) {
                 </div>
               ))}
             </div>
+          </div>
+          <div className="flex items-center justify-between p-4 rounded-xl border mt-4" style={{ backgroundColor: t.surfaceElevated, borderColor: t.borderDefault }}>
+            <div>
+              <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading }}>
+                Restore demo steps
+              </span>
+              <span style={{ fontSize: "12px", color: t.textMuted }} className="block">
+                Puts back the sample care plan, discharge steps and discharge date
+              </span>
+            </div>
+            <button
+              onClick={() => nurseActions.restoreDemoPlans()}
+              className="cursor-pointer active:scale-95 transition-transform"
+              style={{ minHeight: "44px", padding: "0 18px", borderRadius: "12px", border: "none", backgroundColor: t.primary, color: t.brandOnPrimary, fontSize: "14px", fontWeight: 700 }}
+            >
+              Restore
+            </button>
           </div>
         </div>
       )}

@@ -272,6 +272,13 @@ export interface NurseStoreState {
 
   /** Whether to show the "Nurse View" shortcut button on CareMe */
   nurseViewShortcutVisible: boolean;
+
+  /** Demo only: show the care plan and discharge cards as if nothing had been
+   *  added yet, without deleting anything. Stays on until switched off. */
+  previewEmpty?: boolean;
+  /** Demo only: the nurse-view HIS switch. While on, the app counts as
+   *  connected whatever the device lookup says; only the switch turns it off. */
+  hisSimulated?: boolean;
   
   /** Care Plan Shared State */
   carePlanMode: "daily" | "overall";
@@ -622,6 +629,8 @@ const nurseStore = (() => {
        Anything that is not a build asset — a data: URI, a photo from the
        hospital API — is the nurse's, not ours, and is left alone. */
     careTeam: reseedCareTeamImages(cachedState.careTeam, defaultState.careTeam),
+    previewEmpty: !!cachedState.previewEmpty,
+    hisSimulated: !!cachedState.hisSimulated,
   };
   const listeners = new Set<StoreListener>();
 
@@ -775,6 +784,8 @@ const nurseStore = (() => {
 
       state = {
         ...cleanState,
+        previewEmpty: state.previewEmpty,
+        hisSimulated: state.hisSimulated,
         patient: nextPatient,
         isHisConnected: true,
         hisSections: {
@@ -795,7 +806,14 @@ const nurseStore = (() => {
     },
 
     setHisConnected: (connected: boolean, isLocalFallback?: boolean) => {
-      state = { ...state, isHisConnected: connected, isLocalFallback: !!isLocalFallback };
+      state = { ...state, isHisConnected: connected || !!state.hisSimulated, isLocalFallback: !!isLocalFallback };
+      notify();
+    },
+
+    /** The nurse-view switch. Turning it off only drops the simulation; a
+     *  real connection from the device lookup sets itself again. */
+    setHisSimulated: (on: boolean) => {
+      state = { ...state, hisSimulated: on, isHisConnected: on };
       notify();
     },
 
@@ -1039,6 +1057,24 @@ const nurseStore = (() => {
 
     setNurseViewShortcutVisible: (visible: boolean) => {
       state = { ...state, nurseViewShortcutVisible: visible };
+      notify();
+    },
+
+    setPreviewEmpty: (on: boolean) => {
+      state = { ...state, previewEmpty: on };
+      notify();
+    },
+
+    /** Demo only: put the sample care plan, discharge steps and discharge
+     *  date back after testing. */
+    restoreDemoPlans: () => {
+      const d = createDefaultState();
+      state = {
+        ...state,
+        carePlan: d.carePlan,
+        dischargePlan: d.dischargePlan,
+        patient: { ...state.patient, dischargeDate: d.patient.dischargeDate },
+      };
       notify();
     },
   };

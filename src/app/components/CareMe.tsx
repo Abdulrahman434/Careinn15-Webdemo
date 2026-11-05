@@ -403,21 +403,22 @@ function CardButton({
 
 /** The shape every empty or gated state takes: one disc, a title, a line of
  *  explanation, and — where the state has a single way out — the action.
- *  Same order and the same offset from the top of the body on every card, so
- *  swiping between two empty cards does not move the content around. */
+ *  Centred both ways in the space it is given, the same as the locked
+ *  results card, so every empty card reads alike when swiping between them. */
 function CardEmptyState({
-  theme, isExpanded = false, icon, title, description, action,
+  theme, isExpanded = false, icon, title, description, action, inline = false,
 }: {
   theme: any; isExpanded?: boolean; icon: React.ComponentType<any>;
   title: string; description?: string; action?: React.ReactNode;
+  /** Sits inside a longer card (one module of several): no stretching. */
+  inline?: boolean;
 }) {
   return (
     <div
-      className="flex flex-col items-center text-center"
+      className={`flex flex-col items-center justify-center text-center ${inline ? "" : "flex-1 h-full"}`}
       style={{
         gap: isExpanded ? "14px" : "12px",
-        paddingTop: isExpanded ? "44px" : "32px",
-        paddingBottom: "8px",
+        padding: isExpanded ? "24px 24px" : "16px 12px",
       }}
     >
       <CardIcon
@@ -869,18 +870,21 @@ function HisEmptyStateSection({
   description,
   onCheckDemo,
   isExpanded = false,
+  inline = false,
 }: {
   theme: any;
   title?: string;
   description?: string;
   onCheckDemo: () => void;
   isExpanded?: boolean;
+  inline?: boolean;
 }) {
   const { t } = useLocale();
   return (
     <CardEmptyState
       theme={theme}
       isExpanded={isExpanded}
+      inline={inline}
       icon={Sparkles}
       title={title || t("care.his.noInfo")}
       description={description || t("care.his.noInfoSub")}
@@ -1020,6 +1024,7 @@ function PatientProfileSlide({ theme, isExpanded = false }: { theme: any; isExpa
           isExpanded={isExpanded}
           title={t("care.his.noInfo")}
           description={t("care.his.noInfoSub")}
+          inline
           onCheckDemo={() => setShowDemoEmergency(true)}
         />
       ) : (
@@ -1240,25 +1245,21 @@ function CarePlanSlide({ theme, isExpanded = false }: { theme: any; isExpanded?:
   const { t } = useLocale();
   const nurseStore = useNurseStore();
 
-  return (
-    <div className="flex flex-col gap-3">
-      {/* Admission date — the exact mirror of the discharge date on its own
-          card: a row with a rule under it, not a panel. */}
-      {nurseStore.patient.admissionDate && (
-        <div style={{ paddingBottom: "12px", borderBottom: `1px solid ${theme.borderSubtle}` }}>
-          <FieldRow
-            icon={CalendarDays}
-            theme={theme}
-            isExpanded={isExpanded}
-            label={t("care.admitted")}
-            value={<Ltr nowrap>{nurseStore.patient.admissionDate}</Ltr>}
-          />
-        </div>
-      )}
-
-      <TimelineSlide items={nurseStore.carePlan} theme={theme} isExpanded={isExpanded} type="care" />
+  /* Admission date — the exact mirror of the discharge date on its own
+     card: a row with a rule under it, not a panel. */
+  const header = nurseStore.patient.admissionDate ? (
+    <div style={{ paddingBottom: "12px", borderBottom: `1px solid ${theme.borderSubtle}` }}>
+      <FieldRow
+        icon={CalendarDays}
+        theme={theme}
+        isExpanded={isExpanded}
+        label={t("care.admitted")}
+        value={<Ltr nowrap>{nurseStore.patient.admissionDate}</Ltr>}
+      />
     </div>
-  );
+  ) : null;
+
+  return <TimelineSlide items={nurseStore.carePlan} theme={theme} isExpanded={isExpanded} type="care" header={header} />;
 }
 
 /* Fakeeh only: discharge follows the milestones of Fakeeh's HIS. Settlement
@@ -1277,28 +1278,30 @@ function DischargeSlide({ theme, isExpanded = false }: { theme: any; isExpanded?
   const { t } = useLocale();
   const nurseStore = useNurseStore();
 
-  return (
-    <div className="flex flex-col gap-3">
-      {/* Expected discharge date — moved off the patient profile. It heads the
-          step list rather than sitting in a panel of its own. */}
-      {nurseStore.patient.dischargeDate && (
-        <div style={{ paddingBottom: "12px", borderBottom: `1px solid ${theme.borderSubtle}` }}>
-          <FieldRow isExpanded={isExpanded}
-            icon={CalendarDays}
-            theme={theme}
-            label={t("care.discharge")}
-            value={<Ltr nowrap>{nurseStore.patient.dischargeDate}</Ltr>}
-                      />
-        </div>
-      )}
-
-      <TimelineSlide
-        items={theme.id === "dsfh" ? FAKEEH_DISCHARGE : nurseStore.dischargePlan}
+  /* Expected discharge date — moved off the patient profile. It heads the
+     step list rather than sitting in a panel of its own. Before the care
+     team sets it, it says so in words: a bare dash read as a fault. */
+  const header = (
+    <div style={{ paddingBottom: "12px", borderBottom: `1px solid ${theme.borderSubtle}` }}>
+      <FieldRow isExpanded={isExpanded}
+        icon={CalendarDays}
         theme={theme}
-        isExpanded={isExpanded}
-        type="discharge"
+        label={t("care.discharge")}
+        value={nurseStore.patient.dischargeDate && !nurseStore.previewEmpty
+          ? <Ltr nowrap>{nurseStore.patient.dischargeDate}</Ltr>
+          : <span style={{ color: theme.textMuted }}>{t("care.notSetYet")}</span>}
       />
     </div>
+  );
+
+  return (
+    <TimelineSlide
+      items={theme.id === "dsfh" ? FAKEEH_DISCHARGE : nurseStore.dischargePlan}
+      theme={theme}
+      isExpanded={isExpanded}
+      type="discharge"
+      header={header}
+    />
   );
 }
 
@@ -1318,17 +1321,21 @@ function CareTeamSlide({ theme }: { theme: any }) {
 }
 
 function TimelineSlide({
-  items: rawItems,
+  items: storeItems,
   theme,
   completedLabel,
   isExpanded = false,
   type = "care",
+  header,
 }: {
   items: any[];
   theme: any;
   completedLabel?: string;
   isExpanded?: boolean;
   type?: "care" | "discharge";
+  /** The date row. Left out when the HIS sent nothing for the card: an
+   *  empty card shows only its empty state, the same as every other card. */
+  header?: React.ReactNode;
 }) {
   const R = roles(isExpanded);
   const { t, isRTL } = useLocale();
@@ -1336,6 +1343,7 @@ function TimelineSlide({
   const [showDemo, setShowDemo] = useState(false);
   
   const sectionKey = type === "care" ? "carePlan" : "discharge";
+  const rawItems = store.previewEmpty ? [] : storeItems;
   const hasHisData = store.isHisConnected ? !!store.hisSections?.[sectionKey] : true;
 
   const toISO = (d: Date) => d.toISOString().split("T")[0];
@@ -1378,6 +1386,21 @@ function TimelineSlide({
 
   const dateLabel = prefix ? `${prefix} · ${dateFormatted}` : dateFormatted;
 
+  if (rawItems.length === 0 && !(store.isHisConnected && !hasHisData && showDemo)) {
+    return (
+      <div className="flex flex-col gap-3 h-full">
+        {header}
+        <CardEmptyState
+          theme={theme}
+          isExpanded={isExpanded}
+          icon={type === "care" ? ClipboardList : LogOut}
+          title={type === "care" ? t("careplan.emptyHeader") : t("discharge.emptyHeader")}
+          description={type === "care" ? t("careplan.emptyDesc") : t("discharge.emptyDesc")}
+        />
+      </div>
+    );
+  }
+
   /* Every step, in order. The plan covers the whole stay, so slicing it by
      day hid most of it behind a date picker the patient had to work. */
   const items = rawItems;
@@ -1390,6 +1413,7 @@ function TimelineSlide({
       {store.isHisConnected && !hasHisData && showDemo && (
         <DemoBannerHeader theme={theme} onCloseDemo={() => setShowDemo(false)} />
       )}
+      {header && <div style={{ marginBottom: "4px" }}>{header}</div>}
       <div className="flex flex-col gap-0">
         {/* Timeline Items */}
         {items.length === 0 ? (
