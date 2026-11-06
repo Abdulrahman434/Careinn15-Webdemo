@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from "react";
 
-export type SettingsOptionalRow = "useMyPhone" | "preferences" | "pin" | "logout" | "sampleLanguages" | "btSingle";
+export type SettingsOptionalRow = "useMyPhone" | "preferences" | "pin" | "logout" | "sampleLanguages" | "btSingle" | "psSingle";
 
 export const SETTINGS_OPTIONAL_ROWS: { key: SettingsOptionalRow; label: string }[] = [
   { key: "useMyPhone", label: "Use my phone" },
@@ -17,13 +17,14 @@ export const SETTINGS_OPTIONAL_ROWS: { key: SettingsOptionalRow; label: string }
   { key: "logout", label: "Log out" },
   { key: "sampleLanguages", label: "Language list: 10-language sample" },
   { key: "btSingle", label: "Bluetooth: one device at a time" },
+  { key: "psSingle", label: "Patient Services: one item per request" },
 ];
 
 const KEY = "hbs-settings-preview";
 const EVENT = "settings-preview-changed";
 
 type Flags = Record<SettingsOptionalRow, boolean>;
-const ALL_ON: Flags = { useMyPhone: true, preferences: true, pin: true, logout: true, sampleLanguages: false, btSingle: false };
+const ALL_ON: Flags = { useMyPhone: true, preferences: true, pin: true, logout: true, sampleLanguages: false, btSingle: false, psSingle: false };
 
 export function getSettingsPreview(): Flags {
   try {

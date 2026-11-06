@@ -1,5 +1,6 @@
 import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { DialogFrame, DialogTitleBar, DialogText, DialogActions, DialogButton } from "./dialogKit";
+import { useSettingsPreview } from "./settingsPreview";
 import { motion, AnimatePresence } from "motion/react";
 import {
   HandHelping, Wrench, ClipboardList,
@@ -270,7 +271,11 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
    * — an interpreter and a barber are two visits, not one basket — and asking
    * for them together would tell the ward nothing useful about either. */
   const [picked, setPicked] = useState<CardDef[]>([]);
-  const isMultiTab = tab === "request" || tab === "roomcare";
+  /* Two cases, chosen per hospital (demo: nurse-view switch).
+     Several per request: Request and Room care tick items, then Continue (N).
+     One per request: a tap on any item opens its popup straight away. */
+  const onePerRequest = useSettingsPreview().psSingle;
+  const isMultiTab = !onePerRequest && (tab === "request" || tab === "roomcare");
   const togglePick = (card: CardDef) =>
     setPicked((prev) => prev.some((c) => c.key === card.key)
       ? prev.filter((c) => c.key !== card.key)
@@ -335,7 +340,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
      one and will not send until it has it. */
   /* Supplies and room care always show the basket layout — "N selected" plus
      a chip per item — so one item and five items look the same. */
-  const isBatchSheet = !!selected && (selected.kind === "request" || selected.kind === "roomcare");
+  const isBatchSheet = !onePerRequest && !!selected && (selected.kind === "request" || selected.kind === "roomcare");
 
   const asksLanguage = !!selected && selected.cards.some((c) => c.key === INTERPRETER_KEY);
   const languageMissing = asksLanguage && !selectedChip;
@@ -983,7 +988,10 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
             <DialogTitleBar
               title={selected.cards.length > 1 ? t("need.multi.selected", String(selected.cards.length)) : t(selected.cards[0].key)}
               onClose={closeSheet}
-              icon={selected.cards.length > 1 ? ListChecks : selected.cards[0].Icon}
+              /* The tab's icon, not the item's: items are photos from the
+                 server, unreadable at tile size; the title and the chip
+                 already name the item. */
+              icon={tabs.find((tb) => tb.key === selected.kind)?.Icon ?? HandHelping}
               tone={selected.kind === "report" ? "danger" : "brand"}
             />
             <DialogText style={{ marginTop: "8px", marginBottom: "20px" }}>
