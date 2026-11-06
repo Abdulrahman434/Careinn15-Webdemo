@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { DialogFrame, DialogTitleBar, DialogText, DialogActions, DialogButton } from "./dialogKit";
 import { Smartphone } from "lucide-react";
 import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
@@ -110,80 +111,31 @@ export function RemoteControl() {
 
   return createPortal(
     <>
+      {/* Both on the shared popup (dialogKit.tsx), titled with the Settings
+          row that opened them. */}
       {askAccess && (
-        <div
-          className="fixed inset-0 flex items-center justify-center"
-          style={{ zIndex: Z_TOP, backgroundColor: "rgba(0,0,0,0.55)", fontFamily, direction: dir }}
-        >
-          <div
-            className="flex flex-col items-center text-center"
-            style={{
-              width: "520px", maxWidth: "calc(100vw - 48px)", padding: "32px",
-              backgroundColor: "#FFFFFF", borderRadius: theme.radiusLg, color: "#1A2B3C",
-              gap: "18px", boxShadow: "0 12px 40px rgba(0,0,0,0.25)",
-            }}
-          >
-            <div
-              className="flex items-center justify-center"
-              style={{ width: "56px", height: "56px", borderRadius: "16px", backgroundColor: theme.primary }}
-            >
-              <Smartphone size={30} color="#FFFFFF" />
-            </div>
-            <div style={{ fontSize: "24px", fontWeight: 700 }}>{t("remote.access.title")}</div>
-            <div style={{ fontSize: "17px", lineHeight: 1.6 }}>{t("remote.access.body")}</div>
-            <div className="flex" style={{ gap: "12px" }}>
-              <button
-                onClick={() => { setAskAccess(false); void startRemote({ locale, color: theme.primary }); }}
-                className="cursor-pointer active:scale-[0.97] transition-transform"
-                style={{
-                  height: "52px", padding: "0 28px", borderRadius: theme.radiusFull,
-                  border: `1.5px solid ${theme.primary}`, color: theme.primary, backgroundColor: "transparent",
-                  fontSize: "17px", fontWeight: 600, fontFamily,
-                }}
-              >
-                {t("remote.access.skip")}
-              </button>
-              <button
-                onClick={() => { setAskAccess(false); nativeRemote()?.openSettings(); }}
-                className="cursor-pointer active:scale-[0.97] transition-transform"
-                style={{
-                  height: "52px", padding: "0 28px", borderRadius: theme.radiusFull, border: "none",
-                  backgroundColor: theme.primary, color: "#FFFFFF", fontSize: "17px", fontWeight: 600, fontFamily,
-                }}
-              >
-                {t("remote.access.open")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DialogFrame size="small" position="fixed" zIndex={Z_TOP} onClose={() => setAskAccess(false)}>
+          <DialogTitleBar title={t("remote.settings.title")} onClose={() => setAskAccess(false)} icon={Smartphone} />
+          <DialogText style={{ marginTop: "8px" }}>
+            <b style={{ color: theme.textHeading }}>{t("remote.access.title")}</b> {t("remote.access.body")}
+          </DialogText>
+          <DialogActions>
+            <DialogButton kind="outline" label={t("remote.access.skip")} onClick={() => { setAskAccess(false); void startRemote({ locale, color: theme.primary }); }} />
+            <DialogButton label={t("remote.access.open")} onClick={() => { setAskAccess(false); nativeRemote()?.openSettings(); }} />
+          </DialogActions>
+        </DialogFrame>
       )}
 
       {pairing && (
-        <div
-          className="fixed inset-0 flex items-center justify-center"
-          style={{ zIndex: Z_TOP, backgroundColor: "rgba(0,0,0,0.55)", fontFamily, direction: dir }}
-        >
-          <div
-            className="flex flex-col items-center text-center"
-            style={{
-              width: "520px", maxWidth: "calc(100vw - 48px)", padding: "32px",
-              backgroundColor: "#FFFFFF", borderRadius: theme.radiusLg, color: "#1A2B3C",
-              gap: "18px", boxShadow: "0 12px 40px rgba(0,0,0,0.25)",
-            }}
-          >
-            <div className="flex items-center" style={{ gap: "12px" }}>
-              <div
-                className="flex items-center justify-center"
-                style={{ width: "48px", height: "48px", borderRadius: "14px", backgroundColor: theme.primary }}
-              >
-                <Smartphone size={26} color="#FFFFFF" />
-              </div>
-              <div style={{ fontSize: "24px", fontWeight: 700 }}>{t("remote.pair.title")}</div>
-            </div>
-
+        <DialogFrame size="small" position="fixed" zIndex={Z_TOP} onClose={() => stopRemote("cancelled")}>
+          <DialogTitleBar title={t("remote.settings.title")} onClose={() => stopRemote("cancelled")} icon={Smartphone} />
+          <DialogText style={{ marginTop: "8px" }}>
+            {t("remote.pair.step1")} {t("remote.pair.step2")}
+          </DialogText>
+          <div className="flex flex-col items-center" style={{ gap: "12px", marginTop: "20px" }}>
             <div
               className="flex items-center justify-center"
-              style={{ width: "280px", height: "280px", borderRadius: "16px", border: "1px solid #E2E8F0", padding: "12px", backgroundColor: "#FFFFFF" }}
+              style={{ width: "232px", height: "232px", borderRadius: theme.radiusLg, border: `1px solid ${theme.borderDefault}`, padding: "12px", backgroundColor: "#FFFFFF" }}
             >
               {qrSvg ? (
                 <div
@@ -191,32 +143,17 @@ export function RemoteControl() {
                   dangerouslySetInnerHTML={{ __html: qrSvg.replace("<svg ", '<svg width="100%" height="100%" ') }}
                 />
               ) : (
-                <div style={{ fontSize: "16px", color: "#64748B" }}>{t("remote.pair.preparing")}</div>
+                <div style={{ fontSize: "16px", color: theme.textMuted }}>{t("remote.pair.preparing")}</div>
               )}
             </div>
-
-            <div style={{ fontSize: "17px", lineHeight: 1.6 }}>
-              <div>{t("remote.pair.step1")}</div>
-              <div>{t("remote.pair.step2")}</div>
-            </div>
-
             {s.phase === "waiting" && (
-              <div style={{ fontSize: "15px", color: "#64748B" }}>{t("remote.pair.expires", countdown)}</div>
+              <DialogText align="center">{t("remote.pair.expires", countdown)}</DialogText>
             )}
-
-            <button
-              onClick={() => stopRemote("cancelled")}
-              className="cursor-pointer active:scale-[0.97] transition-transform"
-              style={{
-                height: "52px", padding: "0 40px", borderRadius: theme.radiusFull,
-                border: `1.5px solid ${theme.primary}`, color: theme.primary, backgroundColor: "transparent",
-                fontSize: "17px", fontWeight: 600, fontFamily,
-              }}
-            >
-              {t("remote.cancel")}
-            </button>
           </div>
-        </div>
+          <DialogActions>
+            <DialogButton kind="secondary" label={t("remote.cancel")} onClick={() => stopRemote("cancelled")} />
+          </DialogActions>
+        </DialogFrame>
       )}
 
       {/* With the Android finger the app draws the pointer, above every app. */}

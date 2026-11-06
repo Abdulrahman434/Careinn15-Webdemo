@@ -1,4 +1,5 @@
 import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
+import { DialogFrame, DialogTitleBar, DialogText, DialogActions, DialogButton } from "./dialogKit";
 import { motion, AnimatePresence } from "motion/react";
 import {
   HandHelping, Wrench, ClipboardList,
@@ -975,68 +976,19 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
       {/* ─── Notes dialog ─── */}
       <AnimatePresence>
         {selected && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-[60] flex items-center justify-center px-8"
-            style={{ backgroundColor: theme.overlay }}
-            onClick={closeSheet}
-          >
-            <motion.div
-              initial={{ scale: 0.94, y: 16 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.94, opacity: 0 }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              dir={isRTL ? "rtl" : "ltr"}
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                width: 600,
-                maxWidth: "100%",
-                backgroundColor: theme.surface,
-                borderRadius: theme.radiusXl,
-                boxShadow: SHADOW["2xl"],
-                border: theme.cardBorder,
-                padding: SPACE[4],
-              }}
-            >
-              {/* Header: the item, or a count when several were ticked */}
-              <div className="flex items-center gap-4 mb-5">
-                <div
-                  className="shrink-0 flex items-center justify-center"
-                  style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: theme.radiusMd,
-                    backgroundColor: selected.kind === "report" ? theme.errorSubtle : theme.primaryLight,
-                    fontSize: 34,
-                    lineHeight: 1,
-                  }}
-                >
-                  {(() => {
-                    /* JSX cannot name a component through an index, so the
-                       glyph is resolved before it is rendered. */
-                    const SheetIcon = isBatchSheet ? ListChecks : selected.cards[0].Icon;
-                    return (
-                      <SheetIcon
-                        size={34}
-                        color={selected.kind === "report" ? theme.errorOn : theme.primaryOn}
-                        strokeWidth={1.8}
-                      />
-                    );
-                  })()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p style={{ ...TEXT_STYLE.sectionTitle, fontFamily, color: theme.textHeading }}>
-                    {isBatchSheet
-                      ? t("need.multi.selected", String(selected.cards.length))
-                      : t(selected.cards[0].key)}
-                  </p>
-                  <p style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textMuted, marginTop: 2 }}>
-                    {selected.kind === "report" ? t("need.report.whatIssue") : selected.kind === "complaint" ? t("need.complaint.whatHappened") : t("need.notes.title")}
-                  </p>
-                </div>
-              </div>
+          /* The shared popup (dialogKit.tsx), the content size: titled with
+             the item that was tapped, one line asking for notes, the form,
+             then Cancel and Send. */
+          <DialogFrame size="content" zIndex={60} onClose={closeSheet}>
+            <DialogTitleBar
+              title={selected.cards.length > 1 ? t("need.multi.selected", String(selected.cards.length)) : t(selected.cards[0].key)}
+              onClose={closeSheet}
+              icon={selected.cards.length > 1 ? ListChecks : selected.cards[0].Icon}
+              tone={selected.kind === "report" ? "danger" : "brand"}
+            />
+            <DialogText style={{ marginTop: "8px", marginBottom: "20px" }}>
+              {selected.kind === "report" ? t("need.report.whatIssue") : selected.kind === "complaint" ? t("need.complaint.whatHappened") : t("need.notes.title")}
+            </DialogText>
 
               {/* What is about to be sent — a last look before it goes, and a
                   way to drop one without going back to the grid. */}
@@ -1173,54 +1125,16 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                 </p>
               )}
 
-              {/* Actions */}
-              <div className="flex items-center gap-3 mt-6">
-                <button
-                  onClick={closeSheet}
-                  className="flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] transition-transform"
-                  style={{
-                    flex: "0 0 auto",
-                    height: 60,
-                    padding: "0 28px",
-                    borderRadius: theme.radiusMd,
-                    backgroundColor: theme.surface,
-                    border: theme.borderCard,
-                    outline: "none",
-                  }}
-                >
-                  <X size={20} color={theme.textMuted} strokeWidth={2.4} />
-                  <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: theme.textMuted }}>
-                    {t("need.cancel")}
-                  </span>
-                </button>
-                <button
+              <DialogActions>
+                <DialogButton kind="secondary" label={t("need.cancel")} onClick={closeSheet} />
+                <DialogButton
+                  kind={selected.kind === "report" ? "danger" : "primary"}
+                  label={selected.kind === "report" ? t("need.report.submit") : t("need.send")}
                   onClick={sendRequest}
                   disabled={languageMissing}
-                  className={`flex-1 flex items-center justify-center gap-2.5 transition-transform${languageMissing ? "" : " cursor-pointer active:scale-[0.98]"}`}
-                  style={{
-                    height: 60,
-                    borderRadius: theme.radiusMd,
-                    backgroundColor: selected.kind === "report" ? theme.error : theme.primary,
-                    border: "1.5px solid transparent",
-                    boxShadow: SHADOW.md,
-                    outline: "none",
-                    opacity: languageMissing ? 0.45 : 1,
-                    cursor: languageMissing ? "not-allowed" : "pointer",
-                  }}
-                >
-                  <Send
-                    size={20}
-                    color={theme.textInverse}
-                    strokeWidth={2.4}
-                    style={isRTL ? { transform: "scaleX(-1)" } : undefined}
-                  />
-                  <span style={{ ...TEXT_STYLE.button, fontFamily, color: theme.textInverse }}>
-                    {selected.kind === "report" ? t("need.report.submit") : t("need.send")}
-                  </span>
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
+                />
+              </DialogActions>
+          </DialogFrame>
         )}
       </AnimatePresence>
 
