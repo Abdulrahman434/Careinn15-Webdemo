@@ -3,10 +3,12 @@ import { User, Save, X, CheckCircle2 } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
 import { DateField } from "../DateField";
 import { useNurseStore, nurseActions } from "../../NurseDataStore";
+import { SETTINGS_OPTIONAL_ROWS, setSettingsPreview, useSettingsPreview } from "../../settingsPreview";
 
 export function PatientProfileTab({ role }: { role: "nurse" | "doctor" }) {
   const { theme: t } = useTheme();
   const store = useNurseStore();
+  const settingsPreview = useSettingsPreview();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(store.patient);
   const [saved, setSaved] = useState(false);
@@ -182,6 +184,31 @@ export function PatientProfileTab({ role }: { role: "nurse" | "doctor" }) {
               <div className="ni-switch"
                 style={{ backgroundColor: store.previewEmpty ? t.primary : undefined }} />
             </label>
+          </div>
+          <div className="p-4 rounded-xl border mt-4" style={{ backgroundColor: t.surfaceElevated, borderColor: t.borderDefault }}>
+            <span style={{ fontSize: "14px", fontWeight: 700, color: t.textHeading }}>
+              Settings panel rows
+            </span>
+            <span style={{ fontSize: "12px", color: t.textMuted }} className="block">
+              Show or hide the optional rows, to check the panel with and without them. Stays as set
+            </span>
+            <div className="flex flex-col gap-3 mt-3">
+              {SETTINGS_OPTIONAL_ROWS.map((row) => (
+                <div key={row.key} className="flex items-center justify-between">
+                  <span style={{ fontSize: "14px", fontWeight: 600, color: t.textHeading }}>{row.label}</span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settingsPreview[row.key]}
+                      onChange={(e) => setSettingsPreview(row.key, e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="ni-switch"
+                      style={{ backgroundColor: settingsPreview[row.key] ? t.primary : undefined }} />
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="flex items-center justify-between p-4 rounded-xl border mt-4" style={{ backgroundColor: t.surfaceElevated, borderColor: t.borderDefault }}>
             <div>

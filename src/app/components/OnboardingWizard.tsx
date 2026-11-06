@@ -967,10 +967,10 @@ export function OnboardingWizard({
       {overlay === "bluetooth" && (
         <BluetoothDialog
           onClose={() => { setOverlay(null); goNext(); }}
-          connectedId={btDevice}
+          connectedIds={btDevice ? [btDevice] : []}
           onConnect={(id) => setBtDevice(id)}
-          onDisconnect={() => {
-            if (isAndroidApp() && btDevice) bluetoothBridge.disconnect(btDevice);
+          onDisconnect={(id) => {
+            if (isAndroidApp()) bluetoothBridge.disconnect(id);
             setBtDevice(null);
           }}
         />
