@@ -5,6 +5,7 @@ import { useLocale } from "./i18n";
 import { isAccountSet, setAccount } from "../lib/accountAuth";
 import { lockedAppsStore } from "../lib/lockedApps";
 import { PinKeypad } from "./MyAccountDialog";
+import { DialogFrame, DialogTitleBar, DialogText, DialogActions, DialogButton } from "./dialogKit";
 
 interface AppLockSetupModalProps {
   appId: string;
@@ -70,153 +71,45 @@ export function AppLockSetupModal({
     }, 1400);
   };
 
+  /* On the shared popup (dialogKit.tsx). The question is a standard popup;
+     creating the PIN is a PIN popup, with the same title and lines as Set
+     PIN in Settings — one PIN, so one name for it. */
+  const lockTitle = (tr("appLock.setup.title") || "Lock {name}?").replace("{name}", appName);
+  const creating = step === "create-pin1" || step === "create-pin2";
   return (
-    <div
-      data-no-remote
-      className="fixed inset-0 z-[10000] flex items-center justify-center select-none"
-      style={{
-        backgroundColor: "rgba(15, 23, 42, 0.55)",
-        backdropFilter: "blur(4px)",
-        WebkitBackdropFilter: "blur(4px)",
-        fontFamily,
-      }}
-      dir={isRTL ? "rtl" : "ltr"}
-    >
-      <div className="absolute inset-0" onClick={onClose} />
+    <DialogFrame kind={step === "confirm-lock" ? "standard" : "pin"} position="fixed" zIndex={10000} onClose={onClose}>
+      <DialogTitleBar title={creating ? tr("settings.setPin") : lockTitle} onClose={onClose} icon={Lock} />
 
-      <div
-        className="relative flex flex-col items-center p-7 w-[360px] animate-in fade-in zoom-in-95 duration-200"
-        style={{
-          borderRadius: t.radiusXl,
-          backgroundColor: t.surface,
-          border: t.cardBorder,
-          boxShadow: SHADOW.xl,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
-          style={{
-            top: "12px",
-            insetInlineEnd: "12px",
-            width: "32px",
-            height: "32px",
-            borderRadius: t.radiusFull,
-            backgroundColor: t.tileInactiveBg,
-            border: "none",
-            outline: "none",
-          }}
-        >
-          <X size={16} style={{ color: t.textMuted }} />
-        </button>
+      {step === "confirm-lock" && (
+        <>
+          <DialogText style={{ marginTop: "8px" }}>{tr("appLock.setup.desc")}</DialogText>
+          <DialogActions>
+            <DialogButton kind="secondary" label={tr("appLock.cancel")} onClick={onClose} />
+            <DialogButton label={tr("appLock.setup.confirm")} onClick={handleLockExistingPin} />
+          </DialogActions>
+        </>
+      )}
 
-        {/* ─── CONFIRM LOCK (When PIN already exists) ─── */}
-        {step === "confirm-lock" && (
-          <div className="flex flex-col items-center text-center w-full pt-2">
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center mb-5"
-              style={{ backgroundColor: t.primarySubtle, color: t.primaryOn }}
-            >
-              <Lock size={32} strokeWidth={2.2} />
-            </div>
+      {creating && (
+        <>
+          <DialogText tone={error ? "error" : "muted"} style={{ marginTop: "16px" }}>
+            {error ? tr("pinSetup.mismatch") : step === "create-pin1" ? tr("pinSetup.subtitle") : tr("pinSetup.confirm")}
+          </DialogText>
+          <PinKeypad
+            pin={step === "create-pin1" ? pin1 : pin2}
+            setPin={step === "create-pin1" ? setPin1 : setPin2}
+            error={error}
+            onComplete={step === "create-pin1" ? handlePin1Complete : handlePin2Complete}
+          />
+        </>
+      )}
 
-            <h3 style={{ fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading }}>
-              {tr("appLock.setup.title")?.replace("{name}", appName) || `Lock ${appName}?`}
-            </h3>
-
-            <p className="px-2" style={{ fontFamily, ...TEXT_STYLE.dialogBody, color: t.textMuted, marginTop: "8px" }}>
-              {tr("appLock.setup.desc") || "A PIN will be required whenever someone opens this app."}
-            </p>
-
-            <div className="flex flex-col w-full gap-2.5 mt-6">
-              <button
-                onClick={handleLockExistingPin}
-                className="w-full py-3.5 cursor-pointer active:scale-98 transition-all shadow-sm"
-                style={{ fontFamily, ...TEXT_STYLE.dialogButton, color: t.textInverse, backgroundColor: t.primary, borderRadius: t.radiusLg, border: "none" }}
-              >
-                {tr("appLock.setup.confirm") || "Lock App"}
-              </button>
-              <button
-                onClick={onClose}
-                className="w-full py-3.5 cursor-pointer active:scale-98 transition-all"
-                style={{ fontFamily, ...TEXT_STYLE.dialogButton, color: t.textMuted, backgroundColor: "transparent", borderRadius: t.radiusLg, border: `1.5px solid color-mix(in srgb, ${t.textMuted} 35%, transparent)` }}
-              >
-                {tr("appLock.cancel") || "Cancel"}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ─── CREATE PIN STEP 1 ─── */}
-        {step === "create-pin1" && (
-          <div className="flex flex-col items-center text-center w-full pt-2">
-            <div
-              className="flex items-center justify-center"
-              style={{ width: "56px", height: "56px", borderRadius: t.radiusLg, backgroundColor: t.primarySubtle, marginBottom: "16px" }}
-            >
-              <Lock size={28} style={{ color: t.primaryOn }} />
-            </div>
-
-            <h3 style={{ fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading }}>
-              {tr("appLock.createPin.title") || "Create Privacy PIN"}
-            </h3>
-            <p style={{ fontFamily, ...TEXT_STYLE.dialogBody, color: t.textMuted, marginTop: "8px" }}>
-              {tr("appLock.createPin.sub1") || `Set a 4-digit PIN to lock ${appName}`}
-            </p>
-
-            <div className="w-full">
-              <PinKeypad
-                pin={pin1}
-                setPin={setPin1}
-                error={error}
-                onComplete={handlePin1Complete}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* ─── CREATE PIN STEP 2 (CONFIRMATION) ─── */}
-        {step === "create-pin2" && (
-          <div className="flex flex-col items-center text-center w-full pt-2">
-            <div
-              className="flex items-center justify-center"
-              style={{ width: "56px", height: "56px", borderRadius: t.radiusLg, backgroundColor: t.primarySubtle, marginBottom: "16px" }}
-            >
-              <Lock size={28} style={{ color: t.primaryOn }} />
-            </div>
-
-            <h3 style={{ fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading }}>
-              {tr("appLock.createPin.confirmTitle") || "Confirm Privacy PIN"}
-            </h3>
-            <p style={{ fontFamily, ...TEXT_STYLE.dialogBody, color: t.textMuted, marginTop: "8px" }}>
-              {tr("appLock.createPin.sub2") || "Re-enter your 4-digit PIN to confirm"}
-            </p>
-
-            <div className="w-full">
-              <PinKeypad
-                pin={pin2}
-                setPin={setPin2}
-                error={error}
-                onComplete={handlePin2Complete}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* ─── SUCCESS TOAST ─── */}
-        {step === "success" && (
-          <div className="flex flex-col items-center text-center py-6">
-            <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 animate-in zoom-in-75 duration-200">
-              <CheckCircle2 size={40} strokeWidth={2.2} />
-            </div>
-            <h3 style={{ fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading }}>
-              {toastMessage}
-            </h3>
-          </div>
-        )}
-      </div>
-    </div>
+      {step === "success" && (
+        <div className="flex flex-col items-center" style={{ gap: "16px", padding: "32px 0 16px" }}>
+          <CheckCircle2 size={48} style={{ color: t.successOn }} />
+          <DialogText>{toastMessage}</DialogText>
+        </div>
+      )}
+    </DialogFrame>
   );
 }
