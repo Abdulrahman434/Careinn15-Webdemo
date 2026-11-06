@@ -11,14 +11,15 @@
  * whichever screen raised it.
  */
 export const PIN_METRICS = {
-  /** Card width. Wide enough for the keypad to sit in its own space. */
-  card: 430,
+  /** Card width — the small popup size every PIN and confirm shares
+   *  (dialogKit.tsx). Wide enough for the keypad, not a giant card. */
+  card: 400,
   /** Card padding, all four sides. */
-  pad: 32,
+  pad: 28,
   /** Key face — square, not the old 64x52 letterbox. */
   key: 64,
   /** Between keys: a miss lands on glass, not on the wrong digit. */
-  keyGap: 16,
+  keyGap: 14,
   /** Full-width action under the pad (Continue as Guest, Confirm). */
   action: 56,
   /** Close button's touch area — the WCAG floor, and the minimum the rest of

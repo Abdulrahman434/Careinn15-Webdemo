@@ -1,3 +1,4 @@
+import type React from "react";
 import { useState, useEffect, useRef } from "react";
 import { fetchPatientForDevice } from "../lib/hospitalApi";
 import { isAndroidApp, getDeviceInfo } from "../utils/androidBridge";
@@ -42,9 +43,9 @@ function AboutUsIcon({ color }: { color?: string }) {
    trash can, which reads as deleting something of the patient's.
    Lucide "brush-cleaning" (ISC), inlined: it is newer than the
    lucide-react version this project pins. */
-function BrushCleaningIcon({ size = 20 }: { size?: number }) {
+export function BrushCleaningIcon({ size = 20, style }: { size?: number; style?: React.CSSProperties }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, ...style }} aria-hidden>
       <path d="m16 22-1-4" />
       <path d="M19 14a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v1a1 1 0 0 0 1 1" />
       <path d="M19 14H5l-1.973 6.767A1 1 0 0 0 4 22h16a1 1 0 0 0 .973-1.233z" />
@@ -431,6 +432,7 @@ export function PatientGreeting({
         message={t("settings.clearData.clearMyData.desc")}
         confirmLabel={t("settings.clearData.btn.clearMyData")}
         variant="danger"
+        icon={<BrushCleaningIcon size={20} />}
         onConfirm={() => {
           setShowSignOutAppsConfirm(false);
           clearUserDataAndReload();
@@ -441,9 +443,10 @@ export function PatientGreeting({
       <ConfirmDialog
         visible={showLogoutConfirm}
         title={t("general.logout")}
-        message={t("settings.account.overview.removeConfirm")}
+        message={t("logout.confirm")}
         confirmLabel={t("general.logout")}
         variant="danger"
+        icon={LogOut}
         onConfirm={() => {
           setShowLogoutConfirm(false);
           logout();
