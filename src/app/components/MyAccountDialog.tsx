@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useTheme, TEXT_STYLE } from "./ThemeContext";
 import { PIN_METRICS, PIN_TYPE } from "./pinMetrics";
+import { DialogFrame, DialogTitleBar, DialogText, DialogActions, DialogButton } from "./dialogKit";
+import { ListRowGroup, ListRow } from "./listRow";
+import { KeyRound, Nfc, UserCircle } from "lucide-react";
 import { useLocale } from "./i18n";
 import { usePressFlash } from "./usePressFlash";
 import { setAccount, getAccount, updateNfcCard, clearAccount, verifyPin } from "../lib/accountAuth";
@@ -262,12 +265,18 @@ export function MyPreferencesDialog({
   open: boolean;
   onClose: () => void;
   /** "pin-setup" jumps straight into the existing PIN setup flow and closes
-   *  when it finishes — used by the onboarding wizard. */
-  mode?: "full" | "pin-setup";
+   *  when it finishes — used by the onboarding wizard. "pin" is the Settings
+   *  panel's PIN row: no PIN yet → the same setup flow; a PIN already set →
+   *  the PIN options (Change PIN, Update NFC, Remove PIN), each of which asks
+   *  for the current PIN first. Both close when they finish. */
+  mode?: "full" | "pin-setup" | "pin";
 }) {
   const { theme: t } = useTheme();
   const { t: tr, isRTL } = useLocale();
-  const [step, setStep] = useState<Step>(mode === "pin-setup" ? 'setup-pin1' : 'menu');
+  const changingPin = () => mode === "pin" && !!getAccount();
+  const startStep = (): Step =>
+    mode === "full" ? 'menu' : changingPin() ? 'overview' : 'setup-pin1';
+  const [step, setStep] = useState<Step>(startStep);
   const [pin1, setPin1] = useState("");
   const [pin2, setPin2] = useState("");
   const [error, setError] = useState(false);
@@ -297,7 +306,7 @@ export function MyPreferencesDialog({
 
   useEffect(() => {
     if (open) {
-      setStep(mode === "pin-setup" ? 'setup-pin1' : 'menu');
+      setStep(startStep());
       setPin1("");
       setPin2("");
       setError(false);
@@ -334,18 +343,24 @@ export function MyPreferencesDialog({
     }
   }, step === 'nfc-tap1' || step === 'nfc-tap2');
 
+  /* The latest onClose, read when the timer fires. With onClose in the
+     effect's deps, a parent that re-renders every second (the Settings
+     prayer countdown) restarted the 2 s timer forever and "PIN saved" never
+     closed. */
+  const onCloseRef = React.useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
     if (step === 'success') {
       const timer = setTimeout(() => {
-        if (mode === "pin-setup") {
-          onClose();
+        if (mode !== "full") {
+          onCloseRef.current();
         } else {
           setStep('menu');
         }
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [step, mode, onClose]);
+  }, [step, mode]);
 
   function isValidServerUrl(s: string): boolean {
     // Allows IP, DNS, and optional http/https prefix. Also rejects empty spaces.
@@ -433,134 +448,60 @@ export function MyPreferencesDialog({
         const isCustom = isCustomConfig();
         const apiConfig = getApiConfig();
         return (
-          <div className="flex flex-col" style={{ padding: "16px 20px 24px" }}>
-            <div className="flex flex-col gap-2">
-              {/* SECTION 1: Password */}
-              <button
-                onClick={() => {
-                  if (getAccount()) {
-                    setStep('overview');
-                  } else {
-                    setStep('setup-pin1');
-                  }
-                }}
-                className="flex items-center gap-3 w-full text-left cursor-pointer active:scale-[0.98] transition-transform"
-                style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none" }}
-              >
-                <div style={{ padding: "8px", borderRadius: t.radiusMd, backgroundColor: t.primarySubtle }}>
-                  <Shield size={20} style={{ color: t.primaryOn }} />
-                </div>
-                <div className="flex flex-col flex-1">
-                  <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: t.textHeading }}>
-                    Password
-                  </span>
-                  <span style={{ fontFamily: t.fontFamily, fontSize: "13px", color: t.textMuted }}>
-                    {getAccount() ? "Manage PIN & NFC" : "Set / Change PIN"}
-                  </span>
-                </div>
-                <ChevronRight size={20} style={{ color: t.textMuted, transform: isRTL ? 'rotate(180deg)' : '' }} />
-              </button>
-
-              {/* SECTION 2: Server */}
-              <button
-                onClick={() => isAdminUnlocked && setStep('server')}
-                className={`flex items-center gap-3 w-full text-left transition-transform ${isAdminUnlocked ? 'cursor-pointer active:scale-[0.98]' : ''}`}
-                style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none", opacity: isAdminUnlocked ? 1 : 0.5 }}
-              >
-                <div style={{ padding: "8px", borderRadius: t.radiusMd, backgroundColor: t.primarySubtle }}>
-                  <Globe size={20} style={{ color: t.primaryOn }} />
-                </div>
-                <div className="flex flex-col flex-1">
-                  <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: t.textHeading }}>
-                    Server
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span style={{ fontFamily: t.fontFamily, fontSize: "13px", color: isCustom ? t.primaryOn : t.textMuted }}>
-                      {isAdminUnlocked ? apiConfig.serverIp : "Requires Admin"}
-                    </span>
-                    {isCustom && isAdminUnlocked && <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: t.primary }} />}
-                  </div>
-                </div>
-                <ChevronRight size={20} style={{ color: t.textMuted, transform: isRTL ? 'rotate(180deg)' : '' }} />
-              </button>
-
-              {/* SECTION 3: Backgrounds */}
-              <button
+          /* The Settings list rows (listRow.tsx): same rows as the panel
+             that opened this, not a second style of grey boxes. */
+          <div className="flex flex-col" style={{ paddingTop: "16px" }}>
+            <ListRowGroup>
+              <ListRow
+                icon={KeyRound}
+                label={getAccount() ? tr("settings.pin") : tr("settings.setPin")}
+                value={getAccount() ? tr("settings.pin.subtitle.set") : tr("settings.pin.subtitle.unset")}
+                onClick={() => setStep(getAccount() ? 'overview' : 'setup-pin1')}
+              />
+              <ListRow
+                icon={Image}
+                label={tr("prefs.backgrounds")}
+                value={getSavedHeroImage() ? tr("prefs.backgrounds.custom") : (isSlideshowEnabled() ? tr("prefs.backgrounds.slideshow") : tr("prefs.backgrounds.default"))}
                 onClick={() => setStep('backgrounds')}
-                className="flex items-center gap-3 w-full text-left cursor-pointer active:scale-[0.98] transition-transform"
-                style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none" }}
-              >
-                <div style={{ padding: "8px", borderRadius: t.radiusMd, backgroundColor: t.primarySubtle }}>
-                  <Image size={20} style={{ color: t.primaryOn }} />
-                </div>
-                <div className="flex flex-col flex-1">
-                  <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: t.textHeading }}>
-                    {tr("prefs.backgrounds")}
-                  </span>
-                  <span style={{ fontFamily: t.fontFamily, fontSize: "13px", color: t.textMuted }}>
-                    {getSavedHeroImage() ? tr("prefs.backgrounds.custom") : (isSlideshowEnabled() ? tr("prefs.backgrounds.slideshow") : tr("prefs.backgrounds.default"))}
-                  </span>
-                </div>
-                <ChevronRight size={20} style={{ color: t.textMuted, transform: isRTL ? 'rotate(180deg)' : '' }} />
-              </button>
-
-              {/* SECTION 4: Layout Mode */}
-              <button
-                onClick={() => setStep('layout-mode')}
-                className="flex items-center gap-3 w-full text-left cursor-pointer active:scale-[0.98] transition-transform"
-                style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none" }}
-              >
-                <div style={{ padding: "8px", borderRadius: t.radiusMd, backgroundColor: t.primarySubtle }}>
-                  <Layout size={20} style={{ color: t.primaryOn }} />
-                </div>
-                <div className="flex flex-col flex-1">
-                  <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: t.textHeading }}>
-                    Layout Mode
-                  </span>
-                  <span style={{ fontFamily: t.fontFamily, fontSize: "13px", color: t.textMuted }}>
-                    {layoutModeValue === 1 ? 'Layout 1 selected' : layoutModeValue === 2 ? 'Layout 2 selected' : 'Layout 3 selected'}
-                  </span>
-                </div>
-                <ChevronRight size={20} style={{ color: t.textMuted, transform: isRTL ? 'rotate(180deg)' : '' }} />
-              </button>
-
-              {/* SECTION 5: Setup your Preferences (re-opens the onboarding wizard) */}
+              />
               {(() => {
                 const setupIncomplete = localStorage.getItem("careinn-onboarding-complete") !== "true";
                 return (
-                  <button
+                  <ListRow
+                    icon={SlidersHorizontal}
+                    label={tr("prefs.setup")}
+                    value={setupIncomplete ? tr("prefs.setup.incomplete") : tr("prefs.setup.review")}
+                    valueTone={setupIncomplete ? "warning" : "muted"}
                     onClick={() => {
                       onClose();
                       // App root listens: closes Settings and opens the wizard
                       window.dispatchEvent(new CustomEvent("careinn-open-onboarding"));
                     }}
-                    className="flex items-center gap-3 w-full text-left cursor-pointer active:scale-[0.98] transition-transform"
-                    style={{
-                      padding: "16px", borderRadius: t.radiusLg,
-                      backgroundColor: setupIncomplete ? t.warningSubtle : t.tileInactiveBg,
-                      border: setupIncomplete ? `1.5px solid ${t.warning}55` : "none",
-                    }}
-                  >
-                    <div style={{ padding: "8px", borderRadius: t.radiusMd, backgroundColor: setupIncomplete ? "#FFFFFF" : t.primarySubtle }}>
-                      <SlidersHorizontal size={20} style={{ color: setupIncomplete ? t.warning : t.primaryOn }} />
-                    </div>
-                    <div className="flex flex-col flex-1">
-                      <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: t.textHeading }}>
-                        {tr("prefs.setup")}
-                      </span>
-                      <span style={{ fontFamily: t.fontFamily, fontSize: "13px", color: setupIncomplete ? t.warning : t.textMuted }}>
-                        {setupIncomplete ? tr("prefs.setup.incomplete") : tr("prefs.setup.review")}
-                      </span>
-                    </div>
-                    {setupIncomplete
-                      ? <div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: t.warning }} />
-                      : <ChevronRight size={20} style={{ color: t.textMuted, transform: isRTL ? 'rotate(180deg)' : '' }} />}
-                  </button>
+                  />
                 );
               })()}
+            </ListRowGroup>
 
-              {/* SECTION 6: Admin Settings */}
-              <button
+            {/* Staff only, in their own group. */}
+            <div style={{ height: "12px" }} />
+            <ListRowGroup>
+              <ListRow
+                icon={Layout}
+                label="Layout Mode"
+                value={layoutModeValue === 1 ? 'Layout 1 selected' : layoutModeValue === 2 ? 'Layout 2 selected' : 'Layout 3 selected'}
+                onClick={() => setStep('layout-mode')}
+              />
+              <ListRow
+                icon={Globe}
+                label="Server"
+                value={isAdminUnlocked ? `${apiConfig.serverIp}${isCustom ? " · custom" : ""}` : "Requires Admin"}
+                disabled={!isAdminUnlocked}
+                onClick={() => setStep('server')}
+              />
+              <ListRow
+                icon={Settings}
+                label="Admin Settings"
+                value={isAdminUnlocked ? "Unlocked" : "PIN protected"}
                 onClick={() => {
                   if (isAdminUnlocked) {
                     setStep('admin-controls');
@@ -571,30 +512,15 @@ export function MyPreferencesDialog({
                     setStep('verify-current-pin');
                   }
                 }}
-                className="flex items-center gap-3 w-full text-left cursor-pointer active:scale-[0.98] transition-transform"
-                style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none" }}
-              >
-                <div style={{ padding: "8px", borderRadius: t.radiusMd, backgroundColor: t.primarySubtle }}>
-                  <Settings size={20} style={{ color: t.primaryOn }} />
-                </div>
-                <div className="flex flex-col flex-1">
-                  <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: t.textHeading }}>
-                    Admin Settings
-                  </span>
-                  <span style={{ fontFamily: t.fontFamily, fontSize: "13px", color: t.textMuted }}>
-                    {isAdminUnlocked ? "Unlocked" : "PIN protected"}
-                  </span>
-                </div>
-                <ChevronRight size={20} style={{ color: t.textMuted, transform: isRTL ? 'rotate(180deg)' : '' }} />
-              </button>
-            </div>
+              />
+            </ListRowGroup>
           </div>
         );
       }
 
       case 'server':
         return (
-          <div className="flex flex-col" style={{ padding: "20px" }}>
+          <div className="flex flex-col" style={{ paddingTop: "16px" }}>
             <label style={{ fontFamily: t.fontFamily, fontSize: "13px", fontWeight: 600, color: t.textMuted, marginBottom: 4 }}>Server IP</label>
             <input
               type="text"
@@ -733,7 +659,7 @@ export function MyPreferencesDialog({
 
       case 'admin-controls':
         return (
-          <div className="flex flex-col items-center" style={{ padding: "28px 24px" }}>
+          <div className="flex flex-col items-center" style={{ paddingTop: "16px" }}>
             <Shield size={40} style={{ color: t.primaryOn, marginBottom: 16 }} />
             <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, marginBottom: 8, textAlign: "center" }}>
               Admin Controls
@@ -768,66 +694,37 @@ export function MyPreferencesDialog({
           </div>
         );
 
+      /* ── PIN family ──
+         On the shared popup (dialogKit.tsx). The title bar names what was
+         tapped (Set PIN, Change PIN, Remove PIN, NFC card); each step adds
+         one line saying what to do, then the keypad or the actions. */
       case 'overview':
         return (
-          <div className="flex flex-col items-center" style={{ padding: "28px 24px" }}>
-            <div
-              className="flex items-center justify-center mb-4"
-              style={{ width: "56px", height: "56px", borderRadius: t.radiusFull, backgroundColor: t.primarySubtle }}
-            >
-              <CheckCircle size={28} style={{ color: t.primaryOn }} />
-            </div>
-            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, marginBottom: "4px" }}>
-              {tr("settings.preferences.subtitle.set")}
-            </span>
-            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogBody, color: t.textMuted, marginBottom: "24px" }}>
-              Last updated: {account?.setAt ? new Date(account.setAt).toLocaleDateString() : 'Unknown'}
-            </span>
-
-            <div className="flex flex-col w-full gap-3">
-              <button
-                onClick={() => {
-                  setVerifyPinVal("");
-                  setError(false);
-                  setPendingAction('reset-pin');
-                  setStep('verify-current-pin');
-                }}
-                className="flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97]"
-                style={{ height: "44px", borderRadius: t.radiusMd, backgroundColor: t.primarySubtle, border: `1px solid ${t.primary}44` }}
-              >
-                <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 600, color: t.primaryOn }}>
-                  Change PIN
-                </span>
-              </button>
-              <button
-                onClick={() => {
-                  setVerifyPinVal("");
-                  setError(false);
-                  setPendingAction('reset-nfc');
-                  setStep('verify-current-pin');
-                }}
-                className="flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97]"
-                style={{ height: "44px", borderRadius: t.radiusMd, backgroundColor: t.tileInactiveBg, border: `1px solid ${t.borderDefault}` }}
-              >
-                <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 600, color: t.textHeading }}>
-                  Update NFC
-                </span>
-              </button>
-              <button
-                onClick={() => {
-                  setVerifyPinVal("");
-                  setError(false);
-                  setPendingAction('remove-account');
-                  setStep('verify-current-pin');
-                }}
-                className="flex items-center justify-center gap-2 cursor-pointer active:scale-[0.97] mt-2"
-                style={{ height: "44px", border: "none", background: "none" }}
-              >
-                <Trash2 size={16} style={{ color: t.errorOn }} />
-                <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 600, color: t.errorOn }}>
-                  Remove PIN
-                </span>
-              </button>
+          <div className="flex flex-col" style={{ paddingTop: "8px" }}>
+            <DialogText>{tr("pin.overview.desc")}</DialogText>
+            {/* Choices, not actions: the Settings list rows, so they read as
+                "open this", not as Cancel. Remove sits apart, in red. */}
+            <div className="flex flex-col" style={{ gap: "12px", marginTop: "24px" }}>
+              <ListRowGroup>
+                <ListRow
+                  icon={KeyRound}
+                  label={tr("settings.changePin")}
+                  onClick={() => { setVerifyPinVal(""); setError(false); setPendingAction('reset-pin'); setStep('verify-current-pin'); }}
+                />
+                <ListRow
+                  icon={Nfc}
+                  label={tr("pin.updateNfc")}
+                  onClick={() => { setVerifyPinVal(""); setError(false); setPendingAction('reset-nfc'); setStep('verify-current-pin'); }}
+                />
+              </ListRowGroup>
+              <ListRowGroup>
+                <ListRow
+                  icon={Trash2}
+                  tone="danger"
+                  label={tr("pin.remove")}
+                  onClick={() => { setVerifyPinVal(""); setError(false); setPendingAction('remove-account'); setStep('verify-current-pin'); }}
+                />
+              </ListRowGroup>
             </div>
           </div>
         );
@@ -835,15 +732,7 @@ export function MyPreferencesDialog({
       case 'setup-pin1':
         return (
           <>
-            <div className="flex flex-col items-center" style={{ padding: "28px 24px 0 24px" }}>
-              <Shield size={28} style={{ color: t.primaryOn, marginBottom: "16px" }} />
-              <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center" }}>
-                {tr("pinSetup.title")}
-              </span>
-              <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogBody, color: t.textMuted, textAlign: "center", marginTop: "8px" }}>
-                {tr("pinSetup.subtitle")}
-              </span>
-            </div>
+            <DialogText align="center" style={{ marginTop: "16px" }}>{tr("pinSetup.subtitle")}</DialogText>
             <PinKeypad pin={pin1} setPin={setPin1} error={false} onComplete={() => setStep('setup-pin2')} />
           </>
         );
@@ -851,12 +740,7 @@ export function MyPreferencesDialog({
       case 'setup-pin2':
         return (
           <>
-            <div className="flex flex-col items-center" style={{ padding: "28px 24px 0 24px" }}>
-              <Shield size={28} style={{ color: t.primaryOn, marginBottom: "16px" }} />
-              <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center" }}>
-                {tr("pinSetup.confirm")}
-              </span>
-            </div>
+            <DialogText align="center" style={{ marginTop: "16px" }}>{tr("pinSetup.confirm")}</DialogText>
             <PinKeypad
               pin={pin2}
               setPin={setPin2}
@@ -881,106 +765,63 @@ export function MyPreferencesDialog({
 
       case 'setup-pin-mismatch':
         return (
-          <div className="flex flex-col items-center justify-center" style={{ padding: "40px 24px" }}>
-            <AlertCircle size={40} style={{ color: t.accentOn, marginBottom: "16px" }} />
-            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center" }}>
-              {tr("pinSetup.mismatch")}
-            </span>
+          <div className="flex flex-col items-center" style={{ gap: "16px", padding: "32px 0 16px" }}>
+            <AlertCircle size={40} style={{ color: t.errorOn }} />
+            <DialogText align="center" tone="error">{tr("pinSetup.mismatch")}</DialogText>
           </div>
         );
 
       case 'nfc-prompt':
         return (
-          <div className="flex flex-col items-center" style={{ padding: "32px 24px" }}>
-            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-              <Shield size={32} style={{ color: t.primaryOn }} />
-            </div>
-            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center" }}>
-              {tr("nfcSetup.title")}
-            </span>
-            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogBody, color: t.textMuted, textAlign: "center", marginTop: "12px", marginBottom: "24px" }}>
-              {tr("nfcSetup.subtitle")}
-            </span>
-            <div className="flex gap-3 w-full">
-              <button
-                onClick={() => {
-                  setAccount(pin1, null).then(() => setStep('success'));
-                }}
-                className="flex-1 flex items-center justify-center"
-                style={{ height: "48px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none" }}
-              >
-                <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogButton, color: t.textHeading }}>
-                  {tr("nfcSetup.skip")}
-                </span>
-              </button>
-              <button
-                onClick={() => setStep('nfc-tap1')}
-                className="flex-1 flex items-center justify-center"
-                style={{ height: "48px", borderRadius: t.radiusLg, backgroundColor: t.primary, border: "none" }}
-              >
-                <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogButton, color: "#fff" }}>
-                  {tr("nfcSetup.pair")}
-                </span>
-              </button>
-            </div>
-          </div>
+          <>
+            <DialogText style={{ marginTop: "8px" }}>{tr("nfcSetup.subtitle")}</DialogText>
+            <DialogActions>
+              <DialogButton kind="secondary" label={tr("nfcSetup.skip")} onClick={() => { setAccount(pin1, null).then(() => setStep('success')); }} />
+              <DialogButton label={tr("nfcSetup.pair")} onClick={() => setStep('nfc-tap1')} />
+            </DialogActions>
+          </>
         );
 
       case 'nfc-tap1':
       case 'nfc-tap2':
         return (
-          <div className="flex flex-col items-center" style={{ padding: "40px 24px" }}>
-            <div className="relative mb-8 flex items-center justify-center" style={{ width: 100, height: 100 }}>
+          <div className="flex flex-col items-center" style={{ paddingTop: "24px" }}>
+            <div className="relative mb-6 flex items-center justify-center" style={{ width: 100, height: 100 }}>
               <div className="absolute inset-0 rounded-full animate-ping opacity-20" style={{ backgroundColor: t.primary }}></div>
               <div className="absolute inset-2 rounded-full animate-ping opacity-40 animation-delay-150" style={{ backgroundColor: t.primary }}></div>
               <div className="relative rounded-full z-10 flex items-center justify-center" style={{ width: 64, height: 64, backgroundColor: t.primary }}>
-                <Shield size={32} color="#FFFFFF" />
+                <Shield size={32} style={{ color: t.brandOnPrimary }} />
               </div>
             </div>
-            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center" }}>
-              {step === 'nfc-tap1' ? tr("nfcSetup.tap1") : tr("nfcSetup.tap2")}
-            </span>
-            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogBody, color: t.textMuted, textAlign: "center", marginTop: "12px", marginBottom: "24px" }}>
-              {tr("nfcSetup.hold")}
-            </span>
-            <button
-              onClick={() => {
-                if (getAccount()) setStep('menu');
-                else setStep('nfc-prompt');
-              }}
-              style={{ padding: "10px 20px", color: t.textMuted, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: t.fontFamily }}
-            >
-              {tr("general.cancel")}
-            </button>
+            <DialogText align="center">
+              {step === 'nfc-tap1' ? tr("nfcSetup.tap1") : tr("nfcSetup.tap2")} · {tr("nfcSetup.hold")}
+            </DialogText>
+            <DialogActions>
+              <DialogButton
+                kind="secondary"
+                label={tr("general.cancel")}
+                onClick={() => { if (getAccount()) setStep(backStep); else setStep('nfc-prompt'); }}
+              />
+            </DialogActions>
           </div>
         );
 
       case 'nfc-mismatch':
         return (
-          <div className="flex flex-col items-center justify-center" style={{ padding: "40px 24px" }}>
-            <AlertCircle size={40} style={{ color: t.accentOn, marginBottom: "16px" }} />
-            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center" }}>
-              {tr("nfcSetup.mismatch")}
-            </span>
+          <div className="flex flex-col items-center" style={{ gap: "16px", padding: "32px 0 16px" }}>
+            <AlertCircle size={40} style={{ color: t.errorOn }} />
+            <DialogText align="center" tone="error">{tr("nfcSetup.mismatch")}</DialogText>
           </div>
         );
 
       case 'verify-current-pin':
         return (
-          <div className="flex flex-col items-center" style={{ padding: "32px 24px" }}>
-            <div
-              className="flex items-center justify-center mb-6"
-              style={{ width: "56px", height: "56px", borderRadius: t.radiusLg, backgroundColor: t.primarySubtle }}
-            >
-              <Shield size={28} style={{ color: t.primaryOn }} />
-            </div>
-            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
-              {pendingAction === 'admin-login' ? "Admin Login" : "Verify PIN"}
-            </span>
-            <span style={{ fontFamily: t.fontFamily, fontSize: "13px", color: t.textMuted, textAlign: "center", marginBottom: "24px" }}>
-              {pendingAction === 'admin-login' ? "Enter admin password" : "Enter your current PIN to continue"}
-            </span>
-
+          <>
+            <DialogText align="center" tone={error ? "error" : "muted"} style={{ marginTop: "16px" }}>
+              {pendingAction === 'admin-login'
+                ? "Enter admin password"
+                : error ? tr("pin.wrong") : tr("pin.current")}
+            </DialogText>
             <PinKeypad
               pin={verifyPinVal}
               setPin={setVerifyPinVal}
@@ -1022,74 +863,33 @@ export function MyPreferencesDialog({
                 }
               }}
             />
-          </div>
+          </>
         );
 
       case 'remove-confirm':
         return (
-          <div className="flex flex-col items-center" style={{ padding: "32px 24px" }}>
-            <div
-              className="flex items-center justify-center mb-6"
-              style={{ width: "64px", height: "64px", borderRadius: t.radiusFull, backgroundColor: "#FEE2E2" }}
-            >
-              <Trash2 size={32} style={{ color: "#EF4444" }} />
-            </div>
-            <span style={{ fontFamily: t.fontFamily, fontSize: "20px", fontWeight: 700, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
-              Remove PIN?
-            </span>
-            <span style={{ fontFamily: t.fontFamily, fontSize: "14px", color: t.textMuted, textAlign: "center", marginBottom: "24px" }}>
-              This will disable PIN protection for settings.
-            </span>
-
-            <div className="flex flex-col w-full gap-3">
-              <button
-                onClick={() => {
-                  clearAccount();
-                  setStep('success');
-                }}
-                className="flex items-center justify-center w-full py-3.5 cursor-pointer active:scale-95 transition-transform"
-                style={{
-                  backgroundColor: "#EF4444",
-                  borderRadius: t.radiusLg,
-                  border: "none",
-                  color: "#FFFFFF",
-                  fontWeight: 700,
-                  fontSize: "16px"
-                }}
-              >
-                Remove PIN
-              </button>
-              <button
-                onClick={() => setStep('menu')}
-                className="flex items-center justify-center w-full py-3.5 cursor-pointer active:scale-95 transition-transform"
-                style={{
-                  backgroundColor: "transparent",
-                  borderRadius: t.radiusLg,
-                  border: `1.5px solid ${t.borderDefault}`,
-                  color: t.textMuted,
-                  fontWeight: 600,
-                  fontSize: "16px"
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
+          <>
+            <DialogText style={{ marginTop: "8px" }}>{tr("pin.remove.desc")}</DialogText>
+            <DialogActions>
+              <DialogButton kind="secondary" label={tr("general.cancel")} onClick={() => setStep(backStep)} />
+              <DialogButton kind="danger" label={tr("pin.remove")} onClick={() => { clearAccount(); setStep('success'); }} />
+            </DialogActions>
+          </>
         );
 
       case 'success':
         return (
-          <div className="flex flex-col items-center justify-center" style={{ padding: "40px 24px" }}>
-            <CheckCircle size={48} style={{ color: "#10B981", marginBottom: "16px" }} />
-            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, color: t.textHeading, textAlign: "center" }}>
+          <div className="flex flex-col items-center" style={{ gap: "16px", padding: "32px 0 16px" }}>
+            <CheckCircle size={48} style={{ color: t.successOn }} />
+            <DialogText align="center">
               {pendingAction === 'remove-account' ? tr("pinSetup.removed") : tr("pinSetup.saved")}
-            </span>
+            </DialogText>
           </div>
         );
 
       case 'layout-mode':
         return (
-          <div className="flex flex-col" style={{ padding: "16px 20px 24px" }}>
+          <div className="flex flex-col" style={{ paddingTop: "16px" }}>
             <div className="flex flex-col gap-3" style={{ padding: "8px 0 0" }}>
               {[
                 { id: 1, title: "Layout 1", subtitle: "Current layout (existing design)" },
@@ -1124,42 +924,77 @@ export function MyPreferencesDialog({
     }
   };
 
+  /* Each PIN step is titled with the action the patient chose, never a
+     generic "Password". */
+  const pinTitle = () => {
+    if (pendingAction === 'admin-login') return "Admin Login";
+    if (pendingAction === 'remove-account') return tr("pin.remove");
+    if (pendingAction === 'reset-nfc') return tr("pin.nfcCard");
+    if (pendingAction === 'reset-pin') return tr("settings.changePin");
+    return tr("settings.setPin");
+  };
+  /* Title-bar icon for the standard steps (keypad steps draw none). */
+  const stepIcon = () => {
+    switch (step) {
+      case 'menu': return UserCircle;
+      case 'overview': return KeyRound;
+      case 'nfc-prompt': return Nfc;
+      case 'remove-confirm': return Trash2;
+      case 'server': return Globe;
+      case 'layout-mode': return Layout;
+      case 'admin-controls': return Settings;
+      case 'backgrounds': return Image;
+      default: return undefined;
+    }
+  };
   const getTitle = () => {
     switch (step) {
       case 'menu': return tr("settings.preferences");
       case 'server': return "Server Configuration";
       case 'layout-mode': return "Layout Mode";
       case 'admin-controls': return "Admin Settings";
+      case 'overview': return tr("settings.pin");
       case 'setup-pin1':
       case 'setup-pin2':
+      case 'setup-pin-mismatch':
       case 'nfc-prompt':
       case 'nfc-tap1':
       case 'nfc-tap2':
-      case 'overview':
+      case 'nfc-mismatch':
       case 'verify-current-pin':
-        return pendingAction === 'admin-login' ? "Admin Login" : "Password";
       case 'remove-confirm':
-        return "Password";
+      case 'success':
+        return pinTitle();
       case 'backgrounds': return tr("prefs.backgrounds");
       default: return tr("settings.preferences");
     }
   };
 
-  const showHeader = step !== 'success' && step !== 'setup-pin-mismatch' && step !== 'nfc-mismatch';
-  const canGoBack = step !== 'menu' && step !== 'success' && mode !== 'pin-setup';
-  const dialogWidth = step === 'backgrounds' ? 420 : 340;
+  const showHeader = true;
+  /* The PIN row's options screen is its home: every step under it backs up
+     to it, the way the full dialog's steps back up to the menu. */
+  const backStep: Step = mode === 'full' ? 'menu' : 'overview';
+  const canGoBack = step !== 'success' && (
+    mode === 'full' ? step !== 'menu' : mode === 'pin' && !!account && step !== 'overview'
+  );
+  const isPinStep = !['menu', 'server', 'layout-mode', 'admin-controls', 'backgrounds'].includes(step);
+  /* Keypad steps and their one-line results are PIN popups (centred);
+     the PIN options, the NFC question and Remove's confirm are standard. */
+  const isKeypadStep = ['setup-pin1', 'setup-pin2', 'setup-pin-mismatch', 'verify-current-pin', 'nfc-tap1', 'nfc-tap2', 'nfc-mismatch', 'success'].includes(step);
 
   return (
-    <CenteredDialog onClose={onClose} width={dialogWidth}>
+    <DialogFrame onClose={onClose} size={isPinStep ? "small" : "content"} kind={isKeypadStep ? "pin" : "standard"}>
       {showHeader && (
-        <DialogHeader
+        <DialogTitleBar
           title={getTitle()}
           onClose={onClose}
-          onBack={canGoBack ? () => setStep('menu') : undefined}
+          onBack={canGoBack ? () => setStep(backStep) : undefined}
+          icon={stepIcon()}
+          tone={step === 'remove-confirm' ? "danger" : "brand"}
         />
       )}
       {renderContent()}
-    </CenteredDialog>
+    </DialogFrame>
   );
 }
 

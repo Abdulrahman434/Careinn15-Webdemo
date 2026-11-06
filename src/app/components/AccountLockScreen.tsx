@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTheme, SHADOW, TEXT_STYLE, WEIGHT } from "./ThemeContext";
+import { DialogFrame, DialogTitleBar, DialogText, DialogActions, DialogButton } from "./dialogKit";
 import { useLocale } from "./i18n";
 import { getAccount, verifyPin, verifyNfcUid } from "../lib/accountAuth";
 import { useNfcTap } from "../utils/nfc";
@@ -67,120 +68,22 @@ export function AccountLockScreen({ visible, onUnlock, onClose, onSkipAsGuest }:
 
   if (!visible) return null;
 
+  /* A PIN popup on the shared frame (dialogKit.tsx): centred title, one
+     line (the NFC hint, or the error), the keypad, then the guest choice. */
   return (
-    <div
-      data-no-remote
-      className="fixed inset-0 z-[9999] flex items-center justify-center"
-      style={{
-        backgroundColor: t.overlay,
-        backdropFilter: "blur(4px)",
-        WebkitBackdropFilter: "blur(4px)",
-      }}
-    >
-      <div
-        className="relative flex flex-col items-center justify-center"
-        style={{
-          /* Same card as every other PIN prompt — see pinMetrics.ts. */
-          width: PIN_METRICS.card,
-          padding: PIN_METRICS.pad,
-          borderRadius: t.radiusXl,
-          /* Token, not #FFFFFF: the keypad's digits and tiles are already
-             theme-driven, so a hardcoded white card put near-white text on a
-             white surface the moment dark mode was on. */
-          backgroundColor: t.surface,
-          border: t.cardBorder,
-          boxShadow: SHADOW.xl,
-          animation: "lockDialogIn 0.2s ease-out",
-        }}
-      >
-        {/* (×) close button */}
-        {/* 44x44 of touch area around a 36px disc: the target is the finger's,
-            the circle is the eye's. */}
-        <button
-          onClick={onClose}
-          className="absolute flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
-          style={{
-            top: "10px",
-            right: "10px",
-            width: PIN_METRICS.close,
-            height: PIN_METRICS.close,
-            borderRadius: t.radiusFull,
-            backgroundColor: "transparent",
-            border: "none",
-            outline: "none",
-            padding: 0,
-          }}
-        >
-          <span
-            className="flex items-center justify-center"
-            style={{
-              width: PIN_METRICS.closeDisc,
-              height: PIN_METRICS.closeDisc,
-              borderRadius: t.radiusFull,
-              backgroundColor: t.tileInactiveBg,
-            }}
-          >
-            <X size={18} style={{ color: t.textMuted }} />
-          </span>
-        </button>
-
-        <div
-          className="flex items-center justify-center"
-          style={{ width: "56px", height: "56px", borderRadius: t.radiusLg, backgroundColor: t.primarySubtle, marginBottom: "16px" }}
-        >
-          <Lock size={28} style={{ color: t.primaryOn }} />
+    <DialogFrame kind="pin" position="fixed" zIndex={9999} onClose={onClose}>
+      <DialogTitleBar title={tr("lock.title")} onClose={onClose} />
+      <DialogText tone={error ? "error" : "muted"} style={{ marginTop: "16px" }}>
+        {error ? tr("lock.wrongPin") : account?.nfcCardUid ? tr("lock.nfc.hint") : tr("lock.subtitle")}
+      </DialogText>
+      <PinKeypad pin={pin} setPin={setPin} error={error} onComplete={handlePinComplete} />
+      <DialogActions>
+        {/* The guest choice and what it means, together in the footer. */}
+        <div className="flex flex-col w-full" style={{ gap: "8px" }}>
+          <DialogButton kind="outline" label={tr("lock.guest.button")} onClick={handleSkipAsGuest} />
+          <DialogText>{tr("lock.guest.subtitle")}</DialogText>
         </div>
-
-        <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogTitle, fontSize: PIN_TYPE.title, fontWeight: WEIGHT.semibold, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
-          {tr("lock.title")}
-        </span>
-
-        {account?.nfcCardUid && (
-          <div className="flex items-center gap-2 mb-4" style={{ padding: "8px 16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg }}>
-            <Smartphone size={16} style={{ color: t.textMuted }} />
-            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogHelper, color: t.textMuted }}>
-              {tr("lock.nfc.hint")}
-            </span>
-          </div>
-        )}
-
-        {error && (
-          <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogBody, fontWeight: WEIGHT.semibold, color: t.errorOn, marginBottom: "16px", animation: "settingsFadeIn 0.2s ease-out" }}>
-            {tr("lock.wrongPin")}
-          </span>
-        )}
-
-        <div style={{ marginTop: "16px", width: "100%" }}>
-          <PinKeypad pin={pin} setPin={setPin} error={error} onComplete={handlePinComplete} />
-        </div>
-
-        <div className="flex flex-col items-center w-full mt-6 gap-2">
-          <button
-            onClick={handleSkipAsGuest}
-            className="flex items-center justify-center w-full cursor-pointer active:scale-[0.98] transition-transform"
-            style={{
-              height: PIN_METRICS.action,
-              borderRadius: t.radiusLg,
-              backgroundColor: "transparent",
-              border: `1.5px solid ${t.borderDefault}`,
-              outline: "none",
-            }}
-          >
-            <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogButton, color: t.textMuted }}>
-              {tr("lock.guest.button")}
-            </span>
-          </button>
-          <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogHelper, color: t.textMuted, textAlign: "center" }}>
-            {tr("lock.guest.subtitle")}
-          </span>
-        </div>
-      </div>
-      <style>{`
-        @keyframes lockDialogIn {
-          from { opacity: 0; transform: scale(0.94) translateY(8px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-      `}</style>
-    </div>
+      </DialogActions>
+    </DialogFrame>
   );
 }

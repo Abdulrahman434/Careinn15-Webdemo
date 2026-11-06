@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTheme, SHADOW, TYPE_SCALE } from "./ThemeContext";
+import { DialogFrame, DialogTitleBar, DialogText, DialogActions, DialogButton } from "./dialogKit";
 import { useLocale } from "./i18n";
 import { Lock, Unlock, X, CheckCircle, ShieldAlert } from "lucide-react";
 import { lockedAppsStore } from "../lib/lockedApps";
@@ -69,181 +70,69 @@ export function AppLockMenu({
     }
   };
 
+  /* Latest onClose, read when the timer fires: with onClose in the deps a
+     re-rendering parent restarts the timer and "Locked" never closes. */
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
     if (step === "success") {
-      const timer = setTimeout(onClose, 1200);
+      const timer = setTimeout(() => onCloseRef.current(), 1200);
       return () => clearTimeout(timer);
     }
-  }, [step, onClose]);
+  }, [step]);
+
+  /* On the shared popup (dialogKit.tsx). The keypad and its result are a PIN
+     popup (centred); the lock / unlock question is a standard one. Every
+     step is titled with the action: Lock this app / Unlock this app, or the
+     app's name when the PIN opens it. */
+  const actionTitle = onOpenApp ? appName : isCurrentlyLocked ? tr("appLock.unlock.title") : tr("appLock.lock.title");
+  const keypad = (step === "verify-pin" && isAccountSet()) || step === "success";
 
   return (
-    <div
-      className="fixed inset-0 z-[10000] flex items-center justify-center"
-      style={{
-        backgroundColor: "rgba(0,0,0,0.55)",
-        backdropFilter: "blur(4px)",
-        WebkitBackdropFilter: "blur(4px)",
-      }}
-    >
-      <div
-        className="absolute inset-0"
-        onClick={onClose}
-      />
-      <div
-        className="relative flex flex-col items-center"
-        style={{
-          /* Same card as every other PIN prompt — see pinMetrics.ts. */
-          width: PIN_METRICS.card,
-          padding: PIN_METRICS.pad,
-          borderRadius: t.radiusXl,
-          backgroundColor: t.surface,
-          boxShadow: SHADOW.xl,
-          animation: "lockDialogIn 0.2s ease-out",
-        }}
-      >
-        <button
-          onClick={onClose}
-          className="absolute flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
-          style={{
-            top: "12px",
-            right: "12px",
-            width: "32px",
-            height: "32px",
-            borderRadius: t.radiusFull,
-            backgroundColor: t.tileInactiveBg,
-            border: "none",
-            outline: "none",
-          }}
-        >
-          <X size={16} style={{ color: t.textMuted }} />
-        </button>
+    <DialogFrame kind={keypad ? "pin" : "standard"} position="fixed" zIndex={10000} onClose={onClose}>
+      <DialogTitleBar title={actionTitle} onClose={onClose} icon={isCurrentlyLocked ? Unlock : Lock} tone={isCurrentlyLocked && step === "menu" ? "danger" : "brand"} />
 
-        {step === "menu" && (
-          <>
-            <div
-              className="flex items-center justify-center mb-6"
-              style={{ 
-                width: "64px", height: "64px", 
-                borderRadius: t.radiusFull, 
-                backgroundColor: isCurrentlyLocked ? "#FEE2E2" : t.primarySubtle 
-              }}
-            >
-              {isCurrentlyLocked ? (
-                <Unlock size={32} style={{ color: t.errorOn }} />
-              ) : (
-                <Lock size={32} style={{ color: t.primary }} />
-              )}
-            </div>
-            <span style={{ fontFamily, fontSize: "20px", fontWeight: 700, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
-              {isCurrentlyLocked ? tr("appLock.unlock.title") : tr("appLock.lock.title")}
-            </span>
-            <span style={{ fontFamily, fontSize: "14px", color: t.textMuted, textAlign: "center", marginBottom: "24px" }}>
-              {isCurrentlyLocked ? tr("appLock.unlock.subtitle") : tr("appLock.lock.subtitle")}
-            </span>
-            
-            <div className="flex flex-col w-full gap-3">
-              <button
-                onClick={isCurrentlyLocked ? handleUnlock : handleLock}
-                className="flex items-center justify-center w-full py-3.5 cursor-pointer active:scale-95 transition-transform"
-                style={{
-                  backgroundColor: isCurrentlyLocked ? "#EF4444" : t.primary,
-                  borderRadius: t.radiusLg,
-                  border: "none",
-                  color: "#FFFFFF",
-                  fontWeight: 700,
-                  fontSize: TYPE_SCALE.base
-                }}
-              >
-                {isCurrentlyLocked ? tr("appLock.unlock.button") : tr("appLock.lock.button")}
-              </button>
-              <button
-                onClick={onClose}
-                className="flex items-center justify-center w-full py-3.5 cursor-pointer active:scale-95 transition-transform"
-                style={{
-                  backgroundColor: "transparent",
-                  borderRadius: t.radiusLg,
-                  border: `1.5px solid color-mix(in srgb, ${t.textMuted} 35%, transparent)`,
-                  color: t.textMuted,
-                  fontWeight: 600,
-                  fontSize: TYPE_SCALE.base
-                }}
-              >
-                {tr("appLock.cancel")}
-              </button>
-            </div>
-          </>
-        )}
+      {step === "menu" && (
+        <>
+          <DialogText style={{ marginTop: "8px" }}>
+            {isCurrentlyLocked ? tr("appLock.unlock.subtitle") : tr("appLock.lock.subtitle")}
+          </DialogText>
+          <DialogActions>
+            <DialogButton kind="secondary" label={tr("appLock.cancel")} onClick={onClose} />
+            <DialogButton
+              kind={isCurrentlyLocked ? "danger" : "primary"}
+              label={isCurrentlyLocked ? tr("appLock.unlock.button") : tr("appLock.lock.button")}
+              onClick={isCurrentlyLocked ? handleUnlock : handleLock}
+            />
+          </DialogActions>
+        </>
+      )}
 
-        {step === "verify-pin" && (
-          <>
-            {!isAccountSet() ? (
-              <>
-                <div
-                  className="flex items-center justify-center mb-6"
-                  style={{ width: "64px", height: "64px", borderRadius: t.radiusFull, backgroundColor: "#FEF3C7" }}
-                >
-                  <ShieldAlert size={32} style={{ color: "#D97706" }} />
-                </div>
-                <span style={{ fontFamily, fontSize: "20px", fontWeight: 700, color: t.textHeading, textAlign: "center", marginBottom: "8px" }}>
-                  {tr("appLock.noPinSetup.title")}
-                </span>
-                <span style={{ fontFamily, fontSize: "14px", color: t.textMuted, textAlign: "center", marginBottom: "24px" }}>
-                  {tr("appLock.noPinSetup.subtitle")}
-                </span>
-                <button
-                  onClick={onRequestPinSetup}
-                  className="flex items-center justify-center w-full py-3.5 cursor-pointer active:scale-95 transition-transform"
-                  style={{
-                    backgroundColor: t.primary,
-                    borderRadius: t.radiusLg,
-                    border: "none",
-                    color: "#FFFFFF",
-                    fontWeight: 700,
-                    fontSize: TYPE_SCALE.base
-                  }}
-                >
-                  {tr("appLock.noPinSetup.button")}
-                </button>
-              </>
-            ) : (
-              <>
-                <div
-                  className="flex items-center justify-center mb-4"
-                  style={{ width: "56px", height: "56px", borderRadius: t.radiusLg, backgroundColor: t.primarySubtle }}
-                >
-                  <Lock size={28} style={{ color: t.primaryOn }} />
-                </div>
-                <span style={{ fontFamily, fontSize: "18px", fontWeight: 700, color: t.textHeading, textAlign: "center", marginBottom: "4px" }}>
-                  {onOpenApp ? tr("appLock.open.title") : tr("appLock.verify.title")}
-                </span>
-                <span style={{ fontFamily, fontSize: "13px", color: t.textMuted, textAlign: "center", marginBottom: "16px" }}>
-                  {appName}
-                </span>
+      {step === "verify-pin" && !isAccountSet() && (
+        <>
+          <DialogText style={{ marginTop: "8px" }}>{tr("appLock.noPinSetup.subtitle")}</DialogText>
+          <DialogActions>
+            <DialogButton kind="secondary" label={tr("appLock.cancel")} onClick={onClose} />
+            <DialogButton label={tr("settings.setPin")} onClick={onRequestPinSetup} />
+          </DialogActions>
+        </>
+      )}
 
-                {/* PIN dots are included in PinKeypad */}
-                <div className="w-full">
-                  <PinKeypad pin={pin} setPin={setPin} error={error} onComplete={handlePinComplete} />
-                </div>
-              </>
-            )}
-          </>
-        )}
+      {step === "verify-pin" && isAccountSet() && (
+        <>
+          <DialogText tone={error ? "error" : "muted"} style={{ marginTop: "16px" }}>
+            {error ? tr("pin.wrong") : tr("lock.subtitle")}
+          </DialogText>
+          <PinKeypad pin={pin} setPin={setPin} error={error} onComplete={handlePinComplete} />
+        </>
+      )}
 
-        {step === "success" && (
-          <div className="flex flex-col items-center py-8">
-            <CheckCircle size={64} style={{ color: t.primary, marginBottom: "16px" }} />
-            <span style={{ fontFamily, fontSize: "24px", fontWeight: 700, color: t.textHeading }}>
-              {successMode === "locked" ? tr("appLock.locked") : tr("appLock.unlocked")}
-            </span>
-          </div>
-        )}
-      </div>
-      <style>{`
-        @keyframes lockDialogIn {
-          from { opacity: 0; transform: scale(0.94) translateY(8px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-      `}</style>
-    </div>
+      {step === "success" && (
+        <div className="flex flex-col items-center" style={{ gap: "16px", padding: "32px 0 16px" }}>
+          <CheckCircle size={48} style={{ color: t.successOn }} />
+          <DialogText>{successMode === "locked" ? tr("appLock.locked") : tr("appLock.unlocked")}</DialogText>
+        </div>
+      )}
+    </DialogFrame>
   );
 }

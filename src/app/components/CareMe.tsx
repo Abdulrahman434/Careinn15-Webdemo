@@ -86,6 +86,7 @@ import { SIGNATURE_PAPER, SIGNATURE_PAPER_LINE } from "./nurse/SignaturePad";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { CareMePinDialog } from "./CareMePinDialog";
 import { PinKeypad } from "./MyAccountDialog";
+import { DialogFrame, DialogTitleBar, DialogText } from "./dialogKit";
 import { PIN_METRICS } from "./pinMetrics";
 import { isAccountSet, setAccount } from "../lib/accountAuth";
 import svgPaths from "../../imports/svg-ca68x68c4i";
@@ -1681,32 +1682,28 @@ function ResultsPinGate({ theme, isExpanded = false, titleKey, onUnlock }: {
       )}
 
       {dialog === "create" && createPortal(
-        <div className="fixed inset-0 z-[10050] flex items-center justify-center" style={{ backgroundColor: theme.overlay }}>
-          <div
-            className="flex flex-col items-center gap-4"
-            style={{ width: PIN_METRICS.card, padding: PIN_METRICS.pad, borderRadius: theme.radiusXl, backgroundColor: theme.surface, boxShadow: SHADOW.xl }}
-          >
-            <div className="flex items-center justify-center" style={{ width: "48px", height: "48px", borderRadius: theme.radiusLg, backgroundColor: theme.primarySubtle }}>
-              <Lock size={22} style={{ color: theme.primaryOn }} />
-            </div>
-            <span style={{ fontFamily, ...R.title, color: theme.textHeading, textAlign: "center" }}>
-              {stage === "first" ? t("care.labs.pin.create") : t("care.labs.pin.confirm")}
-            </span>
-            <PinKeypad
-              pin={stage === "first" ? newPin : confirmPin}
-              setPin={stage === "first" ? setNewPin : setConfirmPin}
-              error={error}
-              onComplete={handleCreate}
-            />
-            <button
-              onClick={() => { setDialog(null); setStage("first"); setNewPin(""); setConfirmPin(""); }}
-              className="cursor-pointer"
-              style={{ fontFamily, ...R.heading, color: theme.textMuted, background: "none", border: "none" }}
-            >
-              {t("general.cancel")}
-            </button>
-          </div>
-        </div>,
+        /* The shared popup (dialogKit.tsx), titled with the button that
+           opened it, the same steps and words as Set PIN in Settings. */
+        <DialogFrame
+          kind="pin"
+          position="fixed"
+          zIndex={10050}
+          onClose={() => { setDialog(null); setStage("first"); setNewPin(""); setConfirmPin(""); }}
+        >
+          <DialogTitleBar
+            title={t("settings.setPin")}
+            onClose={() => { setDialog(null); setStage("first"); setNewPin(""); setConfirmPin(""); }}
+          />
+          <DialogText align="center" tone={error ? "error" : "muted"} style={{ marginTop: "16px" }}>
+            {error ? t("pinSetup.mismatch") : stage === "first" ? t("pinSetup.subtitle") : t("pinSetup.confirm")}
+          </DialogText>
+          <PinKeypad
+            pin={stage === "first" ? newPin : confirmPin}
+            setPin={stage === "first" ? setNewPin : setConfirmPin}
+            error={error}
+            onComplete={handleCreate}
+          />
+        </DialogFrame>,
         document.body
       )}
     </>
