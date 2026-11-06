@@ -827,7 +827,7 @@ const translations: Record<string, TranslationEntry> = {
   /* ─── Admission / Discharge Labels ─── */
   "care.admitted": { en: "Admitted", ar: "تاريخ الدخول", ur: "داخلہ" },
   "care.notSetYet": { en: "Not set yet", ar: "لم يُحدَّد بعد", ur: "ابھی طے نہیں" },
-  "care.discharge": { en: "Discharge", ar: "الخروج المتوقع", ur: "ڈسچارج" },
+  "care.discharge": { en: "Expected discharge", ar: "الخروج المتوقع", ur: "متوقع ڈسچارج" },
   "care.mrn": { en: "MRN", ar: "رقم الملف", ur: "ایم آر این" },
   "care.room": { en: "Room", ar: "الغرفة", ur: "کمرہ" },
 
