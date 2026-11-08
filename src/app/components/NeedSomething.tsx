@@ -1,6 +1,7 @@
 import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { DialogFrame, DialogTitleBar, DialogText, DialogActions, DialogButton } from "./dialogKit";
 import { useSettingsPreview } from "./settingsPreview";
+import { SearchField } from "./searchField";
 import { motion, AnimatePresence } from "motion/react";
 import {
   HandHelping, Wrench, ClipboardList,
@@ -13,7 +14,7 @@ import {
   AirVent, Lightbulb, Tv, ShowerHead, Plug,
   Ear, Eye, Accessibility, ShieldCheck, BookOpen, PersonStanding,
   Scissors, Brush, Droplets, Sparkles, Trash2, Languages, HeartHandshake,
-  Stethoscope, Wifi, ConciergeBell, MessageSquareWarning, Armchair,
+  Stethoscope, Wifi, ConciergeBell, MessageSquareWarning, Armchair, Search,
   createLucideIcon, type LucideIcon,
 } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW, SPACE, LEADING } from "./ThemeContext";
@@ -426,7 +427,11 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
      Every item of the tab is laid out at once and the patient scrolls up/down
      with a thumb — no sideways paging. The fade + chevron at the bottom edge
      say "there is more below" and also scroll one screen when tapped. */
-  const gridItems = allGridItems;
+  /* Search narrows the open category by item name (any language shown).
+     It starts empty on every category, like the ticks. */
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const gridItems = q ? allGridItems.filter((c) => t(c.key).toLowerCase().includes(q)) : allGridItems;
   const gridScrollRef = useRef<HTMLDivElement>(null);
   const [scrollEdge, setScrollEdge] = useState({ top: true, bottom: true });
   const updateScrollEdge = useCallback(() => {
@@ -437,13 +442,18 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
     setScrollEdge((prev) => (prev.top === top && prev.bottom === bottom ? prev : { top, bottom }));
   }, []);
   /* Ticks belong to the category they were made in. */
-  useEffect(() => { setPicked([]); }, [tab]);
+  useEffect(() => { setPicked([]); setQuery(""); }, [tab]);
 
   /* Back to the top when switching tabs */
   useEffect(() => {
     gridScrollRef.current?.scrollTo({ top: 0 });
     requestAnimationFrame(updateScrollEdge);
   }, [tab, updateScrollEdge]);
+  /* Fewer cards after a search: back to the top, fades re-measured */
+  useEffect(() => {
+    gridScrollRef.current?.scrollTo({ top: 0 });
+    requestAnimationFrame(updateScrollEdge);
+  }, [q, updateScrollEdge]);
 
   const tabs: { key: Tab; Icon: typeof HandHelping; label: string; count?: number }[] = [
     { key: "request", Icon: HandHelping, label: t("need.tab.request") },
@@ -681,13 +691,16 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
           {/* Body */}
           <div className="ns-scroll flex-1 min-w-0 min-h-0 overflow-y-auto px-8 py-7 flex flex-col">
             {/* Section heading */}
-            <div className="shrink-0 mb-4">
-              <h3 style={{ ...TEXT_STYLE.pageTitle, fontFamily, color: theme.textHeading }}>
-                {t(titleKey)}
-              </h3>
-              <p style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textMuted, marginTop: 4 }}>
+            <div className="shrink-0 mb-4 flex items-center gap-6">
+              <div className="flex-1 min-w-0">
+                <h3 className="truncate" style={{ ...TEXT_STYLE.pageTitle, fontFamily, color: theme.textHeading }}>
+                  {t(titleKey)}
+                </h3>
+                <p style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textMuted, marginTop: 4 }}>
                   {t(subKey)}
                 </p>
+              </div>
+              <SearchField value={query} onChange={setQuery} placeholder={t("need.search")} clearLabel={t("tv.clearSearch")} />
             </div>
 
               <div className="flex-1 min-h-0 flex flex-col">
@@ -883,6 +896,20 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                     })}
                     </motion.div>
                   </div>
+
+                  {q && gridItems.length === 0 && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center gap-4" style={{ pointerEvents: "none" }}>
+                      <span
+                        className="flex items-center justify-center"
+                        style={{ width: 88, height: 88, borderRadius: theme.radiusFull, backgroundColor: theme.primarySubtle }}
+                      >
+                        <Search size={40} color={theme.primaryOn} strokeWidth={1.8} />
+                      </span>
+                      <p style={{ ...TEXT_STYLE.subtitle, fontFamily, color: theme.textMuted, maxWidth: 420, lineHeight: LEADING.normal }}>
+                        {t("need.empty.search")}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Edge fades — a soft hint that the list continues (no arrows) */}
                   {(["top", "bottom"] as const).map((edge) => {

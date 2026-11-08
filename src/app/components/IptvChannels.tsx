@@ -3,12 +3,13 @@ import { InternalPageHeader } from "./InternalPageHeader";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE, TEXT_STYLE, LEADING } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import {
-  Tv, ArrowLeft, ArrowRight, RefreshCw, Square, Search, X, Heart, LayoutGrid,
+  Tv, ArrowLeft, ArrowRight, RefreshCw, Square, Heart, LayoutGrid,
   Newspaper, Trophy, Baby, BookOpen, Clapperboard, Compass, Music, Globe,
   SkipBack, SkipForward, Volume2, VolumeX, Maximize2, Minimize2, Layers,
 } from "lucide-react";
 import { useIptvChannels, iptv, isAndroidApp, useAndroidEvent, IptvChannel, _setIptvPlayingId } from "../utils/androidBridge";
 import { ApiImage } from "./ApiImage";
+import { SearchField } from "./searchField";
 import { PREVIEW_CHANNELS } from "../data/tvChannels";
 
 /* The patient's favourites, as channel ids (strings). */
@@ -583,7 +584,6 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
         background: theme.pageGradientFlat,
         fontFamily,
         animation: "appLauncherIn 0.2s ease-out",
-        ["--tv-primary" as any]: theme.primary,
       } as CSSProperties}
     >
       <ApiImage
@@ -596,8 +596,6 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
 
       <style>{`
         .tv-card { transition: transform .12s ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-        .tv-search::placeholder { color: ${theme.textDisabled}; }
-        .tv-search-box:focus-within { border-color: var(--tv-primary) !important; }
         .tv-scroll::-webkit-scrollbar { width: 10px; }
         .tv-scroll::-webkit-scrollbar-track { background: transparent; }
         .tv-scroll::-webkit-scrollbar-thumb { background: ${theme.borderDefault}; border-radius: 100px; border: 3px solid transparent; background-clip: content-box; }
@@ -751,45 +749,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
                 </p>
               </div>
 
-              <label
-                className="tv-search-box shrink-0 flex items-center gap-3"
-                style={{
-                  width: 440,
-                  height: 56,
-                  paddingInlineStart: 18,
-                  paddingInlineEnd: 8,
-                  borderRadius: theme.radiusMd,
-                  backgroundColor: theme.surfaceInset,
-                  border: `1.5px solid ${theme.borderSubtle}`,
-                }}
-              >
-                <Search size={22} color={theme.textMuted} strokeWidth={2.2} />
-                <input
-                  value={query}
-                  onChange={e => setQuery(e.target.value)}
-                  placeholder={t("tv.search")}
-                  className="tv-search flex-1 min-w-0 bg-transparent outline-none"
-                  style={{ ...TEXT_STYLE.body, fontFamily, color: theme.textHeading, border: "none" }}
-                />
-                {query && (
-                  <button
-                    type="button"
-                    onClick={() => setQuery("")}
-                    aria-label={t("tv.clearSearch")}
-                    className="shrink-0 flex items-center justify-center cursor-pointer active:scale-95"
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: theme.radiusSm,
-                      backgroundColor: theme.surface,
-                      border: "none",
-                      outline: "none",
-                    }}
-                  >
-                    <X size={20} color={theme.textMuted} />
-                  </button>
-                )}
-              </label>
+              <SearchField value={query} onChange={setQuery} placeholder={t("tv.search")} clearLabel={t("tv.clearSearch")} />
             </div>
 
             <div ref={gridRef} className="tv-scroll flex-1 min-h-0 overflow-y-auto px-8 pb-8" style={{ overscrollBehavior: "contain" }}>
