@@ -311,6 +311,8 @@ const translations: Record<string, TranslationEntry> = {
   "need.status.onway": { en: "On the way", ar: "في الطريق", ur: "راستے میں" },
   "need.status.delivered": { en: "Delivered", ar: "تم التوصيل", ur: "پہنچا دیا" },
   "need.status.fixed": { en: "Fixed", ar: "تم الإصلاح", ur: "ٹھیک ہو گیا" },
+  "need.search": { en: "Search items", ar: "ابحث عن عنصر", ur: "اشیاء تلاش کریں" },
+  "need.empty.search": { en: "No item matches your search.", ar: "لا يوجد عنصر يطابق بحثك.", ur: "آپ کی تلاش سے کوئی چیز نہیں ملی۔" },
   "need.empty.title": { en: "No requests yet", ar: "لا توجد طلبات بعد", ur: "ابھی کوئی درخواست نہیں" },
   "need.empty.body": { en: "Tap a card to ask for something! 😊", ar: "اضغط على بطاقة لتطلب شيئاً! 😊", ur: "کچھ مانگنے کے لیے کارڈ پر ٹیپ کریں! 😊" },
   "need.empty.reportTitle": { en: "No issues reported", ar: "لا توجد بلاغات", ur: "کوئی مسئلہ رپورٹ نہیں ہوا" },
