@@ -35,6 +35,16 @@ export const CHANGE_TYPES: { type: ChangeType; label: string }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: "1.10.0",
+    date: "2026-11-08",
+    changes: [
+      { type: "improved", area: "CareMe", text: "Every CareMe card with nothing to show has the same centred message with short text, such as \"No Care Plan Yet\" or \"No Data from HIS\"." },
+      { type: "improved", area: "CareMe", text: "An empty discharge date reads \"Not set yet\"." },
+      { type: "improved", area: "CareMe", text: "Shorter text on the locked results card: \"Enter your PIN to see your results\"." },
+      { type: "new", area: "Nurse View", text: "Demo switches for the HIS connection and for previewing empty CareMe cards. They stay as set until switched off, and Restore puts the sample steps back." },
+    ],
+  },
+  {
     version: "1.9.0",
     date: "2026-11-08",
     changes: [
