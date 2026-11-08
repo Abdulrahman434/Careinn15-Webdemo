@@ -491,6 +491,7 @@ function buildTheme(core: {
   slideshowInterval?: number;
   heroOpacity?: number;
   primary: string;
+  onPrimary?: string;
   primaryDark?: string;
   primaryLight?: string;
   accent: string;
@@ -558,14 +559,14 @@ function buildTheme(core: {
 
   if (!dark) {
     /* ── LIGHT MODE ── */
-    const P = fillSet(c.primary, "#FFFFFF", false);
+    const P = fillSet(c.primary, "#FFFFFF", false, c.onPrimary);
     const A = fillSet(c.accent, "#FFFFFF", false);
     // Brand text/icons in light mode land on white or on a pale brand tint;
     // the tint is darker, so it is the binding backdrop for dark ink.
     const ENG_L = engagementTokens(c.primary, c.accent, "#FFFFFF", {
       tint: 0.09, border: 0.18, iconBg: 0.06, stroke: 0.35,
       minBorder: 1.35, minIconBg: 1.05, minStroke: 1.7, minGlyph: 4.5,
-    });
+    }, c.onPrimary);
     const chipOnTintL = overlayHex(P.seed, P.subtleAlpha, ENG_L.engagementTint);
     const backdropsL = ["#FFFFFF", "#F8F8F8", "#F9FAFB", P.subtleSolid, A.subtleSolid,
       ENG_L.engagementTint, chipOnTintL];
@@ -654,7 +655,7 @@ function buildTheme(core: {
   const DARK_TEXT_SEC = "#8B99A4";
   // Lifted until legible on the lightest dark backdrop (DARK_ELEVATED), so the
   // same value stays readable on every darker one. Hue is preserved.
-  const PD = fillSet(c.primary, DARK_SURFACE, true);
+  const PD = fillSet(c.primary, DARK_SURFACE, true, c.onPrimary);
   const AD = fillSet(c.accent, DARK_SURFACE, true);
   // Muted/disabled text also lands on brand-tinted chips and tiles, which are
   // lighter than the plain card — include those in the backdrop set so the
@@ -662,7 +663,7 @@ function buildTheme(core: {
   const ENG_D = engagementTokens(c.primary, c.accent, ENGAGEMENT_DARK_SURFACE, {
     tint: 0.17, border: 0.22, iconBg: 0.11, stroke: 0.55,
     minBorder: 1.55, minIconBg: 1.22, minStroke: 2.0, minGlyph: 4.5,
-  });
+  }, c.onPrimary);
   // Deepest real stack: a brand-tinted chip drawn on the card's gradient top.
   const chipOnTintD = overlayHex(PD.seed, PD.subtleAlpha, ENG_D.engagementTint);
   // Panels nested inside a card (surfaceInset) are lighter than every brand
@@ -922,9 +923,9 @@ function solveAlpha(fg: string, bg: string, minRatio: number, floor: number): nu
  *  This is the reusable unit: `fillSet(primary, …)` and `fillSet(accent, …)`
  *  are the same call, and semantic colors (error/success/warning/info) go
  *  through it too. Nothing here knows which brand it is looking at. */
-function fillSet(color: string, surface: string, dark: boolean) {
+function fillSet(color: string, surface: string, dark: boolean, onOverride?: string) {
   const base = color;
-  const on = onColorFor(base);
+  const on = onOverride || onColorFor(base);
   // Hover/press move away from the surface so the control gains weight when
   // touched: lighter on dark, darker on light. Clamped inside hslToHex.
   const dir = dark ? 1 : -1;
@@ -947,9 +948,9 @@ function fillSet(color: string, surface: string, dark: boolean) {
     base,
     on,
     hover,
-    hoverOn: contrastRatio(on, hover) >= 3 ? on : onColorFor(hover),
+    hoverOn: onOverride || (contrastRatio(on, hover) >= 3 ? on : onColorFor(hover)),
     active,
-    activeOn: contrastRatio(on, active) >= 3 ? on : onColorFor(active),
+    activeOn: onOverride || (contrastRatio(on, active) >= 3 ? on : onColorFor(active)),
     subtle: hexToRgba(seed, subtleA),
     subtleSolid: overlayHex(seed, subtleA, surface),
     /** alpha of `subtle`, so callers can composite it over another backdrop */
@@ -1014,6 +1015,7 @@ function engagementTokens(
   surface: string,
   spec: { tint: number; border: number; iconBg: number; stroke: number;
           minBorder: number; minIconBg: number; minStroke: number; minGlyph: number },
+  onPrimary?: string,
 ) {
   // The glyph carries meaning, so it leads: pull the brand color to a readable
   // lightness on this surface, then tint everything else from that same color
@@ -1040,10 +1042,10 @@ function engagementTokens(
     : hexToRgba("#1B2A32", 0.10);
 
   return {
-    brandOnPrimary: onColorFor(primary),
+    brandOnPrimary: onPrimary || onColorFor(primary),
     brandOnAccent: onColorFor(accent),
     engagementFill: fill,
-    engagementOnFill: onColorFor(fill),
+    engagementOnFill: onPrimary && fill === primary ? onPrimary : onColorFor(fill),
     engagementSurface: surface,
     engagementCardGradient: `linear-gradient(180deg, ${tint} 0%, ${surface} 58%)`,
     engagementCardGradientShort: `linear-gradient(180deg, ${tint} 0%, ${surface} 32%)`,
@@ -1084,8 +1086,8 @@ import slhLogo from "../../assets/000bda4db783fe15cbd489d69579eb6e0e831a8a.webp"
 import slhLogoDark from "../../assets/logos/slh-logo-dark.webp";
 import slhHero from "../../assets/e956f98cfa0d9f06f0dd2befe535fed91ed51d1e.webp";
 
-import dallahLogo from "../../assets/DallahLogo.webp";
-import dallahLogoDark from "../../assets/logos/dallah-logo-dark.webp";
+import dallahLogo from "../../assets/logos/dallah-correct-logo.png";
+import dallahLogoDark from "../../assets/logos/dallah-correct-logo-dark.png";
 import dallahHero from "../../assets/dallah-hero-welcome.webp";
 
 import caremedLogo from "../../assets/CareMedicalLogo.webp";
@@ -1187,12 +1189,9 @@ export const DALLAH_CORE: HospitalCoreConfig = {
   hospitalWebsiteUrl: "https://www.dallah-hospital.com/english/home",
   heroImageUrl: dallahHero,
   heroCropPosition: "50% 45%",
-  primary: "#004B8D",
-  primaryDark: "#003A6E",
-  primaryLight: "#E6EEF5",
-  accent: "#FDB913",
-  accentDark: "#C5900F",
-  accentLight: "#FFF6E0",
+  primary: "#00C4D3",
+  onPrimary: "#FFFFFF",
+  accent: "#4A4E4F",
   location: "Riyadh",
 };
 
@@ -1354,6 +1353,10 @@ export interface HospitalCoreConfig {
   slideshowInterval?: number;
   heroOpacity?: number;      // background photo opacity, percent 0–100 (default 40)
   primary: string;
+  /** Optional text/icon colour on a filled primary surface. Set only when the
+   *  brand guide prescribes it (Dallah: white on its cyan); otherwise it is
+   *  chosen for contrast. */
+  onPrimary?: string;
   /** Optional — auto-derived from `primary` when absent */
   primaryDark?: string;
   /** Optional — auto-derived from `primary` when absent */

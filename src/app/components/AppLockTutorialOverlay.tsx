@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Lock, Check } from "lucide-react";
-import { useTheme } from "./ThemeContext";
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
+import { Lock, Hand } from "lucide-react";
+import { useTheme, TEXT_STYLE, SHADOW, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
+import { DIALOG, DialogActions, DialogButton } from "./dialogKit";
 import { setHasSeenAppLockTutorial } from "../lib/appLockTutorialStore";
 
 export interface TargetTileInfo {
@@ -18,51 +19,49 @@ interface AppLockTutorialOverlayProps {
   onStartLockSetup: (appId: string, appName: string) => void;
 }
 
+const HOLD_DURATION_MS = 1000;
+const CARD_GAP = 24;
+const EDGE = 16;
+const CARET = 14;
+
 export function AppLockTutorialOverlay({
   target,
   onClose,
   onStartLockSetup,
 }: AppLockTutorialOverlayProps) {
-  const { theme: t, darkMode } = useTheme();
+  const { theme: t } = useTheme();
   const { t: tr, isRTL, fontFamily } = useLocale();
 
   const [holdProgress, setHoldProgress] = useState(0); // 0 to 100
   const [isHolding, setIsHolding] = useState(false);
-  const [demoProgress, setDemoProgress] = useState(0); // 0 to 100 for illustration loop
+  const [cardHeight, setCardHeight] = useState(220);
 
   const holdStartTimeRef = useRef<number | null>(null);
   const animFrameRef = useRef<number | null>(null);
-  const HOLD_DURATION_MS = 1000;
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  /* ─── Demo Animation Loop inside Coachmark Illustration ─── */
-  useEffect(() => {
-    let frameId: number;
-    let startTime = performance.now();
-    const cycleMs = 1800;
+  useLayoutEffect(() => {
+    if (cardRef.current) setCardHeight(cardRef.current.offsetHeight);
+  }, [tr]);
 
-    const loop = (now: number) => {
-      const elapsed = (now - startTime) % cycleMs;
-      // 0ms - 1000ms: ring fills 0 to 100%. 1000ms - 1800ms: holds at 100% with lock icon
-      const progress = Math.min(100, (elapsed / 1000) * 100);
-      setDemoProgress(progress);
-      frameId = requestAnimationFrame(loop);
-    };
+  const finish = useCallback(() => {
+    setHasSeenAppLockTutorial(true);
+    onClose();
+  }, [onClose]);
 
-    frameId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(frameId);
-  }, []);
+  const startLockSetup = useCallback(() => {
+    finish();
+    onStartLockSetup(target.id, target.name);
+  }, [finish, onStartLockSetup, target.id, target.name]);
 
-  /* ─── Complete long press handler ─── */
   const completeLongPress = useCallback(() => {
     if (navigator.vibrate) {
       try { navigator.vibrate([40, 30, 40]); } catch { /* non-fatal */ }
     }
-    setHasSeenAppLockTutorial(true);
-    onClose();
-    onStartLockSetup(target.id, target.name);
-  }, [onClose, onStartLockSetup, target.id, target.name]);
+    startLockSetup();
+  }, [startLockSetup]);
 
-  /* ─── Cancel hold ─── */
+  /* Letting go early resets the ring: a hold is never counted unless it lasts. */
   const cancelHold = useCallback(() => {
     if (animFrameRef.current) {
       cancelAnimationFrame(animFrameRef.current);
@@ -73,19 +72,15 @@ export function AppLockTutorialOverlay({
     setHoldProgress(0);
   }, []);
 
-  /* ─── Start hold ─── */
   const startHold = useCallback(() => {
     cancelHold();
     setIsHolding(true);
-    const now = performance.now();
-    holdStartTimeRef.current = now;
+    holdStartTimeRef.current = performance.now();
 
-    const tick = (currentTime: number) => {
+    const tick = (now: number) => {
       if (!holdStartTimeRef.current) return;
-      const elapsed = currentTime - holdStartTimeRef.current;
-      const pct = Math.min(100, (elapsed / HOLD_DURATION_MS) * 100);
+      const pct = Math.min(100, ((now - holdStartTimeRef.current) / HOLD_DURATION_MS) * 100);
       setHoldProgress(pct);
-
       if (pct >= 100) {
         cancelHold();
         completeLongPress();
@@ -93,313 +88,191 @@ export function AppLockTutorialOverlay({
         animFrameRef.current = requestAnimationFrame(tick);
       }
     };
-
     animFrameRef.current = requestAnimationFrame(tick);
   }, [cancelHold, completeLongPress]);
 
-  /* ─── Keyboard / Remote OK button listener ─── */
+  useEffect(() => () => {
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+  }, []);
+
+  /* Remote / keyboard: Escape dismisses, holding OK is the same as holding the tile. */
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        setHasSeenAppLockTutorial(true);
-        onClose();
+        finish();
         return;
       }
-      if ((e.key === "Enter" || e.key === " ") && !isHolding) {
-        if (e.repeat) return; // ignore key repeat
-        startHold();
-      }
+      if ((e.key === "Enter" || e.key === " ") && !isHolding && !e.repeat) startHold();
     };
-
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") {
-        cancelHold();
-      }
+      if (e.key === "Enter" || e.key === " ") cancelHold();
     };
-
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [isHolding, startHold, cancelHold, onClose]);
+  }, [isHolding, startHold, cancelHold, finish]);
 
-  /* ─── "Got it" action ─── */
-  const handleGotIt = () => {
-    setHasSeenAppLockTutorial(true);
-    onClose();
+  const handleNotNow = () => {
+    finish();
     target.onOpenOriginalApp();
   };
 
-  /* ─── Compute positions for target tile and coachmark ─── */
+  /* ─── Placement ─── */
   const rect = target.rect;
   const tileWidth = rect ? rect.width : 200;
   const tileHeight = rect ? rect.height : 200;
   const tileLeft = rect ? rect.left : window.innerWidth / 2 - 100;
   const tileTop = rect ? rect.top : window.innerHeight / 2 - 100;
 
-  // Determine coachmark position relative to tile
-  const coachmarkWidth = 400;
-  const isRightSideSpace = tileLeft + tileWidth + coachmarkWidth + 30 < window.innerWidth;
-  const placeOnRight = isRTL ? !isRightSideSpace : isRightSideSpace;
+  const cardWidth = DIALOG.small;
+  // The card sits on the reading-forward side of the tile (right in LTR, left
+  // in RTL) and flips when that side has no room.
+  const roomAfter = isRTL
+    ? tileLeft - CARD_GAP - cardWidth >= EDGE
+    : tileLeft + tileWidth + CARD_GAP + cardWidth <= window.innerWidth - EDGE;
+  const onRight = isRTL ? !roomAfter : roomAfter;
 
-  let coachLeft = placeOnRight
-    ? tileLeft + tileWidth + 20
-    : tileLeft - coachmarkWidth - 20;
+  const coachLeft = Math.max(EDGE, Math.min(
+    window.innerWidth - cardWidth - EDGE,
+    onRight ? tileLeft + tileWidth + CARD_GAP : tileLeft - CARD_GAP - cardWidth,
+  ));
+  const tileCenterY = tileTop + tileHeight / 2;
+  const coachTop = Math.max(EDGE, Math.min(window.innerHeight - cardHeight - EDGE, tileCenterY - cardHeight / 2));
+  // The caret points at the tile's centre, kept clear of the card's corners.
+  const caretTop = Math.max(32, Math.min(cardHeight - 32, tileCenterY - coachTop));
 
-  // Clamp coachmark inside screen
-  if (coachLeft < 16) coachLeft = 16;
-  if (coachLeft + coachmarkWidth > window.innerWidth - 16) {
-    coachLeft = window.innerWidth - coachmarkWidth - 16;
-  }
-
-  let coachTop = tileTop + tileHeight / 2 - 120;
-  if (coachTop < 20) coachTop = 20;
-  if (coachTop + 240 > window.innerHeight - 20) {
-    coachTop = window.innerHeight - 260;
-  }
-
-  const primaryCyan = "#0090B8";
+  const radius = parseFloat(t.radiusCard) || 40;
 
   return (
     <div
-      className="fixed inset-0 z-[9990] flex items-center justify-center select-none overflow-hidden"
-      style={{
-        backgroundColor: "rgba(15, 23, 42, 0.45)",
-        backdropFilter: "blur(2px)",
-        WebkitBackdropFilter: "blur(2px)",
-        fontFamily,
-      }}
+      className="fixed inset-0 z-[9990] select-none overflow-hidden"
+      style={{ backgroundColor: t.overlay, fontFamily }}
       dir={isRTL ? "rtl" : "ltr"}
-      tabIndex={0}
-      autoFocus
     >
-      {/* Invisible backdrop click capturer */}
-      <div
-        className="absolute inset-0"
-        onClick={(e) => {
-          e.stopPropagation();
-          setHasSeenAppLockTutorial(true);
-          onClose();
-        }}
-      />
+      {/* Tap outside: dismiss without opening anything */}
+      <div className="absolute inset-0" onClick={(e) => { e.stopPropagation(); finish(); }} />
 
-      {/* ─── ELEVATED HIGHLIGHTED TILE ─── */}
+      {/* ─── The real tile, lifted above the dim layer ─── */}
       <div
-        className="fixed z-[9995] flex flex-col items-center justify-center cursor-pointer transition-transform active:scale-95"
+        role="button"
+        aria-label={`${tr("appLock.tutorial.pressAndHold")} — ${target.name}`}
+        className="fixed z-[9995] flex flex-col items-center justify-center cursor-pointer active:scale-[0.97] transition-transform"
         style={{
-          left: `${tileLeft}px`,
-          top: `${tileTop}px`,
-          width: `${tileWidth}px`,
-          height: `${tileHeight}px`,
+          left: tileLeft,
+          top: tileTop,
+          width: tileWidth,
+          height: tileHeight,
           backgroundColor: t.surfaceElevated,
-          borderRadius: t.radiusCard || "16px",
-          border: `2.5px solid ${primaryCyan}`,
-          boxShadow: `0 0 30px rgba(0, 144, 184, 0.55), ${t.shadowMd || "0 4px 12px rgba(0,0,0,0.1)"}`,
+          borderRadius: radius,
+          boxShadow: `0 0 0 ${SPACE[1]} ${t.primarySubtle}, ${SHADOW.xl}`,
           touchAction: "none",
         }}
         onPointerDown={startHold}
         onPointerUp={cancelHold}
         onPointerLeave={cancelHold}
         onPointerCancel={cancelHold}
+        onContextMenu={(e) => e.preventDefault()}
       >
-        {/* Floating "Press and hold" pill badge above tile */}
+        {/* Outline that fills around the tile while it is held */}
+        <svg className="absolute inset-0 pointer-events-none" width={tileWidth} height={tileHeight} aria-hidden>
+          <rect
+            x={1.5} y={1.5} width={tileWidth - 3} height={tileHeight - 3}
+            rx={radius - 1.5} ry={radius - 1.5}
+            fill="none" stroke={t.primaryBorder} strokeWidth={3}
+          />
+          <rect
+            x={1.5} y={1.5} width={tileWidth - 3} height={tileHeight - 3}
+            rx={radius - 1.5} ry={radius - 1.5}
+            fill="none" stroke={t.primary} strokeWidth={4} strokeLinecap="round"
+            pathLength={100} strokeDasharray="100 100" strokeDashoffset={100 - holdProgress}
+            style={{ opacity: isHolding ? 1 : 0 }}
+          />
+        </svg>
+
+        {/* "Press and hold" label above the tile */}
         <div
-          className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3.5 py-1 rounded-full text-white font-semibold shadow-lg whitespace-nowrap"
+          className="absolute left-1/2 -translate-x-1/2 flex items-center whitespace-nowrap pointer-events-none"
           style={{
-            top: "-18px",
-            backgroundColor: primaryCyan,
-            fontSize: "12px",
-            letterSpacing: "0.2px",
-            zIndex: 10,
+            bottom: `calc(100% + ${SPACE[2]})`,
+            gap: SPACE[1],
+            padding: `${SPACE[1]} ${SPACE[2]}`,
+            borderRadius: t.radiusFull,
+            backgroundColor: t.primary,
+            color: t.brandOnPrimary,
+            boxShadow: SHADOW.md,
+            ...TEXT_STYLE.label,
           }}
         >
-          <Lock size={12} strokeWidth={2.5} />
-          <span>{tr("appLock.tutorial.pressAndHold") || "Press and hold"}</span>
-          {/* Arrow pointing down at tile */}
-          <div
-            className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 rotate-45"
-            style={{ backgroundColor: primaryCyan }}
+          <Hand size={16} strokeWidth={2.25} aria-hidden />
+          <span>{tr("appLock.tutorial.pressAndHold")}</span>
+          <span
+            className="absolute left-1/2 -translate-x-1/2 rotate-45"
+            style={{ bottom: -5, width: 10, height: 10, backgroundColor: t.primary }}
           />
         </div>
 
-        {/* Circular Progress Overlay when holding down */}
-        {isHolding && (
-          <div className="absolute inset-0 rounded-[14px] flex items-center justify-center overflow-hidden bg-black/10 pointer-events-none z-20">
-            <svg className="w-full h-full p-2" viewBox="0 0 100 100">
-              <circle
-                cx="50"
-                cy="50"
-                r="42"
-                fill="none"
-                stroke="rgba(0, 144, 184, 0.25)"
-                strokeWidth="8"
-              />
-              <circle
-                cx="50"
-                cy="50"
-                r="42"
-                fill="none"
-                stroke={primaryCyan}
-                strokeWidth="8"
-                strokeDasharray="263.89"
-                strokeDashoffset={263.89 - (263.89 * holdProgress) / 100}
-                strokeLinecap="round"
-                transform="rotate(-90 50 50)"
-                style={{ transition: "stroke-dashoffset 0.05s linear" }}
-              />
-            </svg>
+        <div className="relative flex flex-col items-center justify-center text-center" style={{ gap: SPACE[1], padding: SPACE[2] }}>
+          <div
+            className="flex items-center justify-center"
+            style={{ width: 56, height: 56, borderRadius: t.radiusMd, backgroundColor: t.primarySubtle, color: t.iconBrand }}
+          >
+            {target.icon ?? <Lock size={28} />}
           </div>
-        )}
-
-        {/* Tile Content (Icon + Name) */}
-        <div className="flex flex-col items-center justify-center gap-2.5 p-4 text-center">
-          {target.icon ? (
-            <div
-              className="flex items-center justify-center w-14 h-14 rounded-2xl"
-              style={{ backgroundColor: t.primaryLight || "rgba(0, 144, 184, 0.1)", color: primaryCyan }}
-            >
-              {target.icon}
-            </div>
-          ) : (
-            <div
-              className="flex items-center justify-center w-14 h-14 rounded-2xl"
-              style={{ backgroundColor: "rgba(0, 144, 184, 0.1)", color: primaryCyan }}
-            >
-              <Lock size={28} />
-            </div>
-          )}
-          <span style={{ fontSize: "16px", fontWeight: 700, color: t.textHeading || "#0F172A" }}>
-            {target.name}
-          </span>
+          <span style={{ ...TEXT_STYLE.subtitle, color: t.textHeading }}>{target.name}</span>
         </div>
       </div>
 
-      {/* ─── COACHMARK CARD BESIDE TILE ─── */}
+      {/* ─── Coachmark card ─── */}
       <div
-        className="fixed z-[9996] flex flex-col rounded-2xl p-5 animate-in fade-in zoom-in-95 duration-200"
+        ref={cardRef}
+        role="dialog"
+        aria-labelledby="app-lock-tutorial-title"
+        className="fixed z-[9996] motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200"
         style={{
-          left: `${coachLeft}px`,
-          top: `${coachTop}px`,
-          width: `${coachmarkWidth}px`,
+          left: coachLeft,
+          top: coachTop,
+          width: cardWidth,
+          padding: DIALOG.pad,
           backgroundColor: t.surfaceElevated,
-          border: `1px solid ${t.borderSubtle}`,
-          boxShadow: "0 20px 40px -10px rgba(15, 23, 42, 0.45)",
+          borderRadius: t.radiusLg,
+          boxShadow: SHADOW.xl,
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex flex-row items-center gap-5">
-          {/* Left Column — Animated Touch Illustration */}
-          <div
-            className="relative w-24 h-24 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden"
-            style={{ backgroundColor: t.surfaceInset, border: `1px solid ${t.borderDefault}` }}
-          >
-            {/* Outer Circular Progress Ring */}
-            <svg className="absolute inset-0 w-full h-full p-2" viewBox="0 0 100 100">
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                fill="none"
-                stroke={darkMode ? "rgba(255, 255, 255, 0.16)" : "#E2E8F0"}
-                strokeWidth="6"
-              />
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                fill="none"
-                stroke={primaryCyan}
-                strokeWidth="6"
-                strokeDasharray="251.32"
-                strokeDashoffset={251.32 - (251.32 * demoProgress) / 100}
-                strokeLinecap="round"
-                transform="rotate(-90 50 50)"
-              />
-            </svg>
+        {/* Caret pointing at the tile */}
+        <span
+          aria-hidden
+          className="absolute rotate-45"
+          style={{
+            top: caretTop - CARET / 2,
+            [onRight ? "left" : "right"]: -CARET / 2,
+            width: CARET,
+            height: CARET,
+            backgroundColor: t.surfaceElevated,
+          }}
+        />
 
-            {/* Inner Miniature Keypad & Touch Fingertip */}
-            <div className="relative flex items-center justify-center w-12 h-12">
-              {/* 3x3 Keypad dots */}
-              <div className="grid grid-cols-3 gap-1.5 opacity-30">
-                {Array.from({ length: 9 }).map((_, i) => (
-                  <div key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: t.textBody }} />
-                ))}
-              </div>
-
-              {/* Touch Hand/Fingertip Graphic */}
-              <div
-                className="absolute inset-0 flex items-center justify-center transition-transform duration-300"
-                style={{ transform: demoProgress > 0 && demoProgress < 100 ? "scale(0.9)" : "scale(1)" }}
-              >
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={primaryCyan} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0" />
-                  <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v6" />
-                  <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8" />
-                  <path d="M18 8a2 2 0 0 1 2 2v4a6 6 0 0 1-6 6h-2a6 6 0 0 1-6-6v-1.5" />
-                </svg>
-              </div>
-
-              {/* Lock pop-up badge when completed */}
-              {demoProgress >= 98 && (
-                <div
-                  className="absolute inset-0 flex items-center justify-center rounded-full animate-in zoom-in-75 duration-150"
-                  style={{ backgroundColor: t.surfaceElevated, opacity: 0.9 }}
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#0090B8] flex items-center justify-center text-white shadow-md">
-                    <Check size={18} strokeWidth={3} />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column — Content */}
-          <div className="flex flex-col flex-1 min-w-0">
-            <h3 className="text-base font-bold leading-snug" style={{ color: t.textHeading }}>
-              {tr("appLock.tutorial.title") || "Keep an app private"}
-            </h3>
-            <p className="text-xs mt-1 leading-relaxed" style={{ color: t.textBody }}>
-              {tr("appLock.tutorial.body") || "Touch and hold any app to lock it with your PIN."}
-            </p>
-            <span
-              className="text-xs font-semibold mt-1.5"
-              style={{ color: primaryCyan }}
-            >
-              {tr("appLock.tutorial.hint") || "Hold for 2 seconds"}
-            </span>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3 mt-3.5">
-              <button
-                onClick={startHold}
-                className="px-4 py-1.5 rounded-full text-white font-bold text-xs shadow-sm cursor-pointer active:scale-95 transition-all"
-                style={{ backgroundColor: primaryCyan }}
-              >
-                {tr("appLock.tutorial.tryIt") || "Try it"}
-              </button>
-              <button
-                onClick={handleGotIt}
-                className="font-semibold text-xs cursor-pointer hover:underline"
-                style={{ color: primaryCyan }}
-              >
-                {tr("appLock.tutorial.gotIt") || "Got it"}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer Progress Indicator */}
         <div
-          className="mt-3 pt-2.5 flex items-center justify-center"
-          style={{ borderTop: `1px solid ${t.borderSubtle}` }}
+          className="flex items-center justify-center"
+          style={{ width: 48, height: 48, borderRadius: t.radiusFull, backgroundColor: t.primarySubtle, color: t.iconBrand, marginBottom: SPACE[2] }}
         >
-          <span className="text-[11px] font-medium" style={{ color: t.textMuted }}>
-            {tr("appLock.tutorial.progress") || "1 of 1"}
-          </span>
+          <Lock size={24} strokeWidth={2.25} aria-hidden />
         </div>
+        <h3 id="app-lock-tutorial-title" style={{ ...TEXT_STYLE.dialogTitle, color: t.textHeading, margin: 0 }}>
+          {tr("appLock.tutorial.title")}
+        </h3>
+        <p style={{ ...TEXT_STYLE.dialogBody, color: t.textBody, margin: `${SPACE[1]} 0 0` }}>
+          {tr("appLock.tutorial.body")}
+        </p>
+
+        <DialogActions>
+          <DialogButton kind="secondary" label={tr("appLock.tutorial.notNow")} onClick={handleNotNow} />
+          <DialogButton kind="primary" label={tr("appLock.setup.confirm")} onClick={startLockSetup} />
+        </DialogActions>
       </div>
     </div>
   );
