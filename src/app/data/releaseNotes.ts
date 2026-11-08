@@ -35,6 +35,23 @@ export const CHANGE_TYPES: { type: ChangeType; label: string }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: "1.9.0",
+    date: "2026-11-08",
+    changes: [
+      { type: "new", area: "Patient Services", text: "A search box in every category, the same one Live TV has. Type a few letters to find an item." },
+      { type: "new", area: "PIN", text: "The PIN row opens one place to change your PIN, update your NFC card or remove the PIN." },
+      { type: "improved", area: "Popups", text: "Every popup shares one look: the same sizes, title bar and buttons, with Cancel first. PIN popups are centred; the others start with an icon." },
+      { type: "improved", area: "Settings", text: "Settings is one list of rows: Language, Use my phone, Preferences, PIN and Care Team, then Log out and Clear My Data apart in red." },
+      { type: "improved", area: "Settings", text: "Wi-Fi, Bluetooth and Cast: the on/off switch stays at the top, Scan again, and a red Disconnect for the connected device." },
+      { type: "improved", area: "Settings", text: "Language opens a list with an Apply button, so it works with many languages." },
+      { type: "improved", area: "Patient Services", text: "The request popup shows the category's icon and the item name as its title." },
+      { type: "improved", area: "Use my phone", text: "The Use my phone popup is the same size as the other popups." },
+      { type: "improved", area: "Wording", text: "Plainer text in popups, PIN, Bluetooth and Clear My Data." },
+      { type: "fixed", area: "CareMe", text: "The discharge date reads \"Expected discharge\" in English and Urdu, as it already did in Arabic." },
+      { type: "fixed", area: "Clear My Data", text: "The Arabic message now reads يتم تسجيل خروجك." },
+    ],
+  },
+  {
     version: "1.8.0",
     date: "2026-11-08",
     changes: [
