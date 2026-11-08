@@ -170,20 +170,38 @@ export function NewsTicker({ items, paused = false }: NewsTickerProps = {}) {
     const elements: React.ReactNode[] = [];
     newsItems.forEach((item, i) => {
       elements.push(<span key={`item-${i}`}>{item}</span>);
+      // The leaf mark is Fakeeh's own; every other brand gets a plain dot.
       elements.push(
-        <ApiImage
-          key={`sep-${i}`}
-          src={separatorIcon}
-          alt=""
-          style={{
-            width: "14px",
-            height: "14px",
-            display: "inline-block",
-            verticalAlign: "middle",
-            margin: "0 24px",
-            opacity: 0.5,
-          }}
-        />
+        theme.id === "dsfh" ? (
+          <ApiImage
+            key={`sep-${i}`}
+            src={separatorIcon}
+            alt=""
+            style={{
+              width: "14px",
+              height: "14px",
+              display: "inline-block",
+              verticalAlign: "middle",
+              margin: `0 ${SPACE[3]}`,
+              opacity: 0.5,
+            }}
+          />
+        ) : (
+          <span
+            key={`sep-${i}`}
+            aria-hidden
+            style={{
+              width: "8px",
+              height: "8px",
+              borderRadius: theme.radiusFull,
+              backgroundColor: "currentColor",
+              display: "inline-block",
+              flexShrink: 0,
+              margin: `0 ${SPACE[3]}`,
+              opacity: 0.6,
+            }}
+          />
+        )
       );
     });
     return elements;
