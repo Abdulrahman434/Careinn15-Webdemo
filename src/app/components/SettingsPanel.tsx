@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, Children, Fragment } from "react";
 import { ApiImage } from "./ApiImage";
 import {
   isAndroidApp,
@@ -37,8 +37,11 @@ import {
   Cast,
   Tv,
   Loader2,
+  RotateCcw,
+  RefreshCw,
   Signal,
   Lock,
+  KeyRound,
   Smartphone,
   Headphones,
   Speaker,
@@ -55,7 +58,8 @@ import {
 import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useAuth } from "./AuthContext";
-import { clearAllDataAndReload, clearUserDataAndReload } from "../lib/clearAllData";
+import { clearUserDataAndReload, clearAllDataAndReload } from "../lib/clearAllData";
+import { BrushCleaningIcon } from "./PatientGreeting";
 import { NurseInterface } from "./nurse/NurseInterface";
 import type { Locale } from "./i18n";
 import imgMosque from "../../assets/b51acb5e2ec4a2c930572c53103b020b12e76ee2.webp";
@@ -63,6 +67,9 @@ import { getPrayerStatus, getCountdown, formatPrayerTime, PRAYER_NAMES } from ".
 import { MyPreferencesDialog } from "./MyAccountDialog";
 import { PinDialog } from "./PinDialog";
 import { isAccountSet } from "../lib/accountAuth";
+import { useSettingsPreview } from "./settingsPreview";
+import { DialogFrame, DialogTitleBar, DialogText, DialogButton, DialogActions, DialogSwitchRow, DialogPinned } from "./dialogKit";
+import { ListRowGroup, ListRow } from "./listRow";
 import { resetAppLockTutorial } from "../lib/appLockTutorialStore";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { RELEASES, CHANGE_TYPES } from "../data/releaseNotes";
@@ -307,69 +314,76 @@ function QuickTile({
   );
 }
 
-/* ─── Language Picker Inline ─── */
+/* ─── Language Picker ───
+ * A plain list, so it holds two languages or twenty: it scrolls inside the
+ * dialog past about six. Each language in its own script first (a patient
+ * picks the one they can read), its English name under it. */
+const LANGUAGE_OPTIONS: { key: Locale; label: string; native: string }[] = [
+  { key: "en", label: "English", native: "English" },
+  { key: "ar", label: "Arabic", native: "\u0627\u0644\u0639\u0631\u0628\u064A\u0629" },
+  { key: "ur", label: "Urdu", native: "\u0627\u0631\u062f\u0648" },
+];
+
+/* Demo only: seven sample languages, to judge the popup with ten. They
+   can be picked to see the selection, but Apply works only for the three
+   the app speaks. Switched in the nurse view (Settings panel rows). */
+const SAMPLE_LANGUAGES: { key: string; label: string; native: string }[] = [
+  { key: "fr", label: "French", native: "Français" },
+  { key: "hi", label: "Hindi", native: "हिन्दी" },
+  { key: "bn", label: "Bengali", native: "বাংলা" },
+  { key: "tl", label: "Filipino", native: "Filipino" },
+  { key: "id", label: "Indonesian", native: "Bahasa Indonesia" },
+  { key: "ml", label: "Malayalam", native: "മലയാളം" },
+  { key: "ru", label: "Russian", native: "Русский" },
+];
+
 function LanguagePicker({
   selected,
   onSelect,
 }: {
-  selected: Locale;
-  onSelect: (lang: Locale) => void;
+  selected: string;
+  onSelect: (lang: string) => void;
 }) {
   const { theme: t } = useTheme();
-  const options: { key: Locale; label: string; native: string }[] = [
-    { key: "en", label: "English", native: "English" },
-    { key: "ar", label: "Arabic", native: "\u0627\u0644\u0639\u0631\u0628\u064A\u0629" },
-    { key: "ur", label: "Urdu", native: "\u0627\u0631\u062f\u0648" },
-  ];
-
+  const preview = useSettingsPreview();
+  const options = preview.sampleLanguages ? [...LANGUAGE_OPTIONS, ...SAMPLE_LANGUAGES] : LANGUAGE_OPTIONS;
   return (
-    <div className="flex flex-col gap-2">
+    /* No scroll box of its own: the popup scrolls (up to its 640 cap) with
+       Cancel / Apply pinned under the list, so ten languages show about
+       seven rows at a time. The 2px inset keeps the selected row's outline
+       from being clipped. */
+    <div className="flex flex-col gap-2" style={{ padding: "2px" }}>
       {options.map((opt) => {
         const isActive = selected === opt.key;
         return (
           <button
             key={opt.key}
             onClick={() => onSelect(opt.key)}
-            className="flex items-center gap-3 w-full cursor-pointer active:scale-[0.98] transition-transform select-none"
+            className="flex items-center gap-3 w-full cursor-pointer active:scale-[0.98] transition-transform select-none shrink-0"
             style={{
-              padding: "10px 14px",
+              minHeight: "60px",
+              padding: "8px 16px",
               borderRadius: t.radiusLg,
-              backgroundColor: isActive ? t.primarySubtle : t.tileInactiveBg,
-              border: isActive ? `1.5px solid ${t.borderActive}` : "1.5px solid transparent",
+              backgroundColor: isActive ? t.primarySubtle : "transparent",
+              border: `1.5px solid ${isActive ? t.borderActive : t.borderDefault}`,
             }}
           >
-            <span
-              className="flex-1 text-left"
-              style={{
-                fontFamily: t.fontFamily,
-                fontSize: "15px",
-                fontWeight: isActive ? 700 : 600,
-                color: isActive ? t.primaryOn : t.textHeading,
-              }}
-            >
-              {opt.label}
-            </span>
-            <span
-              style={{
-                fontFamily: t.fontFamily,
-                fontSize: "13px",
-                fontWeight: 500,
-                color: t.textMuted,
-              }}
-            >
-              {opt.native}
-            </span>
+            <div className="flex-1 min-w-0 flex flex-col" style={{ textAlign: "start", gap: "2px" }}>
+              <span style={{ fontFamily: t.fontFamily, fontSize: "17px", fontWeight: 700, lineHeight: 1.5, color: isActive ? t.primaryOn : t.textHeading }}>
+                {opt.native}
+              </span>
+              {opt.native !== opt.label && (
+                <span style={{ fontFamily: t.fontFamily, fontSize: "13px", fontWeight: 500, lineHeight: 1.4, color: t.textMuted }}>
+                  {opt.label}
+                </span>
+              )}
+            </div>
             {isActive && (
               <div
                 className="shrink-0 flex items-center justify-center"
-                style={{
-                  width: "22px",
-                  height: "22px",
-                  borderRadius: t.radiusFull,
-                  backgroundColor: t.primary,
-                }}
+                style={{ width: "24px", height: "24px", borderRadius: t.radiusFull, backgroundColor: t.primary }}
               >
-                <Check size={13} style={{ color: t.textInverse }} strokeWidth={3} />
+                <Check size={14} style={{ color: t.brandOnPrimary }} />
               </div>
             )}
           </button>
@@ -383,108 +397,72 @@ function LanguagePicker({
 function CenteredDialog({
   children,
   onClose,
-  width = 340,
+  size = "content",
 }: {
   children: React.ReactNode;
   onClose: () => void;
   width?: number;
+  /** "device" for Wi-Fi, Bluetooth and Cast. */
+  size?: "small" | "device" | "content";
 }) {
-  const { theme: t } = useTheme();
-  return (
-    <div
-      className="absolute inset-0 z-[60] flex items-center justify-center"
-      style={{ animation: "settingsFadeIn 0.15s ease-out" }}
-    >
-      <div
-        className="absolute inset-0"
-        style={{ backgroundColor: t.overlay }}
-        onClick={onClose}
-      />
-      <div
-        className="relative flex flex-col"
-        style={{
-          width: `${width}px`,
-          /* Per cent of the scaled canvas, not vh: the kiosk transform-scales
-             the whole 1920x1080 canvas, so vh resolves against the browser
-             window instead and clipped this dialog mid-keypad. */
-          maxHeight: "90%",
-          overflowY: "auto",
-          borderRadius: t.radiusXl,
-          backgroundColor: t.surface,
-          boxShadow: "0 16px 48px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.06)",
-          animation: "castDialogIn 0.2s ease-out",
-          overflowX: "hidden",
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  );
+  return <DialogFrame onClose={onClose} size={size}>{children}</DialogFrame>;
 }
 
-/* ─── Dialog Header (reusable) ─── */
-function DialogHeader({
-  icon,
-  title,
-  onClose,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  onClose: () => void;
-}) {
-  const { theme: t } = useTheme();
-  return (
-    <div
-      className="flex items-center justify-between"
-      style={{ padding: "20px 20px 0 20px" }}
-    >
-      <div className="flex items-center gap-3">
-        {icon}
-        <span
-          style={{
-            fontFamily: t.fontFamily,
-            fontSize: "17px",
-            fontWeight: 700,
-            color: t.textHeading,
-          }}
-        >
-          {title}
-        </span>
-      </div>
-      <button
-        onClick={onClose}
-        className="flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
-        style={{
-          width: "36px",
-          height: "36px",
-          borderRadius: t.radiusFull,
-          backgroundColor: t.tileInactiveBg,
-          border: "none",
-        }}
-      >
-        <X size={16} style={{ color: t.textMuted }} />
-      </button>
-    </div>
-  );
-}
+/* ─── Dialog Header (reusable) ─── the shared title bar itself, so the
+   frame can keep it fixed while the list under it scrolls. */
+const DialogHeader = DialogTitleBar;
 
 /* ─── Dialog Section Label ─── */
-function DialogSectionLabel({ children }: { children: string }) {
+function DialogSectionLabel({ children, action }: { children: string; action?: React.ReactNode }) {
   const { theme: t } = useTheme();
   return (
-    <span
+    <div className="flex items-center justify-between" style={{ minHeight: action ? 44 : undefined, marginBottom: "4px" }}>
+      <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 600, color: t.textMuted }}>
+        {children}
+      </span>
+      {action}
+    </div>
+  );
+}
+
+/* ─── Scan again ───
+ * Next to "Available devices": search once more without closing the popup.
+ * The list stays while it searches (the phones show a spinner, not an empty
+ * screen); the button reads "Searching…" and waits until the scan ends. */
+function ScanAgainButton({ scanning, onScan }: { scanning: boolean; onScan: () => void }) {
+  const { theme: t } = useTheme();
+  const { t: tr } = useLocale();
+  return (
+    <button
+      onClick={scanning ? undefined : onScan}
+      disabled={scanning}
+      className="shrink-0 flex items-center cursor-pointer active:scale-95 transition-transform"
       style={{
-        fontFamily: t.fontFamily,
-        fontSize: "12px",
-        fontWeight: 600,
-        color: t.textMuted,
-        letterSpacing: "0.5px",
-        marginBottom: "4px",
+        minHeight: 44, gap: "8px", padding: "0 12px", marginInlineEnd: "-12px",
+        borderRadius: t.radiusMd, background: "none", border: "none", outline: "none",
+        fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 600,
+        color: scanning ? t.textMuted : t.primaryOn,
       }}
     >
-      {children}
-    </span>
+      {scanning
+        ? <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
+        : <RefreshCw size={18} />}
+      {scanning ? tr("scan.searching") : tr("scan.again")}
+    </button>
   );
+}
+
+/** A second scan, started by Scan again. */
+function useRescan(start: () => void, stop?: () => void, ms = 4000) {
+  const [rescanning, setRescanning] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  const rescan = () => {
+    setRescanning(true);
+    start();
+    timer.current = setTimeout(() => { setRescanning(false); stop?.(); }, ms);
+  };
+  return { rescanning, rescan };
 }
 
 /* ─── Device List Item (reusable for Wi-Fi, Bluetooth, Cast) ─── */
@@ -495,6 +473,7 @@ function DeviceListItem({
   isConnected,
   disabled,
   onClick,
+  trailing,
 }: {
   icon: React.ReactNode;
   name: string;
@@ -502,14 +481,17 @@ function DeviceListItem({
   isConnected: boolean;
   disabled?: boolean;
   onClick: () => void;
+  /** Replaces the check: a per-row control (Bluetooth's Disconnect). */
+  trailing?: React.ReactNode;
 }) {
   const { theme: t } = useTheme();
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-3 w-full cursor-pointer active:scale-[0.97] transition-transform select-none"
+      className="flex items-center gap-3 w-full cursor-pointer active:scale-[0.98] transition-transform select-none shrink-0"
       style={{
-        padding: "12px 14px",
+        minHeight: "60px",
+        padding: "10px 14px",
         borderRadius: t.radiusLg,
         backgroundColor: isConnected ? t.primarySubtle : t.tileInactiveBg,
         border: isConnected ? `1.5px solid ${t.borderActive}` : "1.5px solid transparent",
@@ -527,12 +509,13 @@ function DeviceListItem({
       >
         {icon}
       </div>
-      <div className="flex-1 text-left">
+      <div className="flex-1 min-w-0" style={{ textAlign: "start" }}>
         <span
           style={{
             fontFamily: t.fontFamily,
-            fontSize: "14px",
+            fontSize: "16px",
             fontWeight: 700,
+            lineHeight: 1.4,
             color: isConnected ? t.primaryOn : t.textHeading,
             display: "block",
           }}
@@ -542,8 +525,9 @@ function DeviceListItem({
         <span
           style={{
             fontFamily: t.fontFamily,
-            fontSize: "11px",
+            fontSize: "13px",
             fontWeight: 500,
+            lineHeight: 1.4,
             color: isConnected ? t.primaryOn : t.textMuted,
             display: "block",
             marginTop: "1px",
@@ -552,7 +536,7 @@ function DeviceListItem({
           {subtitle}
         </span>
       </div>
-      {isConnected && (
+      {trailing ?? (isConnected && (
         <div
           className="shrink-0 flex items-center justify-center"
           style={{
@@ -564,37 +548,19 @@ function DeviceListItem({
         >
           <Check size={13} style={{ color: t.textInverse }} strokeWidth={3} />
         </div>
-      )}
+      ))}
     </button>
   );
 }
 
-/* ─── Disconnect Button (reusable) ─── */
+/* ─── Disconnect Button (reusable) ─── destructive: it ends a connection
+   the patient is using, so red — as an outline, since it is routine and
+   undone with one tap. */
 function DisconnectButton({ label, onClick }: { label: string; onClick: () => void }) {
-  const { theme: t } = useTheme();
   return (
-    <button
-      onClick={onClick}
-      className="flex items-center justify-center cursor-pointer active:scale-[0.96] transition-transform"
-      style={{
-        height: t.touchTargetMin,
-        borderRadius: t.radiusMd,
-        backgroundColor: t.accentSubtle,
-        marginTop: "8px",
-        border: "none",
-      }}
-    >
-      <span
-        style={{
-          fontFamily: t.fontFamily,
-          fontSize: "14px",
-          fontWeight: 700,
-          color: t.accentOn,
-        }}
-      >
-        {label}
-      </span>
-    </button>
+    <DialogActions style={{ marginTop: "16px" }}>
+      <DialogButton kind="dangerOutline" label={label} onClick={onClick} />
+    </DialogActions>
   );
 }
 
@@ -646,11 +612,16 @@ function WifiDialog({
   connectedId,
   onConnect,
   onDisconnect,
+  enabled,
+  onToggle,
 }: {
   onClose: () => void;
   connectedId: string | null;
   onConnect: (id: string) => void;
   onDisconnect: () => void;
+  /** The master switch at the top, as on the phones' own Wi-Fi screen. */
+  enabled?: boolean;
+  onToggle?: (on: boolean) => void;
 }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLocale();
@@ -662,6 +633,7 @@ function WifiDialog({
   );
 
   const [scanning, setScanning] = useState(true);
+  const wifiScan = useRescan(() => { if (isNative) wifiBridge.startScan(); });
 
   useEffect(() => {
     if (isNative) {
@@ -692,18 +664,25 @@ function WifiDialog({
   );
 
   return (
-    <CenteredDialog onClose={onClose}>
+    <CenteredDialog onClose={onClose} size="device">
       <DialogHeader
         icon={<Wifi size={20} style={{ color: t.primaryOn }} />}
         title={tr("settings.wifi")}
         onClose={onClose}
       />
-      <div className="flex flex-col" style={{ padding: "16px 20px 20px 20px" }}>
-        {scanning ? (
+      <div className="flex flex-col" style={{ paddingTop: "16px" }}>
+        {onToggle && (
+          <DialogPinned>
+            <DialogSwitchRow label={tr("settings.wifi")} on={enabled !== false} onChange={onToggle} />
+          </DialogPinned>
+        )}
+        {enabled === false ? (
+          <DialogText>{tr("wifi.offHint")}</DialogText>
+        ) : scanning ? (
           <ScanningState message={tr("wifi.scanning")} />
         ) : (
           <div className="flex flex-col gap-2">
-            <DialogSectionLabel>{tr("wifi.available")}</DialogSectionLabel>
+            <DialogSectionLabel action={<ScanAgainButton scanning={wifiScan.rescanning} onScan={wifiScan.rescan} />}>{tr("wifi.available")}</DialogSectionLabel>
             {wifiNetworks.map((net) => {
               const isConnected = connectedId === net.id;
               return (
@@ -714,8 +693,10 @@ function WifiDialog({
                   subtitle={isConnected ? tr("wifi.connected") : net.secured ? tr("wifi.secured") : tr("wifi.open")}
                   isConnected={isConnected}
                   onClick={() => {
+                    /* Connected: Disconnect is the named button below, as on
+                       the phones — a tap on the row never drops the network. */
                     if (isConnected) {
-                      onDisconnect();
+                      return;
                     } else if (isNative) {
                       // TODO: add an inline password prompt for secured networks.
                       // For now, delegate to Android's own Wi-Fi settings UI so
@@ -731,7 +712,7 @@ function WifiDialog({
             {connectedId && (
               <DisconnectButton
                 label={tr("settings.disconnect")}
-                onClick={() => { onDisconnect(); onClose(); }}
+                onClick={() => onDisconnect()}
               />
             )}
           </div>
@@ -753,20 +734,39 @@ const mockBtDevices = [
   { id: "bt-phone2", name: "iPhone 15", type: "Phone", icon: Smartphone, paired: false },
 ];
 
+/* Android keeps Bluetooth devices of different kinds connected together
+   (a speaker and the nurse call button, say), so each connected row has its
+   own Disconnect. Audio is one device at a time: Android's "maximum connected
+   audio devices" is 1 by default, so connecting a second speaker/headset
+   replaces the first. Wi-Fi and Cast are one-at-a-time and keep a single
+   Disconnect. */
+const BT_AUDIO_TYPES = ["Speaker", "Audio", "Headphones"];
+export function isBtAudio(type: string | undefined) {
+  return !!type && BT_AUDIO_TYPES.includes(type);
+}
 export function BluetoothDialog({
   onClose,
-  connectedId,
+  connectedIds,
   onConnect,
   onDisconnect,
+  enabled,
+  onToggle,
 }: {
   onClose: () => void;
-  connectedId: string | null;
+  connectedIds: string[];
   onConnect: (id: string) => void;
-  onDisconnect: () => void;
+  onDisconnect: (id: string) => void;
+  /** The master switch at the top, as on the phones' own Bluetooth screen. */
+  enabled?: boolean;
+  onToggle?: (on: boolean) => void;
 }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLocale();
   const isNative = isAndroidApp();
+  /* Two cases, chosen per build (demo: nurse view switch).
+     Several at once: Disconnect on each connected row + Disconnect all.
+     One at a time: a check on the connected row + a single Disconnect. */
+  const single = useSettingsPreview().btSingle;
 
   // Dynamic device list — mock for browser, live for kiosk
   const [btDevices, setBtDevices] = useState(
@@ -776,7 +776,10 @@ export function BluetoothDialog({
   );
 
   const [scanning, setScanning] = useState(true);
-  const [search, setSearch] = useState("");
+  const btScan = useRescan(
+    () => { if (isNative) bluetoothBridge.startScan(); },
+    () => { if (isNative) bluetoothBridge.stopScan(); },
+  );
 
   useEffect(() => {
     if (isNative) {
@@ -833,74 +836,38 @@ export function BluetoothDialog({
     }
   );
 
-  const pairedDevices = btDevices.filter((d) => d.paired);
-  const availableDevices = btDevices.filter((d) => !d.paired);
+  /* Connecting a device pairs it, so a connected one is listed with the paired. */
+  const pairedDevices = btDevices.filter((d) => d.paired || connectedIds.includes(d.id));
+  const availableDevices = btDevices.filter((d) => !d.paired && !connectedIds.includes(d.id));
 
-  const filterDevices = (devices: typeof btDevices) =>
-    search.trim()
-      ? devices.filter((d) => d.name.toLowerCase().includes(search.toLowerCase()))
-      : devices;
-
-  const filteredPaired = filterDevices(pairedDevices);
-  const filteredAvailable = filterDevices(availableDevices);
+  /* No search box: a bedside list is a handful of devices, read at a glance. */
+  const filteredPaired = pairedDevices;
+  const filteredAvailable = availableDevices;
 
   return (
-    <CenteredDialog onClose={onClose}>
+    <CenteredDialog onClose={onClose} size="device">
       <DialogHeader
         icon={<Bluetooth size={20} style={{ color: t.primaryOn }} />}
         title={tr("settings.bluetooth")}
         onClose={onClose}
       />
-      <div className="flex flex-col" style={{ padding: "16px 20px 20px 20px" }}>
-        {scanning ? (
+      <div className="flex flex-col" style={{ paddingTop: "16px" }}>
+        {onToggle && (
+          <DialogPinned>
+            <DialogSwitchRow label={tr("settings.bluetooth")} on={enabled !== false} onChange={onToggle} />
+          </DialogPinned>
+        )}
+        {enabled === false ? (
+          <DialogText>{tr("bt.offHint")}</DialogText>
+        ) : scanning ? (
           <ScanningState message={tr("bt.searching")} />
         ) : (
           <div className="flex flex-col gap-3">
-            {/* Search input */}
-            <div
-              className="flex items-center gap-2"
-              style={{
-                padding: "0 12px",
-                height: "40px",
-                borderRadius: t.radiusMd,
-                backgroundColor: t.tileInactiveBg,
-                border: `1.5px solid ${t.borderDefault}`,
-              }}
-            >
-              <Search size={16} style={{ color: t.textMuted, flexShrink: 0 }} />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={tr("bt.searchDevices")}
-                style={{
-                  flex: 1,
-                  border: "none",
-                  outline: "none",
-                  background: "transparent",
-                  fontFamily: t.fontFamily,
-                  fontSize: "13px",
-                  fontWeight: 500,
-                  color: t.textHeading,
-                }}
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="flex items-center justify-center cursor-pointer"
-                  style={{ border: "none", background: "transparent", padding: 0 }}
-                >
-                  <X size={14} style={{ color: t.textMuted }} />
-                </button>
-              )}
-            </div>
-
             {/* Paired + Available sections (Scrollable) */}
             <div
               className="flex flex-col gap-3"
               style={{
-                maxHeight: "min(420px, 50vh)",
-                overflowY: "auto",
+
               }}
             >
               {/* Paired devices section */}
@@ -908,7 +875,7 @@ export function BluetoothDialog({
                 <div className="flex flex-col gap-2">
                   <DialogSectionLabel>{tr("bt.paired")}</DialogSectionLabel>
                   {filteredPaired.map((device) => {
-                    const isConnected = connectedId === device.id;
+                    const isConnected = connectedIds.includes(device.id);
                     const DevIcon = device.icon;
                     return (
                       <DeviceListItem
@@ -917,14 +884,25 @@ export function BluetoothDialog({
                         name={device.name}
                         subtitle={isConnected ? tr("wifi.connected") : tr("bt.pairedStatus")}
                         isConnected={isConnected}
+                        trailing={isConnected && !single ? (
+                          <span
+                            role="button"
+                            onClick={(e) => { e.stopPropagation(); onDisconnect(device.id); }}
+                            className="shrink-0 flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+                            style={{
+                              minHeight: "44px", padding: "0 14px", borderRadius: t.radiusMd,
+                              /* Red outline: destructive, but repeated on each row, so not a solid red block. */
+                              border: `1.5px solid ${t.errorOn}`, backgroundColor: t.surface,
+                              fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 600, color: t.errorOn,
+                            }}
+                          >
+                            {tr("settings.disconnect")}
+                          </span>
+                        ) : undefined}
                         onClick={() => {
-                          if (isConnected) {
-                            if (isNative) bluetoothBridge.disconnect(device.id);
-                            onDisconnect();
-                          } else {
-                            if (isNative) bluetoothBridge.connect(device.id);
-                            else onConnect(device.id);
-                          }
+                          if (isConnected) return;
+                          if (isNative) bluetoothBridge.connect(device.id);
+                          else onConnect(device.id);
                         }}
                       />
                     );
@@ -932,10 +910,12 @@ export function BluetoothDialog({
                 </div>
               )}
 
-              {/* Available devices section */}
-              {filteredAvailable.length > 0 && (
+              {/* Available devices section — always shown, so Scan again is
+                  there even when the last search found nothing. */}
+              {(
                 <div className="flex flex-col gap-2">
-                  <DialogSectionLabel>{tr("bt.available")}</DialogSectionLabel>
+                  <DialogSectionLabel action={<ScanAgainButton scanning={btScan.rescanning} onScan={btScan.rescan} />}>{tr("bt.available")}</DialogSectionLabel>
+                  {filteredAvailable.length === 0 && <DialogText>{tr("bt.noDevices")}</DialogText>}
                   {filteredAvailable.map((device) => {
                     const DevIcon = device.icon;
                     return (
@@ -955,33 +935,17 @@ export function BluetoothDialog({
                 </div>
               )}
 
-              {/* No results */}
-              {filteredPaired.length === 0 && filteredAvailable.length === 0 && (
-                <div
-                  className="flex flex-col items-center justify-center gap-2"
-                  style={{ padding: "20px 0" }}
-                >
-                  <Search size={24} style={{ color: t.textDisabled }} />
-                  <span
-                    style={{
-                      fontFamily: t.fontFamily,
-                      fontSize: "13px",
-                      fontWeight: 500,
-                      color: t.textMuted,
-                    }}
-                  >
-                    {tr("bt.noMatch", search)}
-                  </span>
-                </div>
+              {connectedIds.length > 0 && (
+                <DisconnectButton
+                  label={single ? tr("settings.disconnect") : tr("bt.disconnectAll")}
+                  onClick={() => connectedIds.forEach((id) => onDisconnect(id))}
+                />
               )}
+
+
             </div>
 
-            {connectedId && (
-              <DisconnectButton
-                label={tr("settings.disconnect")}
-                onClick={() => { onDisconnect(); onClose(); }}
-              />
-            )}
+
           </div>
         )}
       </div>
@@ -1018,6 +982,10 @@ function CastDialog({
   );
 
   const [scanning, setScanning] = useState(false);
+  const castScan = useRescan(
+    () => { if (isNative) castBridge.startScan(); },
+    () => { if (isNative) castBridge.stopScan(); },
+  );
 
   useEffect(() => {
     if (!connectedId) {
@@ -1065,18 +1033,18 @@ function CastDialog({
   );
 
   return (
-    <CenteredDialog onClose={onClose}>
+    <CenteredDialog onClose={onClose} size="device">
       <DialogHeader
         icon={<Cast size={20} style={{ color: t.primaryOn }} />}
         title={tr("settings.castScreen")}
         onClose={onClose}
       />
-      <div className="flex flex-col" style={{ padding: "16px 20px 20px 20px" }}>
+      <div className="flex flex-col" style={{ paddingTop: "16px" }}>
         {scanning ? (
           <ScanningState message={tr("cast.looking")} />
         ) : (
           <div className="flex flex-col gap-2">
-            <DialogSectionLabel>{tr("bt.available")}</DialogSectionLabel>
+            <DialogSectionLabel action={<ScanAgainButton scanning={castScan.rescanning} onScan={castScan.rescan} />}>{tr("bt.available")}</DialogSectionLabel>
             {castDevices.map((device) => {
               const isConnected = connectedId === device.id;
               return (
@@ -1114,157 +1082,6 @@ function CastDialog({
 }
 
 /* ─── Clear Data Confirmation Dialog ─── */
-function ClearDataDialog({
-  onClose,
-  onClearMyData,
-  onClearEverything,
-}: {
-  onClose: () => void;
-  onClearMyData: () => void;
-  onClearEverything: () => void;
-}) {
-  const { theme: t } = useTheme();
-  const { t: tr } = useLocale();
-
-  const DANGER = "#D10044";
-  const DANGER_SUBTLE = "rgba(209,0,68,0.06)";
-  const DANGER_BORDER = "rgba(209,0,68,0.12)";
-
-  return (
-    <CenteredDialog onClose={onClose} width={560}>
-      {/* Absolute close button */}
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
-        style={{
-          width: "36px",
-          height: "36px",
-          borderRadius: "50%",
-          backgroundColor: t.tileInactiveBg,
-          border: "none",
-          zIndex: 10,
-        }}
-        title={tr("general.close") || "Close"}
-      >
-        <X size={18} style={{ color: t.textHeading }} />
-      </button>
-
-      <div
-        className="flex flex-col items-center"
-        style={{ padding: "28px 24px 8px 24px" }}
-      >
-        <div
-          className="flex items-center justify-center"
-          style={{
-            width: "56px",
-            height: "56px",
-            borderRadius: t.radiusLg,
-            backgroundColor: DANGER_SUBTLE,
-            marginBottom: "16px",
-          }}
-        >
-          <AlertTriangle size={28} style={{ color: DANGER }} />
-        </div>
-        <span
-          style={{
-            fontFamily: t.fontFamily,
-            fontSize: "18px",
-            fontWeight: 700,
-            color: t.textHeading,
-            textAlign: "center",
-          }}
-        >
-          {tr("settings.clearData.question")}
-        </span>
-        <span
-          style={{
-            fontFamily: t.fontFamily,
-            fontSize: "13px",
-            fontWeight: 500,
-            color: t.textMuted,
-            textAlign: "center",
-            marginTop: "8px",
-            lineHeight: "20px",
-          }}
-        >
-          {tr("settings.clearData.desc")}
-        </span>
-      </div>
-
-      {/* Description Cards of Options - Side by Side */}
-      <div className="flex gap-4 px-6 pb-6 pt-2">
-        <div
-          onClick={onClearMyData}
-          className="flex-1 flex flex-col justify-between p-4 cursor-pointer active:scale-[0.98] transition-all hover:brightness-95"
-          style={{
-            borderRadius: t.radiusLg,
-            border: `1.5px solid ${t.borderDefault}`,
-            backgroundColor: t.surfaceElevated,
-            minHeight: "170px",
-          }}
-        >
-          <div>
-            <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 700, color: t.textHeading, display: "block" }}>
-              {tr("settings.clearData.clearMyData.title") || "Clear My Data"}
-            </span>
-            <span style={{ fontFamily: t.fontFamily, fontSize: "11px", color: t.textMuted, marginTop: "6px", display: "block", lineHeight: "15px" }}>
-              {tr("settings.clearData.clearMyData.desc") || "Clears third-party apps, browser cache, and website logins. Your preferences and PIN remain safe."}
-            </span>
-          </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); onClearMyData(); }}
-            className="w-full flex items-center justify-center mt-4 cursor-pointer active:scale-95 transition-transform"
-            style={{
-              height: "36px",
-              borderRadius: t.radiusMd,
-              backgroundColor: t.tileInactiveBg,
-              border: `1px solid ${t.borderDefault}`,
-            }}
-          >
-            <span style={{ fontFamily: t.fontFamily, fontSize: "13px", fontWeight: 700, color: t.textHeading }}>
-              {tr("settings.clearData.btn.clearMyData") || "Clear My Data"}
-            </span>
-          </button>
-        </div>
-
-        <div
-          onClick={onClearEverything}
-          className="flex-1 flex flex-col justify-between p-4 cursor-pointer active:scale-[0.98] transition-all hover:brightness-95"
-          style={{
-            borderRadius: t.radiusLg,
-            border: `1.5px solid ${DANGER_BORDER}`,
-            backgroundColor: DANGER_SUBTLE,
-            minHeight: "170px",
-          }}
-        >
-          <div>
-            <span style={{ fontFamily: t.fontFamily, fontSize: "14px", fontWeight: 700, color: DANGER, display: "block" }}>
-              {tr("settings.clearData.clearEverything.title") || "Clear Everything"}
-            </span>
-            <span style={{ fontFamily: t.fontFamily, fontSize: "11px", color: t.textMuted, marginTop: "6px", display: "block", lineHeight: "15px" }}>
-              {tr("settings.clearData.clearEverything.desc") || "Resets the device fully to factory defaults. Wipes all preferences, language setup, and PIN."}
-            </span>
-          </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); onClearEverything(); }}
-            className="w-full flex items-center justify-center mt-4 cursor-pointer active:scale-95 transition-transform"
-            style={{
-              height: "36px",
-              borderRadius: t.radiusMd,
-              backgroundColor: DANGER,
-              border: "none",
-              boxShadow: `0 4px 12px ${DANGER_SUBTLE}`,
-            }}
-          >
-            <span style={{ fontFamily: t.fontFamily, fontSize: "13px", fontWeight: 700, color: "#FFFFFF" }}>
-              {tr("settings.clearData.btn.clearEverything") || "Clear Everything"}
-            </span>
-          </button>
-        </div>
-      </div>
-    </CenteredDialog>
-  );
-}
 
 /* ─── Language Dialog ─── */
 function LanguageDialog({
@@ -1273,11 +1090,15 @@ function LanguageDialog({
   onSelect,
 }: {
   onClose: () => void;
-  selected: "en" | "ar";
-  onSelect: (lang: "en" | "ar") => void;
+  selected: Locale;
+  onSelect: (lang: Locale) => void;
 }) {
   const { theme: t } = useTheme();
   const { t: tr } = useLocale();
+  /* Pick, then Apply: switching the whole screen on the first tap, while
+     still choosing, re-laid every word under the patient's finger. */
+  const [pending, setPending] = useState<string>(selected);
+  const realLocale = LANGUAGE_OPTIONS.some((o) => o.key === pending);
   return (
     <CenteredDialog onClose={onClose}>
       <DialogHeader
@@ -1285,25 +1106,17 @@ function LanguageDialog({
         title={tr("settings.language")}
         onClose={onClose}
       />
-      <div className="flex flex-col" style={{ padding: "16px 20px 20px 20px" }}>
-        <span
-          style={{
-            fontFamily: t.fontFamily,
-            fontSize: "13px",
-            fontWeight: 500,
-            color: t.textMuted,
-            marginBottom: "12px",
-          }}
-        >
-          {tr("settings.language.select")}
-        </span>
-        <LanguagePicker
-          selected={selected}
-          onSelect={(lang) => {
-            onSelect(lang);
-            onClose();
-          }}
-        />
+      <div className="flex flex-col" style={{ paddingTop: "16px" }}>
+        <DialogText style={{ marginBottom: "16px" }}>{tr("settings.language.select")}</DialogText>
+        <LanguagePicker selected={pending} onSelect={setPending} />
+        <DialogActions>
+          <DialogButton kind="secondary" label={tr("general.cancel")} onClick={onClose} />
+          <DialogButton
+            label={tr("general.apply")}
+            disabled={pending === selected || !realLocale}
+            onClick={() => { onSelect(pending as Locale); onClose(); }}
+          />
+        </DialogActions>
       </div>
     </CenteredDialog>
   );
@@ -1522,89 +1335,11 @@ function PrayerCard({
   );
 }
 
-/* ─── Action Button (Language, Admin — opens dialogs, not toggles) ─── */
-function ActionButton({
-  icon,
-  label,
-  subtitle,
-  variant,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  subtitle: string;
-  variant: "primary" | "accent" | "destructive";
-  onClick: () => void;
-}) {
-  const { theme: t } = useTheme();
-  const { isRTL } = useLocale();
-  // The accent, but through the tokens: the raw hex measured 2.96:1 on a dark
-  // surface, so the label was unreadable in dark mode.
-  const DESTRUCTIVE = t.accentOn;
-  const DESTRUCTIVE_SUBTLE = t.accentSubtle;
-  const DESTRUCTIVE_BORDER = t.borderCardColor;
-
-  const bg = variant === "primary" ? t.primarySubtle : variant === "destructive" ? DESTRUCTIVE_SUBTLE : t.accentSubtle;
-  const border = variant === "primary"
-    ? `1.5px solid ${t.borderActive}33`
-    : variant === "destructive"
-    ? `1.5px solid ${DESTRUCTIVE_BORDER}`
-    : `1.5px solid ${t.borderAccent}`;
-  const iconBg = variant === "primary" ? t.primarySubtle : variant === "destructive" ? DESTRUCTIVE_SUBTLE : t.accentSubtle;
-  const labelColor = variant === "destructive" ? DESTRUCTIVE : t.textHeading;
-  const subtitleColor = variant === "destructive" ? t.accentOn : t.textMuted;
-
-  return (
-    <button
-      onClick={onClick}
-      className="flex-1 flex items-center gap-3 cursor-pointer active:scale-[0.97] transition-transform"
-      style={{
-        padding: "14px 16px",
-        borderRadius: t.radiusLg,
-        backgroundColor: bg,
-        border,
-      }}
-    >
-      <div
-        className="shrink-0 flex items-center justify-center"
-        style={{
-          width: "40px",
-          height: "40px",
-          borderRadius: t.radiusMd,
-          backgroundColor: iconBg,
-        }}
-      >
-        {icon}
-      </div>
-      <div className="flex-1" style={{ textAlign: isRTL ? "right" : "left" }}>
-        <span
-          style={{
-            fontFamily: t.fontFamily,
-            fontSize: "14px",
-            fontWeight: 700,
-            color: labelColor,
-            display: "block",
-          }}
-        >
-          {label}
-        </span>
-        <span
-          style={{
-            fontFamily: t.fontFamily,
-            fontSize: "11px",
-            fontWeight: 500,
-            color: subtitleColor,
-            display: "block",
-            marginTop: "1px",
-          }}
-        >
-          {subtitle}
-        </span>
-      </div>
-      <ChevronRight size={16} style={{ color: variant === "destructive" ? "rgba(209,0,68,0.35)" : t.textDisabled, transform: isRTL ? "scaleX(-1)" : undefined }} />
-    </button>
-  );
-}
+/* ─── Settings list ───
+ * The shared list rows (listRow.tsx): the PIN popup uses the same rows, so
+ * a choice inside a popup looks like the Settings row that opened it. */
+const SettingsRowGroup = ListRowGroup;
+const SettingsRow = ListRow;
 
 /* ═══════════════════════════════════════════════════════════════
  * MAIN SETTINGS PANEL
@@ -1731,17 +1466,17 @@ export function SettingsPanel({
   const [btEnabled, setBtEnabled] = useState(() =>
     isNative ? bluetoothBridge.isEnabled() : true
   );
-  const [btDevice, setBtDevice] = useState<string | null>(
-    isNative ? null : "bt-speaker"
+  const [btConnected, setBtConnected] = useState<string[]>(
+    isNative ? [] : ["bt-speaker"]
   );
 
   useAndroidEvent<{ enabled: boolean }>('bluetooth-state-changed', (d) => {
     setBtEnabled(d.enabled);
-    if (!d.enabled) setBtDevice(null);
+    if (!d.enabled) setBtConnected([]);
   });
   useAndroidEvent<{ address: string }>('bluetooth-device-connected', (d) => {
     setBtEnabled(true);
-    setBtDevice(d.address);
+    setBtConnected((ids) => (ids.includes(d.address) ? ids : [...ids, d.address]));
   });
 
   // ── DND: read initial state, sync via event ──
@@ -1777,9 +1512,12 @@ export function SettingsPanel({
   const [showBtDialog, setShowBtDialog] = useState(false);
   const [showCastDialog, setShowCastDialog] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const [showLangDialog, setShowLangDialog] = useState(false);
   const [showCareTeamDialog, setShowCareTeamDialog] = useState(false);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
+  const [showPinDialog, setShowPinDialog] = useState(false);
+  const preview = useSettingsPreview();
   const [replayToast, setReplayToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -1865,6 +1603,24 @@ export function SettingsPanel({
             </span>
           </div>
           <div className="flex items-center gap-2">
+            {/* DEMO ONLY — not part of the product, not in the dev guide.
+                Restores the screen to its first setup (the old "Clear
+                Everything"), for resetting a demo between showings. */}
+            <button
+              onClick={() => setShowRestoreConfirm(true)}
+              aria-label={tr("demo.restore.title")}
+              className="flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
+              style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: t.radiusLg,
+                backgroundColor: t.tileInactiveBg,
+                border: "none",
+              }}
+              title={tr("demo.restore.title")}
+            >
+              <RotateCcw size={22} style={{ color: t.primaryOn }} />
+            </button>
             <button
               onClick={onFullscreenTap}
               className="flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
@@ -1915,31 +1671,6 @@ export function SettingsPanel({
             prayerAlarm={prayerAlarm}
             onToggleAlarm={() => setPrayerAlarm(!prayerAlarm)}
           />
-
-          {/* Use my phone — placed here, under Next Prayer, so it is easy to
-              find: scan once to control the screen as a cursor (and, on
-              supported terminals, to show your phone on the screen). */}
-          {t.remoteControl && (
-            <button
-              onClick={() => window.dispatchEvent(new Event("careinn-remote-start"))}
-              className="flex items-center w-full cursor-pointer active:scale-[0.99] transition-transform"
-              style={{
-                gap: "14px", padding: "16px 18px", borderRadius: t.radiusLg,
-                backgroundColor: "transparent", border: `1.5px solid ${t.primary}`,
-              }}
-            >
-              <div
-                className="flex items-center justify-center shrink-0"
-                style={{ width: "44px", height: "44px", borderRadius: "13px", backgroundColor: t.surfaceInset }}
-              >
-                <Smartphone size={22} color={t.primary} />
-              </div>
-              <div className="flex-1 text-start">
-                <div style={{ fontSize: "17px", fontWeight: 700, color: t.textHeading }}>{tr("remote.settings.title")}</div>
-                <div style={{ fontSize: "13px", color: t.textMuted }}>{tr("remote.settings.subtitle")}</div>
-              </div>
-            </button>
-          )}
 
           {/* Brightness */}
           <SettingsSlider
@@ -1999,7 +1730,7 @@ export function SettingsPanel({
                     // State will update via 'bluetooth-state-changed' event
                   } else {
                     setBtEnabled(next);
-                    if (!next) setBtDevice(null);
+                    if (!next) setBtConnected([]);
                   }
                 }}
                 onLongPress={() => setShowBtDialog(true)}
@@ -2060,99 +1791,71 @@ export function SettingsPanel({
 
           <div style={{ height: "1px", backgroundColor: t.borderDefault }} />
 
-          {/* Action buttons — one grid, rows as close as the columns, like the
-              tiles above. */}
-          <div className="flex flex-col gap-2.5">
-          {/* Language & Care Team (open dialogs, not toggles) */}
-          <div className="flex items-center gap-2.5">
-            <ActionButton
-              icon={<Globe size={20} style={{ color: t.primaryOn }} />}
+          {/* Everything that opens something: one list, one row style. Rows
+              a hospital doesn't have are left out and the list closes up. */}
+          <SettingsRowGroup>
+            {/* Language: a row that opens the full list, so it holds two
+                languages or twenty. The value is the language in its own
+                script, so a patient who can't read English still finds it. */}
+            <SettingsRow
+              icon={Globe}
               label={tr("settings.language")}
-              subtitle={selectedLang === "en" ? "English" : "\u0627\u0644\u0639\u0631\u0628\u064A\u0629"}
-              variant="primary"
+              value={LANGUAGE_OPTIONS.find((o) => o.key === selectedLang)?.native}
               onClick={() => setShowLangDialog(true)}
             />
-            <ActionButton
-              icon={<Stethoscope size={20} style={{ color: t.accentOn }} />}
+            {t.remoteControl && preview.useMyPhone && (
+              <SettingsRow
+                icon={Smartphone}
+                label={tr("remote.settings.title")}
+                value={tr("remote.settings.subtitle")}
+                onClick={() => window.dispatchEvent(new Event("careinn-remote-start"))}
+              />
+            )}
+            {preview.preferences && (
+              <SettingsRow
+                icon={UserCircle}
+                label={tr("settings.preferences")}
+                value={isAccountSet() ? tr("settings.preferences.subtitle.set") : tr("settings.preferences.subtitle.unset")}
+                onClick={() => setShowAccountDialog(true)}
+              />
+            )}
+            {preview.pin && (
+              <SettingsRow
+                icon={KeyRound}
+                label={isAccountSet() ? tr("settings.pin") : tr("settings.setPin")}
+                value={isAccountSet() ? tr("settings.pin.subtitle.set") : tr("settings.pin.subtitle.unset")}
+                onClick={() => setShowPinDialog(true)}
+              />
+            )}
+            <SettingsRow
+              icon={Stethoscope}
               label={tr("settings.careTeam")}
-              subtitle={tr("settings.careTeam.subtitle")}
-              variant="destructive"
+              value={tr("settings.careTeam.subtitle")}
               onClick={() => setShowCareTeamDialog(true)}
             />
-          </div>
+          </SettingsRowGroup>
 
-          <div className="flex items-center gap-2.5">
-            <ActionButton
-              icon={<UserCircle size={20} style={{ color: t.primaryOn }} />}
-              label={tr("settings.preferences")}
-              subtitle={
-                isAccountSet() 
-                  ? tr("settings.preferences.subtitle.set") 
-                  : tr("settings.preferences.subtitle.unset")
-              }
-              variant="primary"
-              onClick={() => setShowAccountDialog(true)}
+          {/* Ending actions — Log out and Clear Data, full width, together and
+              apart from the list so neither is tapped on the way to something
+              else. Same row, in red. No fill until pressed. Log out is hidden
+              for guests, who have no session to end. */}
+          <SettingsRowGroup>
+            {!isGuest && preview.logout && (
+              <SettingsRow
+                icon={LogOut}
+                mirrorIcon
+                tone="danger"
+                label={tr("general.logout")}
+                onClick={() => setShowLogoutConfirm(true)}
+              />
+            )}
+            <SettingsRow
+              icon={BrushCleaningIcon}
+              tone="danger"
+              label={tr("settings.clearData.clearMyData.title")}
+              onClick={() => setShowClearConfirm(true)}
             />
-          </div>
-          </div>
-
-          {/* Clear Data and Log out sit as a pair, as close as the rows above. */}
-          <div className="flex flex-col gap-2.5">
-          {/* Clear Data — no flex-1 spacer above it. A filler in a scrolling
-              column takes every pixel of slack for itself, which pushed this
-              button down and shoved the room and device lines past the bottom
-              edge: a panel with room for all of it still had to be scrolled to
-              read its last line. */}
-          <button
-            data-no-remote
-            onClick={() => setShowClearConfirm(true)}
-            className="flex items-center justify-center gap-3 w-full cursor-pointer active:scale-[0.96] transition-transform"
-            style={{
-              height: "56px",
-              flexShrink: 0,
-              borderRadius: t.radiusLg,
-              backgroundColor: "#D10044",
-              boxShadow: "0 4px 16px rgba(209,0,68,0.15)",
-              border: "none",
-            }}
-          >
-            <Trash2 size={20} style={{ color: "#FFFFFF" }} />
-            <span
-              style={{
-                fontFamily: t.fontFamily,
-                fontSize: "16px",
-                fontWeight: 700,
-                color: "#FFFFFF",
-              }}
-            >
-              {tr("settings.clearData")}
-            </span>
-          </button>
-
-          {/* Log out — moved off the home top bar: signing the screen out to
-              the access code is a staff step, so it lives with the other
-              staff-type action here. Hidden for guests, who have no session. */}
-          {!isGuest && (
-            <button
-              data-no-remote
-              onClick={() => setShowLogoutConfirm(true)}
-              className="flex items-center justify-center gap-3 w-full cursor-pointer active:scale-[0.96] transition-transform"
-              style={{
-                height: "56px",
-                flexShrink: 0,
-                borderRadius: t.radiusLg,
-                backgroundColor: t.errorSubtle,
-                border: "none",
-                color: t.errorOn,
-              }}
-            >
-              <LogOut size={20} style={{ transform: isRTL ? "scaleX(-1)" : undefined }} />
-              <span style={{ fontFamily: t.fontFamily, fontSize: "16px", fontWeight: 700 }}>
-                {tr("general.logout")}
-              </span>
-            </button>
-          )}
-          </div>
+          </SettingsRowGroup>
 
           {/* Room & Device info */}
           <div
@@ -2345,11 +2048,19 @@ export function SettingsPanel({
         <WifiDialog
           onClose={() => setShowWifiDialog(false)}
           connectedId={wifiNetwork}
+          enabled={wifiEnabled}
+          onToggle={(on) => {
+            /* Same as the tile: Android 10+ only lets the system settings
+               switch Wi-Fi, so the kiosk hands off there. */
+            if (isNative) { wifiBridge.openSettings(); return; }
+            setWifiEnabled(on);
+            setWifiNetwork(on ? "dsfh-patient" : null);
+          }}
           onConnect={(id) => { setWifiEnabled(true); setWifiNetwork(id); }}
           onDisconnect={() => {
             if (isNative) wifiBridge.disconnect();
+            /* Drops the network only; Wi-Fi stays on (the switch turns it off). */
             setWifiNetwork(null);
-            setWifiEnabled(false);
           }}
         />
       )}
@@ -2357,11 +2068,23 @@ export function SettingsPanel({
       {showBtDialog && (
         <BluetoothDialog
           onClose={() => setShowBtDialog(false)}
-          connectedId={btDevice}
-          onConnect={(id) => { setBtEnabled(true); setBtDevice(id); }}
-          onDisconnect={() => {
-            if (isNative && btDevice) bluetoothBridge.disconnect(btDevice);
-            setBtDevice(null);
+          connectedIds={btConnected}
+          enabled={btEnabled}
+          onToggle={(on) => {
+            if (isNative) { bluetoothBridge.setEnabled(on); return; }
+            setBtEnabled(on);
+            if (!on) setBtConnected([]);
+          }}
+          onConnect={(id) => {
+            setBtEnabled(true);
+            /* A new audio device takes the place of the one before it. */
+            const audio = (x: string) => isBtAudio(mockBtDevices.find((d) => d.id === x)?.type);
+            if (preview.btSingle) { setBtConnected([id]); return; }
+            setBtConnected((ids) => (ids.includes(id) ? ids : [...ids.filter((x) => !(audio(id) && audio(x))), id]));
+          }}
+          onDisconnect={(id) => {
+            if (isNative) bluetoothBridge.disconnect(id);
+            setBtConnected((ids) => ids.filter((x) => x !== id));
           }}
         />
       )}
@@ -2375,26 +2098,44 @@ export function SettingsPanel({
         />
       )}
 
-      {showClearConfirm && (
-        <ClearDataDialog
-          onClose={() => setShowClearConfirm(false)}
-          onClearMyData={async () => {
-            setShowClearConfirm(false);
-            await clearUserDataAndReload();
-          }}
-          onClearEverything={async () => {
-            setShowClearConfirm(false);
-            await clearAllDataAndReload();
-          }}
-        />
-      )}
+      {/* The same Clear My Data confirm as the home card: one action, one
+          popup, one message. "Clear Everything" is not a patient action. */}
+      <ConfirmDialog
+        visible={showClearConfirm}
+        title={tr("settings.clearData.clearMyData.title")}
+        message={tr("settings.clearData.clearMyData.desc")}
+        confirmLabel={tr("settings.clearData.btn.clearMyData")}
+        variant="danger"
+        icon={<BrushCleaningIcon size={20} />}
+        onConfirm={async () => {
+          setShowClearConfirm(false);
+          await clearUserDataAndReload();
+        }}
+        onCancel={() => setShowClearConfirm(false)}
+      />
+
+      {/* DEMO ONLY — Restore device. */}
+      <ConfirmDialog
+        visible={showRestoreConfirm}
+        title={tr("demo.restore.title")}
+        message={tr("demo.restore.desc")}
+        confirmLabel={tr("demo.restore.confirm")}
+        variant="danger"
+        icon={RotateCcw}
+        onConfirm={async () => {
+          setShowRestoreConfirm(false);
+          await clearAllDataAndReload();
+        }}
+        onCancel={() => setShowRestoreConfirm(false)}
+      />
 
       <ConfirmDialog
         visible={showLogoutConfirm}
         title={tr("general.logout")}
-        message={tr("settings.account.overview.removeConfirm")}
+        message={tr("logout.confirm")}
         confirmLabel={tr("general.logout")}
         variant="danger"
+        icon={LogOut}
         onConfirm={() => {
           setShowLogoutConfirm(false);
           logout();
@@ -2414,6 +2155,14 @@ export function SettingsPanel({
         <MyPreferencesDialog
           open={showAccountDialog}
           onClose={() => setShowAccountDialog(false)}
+        />
+      )}
+
+      {showPinDialog && (
+        <MyPreferencesDialog
+          open={showPinDialog}
+          mode="pin"
+          onClose={() => setShowPinDialog(false)}
         />
       )}
 
