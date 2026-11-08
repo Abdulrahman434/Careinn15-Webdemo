@@ -35,6 +35,17 @@ export const CHANGE_TYPES: { type: ChangeType; label: string }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: "1.8.0",
+    date: "2026-11-08",
+    changes: [
+      { type: "improved", area: "Dallah", text: "Dallah uses its brand cyan with white text on buttons, and the new Dallah Hospitals logo, with a white-text version in dark mode." },
+      { type: "improved", area: "Apps", text: "The \"Keep an app private\" hint is simpler and follows each hospital's colours: hold the highlighted app, or tap Lock App." },
+      { type: "improved", area: "Apps", text: "The lock on a locked app is larger, in the hospital's colours, and sits in the top corner." },
+      { type: "improved", area: "News", text: "Between headlines, hospitals other than Fakeeh show a small dot instead of Fakeeh's mark." },
+      { type: "fixed", area: "Apps", text: "The Arabic app-lock hint now says \"to lock it\" instead of \"to close it\"." },
+    ],
+  },
+  {
     version: "1.7.0",
     date: "2026-11-03",
     changes: [
