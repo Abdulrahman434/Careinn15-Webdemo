@@ -35,6 +35,14 @@ export const CHANGE_TYPES: { type: ChangeType; label: string }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: "1.11.0",
+    date: "2026-11-09",
+    changes: [
+      { type: "improved", area: "Clear My Data", text: "The confirm popup lists what gets cleared, and confirming resets the screen and goes back to the login screen." },
+      { type: "fixed", area: "Onboarding", text: "\"Start now\" goes straight to Home; only \"Start with a tour\" opens the tour." },
+    ],
+  },
+  {
     version: "1.10.0",
     date: "2026-11-08",
     changes: [
