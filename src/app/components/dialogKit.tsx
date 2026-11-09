@@ -140,8 +140,10 @@ export function DialogFrame({
           style={{
             width: `${size === "content" ? DIALOG.content : size === "device" ? DIALOG.device : DIALOG.small}px`,
             /* px of the 1920x1080 canvas, which the kiosk scales as a whole;
-               90% still guards a canvas shorter than that. */
-            maxHeight: `min(${DIALOG.maxHeight}px, 90%)`,
+               90% still guards a canvas shorter than that. A keypad never
+               scrolls: with the guest choice under it, a PIN popup is taller
+               than the 640 cap, so the PIN kind is held by the 90% alone. */
+            maxHeight: kind === "pin" ? "90%" : `min(${DIALOG.maxHeight}px, 90%)`,
             overflow: "hidden",
             borderRadius: t.radiusXl,
             backgroundColor: t.surface,
