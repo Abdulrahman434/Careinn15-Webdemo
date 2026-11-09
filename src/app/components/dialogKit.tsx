@@ -271,6 +271,36 @@ export function DialogTitleBar({
 }
 
 /** The one line under the title, aligned like the title. */
+/* What an action does, as short points under the popup's line (Clear My
+   Data). One inset box, a small dot per point, start-aligned. */
+export function DialogPoints({ items, style }: { items: string[]; style?: React.CSSProperties }) {
+  const { theme: t } = useTheme();
+  if (items.length === 0) return null;
+  return (
+    <ul
+      style={{
+        listStyle: "none", margin: 0, padding: "14px 18px",
+        display: "flex", flexDirection: "column", gap: 8,
+        backgroundColor: t.surfaceInset, borderRadius: t.radiusMd,
+        ...style,
+      }}
+    >
+      {items.map((item) => (
+        <li
+          key={item}
+          style={{
+            display: "flex", alignItems: "baseline", gap: 10,
+            fontFamily: t.fontFamily, ...TEXT_STYLE.dialogBody, color: t.textHeading,
+          }}
+        >
+          <span aria-hidden style={{ flexShrink: 0, width: 6, height: 6, borderRadius: "50%", backgroundColor: t.textMuted, transform: "translateY(-3px)" }} />
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function DialogText({
   children,
   align,
