@@ -58,7 +58,7 @@ import {
 import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useAuth } from "./AuthContext";
-import { clearUserDataAndReload, clearAllDataAndReload } from "../lib/clearAllData";
+import { clearAllDataAndReload } from "../lib/clearAllData";
 import { BrushCleaningIcon } from "./PatientGreeting";
 import { NurseInterface } from "./nurse/NurseInterface";
 import type { Locale } from "./i18n";
@@ -2102,14 +2102,16 @@ export function SettingsPanel({
           popup, one message. "Clear Everything" is not a patient action. */}
       <ConfirmDialog
         visible={showClearConfirm}
-        title={tr("settings.clearData.clearMyData.title")}
+        title={tr("clearData.confirm.title")}
         message={tr("settings.clearData.clearMyData.desc")}
+        points={["apps", "history", "passwords", "locks", "pin", "language", "login"].map((k) => tr(`clearData.point.${k}`))}
         confirmLabel={tr("settings.clearData.btn.clearMyData")}
         variant="danger"
         icon={<BrushCleaningIcon size={20} />}
         onConfirm={async () => {
           setShowClearConfirm(false);
-          await clearUserDataAndReload();
+          /* Same as the home button: full reset, back to the login screen. */
+          await clearAllDataAndReload();
         }}
         onCancel={() => setShowClearConfirm(false)}
       />

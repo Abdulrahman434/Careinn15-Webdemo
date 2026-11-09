@@ -1,12 +1,14 @@
 import React from "react";
 import { useLocale } from "./i18n";
-import { DialogFrame, DialogTitleBar, DialogText, DialogActions, DialogButton } from "./dialogKit";
+import { DialogFrame, DialogTitleBar, DialogText, DialogPoints, DialogActions, DialogButton } from "./dialogKit";
 import { AlertTriangle, Info } from "lucide-react";
 
 interface ConfirmDialogProps {
   visible: boolean;
   title?: string;
   message: string;
+  /** Optional short points under the message: what the action does. */
+  points?: string[];
   confirmLabel?: string;
   cancelLabel?: string;
   onConfirm: () => void;
@@ -20,6 +22,7 @@ export function ConfirmDialog({
   visible,
   title,
   message,
+  points,
   confirmLabel,
   cancelLabel,
   onConfirm,
@@ -42,6 +45,7 @@ export function ConfirmDialog({
         tone={variant === "danger" ? "danger" : "brand"}
       />
       <DialogText style={{ marginTop: "8px" }}>{message}</DialogText>
+      {points && points.length > 0 && <DialogPoints items={points} style={{ marginTop: "16px" }} />}
       <DialogActions>
         <DialogButton kind="secondary" label={cancelLabel || tr("general.cancel")} onClick={onCancel} />
         <DialogButton kind={variant === "danger" ? "danger" : "primary"} label={confirmLabel || tr("general.confirm")} onClick={onConfirm} />

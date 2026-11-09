@@ -14,7 +14,7 @@ import { useAuth } from "./AuthContext";
 import svgPaths from "../../imports/svg-ca68x68c4i";
 import { getSavedHeroImage, isSlideshowEnabled } from "../lib/backgroundPrefs";
 import { usePatientInfo } from "../lib/usePatientInfo";
-import { clearUserDataAndReload } from "../lib/clearAllData";
+import { clearAllDataAndReload } from "../lib/clearAllData";
 import { GuestLoginButton, cardSecondaryButtonStyle, CARD_SECONDARY_PRESS } from "./GuestHome";
 
 function AboutUsIcon({ color }: { color?: string }) {
@@ -428,14 +428,17 @@ export function PatientGreeting({
 
       <ConfirmDialog
         visible={showSignOutAppsConfirm}
-        title={t("settings.clearData.clearMyData.title")}
+        title={t("clearData.confirm.title")}
         message={t("settings.clearData.clearMyData.desc")}
+        points={["apps", "history", "passwords", "locks", "pin", "language", "login"].map((k) => t(`clearData.point.${k}`))}
         confirmLabel={t("settings.clearData.btn.clearMyData")}
         variant="danger"
         icon={<BrushCleaningIcon size={20} />}
         onConfirm={() => {
           setShowSignOutAppsConfirm(false);
-          clearUserDataAndReload();
+          /* As the popup says: the screen is reset for the next patient and
+             goes back to the login screen. */
+          clearAllDataAndReload();
         }}
         onCancel={() => setShowSignOutAppsConfirm(false)}
       />
