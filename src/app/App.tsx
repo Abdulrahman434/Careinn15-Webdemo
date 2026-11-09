@@ -2594,7 +2594,13 @@ function BedsideScreen() {
         <OnboardingWizard
           admitRef={currentAdmitRef}
           hidden={showTour || showWelcomeSlideshow}
-          onComplete={() => setShowOnboarding(false)}
+          onComplete={() => {
+            /* The Consent step already offered the tour, so the first-visit
+               auto-tour must not start it again after "Start now". */
+            setShowOnboarding(false);
+            setTourDismissed(true);
+            try { localStorage.setItem("hbs-tour-seen", "1"); } catch { }
+          }}
           onStartTour={() => setShowTour(true)}
           onStartSlideshow={() => setShowWelcomeSlideshow(true)}
         />
