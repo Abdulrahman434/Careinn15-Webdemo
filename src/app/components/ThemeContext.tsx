@@ -1553,7 +1553,7 @@ const ThemeContext = createContext<ThemeContextType>({
   setCastDevice: () => { },
   locale: "en",
   setLocale: () => { },
-  prayerAlarm: true,
+  prayerAlarm: false,
   setPrayerAlarm: () => { },
   layout2Theme: DEFAULT_LAYOUT2_THEME,
   saveLayout2Theme: () => { },
@@ -1658,7 +1658,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [locale, setLocale] = useState<Locale>(() => loadLocale());
   const [prayerAlarm, setPrayerAlarm] = useState(() => {
     const saved = localStorage.getItem("prayer-alarm");
-    return saved === null ? true : saved === "true";
+    return saved === "true";
   });
 
   const [layout2Theme, setLayout2Theme] = useState<Layout2Theme>(() => loadLayout2Theme());
