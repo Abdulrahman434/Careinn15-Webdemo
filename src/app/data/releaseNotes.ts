@@ -35,6 +35,14 @@ export const CHANGE_TYPES: { type: ChangeType; label: string }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: "1.12.0",
+    date: "2026-11-11",
+    changes: [
+      { type: "improved", area: "Azan", text: "The azan is silent by default. Patients can turn it on in Settings or during onboarding." },
+      { type: "fixed", area: "PIN", text: "PIN popups are never cut off; the keypad no longer slides under \"Continue as Guest\"." },
+    ],
+  },
+  {
     version: "1.11.0",
     date: "2026-11-09",
     changes: [
