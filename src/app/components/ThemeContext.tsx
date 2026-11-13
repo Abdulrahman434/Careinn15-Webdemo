@@ -63,17 +63,33 @@ import type { Locale } from "./i18n";
  */
 export const TYPE_SCALE = {
   /** 14px — labels, captions, compact UI elements */
-  sm: "14px",
+  sm: "var(--ts-sm, 14px)",
   /** 18px — body text, descriptions, UI controls (primary reading size) */
-  base: "18px",
+  base: "var(--ts-base, 18px)",
   /** 22px — emphasized text, buttons, card titles */
-  md: "22px",
+  md: "var(--ts-md, 22px)",
   /** 26px — section headers, page titles */
-  lg: "26px",
+  lg: "var(--ts-lg, 26px)",
   /** 30px — patient name, hero text */
-  xl: "30px",
+  xl: "var(--ts-xl, 30px)",
   /** 34px — survey questions, modal headings, splash content */
-  "2xl": "34px",
+  "2xl": "var(--ts-2xl, 34px)",
+} as const;
+
+/**
+ * The same scale on a phone. The sizes above are set for a bedside screen read
+ * from the bed; a phone is held at reading distance, where they look twice as
+ * big. App.tsx sets these as the --ts-* variables while the canvas is a phone
+ * (useCanvasSize().compact), so every TYPE_SCALE size steps down at once — the
+ * large ones most.
+ */
+export const PHONE_TYPE_SCALE = {
+  sm: "13px",
+  base: "16px",
+  md: "17px",
+  lg: "20px",
+  xl: "22px",
+  "2xl": "24px",
 } as const;
 
 /**
