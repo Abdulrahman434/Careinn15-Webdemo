@@ -16,6 +16,7 @@ import { CareMe, CareMeExpanded } from "./components/CareMe";
 import { IdleScreen } from "./components/IdleScreen";
 import CiHomescreen from "../imports/CiHomescreen";
 import KidsHomescreen from "./components/KidsHomescreen";
+import SpotlightHomescreen from "./components/SpotlightHomescreen";
 import { RippleStyles } from "./components/useRipple";
 import { AppLauncher } from "./components/AppLauncher";
 import { SurveyModal } from "./components/SurveyModal";
@@ -187,10 +188,10 @@ const isBeforeToday = (dateStr: string | null | undefined): boolean => {
 const SCREENSAVER_TIMEOUT_MS = 10 * 60_000;
 const getScreensaverTimeoutMs = (): number => SCREENSAVER_TIMEOUT_MS;
 
-const getSavedLayoutMode = (): 1 | 2 | 3 => {
+const getSavedLayoutMode = (): 1 | 2 | 3 | 4 => {
   try {
     const v = localStorage.getItem('careinn-layout-mode');
-    return v === '2' ? 2 : v === '3' ? 3 : 1;
+    return v === '2' ? 2 : v === '3' ? 3 : v === '4' ? 4 : 1;
   } catch {
     return 1;
   }
@@ -440,7 +441,7 @@ function BedsideScreen() {
       return false;
     }
   });
-  const [layoutMode, setLayoutMode] = useState<1 | 2 | 3>(getSavedLayoutMode);
+  const [layoutMode, setLayoutMode] = useState<1 | 2 | 3 | 4>(getSavedLayoutMode);
   const [showConfigurator, setShowConfigurator] = useState(false);
   const [showThemeAppearance, setShowThemeAppearance] = useState(false);
 
@@ -1808,6 +1809,19 @@ function BedsideScreen() {
               onDhuhrTap={() => setShowThemeAppearance(true)}
             />
           </div>
+        ) : layoutMode === 4 ? (
+          <SpotlightHomescreen
+            onOpenCategory={handleOpenCategory}
+            onLaunchTool={(id) => setActiveTool(id as any)}
+            onShowCareMeExpanded={() => setShowCareMeExpanded(true)}
+            onShowIptv={() => setShowIptv(true)}
+            onOpenSettings={() => setShowSettings(true)}
+            onOpenNotifications={() => setShowNotifications(true)}
+            onOpenSurvey={() => setShowSurvey(true)}
+            onDhuhrTap={() => setShowConfigurator(true)}
+            unreadCount={getUnreadCount()}
+            tickerPaused={showTasbih || isLocked}
+          />
         ) : layoutMode === 3 ? (
           /* Layout 3 (Kids) — playful pediatric design. Inherits the active
              hospital's brand colour + logo, same as Layout 1 / Layout 2. */
