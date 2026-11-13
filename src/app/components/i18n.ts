@@ -559,7 +559,19 @@ const translations: Record<string, TranslationEntry> = {
   "service.orderFood": { en: "Meal Ordering", ar: "طلب الوجبات", ur: "کھانے کا آرڈر" },
   "service.call": { en: "Call", ar: "اتصال", ur: "کال" },
   "service.survey": { en: "Survey", ar: "استبيان", ur: "سروے" },
-  "service.shareFeedback": { en: "Your Feedback", ar: "رأيك يهمنا", ur: "آپ کی رائے" },
+  "service.shareFeedback": { en: "Feedback", ar: "رأيك", ur: "رائے" },
+
+  /* ─── Layout 4 (Spotlight) card subtitles ─── */
+  "spotlight.liveTv.sub": { en: "Watch Live", ar: "شاهد البث المباشر", ur: "براہ راست دیکھیں" },
+  "spotlight.food.sub": { en: "Delicious Meals", ar: "وجبات شهية", ur: "مزیدار کھانے" },
+  "spotlight.room.sub": { en: "At Your Doorstep", ar: "عند باب غرفتك", ur: "آپ کی دہلیز پر" },
+  "spotlight.feedback.sub": { en: "We Value You", ar: "نحن نقدّرك", ur: "ہم آپ کی قدر کرتے ہیں" },
+  "spotlight.careme.sub": { en: "Your Wellbeing Partner", ar: "شريكك في العافية", ur: "آپ کی صحت کا ساتھی" },
+  "spotlight.call.sub": { en: "Make a Call", ar: "أجرِ مكالمة", ur: "کال کریں" },
+  "spotlight.consult.sub": { en: "Talk to a Doctor", ar: "تحدّث مع طبيب", ur: "ڈاکٹر سے بات کریں" },
+  "spotlight.roomControl.sub": { en: "Adjust & Manage", ar: "اضبط وتحكّم", ur: "ایڈجسٹ اور کنٹرول کریں" },
+  "spotlight.cast": { en: "Casting", ar: "البث إلى التلفاز", ur: "کاسٹنگ" },
+  "spotlight.cast.sub": { en: "Share to TV", ar: "شارك على التلفاز", ur: "ٹی وی پر شیئر کریں" },
 
   /* ─── Shortcut Items ─── */
   "shortcut.whatsapp": { en: "WhatsApp", ar: "واتساب", ur: "واٹس ایپ" },

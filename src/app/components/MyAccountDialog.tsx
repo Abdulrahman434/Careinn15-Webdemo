@@ -283,10 +283,10 @@ export function MyPreferencesDialog({
   const [nfcUid1, setNfcUid1] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [verifyPinVal, setVerifyPinVal] = useState("");
-  const [layoutModeValue, setLayoutModeValue] = useState<1 | 2 | 3>(() => {
+  const [layoutModeValue, setLayoutModeValue] = useState<1 | 2 | 3 | 4>(() => {
     try {
       const v = localStorage.getItem('careinn-layout-mode');
-      return v === '2' ? 2 : v === '3' ? 3 : 1;
+      return v === '2' ? 2 : v === '3' ? 3 : v === '4' ? 4 : 1;
     } catch {
       return 1;
     }
@@ -318,7 +318,7 @@ export function MyPreferencesDialog({
       const config = getApiConfig();
       setServerIp(config.serverIp);
       setApiKey(config.apiKey);
-      setLayoutModeValue((() => { const v = localStorage.getItem('careinn-layout-mode'); return v === '2' ? 2 : v === '3' ? 3 : 1; })());
+      setLayoutModeValue((() => { const v = localStorage.getItem('careinn-layout-mode'); return v === '2' ? 2 : v === '3' ? 3 : v === '4' ? 4 : 1; })());
     }
   }, [open]);
 
@@ -430,7 +430,7 @@ export function MyPreferencesDialog({
     setTesting(false);
   };
 
-  const saveLayoutMode = (mode: 1 | 2 | 3) => {
+  const saveLayoutMode = (mode: 1 | 2 | 3 | 4) => {
     try {
       localStorage.setItem('careinn-layout-mode', mode.toString());
     } catch {
@@ -488,7 +488,7 @@ export function MyPreferencesDialog({
               <ListRow
                 icon={Layout}
                 label="Layout Mode"
-                value={layoutModeValue === 1 ? 'Layout 1 selected' : layoutModeValue === 2 ? 'Layout 2 selected' : 'Layout 3 selected'}
+                value={`Layout ${layoutModeValue} selected`}
                 onClick={() => setStep('layout-mode')}
               />
               <ListRow
@@ -895,10 +895,11 @@ export function MyPreferencesDialog({
                 { id: 1, title: "Layout 1", subtitle: "Current layout (existing design)" },
                 { id: 2, title: "Layout 2", subtitle: "CareInn15 design" },
                 { id: 3, title: "Layout 3", subtitle: "Kids mode — playful pediatric design" },
+                { id: 4, title: "Layout 4", subtitle: "Spotlight — full hospital photo with glass cards" },
               ].map((option) => (
                 <button
                   key={option.id}
-                  onClick={() => saveLayoutMode(option.id as 1 | 2 | 3)}
+                  onClick={() => saveLayoutMode(option.id as 1 | 2 | 3 | 4)}
                   className="flex items-center gap-3 w-full text-left cursor-pointer active:scale-[0.98] transition-transform"
                   style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none" }}
                 >
