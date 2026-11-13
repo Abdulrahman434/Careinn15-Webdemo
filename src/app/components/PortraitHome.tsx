@@ -1,11 +1,11 @@
-import { Fragment, useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Bell, Settings } from "lucide-react";
 import { NewsTicker } from "./NewsTicker";
 import { ApiImage } from "./ApiImage";
 import { Pressable } from "./SpotlightHomescreen";
 import { PatientGreeting } from "./PatientGreeting";
 import { ServicesGrid, ShortcutsColumn, type SectionVisibility } from "./ServicesGrid";
-import { useTheme, CompactRadii, WEIGHT, SHADOW, SPACE, TEXT_STYLE, WEATHER_TINT } from "./ThemeContext";
+import { useTheme, WEIGHT, SHADOW, SPACE, TEXT_STYLE, WEATHER_TINT } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { localizeDigits } from "../utils/prayerUtils";
 import { useLongPress } from "../lib/useLongPress";
@@ -118,8 +118,6 @@ export default function PortraitHome({
     compact,
   };
 
-  const Radii = compact ? CompactRadii : Fragment;
-
   /* Connection status: by the logo, as landscape (beside it; under it on
      phones, which have no room beside). Fakeeh keeps it under the clock —
      landscape's rule. */
@@ -209,8 +207,7 @@ export default function PortraitHome({
 
       <div data-tour="ticker" className="shrink-0"><NewsTicker paused={tickerPaused} /></div>
 
-      {/* ── Body ── (phones: the same cards on a smaller radius scale) */}
-      <Radii>
+      {/* ── Body ── (phones: the smaller radius scale comes from App.tsx) */}
       <div className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden" style={{ padding: pad, gap }}>
         {/* Greeting and CareMe — the same two cards as landscape's left
             column, side by side (stacked on phones). */}
@@ -274,7 +271,6 @@ export default function PortraitHome({
           </div>
         </div>
       </div>
-      </Radii>
 
     </div>
   );

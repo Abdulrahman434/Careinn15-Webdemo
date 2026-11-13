@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback, useMemo, useRef, lazy, Suspense, type CSSProperties } from "react";
+import { Fragment, useEffect, useState, useCallback, useMemo, useRef, lazy, Suspense, type CSSProperties } from "react";
 import { getAuthorizedCards, getNurseCardUid } from "./utils/nfc";
 import { isTvDevice } from "./utils/deviceDetect";
-import { ThemeProvider, useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE, PHONE_TYPE_SCALE } from "./components/ThemeContext";
+import { ThemeProvider, useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE, PHONE_TYPE_SCALE, CompactRadii } from "./components/ThemeContext";
 import { IptvChannels } from "./components/IptvChannels";
 import { useSipCallState } from "./utils/androidBridge";
 import { useLocale, translateWithLocale } from "./components/i18n";
@@ -506,6 +506,7 @@ function BedsideScreen() {
   const scale = useScreenScale(DESIGN_W, DESIGN_H);
   /* Internal pages read the canvas size (useCanvasSize) to stack in portrait. */
   const canvasSizeValue = useMemo(() => canvasSize(DESIGN_W, DESIGN_H), [DESIGN_W, DESIGN_H]);
+  const PhoneRadii = canvasSizeValue.compact ? CompactRadii : Fragment;
   const [showConfigurator, setShowConfigurator] = useState(false);
   const [showThemeAppearance, setShowThemeAppearance] = useState(false);
 
@@ -1839,6 +1840,9 @@ function BedsideScreen() {
         }}
         className={`flex flex-col overflow-hidden relative shrink-0 ${isTV ? "careinn-tv" : "careinn-kiosk"}`}
       >
+        {/* Phones: one smaller radius scale for every card on every page
+            (CompactRadii) — the bedside radii turn phone-sized cards into pills. */}
+        <PhoneRadii>
         <ToastProvider>
         {layoutMode === 2 ? (
           /* Layout 2 (CareInn) — inherits Layout 1's active hospital brand
@@ -2524,6 +2528,7 @@ function BedsideScreen() {
           />
         )}
         </ToastProvider>
+        </PhoneRadii>
       </div>
 
       {/* PDF Reader Modal from CTA */}
