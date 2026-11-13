@@ -1252,7 +1252,12 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
              ${compact ? `.sm-content { padding: 0 16px 16px !important; }
           .sm-options { gap: 8px !important; }
           .sm-emoji { width: 56px !important; height: 56px !important; font-size: 30px !important; }` : ""}
-             ${canvasH <= 560 ? smShortFlow : ""}`
+             ${canvasH <= 560 ? smShortFlow : `
+          /* Portrait: the hub cards share the panel's height instead of
+             floating in its middle — never shorter than what they say, never
+             taller than 480. */
+          .sm-hub-row { flex: 1 0 auto; margin: 0 !important; align-items: stretch !important; justify-content: center !important; }
+          .sm-root .sm-card { flex: 1 1 0 !important; min-height: min-content; max-height: 480px; justify-content: center; }`}`
           : `@media (max-width: 820px) {${smHeaderSmall}${smContentSmall}${smBodySmall}
         }
         /* Very short windows: the white card no longer has to fit the screen.
