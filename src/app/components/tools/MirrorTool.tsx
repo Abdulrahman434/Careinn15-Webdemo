@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { toolHeader, toolHeaderGroup, toolHeaderButton, toolTitle } from "./toolLayout";
 import { ArrowLeft, ArrowRight, Camera, RefreshCw } from "lucide-react";
 
 export function MirrorTool({
@@ -12,6 +14,7 @@ export function MirrorTool({
 }) {
   const { theme } = useTheme();
   const { fontFamily, t, isRTL } = useLocale();
+  const { compact } = useCanvasSize();
   /* "Back" is to the right in Arabic and Urdu. */
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -65,6 +68,7 @@ export function MirrorTool({
         className="shrink-0 flex items-center justify-between px-8"
         style={{
           height: "88px",
+          ...toolHeader(compact),
           position: "absolute",
           top: 0,
           left: 0,
@@ -73,13 +77,14 @@ export function MirrorTool({
           background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)",
         }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={toolHeaderGroup(compact)}>
           <button
             onClick={onBackToTools}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
             style={{
               width: "56px",
               height: "56px",
+              ...toolHeaderButton(compact),
               backgroundColor: "rgba(255,255,255,0.15)",
               backdropFilter: "blur(12px)",
               borderRadius: theme.radiusMd,
@@ -96,6 +101,7 @@ export function MirrorTool({
               fontWeight: WEIGHT.bold,
               color: "#fff",
               textShadow: "0 2px 4px rgba(0,0,0,0.5)",
+              ...toolTitle(compact),
             }}
           >
             {t("tool.mirror")}
@@ -107,6 +113,7 @@ export function MirrorTool({
           style={{
             width: "56px",
             height: "56px",
+            ...toolHeaderButton(compact),
             backgroundColor: "rgba(255,255,255,0.15)",
             backdropFilter: "blur(12px)",
             borderRadius: theme.radiusMd,

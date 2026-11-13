@@ -1,6 +1,8 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { toolHeader, toolHeaderGroup, toolHeaderButton, toolTitle, toolBody, toolPanes, toolSidePanel } from "./toolLayout";
 import { ArrowLeft, ArrowRight, Trash2, Pencil, Eraser } from "lucide-react";
 
 type Tool = "pen" | "eraser";
@@ -11,6 +13,7 @@ const SIZES = [4, 8, 16, 24];
 export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void; onBackToTools: () => void }) {
   const { theme } = useTheme();
   const { fontFamily, t, isRTL } = useLocale();
+  const { portrait, compact } = useCanvasSize();
   /* "Back" is to the right in Arabic and Urdu. */
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -18,6 +21,8 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
   const [tool, setTool] = useState<Tool>("pen");
   const [color, setColor] = useState("#000000");
   const [size, setSize] = useState(8);
+  /* In portrait the toolbar is a row above the board, so its buttons are 48px squares. */
+  const pick = portrait ? { width: "48px", height: "48px", flexShrink: 0 } : {};
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -26,14 +31,19 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Set canvas size
-    canvas.width = 1600;
-    canvas.height = 880;
+    // Set canvas size — in portrait, the board's own shape so strokes aren't stretched
+    if (portrait && canvas.clientWidth > 0 && canvas.clientHeight > 0) {
+      canvas.width = Math.round(canvas.clientWidth);
+      canvas.height = Math.round(canvas.clientHeight);
+    } else {
+      canvas.width = 1600;
+      canvas.height = 880;
+    }
 
     // Fill with white background
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }, []);
+  }, [portrait]);
 
   const startDrawing = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -112,18 +122,20 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
         className="shrink-0 flex items-center justify-between px-8"
         style={{
           height: "88px",
+          ...toolHeader(compact),
           backgroundColor: theme.surface,
           borderBottom: theme.cardBorder,
           boxShadow: SHADOW.lg,
         }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={toolHeaderGroup(compact)}>
           <button
             onClick={onBackToTools}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
             style={{
               width: "56px",
               height: "56px",
+              ...toolHeaderButton(compact),
               backgroundColor: theme.surfaceElevated,
               borderRadius: theme.radiusMd,
               border: "none",
@@ -138,6 +150,7 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
               fontSize: TYPE_SCALE.xl,
               fontWeight: WEIGHT.bold,
               color: theme.textHeading,
+              ...toolTitle(compact),
             }}
           >
             {t("tool.whiteboard")}
@@ -149,6 +162,7 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
           style={{
             width: "56px",
             height: "56px",
+            ...toolHeaderButton(compact),
             backgroundColor: theme.surfaceElevated,
             borderRadius: theme.radiusMd,
             border: "none",
@@ -160,13 +174,19 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
       </div>
 
       {/* Whiteboard Content */}
-      <div className="flex-1 flex gap-6 px-8 py-6">
+      <div
+        className="flex-1 flex gap-6 px-8 py-6"
+        style={{ ...toolBody(portrait, compact), ...toolPanes(portrait, compact), ...(portrait ? { overflowY: "hidden" } : {}) }}
+      >
         {/* Toolbar */}
         <div
           className="flex flex-col gap-6"
           style={{
             width: "120px",
             padding: "20px",
+            ...(portrait
+              ? { ...toolSidePanel(portrait), flexDirection: "row", alignItems: "flex-end", padding: compact ? "12px 16px" : "16px 20px", overflowX: "auto", scrollbarWidth: "none" }
+              : {}),
             backgroundColor: theme.surface,
             borderRadius: theme.radiusCard,
             border: theme.cardBorder,
@@ -186,13 +206,14 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
             >
               Tools
             </h3>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2" style={portrait ? { flexDirection: "row" } : undefined}>
               <button
                 onClick={() => setTool("pen")}
                 className="cursor-pointer transition-transform"
                 style={{
                   width: "80px",
                   height: "80px",
+                  ...pick,
                   backgroundColor: tool === "pen" ? theme.primarySubtle : theme.surfaceElevated,
                   borderRadius: theme.radiusMd,
                   border: tool === "pen" ? `2px solid ${theme.primary}` : "none",
@@ -210,6 +231,7 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
                 style={{
                   width: "80px",
                   height: "80px",
+                  ...pick,
                   backgroundColor: tool === "eraser" ? theme.primarySubtle : theme.surfaceElevated,
                   borderRadius: theme.radiusMd,
                   border: tool === "eraser" ? `2px solid ${theme.primary}` : "none",
@@ -238,7 +260,7 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
               >
                 Colors
               </h3>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2" style={portrait ? { flexDirection: "row" } : undefined}>
                 {COLORS.map((c) => (
                   <button
                     key={c}
@@ -247,6 +269,7 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
                     style={{
                       width: "80px",
                       height: "48px",
+                      ...pick,
                       backgroundColor: c,
                       borderRadius: theme.radiusMd,
                       border: color === c ? `3px solid ${theme.primaryOn}` : "none",
@@ -272,7 +295,7 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
             >
               Size
             </h3>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2" style={portrait ? { flexDirection: "row" } : undefined}>
               {SIZES.map((s) => (
                 <button
                   key={s}
@@ -281,6 +304,7 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
                   style={{
                     width: "80px",
                     height: "48px",
+                    ...pick,
                     backgroundColor: size === s ? theme.primarySubtle : theme.surfaceElevated,
                     borderRadius: theme.radiusMd,
                     border: size === s ? `2px solid ${theme.primary}` : "none",
@@ -292,8 +316,8 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
                 >
                   <div
                     style={{
-                      width: `${s * 2}px`,
-                      height: `${s * 2}px`,
+                      width: `${portrait ? Math.min(s * 2, 36) : s * 2}px`,
+                      height: `${portrait ? Math.min(s * 2, 36) : s * 2}px`,
                       backgroundColor: size === s ? theme.primary : theme.textMuted,
                       borderRadius: "50%",
                     }}
@@ -319,6 +343,7 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
               alignItems: "center",
               justifyContent: "center",
               gap: "4px",
+              ...(portrait ? { width: "auto", height: "48px", flexDirection: "row", gap: "8px", paddingInline: "16px", flexShrink: 0, marginTop: 0, marginInlineStart: "auto" } : {}),
             }}
           >
             <Trash2 size={28} color="#fff" />
@@ -343,7 +368,8 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
             borderRadius: theme.radiusCard,
             border: theme.cardBorder,
             boxShadow: SHADOW.md,
-            padding: "16px",
+            padding: compact ? "8px" : "16px",
+            ...(portrait ? { minHeight: 0 } : {}),
           }}
         >
           <canvas

@@ -1,11 +1,14 @@
 import { useState, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { toolHeader, toolHeaderGroup, toolHeaderButton, toolTitle, toolBody, toolFit } from "./toolLayout";
 import { ArrowLeft, ArrowRight, Delete } from "lucide-react";
 
 export function CalculatorTool({ onClose, onBackToTools }: { onClose: () => void; onBackToTools: () => void }) {
   const { theme } = useTheme();
   const { fontFamily, t, isRTL } = useLocale();
+  const { portrait, compact } = useCanvasSize();
   /* "Back" is to the right in Arabic and Urdu. */
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const [display, setDisplay] = useState("0");
@@ -157,18 +160,20 @@ export function CalculatorTool({ onClose, onBackToTools }: { onClose: () => void
         className="shrink-0 flex items-center justify-between px-8"
         style={{
           height: "88px",
+          ...toolHeader(compact),
           backgroundColor: theme.surface,
           borderBottom: theme.cardBorder,
           boxShadow: SHADOW.lg,
         }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={toolHeaderGroup(compact)}>
           <button
             onClick={onBackToTools}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
             style={{
               width: "56px",
               height: "56px",
+              ...toolHeaderButton(compact),
               backgroundColor: theme.surfaceElevated,
               borderRadius: theme.radiusMd,
               border: "none",
@@ -183,6 +188,7 @@ export function CalculatorTool({ onClose, onBackToTools }: { onClose: () => void
               fontSize: TYPE_SCALE.xl,
               fontWeight: WEIGHT.bold,
               color: theme.textHeading,
+              ...toolTitle(compact),
             }}
           >
             {t("tool.calculator")}
@@ -194,6 +200,7 @@ export function CalculatorTool({ onClose, onBackToTools }: { onClose: () => void
           style={{
             width: "56px",
             height: "56px",
+            ...toolHeaderButton(compact),
             backgroundColor: theme.surfaceElevated,
             borderRadius: theme.radiusMd,
             border: "none",
@@ -205,16 +212,20 @@ export function CalculatorTool({ onClose, onBackToTools }: { onClose: () => void
       </div>
 
       {/* Calculator Content */}
-      <div className="flex-1 flex items-center justify-center px-16 py-12">
+      <div
+        className="flex-1 flex items-center justify-center px-16 py-12"
+        style={{ ...toolBody(portrait, compact), ...(portrait ? { alignItems: "safe center" } : {}) }}
+      >
         <div
           className="flex flex-col"
           style={{
             width: "600px",
+            ...toolFit(portrait, "600px"),
             backgroundColor: theme.surface,
             borderRadius: theme.radiusCard,
             border: theme.cardBorder,
             boxShadow: SHADOW.xl,
-            padding: "32px",
+            padding: compact ? "16px" : "32px",
           }}
         >
           {/* Display */}

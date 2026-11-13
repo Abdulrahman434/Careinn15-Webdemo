@@ -1,6 +1,8 @@
 import { useState, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { toolHeader, toolHeaderGroup, toolHeaderButton, toolTitle, toolBody } from "./toolLayout";
 import { ArrowLeft, ArrowRight, Plus, Bell, BellRing, Check, Trash2, Clock } from "lucide-react";
 
 export interface Reminder {
@@ -76,6 +78,7 @@ export function RemindersTool({
 }) {
   const { theme } = useTheme();
   const { fontFamily, t, isRTL } = useLocale();
+  const { portrait, compact } = useCanvasSize();
   /* "Back" is to the right in Arabic and Urdu. */
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const [showAddForm, setShowAddForm] = useState(false);
@@ -182,18 +185,20 @@ export function RemindersTool({
         className="shrink-0 flex items-center justify-between px-8"
         style={{
           height: "88px",
+          ...toolHeader(compact),
           backgroundColor: theme.surface,
           borderBottom: theme.cardBorder,
           boxShadow: SHADOW.lg,
         }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={toolHeaderGroup(compact)}>
           <button
             onClick={onBackToTools}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
             style={{
               width: "56px",
               height: "56px",
+              ...toolHeaderButton(compact),
               backgroundColor: theme.surfaceElevated,
               borderRadius: theme.radiusMd,
               border: "none",
@@ -208,16 +213,19 @@ export function RemindersTool({
               fontSize: TYPE_SCALE.xl,
               fontWeight: WEIGHT.bold,
               color: theme.textHeading,
+              ...toolTitle(compact),
             }}
           >
             {t("tool.reminders")}
           </h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={toolHeaderGroup(compact)}>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
+            aria-label="Add Reminder"
             className="flex items-center gap-2 px-6 py-3 cursor-pointer active:scale-95 transition-transform"
             style={{
+              ...toolHeaderButton(compact),
               backgroundColor: theme.primary,
               borderRadius: theme.radiusMd,
               border: "none",
@@ -225,7 +233,7 @@ export function RemindersTool({
             }}
           >
             <Plus size={20} color={theme.textInverse} />
-            <span
+            {!compact && <span
               style={{
                 fontFamily: fontFamily,
                 fontSize: TYPE_SCALE.base,
@@ -234,7 +242,7 @@ export function RemindersTool({
               }}
             >
               Add Reminder
-            </span>
+            </span>}
           </button>
           <button
             onClick={onClose}
@@ -242,6 +250,7 @@ export function RemindersTool({
             style={{
               width: "56px",
               height: "56px",
+              ...toolHeaderButton(compact),
               backgroundColor: theme.surfaceElevated,
               borderRadius: theme.radiusMd,
               border: "none",
@@ -254,12 +263,13 @@ export function RemindersTool({
       </div>
 
       {/* Reminders Content */}
-      <div className="flex-1 flex flex-col gap-6 px-16 py-8 overflow-y-auto">
+      <div className="flex-1 flex flex-col gap-6 px-16 py-8 overflow-y-auto" style={toolBody(portrait, compact)}>
         {/* Add Form */}
         {showAddForm && (
           <div
             className="p-6"
             style={{
+              ...(compact ? { padding: "16px" } : {}),
               backgroundColor: theme.surface,
               borderRadius: theme.radiusCard,
               border: theme.cardBorder,
@@ -277,7 +287,7 @@ export function RemindersTool({
             >
               New Reminder
             </h3>
-            <div className="flex gap-4 mb-4">
+            <div className="flex gap-4 mb-4" style={compact ? { flexDirection: "column", gap: "12px" } : undefined}>
               <input
                 type="text"
                 value={newTitle}
@@ -311,7 +321,7 @@ export function RemindersTool({
                 }}
               />
             </div>
-            <div className="flex gap-3 mb-4">
+            <div className="flex gap-3 mb-4" style={compact ? { flexWrap: "wrap" } : undefined}>
               {(["medication", "appointment", "general"] as const).map((cat) => (
                 <button
                   key={cat}
@@ -335,7 +345,7 @@ export function RemindersTool({
             </div>
 
             {/* Push Notification Checkbox */}
-            <div className="flex items-center gap-3 mb-5">
+            <div className="flex items-center gap-3 mb-5" style={compact ? { alignItems: "flex-start" } : undefined}>
               <button
                 onClick={() => setNewPushNotify(!newPushNotify)}
                 className="cursor-pointer transition-all"
@@ -355,7 +365,7 @@ export function RemindersTool({
               >
                 {newPushNotify && <Check size={16} color="#fff" strokeWidth={3} />}
               </button>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2" style={compact ? { flexWrap: "wrap", columnGap: "8px", rowGap: "2px" } : undefined}>
                 <BellRing size={18} color={newPushNotify ? theme.primaryOn : theme.textMuted} />
                 <span
                   style={{
@@ -422,6 +432,7 @@ export function RemindersTool({
                   key={reminder.id}
                   className="flex items-center gap-4 p-5"
                   style={{
+                    ...(compact ? { gap: "10px", padding: "14px" } : {}),
                     backgroundColor: theme.surface,
                     borderRadius: theme.radiusMd,
                     border: theme.cardBorder,
@@ -457,7 +468,7 @@ export function RemindersTool({
                   >
                     {getCategoryIcon(reminder.category)}
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1" style={compact ? { minWidth: 0 } : undefined}>
                     <h3
                       style={{
                         fontFamily: fontFamily,
@@ -548,6 +559,7 @@ export function RemindersTool({
                   key={reminder.id}
                   className="flex items-center gap-4 p-5"
                   style={{
+                    ...(compact ? { gap: "10px", padding: "14px" } : {}),
                     backgroundColor: theme.surface,
                     borderRadius: theme.radiusMd,
                     border: theme.cardBorder,
@@ -584,7 +596,7 @@ export function RemindersTool({
                   >
                     {getCategoryIcon(reminder.category)}
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1" style={compact ? { minWidth: 0 } : undefined}>
                     <h3
                       style={{
                         fontFamily: fontFamily,
