@@ -1,11 +1,14 @@
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, LEADING, TEXT_STYLE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, MessageSquareHeart, MessageSquareWarning, FileText, AlertTriangle, Heart, Mic, CheckCircle2, Play, Pause, Square, RotateCcw, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageSquareHeart, MessageSquareWarning, FileText, AlertTriangle, Heart, Mic, CheckCircle2, Play, Pause, Square, RotateCcw, Trash2, Star, ClipboardList, X, Loader2 } from "lucide-react";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { ApiImage } from "./ApiImage";
 import thankYouImage from "../../assets/23db5e568918c9a319b272caa7a9e865d4fbd418.webp";
+import burjeelGoogleReviewQr from "../../assets/feedback/burjeel-google-review-qr.jpeg";
+import burjeelPatientFormQr from "../../assets/feedback/burjeel-patient-form-qr.jpeg";
 import { useReloadHold } from "../lib/reloadSafety";
+import { useCanvasSize } from "../lib/canvasSize";
 
 /* ═══════════════════════════════════════════════════════════════
  * REAL VOICE RECORDER (uses MediaRecorder API)
@@ -295,13 +298,36 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
   useReloadHold(true, "survey", "survey open");
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
+  const { portrait, compact, width: canvasW, height: canvasH } = useCanvasSize();
 
   const BRAND = theme.primary;
   const BRAND_DARK = theme.primaryDark;
   const isFakeeh = theme.id === "dsfh";
+  /* Burjeel's printed QR posters: Google Maps review + their own patient form */
+  const isBurjeel = theme.id === "burjeel";
 
   // Hub state
   const [path, setPath] = useState<FeedbackPath>(initialPath);
+  const [qrPoster, setQrPoster] = useState<string | null>(null);
+  /* The poster is sized to fit the white panel; null until both the panel
+     box and the image's own size are known (a spinner shows meanwhile). */
+  const [posterBox, setPosterBox] = useState<{ w: number; h: number } | null>(null);
+  const [posterNatural, setPosterNatural] = useState<{ w: number; h: number } | null>(null);
+  const posterAreaRef = useRef<HTMLDivElement | null>(null);
+  const openPoster = (src: string) => { setPosterNatural(null); setQrPoster(src); };
+  useEffect(() => {
+    const el = posterAreaRef.current;
+    if (!qrPoster || !el) return;
+    const measure = () => setPosterBox({ w: el.clientWidth - 48, h: el.clientHeight - 48 });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [qrPoster]);
+  const posterFit = posterBox && posterNatural
+    ? Math.min(posterBox.w / posterNatural.w, posterBox.h / posterNatural.h)
+    : 0;
+  const posterLoaded = posterFit > 0;
 
   // Survey state
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -364,7 +390,10 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
    * ═══════════════════════════════════════════════════════════════ */
   const renderHubScreen = () => (
     <div className="sm-hub sm-pad flex flex-col items-center justify-center h-full px-16 text-center">
-      <div className="sm-hub-row flex items-center justify-center gap-6 w-full max-w-[1000px]">
+      <div className={`sm-hub-row flex items-center justify-center gap-6 w-full ${isBurjeel ? "max-w-[660px]" : "max-w-[1000px]"}`}>
+        {/* Burjeel collects feedback through its own QR posters only */}
+        {!isBurjeel && (
+        <>
         {/* Quick Survey Card */}
         <button
           onClick={() => setPath("survey")}
@@ -476,6 +505,66 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
         </button>
         </>
         )}
+        </>
+        )}
+
+        {isBurjeel && (
+        <>
+        {/* Rate Us — Google Maps review QR poster */}
+        <button
+          onClick={() => openPoster(burjeelGoogleReviewQr)}
+          className="sm-card flex-1 flex flex-col items-center cursor-pointer"
+          style={{
+            padding: "48px 24px",
+            borderRadius: theme.radiusCard,
+            backgroundColor: theme.surface,
+            border: `1.5px solid ${theme.borderCardColor}`,
+            boxShadow: SHADOW.sm,
+            outline: "none",
+          }}
+        >
+          <div
+            className="sm-iconbox flex items-center justify-center mb-6"
+            style={{ width: 80, height: 80, borderRadius: theme.radiusFull, backgroundColor: theme.primarySubtle }}
+          >
+            <Star size={40} style={{ color: BRAND }} />
+          </div>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "8px" }}>
+            {t("feedback.rateUs")}
+          </span>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.medium, color: theme.textMuted }}>
+            {t("feedback.rateUsDesc")}
+          </span>
+        </button>
+
+        {/* Patient Form — inpatient / day-care feedback QR poster */}
+        <button
+          onClick={() => openPoster(burjeelPatientFormQr)}
+          className="sm-card flex-1 flex flex-col items-center cursor-pointer"
+          style={{
+            padding: "48px 24px",
+            borderRadius: theme.radiusCard,
+            backgroundColor: theme.surface,
+            border: `1.5px solid ${theme.borderCardColor}`,
+            boxShadow: SHADOW.sm,
+            outline: "none",
+          }}
+        >
+          <div
+            className="sm-iconbox flex items-center justify-center mb-6"
+            style={{ width: 80, height: 80, borderRadius: theme.radiusFull, backgroundColor: theme.primarySubtle }}
+          >
+            <ClipboardList size={40} style={{ color: BRAND }} />
+          </div>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "8px" }}>
+            {t("feedback.patientForm")}
+          </span>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.medium, color: theme.textMuted }}>
+            {t("feedback.patientFormDesc")}
+          </span>
+        </button>
+        </>
+        )}
       </div>
     </div>
   );
@@ -534,7 +623,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
         </h3>
 
         {/* Options */}
-        <div className="sm-options flex flex-wrap items-center justify-center gap-5 max-w-[1100px]">
+        <div className="sm-options flex flex-wrap items-center justify-center gap-x-5 gap-y-7 max-w-[1100px]">
           {question.type === "emoji" ? (
             question.optionKeys.map((option, idx) => {
               const isSelected = currentAnswer === idx;
@@ -559,58 +648,30 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
               );
             })
           ) : (
-            <>
-              <div className="flex flex-wrap items-center justify-center gap-5 w-full">
-                {question.optionKeys.slice(0, 4).map((option, idx) => {
-                  const isSelected = currentAnswer === option;
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => handleAnswer(question.id, option)}
-                      className="sm-opt transition-transform duration-200"
-                      style={{
-                        minWidth: "220px", padding: "20px 32px",
-                        borderRadius: theme.radiusXl,
-                        border: isSelected ? `3px solid ${BRAND}` : `2px solid ${theme.borderDefault}`,
-                        backgroundColor: isSelected ? theme.primarySubtle : theme.surface,
-                        fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.semibold,
-                        color: isSelected ? BRAND : theme.textBody,
-                        cursor: "pointer",
-                        transform: isSelected ? "scale(1.03)" : "scale(1)",
-                      }}
-                    >
-                      {t(option)}
-                    </button>
-                  );
-                })}
-              </div>
-              {question.optionKeys.length > 4 && (
-                <div className="flex justify-center w-full mt-2">
-                  {question.optionKeys.slice(4).map((option, idx) => {
-                    const isSelected = currentAnswer === option;
-                    return (
-                      <button
-                        key={idx + 4}
-                        onClick={() => handleAnswer(question.id, option)}
-                        className="sm-opt transition-transform duration-200"
-                        style={{
-                          minWidth: "220px", padding: "20px 32px",
-                          borderRadius: theme.radiusXl,
-                          border: isSelected ? `3px solid ${BRAND}` : `2px solid ${theme.borderDefault}`,
-                          backgroundColor: isSelected ? theme.primarySubtle : theme.surface,
-                          fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.semibold,
-                          color: isSelected ? BRAND : theme.textBody,
-                          cursor: "pointer",
-                          transform: isSelected ? "scale(1.03)" : "scale(1)",
-                        }}
-                      >
-                        {t(option)}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </>
+            /* One wrapping run for every option: a row takes as many as
+               fit and the rest share the next one, centred. */
+            question.optionKeys.map((option, idx) => {
+              const isSelected = currentAnswer === option;
+              return (
+                <button
+                  key={idx}
+                  onClick={() => handleAnswer(question.id, option)}
+                  className="sm-opt transition-transform duration-200"
+                  style={{
+                    minWidth: "220px", padding: "20px 32px",
+                    borderRadius: theme.radiusXl,
+                    border: isSelected ? `3px solid ${BRAND}` : `2px solid ${theme.borderDefault}`,
+                    backgroundColor: isSelected ? theme.primarySubtle : theme.surface,
+                    fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.semibold,
+                    color: isSelected ? BRAND : theme.textBody,
+                    cursor: "pointer",
+                    transform: isSelected ? "scale(1.03)" : "scale(1)",
+                  }}
+                >
+                  {t(option)}
+                </button>
+              );
+            })
           )}
         </div>
       </div>
@@ -1100,6 +1161,56 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
     );
   };
 
+  /* Small-screen rules. In landscape the 1920×1080 canvas is scaled to fit,
+     so they stay on the browser's media queries exactly as before. In portrait
+     the canvas is the screen itself and its own size decides; the shared
+     header sizes itself there, so the header (.iph) rules stay landscape-only. */
+  const smHeaderSmall = `
+          .sm-root .iph { gap: 10px !important; padding: 14px 12px 10px !important; }
+          .sm-root .iph-divider, .sm-root .iph-icon, .sm-root .iph-subtitle { display: none !important; }
+          .sm-root .iph-title { font-size: 20px !important; line-height: 24px !important; }
+          .sm-root .iph > button, .sm-root .iph-actions button { width: 40px !important; height: 40px !important; }
+          .sm-root .iph-actions { gap: 6px !important; }`;
+  const smContentSmall = `
+          .sm-content { padding: 0 10px 10px !important; }`;
+  const smBodySmall = `
+          .sm-pad { padding: 20px 16px !important; }
+          .sm-hub-row { flex-direction: column !important; gap: 12px !important; }
+          .sm-root .sm-card { flex: 0 0 auto !important; width: 100% !important; padding: 20px 16px !important; }
+          .sm-root .sm-iconbox { width: 56px !important; height: 56px !important; margin-bottom: 10px !important; }
+          .sm-root .sm-iconbox svg { width: 28px; height: 28px; }
+          .sm-qbadge { width: 60px !important; height: 60px !important; margin-bottom: 10px !important; }
+          .sm-qbadge span { font-size: 26px !important; }
+          .sm-qcount { font-size: 15px !important; margin-bottom: 14px !important; }
+          .sm-qtitle { font-size: 22px !important; margin-bottom: 22px !important; }
+          .sm-options { gap: 10px !important; width: 100%; }
+          .sm-emoji { width: 60px !important; height: 60px !important; font-size: 32px !important; }
+          .sm-opt { min-width: 0 !important; width: 100%; padding: 14px 18px !important; font-size: 17px !important; }
+          .sm-form { padding: 0 16px; }
+          .sm-form-head { padding-top: 18px !important; }
+          .sm-footer { gap: 8px; padding: 10px 12px !important; }
+          .sm-footer > div { display: none !important; }
+          .sm-footer button { height: 46px !important; padding: 0 16px !important; font-size: 16px !important; }`;
+  const smShortFlow = `
+          .sm-root { overflow-y: auto !important; }
+          .sm-content, .sm-shell, .sm-path, .sm-scroll, .sm-form { flex: none !important; height: auto !important; min-height: 0 !important; overflow: visible !important; }
+          .sm-hub { height: auto !important; overflow: visible !important; }`;
+  const smHeaderShort = `
+          .sm-root .iph { gap: 10px !important; padding: 12px 16px 10px !important; }
+          .sm-root .iph-divider, .sm-root .iph-icon, .sm-root .iph-subtitle { display: none !important; }
+          .sm-root .iph-title { font-size: 20px !important; line-height: 24px !important; }
+          .sm-root .iph > button, .sm-root .iph-actions button { width: 40px !important; height: 40px !important; }`;
+  const smLandShort = `
+          .sm-root .iph { padding-top: 16px !important; padding-bottom: 12px !important; }
+          .sm-content { padding-bottom: 16px !important; }
+          .sm-pad { padding-top: 20px !important; padding-bottom: 20px !important; }
+          .sm-qbadge { width: 64px !important; height: 64px !important; margin-bottom: 10px !important; }
+          .sm-qbadge span { font-size: 28px !important; }
+          .sm-qcount { margin-bottom: 14px !important; }
+          .sm-qtitle { font-size: 26px !important; margin-bottom: 24px !important; }
+          .sm-emoji { width: 96px !important; height: 96px !important; font-size: 46px !important; }
+          .sm-footer { padding-top: 12px !important; padding-bottom: 12px !important; }`;
+
   /* ═══════════════════════════════════════════════════════════════
    * MAIN RENDER
    * ═══════════════════════════════════════════════════════════════ */
@@ -1134,54 +1245,23 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
         .sm-hub-row { margin-top: auto; margin-bottom: auto; }
 
         /* ── Small screens (phones, tablets in portrait) ── */
-        @media (max-width: 820px) {
-          .sm-root .iph { gap: 10px !important; padding: 14px 12px 10px !important; }
-          .sm-root .iph-divider, .sm-root .iph-icon, .sm-root .iph-subtitle { display: none !important; }
-          .sm-root .iph-title { font-size: 20px !important; line-height: 24px !important; }
-          .sm-root .iph > button, .sm-root .iph-actions button { width: 40px !important; height: 40px !important; }
-          .sm-root .iph-actions { gap: 6px !important; }
-          .sm-content { padding: 0 10px 10px !important; }
-          .sm-pad { padding: 20px 16px !important; }
-          .sm-hub-row { flex-direction: column !important; gap: 12px !important; }
-          .sm-root .sm-card { flex: 0 0 auto !important; width: 100% !important; padding: 20px 16px !important; }
-          .sm-root .sm-iconbox { width: 56px !important; height: 56px !important; margin-bottom: 10px !important; }
-          .sm-root .sm-iconbox svg { width: 28px; height: 28px; }
-          .sm-qbadge { width: 60px !important; height: 60px !important; margin-bottom: 10px !important; }
-          .sm-qbadge span { font-size: 26px !important; }
-          .sm-qcount { font-size: 15px !important; margin-bottom: 14px !important; }
-          .sm-qtitle { font-size: 22px !important; margin-bottom: 22px !important; }
-          .sm-options { gap: 10px !important; }
-          .sm-emoji { width: 60px !important; height: 60px !important; font-size: 32px !important; }
-          .sm-opt { min-width: 0 !important; width: 100%; padding: 14px 18px !important; font-size: 17px !important; }
-          .sm-form { padding: 0 16px; }
-          .sm-form-head { padding-top: 18px !important; }
-          .sm-footer { gap: 8px; padding: 10px 12px !important; }
-          .sm-footer > div { display: none !important; }
-          .sm-footer button { height: 46px !important; padding: 0 16px !important; font-size: 16px !important; }
+        ${portrait
+          ? `${canvasW <= 820 ? smBodySmall : `
+          .sm-hub-row { flex-direction: column !important; }
+          .sm-root .sm-card { flex: 0 0 auto !important; width: 100% !important; }`}
+             ${compact ? `.sm-content { padding: 0 16px 16px !important; }
+          .sm-options { gap: 8px !important; }
+          .sm-emoji { width: 56px !important; height: 56px !important; font-size: 30px !important; }` : ""}
+             ${canvasH <= 560 ? smShortFlow : ""}`
+          : `@media (max-width: 820px) {${smHeaderSmall}${smContentSmall}${smBodySmall}
         }
         /* Very short windows: the white card no longer has to fit the screen.
            The whole page scrolls instead, so nothing is squeezed or clipped. */
-        @media (max-height: 560px) {
-          .sm-root { overflow-y: auto !important; }
-          .sm-content, .sm-shell, .sm-path, .sm-scroll, .sm-form { flex: none !important; height: auto !important; min-height: 0 !important; overflow: visible !important; }
-          .sm-hub { height: auto !important; overflow: visible !important; }
-          .sm-root .iph { gap: 10px !important; padding: 12px 16px 10px !important; }
-          .sm-root .iph-divider, .sm-root .iph-icon, .sm-root .iph-subtitle { display: none !important; }
-          .sm-root .iph-title { font-size: 20px !important; line-height: 24px !important; }
-          .sm-root .iph > button, .sm-root .iph-actions button { width: 40px !important; height: 40px !important; }
+        @media (max-height: 560px) {${smShortFlow}${smHeaderShort}
         }
         /* Short landscape screens: tighter vertical rhythm */
-        @media (max-height: 700px) and (min-width: 821px) {
-          .sm-root .iph { padding-top: 16px !important; padding-bottom: 12px !important; }
-          .sm-content { padding-bottom: 16px !important; }
-          .sm-pad { padding-top: 20px !important; padding-bottom: 20px !important; }
-          .sm-qbadge { width: 64px !important; height: 64px !important; margin-bottom: 10px !important; }
-          .sm-qbadge span { font-size: 28px !important; }
-          .sm-qcount { margin-bottom: 14px !important; }
-          .sm-qtitle { font-size: 26px !important; margin-bottom: 24px !important; }
-          .sm-emoji { width: 96px !important; height: 96px !important; font-size: 46px !important; }
-          .sm-footer { padding-top: 12px !important; padding-bottom: 12px !important; }
-        }
+        @media (max-height: 700px) and (min-width: 821px) {${smLandShort}
+        }`}
       `}</style>
 
       {/* ─── Header (white text on brand gradient) ─── */}
@@ -1195,7 +1275,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
       {/* ─── Main content — large white rounded card ─── */}
       <div className="sm-content flex-1 min-h-0 px-12 pt-2 pb-8 relative z-10 flex flex-col">
         <div
-          className="sm-shell flex-1 min-h-0 flex flex-col overflow-hidden"
+          className="sm-shell relative flex-1 min-h-0 flex flex-col overflow-hidden"
           style={{
             backgroundColor: theme.surface,
             borderRadius: theme.radiusXl,
@@ -1207,6 +1287,54 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
           {path === "survey" && renderSurveyPath()}
           {path === "concern" && renderConcernPath()}
           {path === "appreciation" && renderAppreciationPath()}
+
+          {/* QR poster — held inside the white panel; tap outside or ✕ to dismiss */}
+          {qrPoster && (
+            <div
+              ref={posterAreaRef}
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ zIndex: 20, backgroundColor: theme.overlay, animation: "smPosterFade .15s ease-out" }}
+              onClick={() => setQrPoster(null)}
+            >
+              {!posterLoaded && (
+                <Loader2 className="animate-spin absolute" size={40} style={{ color: theme.primaryOn }} />
+              )}
+              <div
+                className="relative shrink-0"
+                style={{
+                  width: posterNatural ? posterNatural.w * posterFit : 0,
+                  height: posterNatural ? posterNatural.h * posterFit : 0,
+                  opacity: posterLoaded ? 1 : 0, transition: "opacity .2s ease",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <img
+                  key={qrPoster}
+                  src={qrPoster}
+                  alt=""
+                  onLoad={(e) => setPosterNatural({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
+                  className="block select-none w-full h-full"
+                  style={{ borderRadius: theme.radiusLg, boxShadow: SHADOW.xl }}
+                  draggable={false}
+                />
+                {posterLoaded && (
+                  <button
+                    onClick={() => setQrPoster(null)}
+                    aria-label={t("feedback.closePoster")}
+                    className="absolute flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
+                    style={{
+                      top: 16, insetInlineEnd: 16, width: 56, height: 56,
+                      borderRadius: theme.radiusFull, backgroundColor: theme.surface,
+                      border: `1.5px solid ${theme.borderCardColor}`, boxShadow: SHADOW.md, outline: "none",
+                    }}
+                  >
+                    <X size={28} style={{ color: theme.textHeading }} />
+                  </button>
+                )}
+              </div>
+              <style>{`@keyframes smPosterFade { from { opacity: 0; } to { opacity: 1; } }`}</style>
+            </div>
+          )}
         </div>
       </div>
     </div>
