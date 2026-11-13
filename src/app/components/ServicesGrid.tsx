@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ApiImage } from "./ApiImage";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE, LEADING } from "./ThemeContext";
 import { useLocale } from "./i18n";
+import { useCanvasSize } from "../lib/canvasSize";
 import { useRipple } from "./useRipple";
 import svgPaths from "../../imports/svg-ca68x68c4i";
 import { type LucideIcon, BookMarked, Stethoscope, BookOpenText, MessageSquareMore, Utensils, LayoutGrid, X } from "lucide-react";
@@ -289,6 +290,7 @@ function ServiceCard({ item, onTap, square, contained, compact, onLongPress, isL
   const { onPointerDown, rippleElements } = useRipple("rgba(255,255,255,0.12)");
   const [pressed, setPressed] = useState(false);
 
+  const { compact: phone } = useCanvasSize();
   const iconBoxSize = compact ? "48px" : "72px";
   const iconSize = compact ? 28 : 40;
   const iconRadius = compact ? theme.radiusMd : theme.radiusLg;
@@ -374,7 +376,8 @@ function ServiceCard({ item, onTap, square, contained, compact, onLongPress, isL
       <span
         style={{
           fontFamily: fontFamily,
-          fontSize: compact ? "12px" : TEXT_STYLE.button.fontSize,
+          /* Phones: the same small label as the hub and shortcut tiles. */
+          fontSize: phone ? TYPE_SCALE.sm : compact ? "12px" : TEXT_STYLE.button.fontSize,
           fontWeight: WEIGHT.semibold,
           color: pressed ? theme.textInverse : theme.textHeading,
           textAlign: "center",
@@ -450,7 +453,9 @@ function SurveyCardFilled({ onOpen, compact, small, onLongPress, isLocked, guest
         style={{
           fontFamily: fontFamily,
           ...TEXT_STYLE.button,
-          ...(compact && { fontSize: small ? TYPE_SCALE.sm : TYPE_SCALE.base, lineHeight: LEADING.tight, textAlign: "center" as const }),
+          /* Phones: the small label every home tile uses there. Elsewhere the
+             label stays the landscape size even when the tile is compact. */
+          ...(small && { fontSize: TYPE_SCALE.sm, lineHeight: LEADING.tight, textAlign: "center" as const }),
           fontWeight: WEIGHT.semibold,
           color: pressed ? theme.textInverse : theme.textHeading,
           transition: "color 0.15s",
