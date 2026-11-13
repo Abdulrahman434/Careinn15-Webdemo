@@ -246,11 +246,15 @@ type Tab = NeedKind;
 export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
   const { theme } = useTheme();
   const { t, isRTL, fontFamily, locale } = useLocale();
-  const { compact, portrait, width: canvasWidth } = useCanvasSize();
+  const { compact, portrait } = useCanvasSize();
   /* Grid columns: 4 in landscape; in portrait as many as the pane under or
      beside the rail holds — 3 on the bedside portrait screen, else 2. */
   /* Portrait: the rail is a strip on top, so the grid has the full width. */
-  const gridCols = !portrait ? 4 : compact ? 2 : canvasWidth >= 1000 ? 4 : 3;
+  const gridCols = !portrait ? 4 : compact ? 2 : 3;
+  /* The categories stay a column down the card's edge, as in landscape,
+     wherever there is room beside them (tablets, the bedside portrait screen);
+     only a phone turns them into a sideways strip over the items. */
+  const strip = compact;
   /* Icon art ring for the tabs without photos, scaled to the card width. */
   const ring = compact ? { size: 64, border: 6, icon: 30 } : portrait ? { size: 84, border: 8, icon: 40 } : { size: 126, border: 12, icon: 60 };
 
@@ -608,7 +612,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
         <div
           className="flex-1 min-h-0 overflow-hidden"
           style={{
-            ...pageRailCard(portrait),
+            ...pageRailCard(strip),
             backgroundColor: theme.surface,
             borderRadius: theme.radiusXl,
             boxShadow: SHADOW.xl,
@@ -622,7 +626,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
           <nav
             className="gap-2 py-7 px-5"
             style={{
-              ...pageRail(portrait, 320, theme.borderSubtle),
+              ...pageRail(strip, 320, theme.borderSubtle),
               backgroundColor: theme.surfaceInset,
             }}
           >
@@ -646,7 +650,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                     outline: "none",
                     boxShadow: active ? SHADOW.md : "none",
                     textAlign: "start",
-                    ...pageRailItem(portrait),
+                    ...pageRailItem(strip),
                   }}
                 >
                   <span

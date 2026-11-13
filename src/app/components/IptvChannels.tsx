@@ -381,9 +381,12 @@ function ChannelPlayerSimulation({
 export function IptvChannels({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
   const { t, fontFamily, locale, isRTL } = useLocale();
-  const { compact, portrait, width: canvasWidth } = useCanvasSize();
+  const { compact, portrait } = useCanvasSize();
   /* Portrait: the rail is a strip on top, so the grid has the full width. */
-  const gridCols = `repeat(${!portrait ? 5 : compact ? 2 : canvasWidth >= 1000 ? 4 : 3}, minmax(0, 1fr))`;
+  const gridCols = `repeat(${!portrait ? 5 : compact ? 2 : 3}, minmax(0, 1fr))`;
+  /* Categories: a column beside the channels, as in landscape, wherever there
+     is room for it; a sideways strip only on phones. */
+  const strip = compact;
   const { channels, loading, error, reload } = useIptvChannels();
   const [playingId, setPlayingId] = useState<number | null>(null);
   const [favourites, setFavourites] = useState<string[]>(() => readIds(FAVOURITES_KEY));
@@ -651,7 +654,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
         <div
           className="flex-1 min-h-0 overflow-hidden"
           style={{
-            ...pageRailCard(portrait),
+            ...pageRailCard(strip),
             backgroundColor: theme.surface,
             borderRadius: theme.radiusXl,
             boxShadow: SHADOW.xl,
@@ -660,9 +663,9 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
         >
           {/* Category rail — the patient's own lists first, then genres. */}
           <nav
-            className={`tv-scroll gap-2 py-7 px-5 ${portrait ? "" : "overflow-y-auto"}`}
+            className={`tv-scroll gap-2 py-7 px-5 ${strip ? "" : "overflow-y-auto"}`}
             style={{
-              ...pageRail(portrait, 320, theme.borderSubtle),
+              ...pageRail(strip, 320, theme.borderSubtle),
               backgroundColor: theme.surfaceInset,
             }}
           >
@@ -671,8 +674,8 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
               const RIcon = item.Icon;
               const startsGenres = item.key === "all" && i > 0;
               return (
-                <div key={item.key} style={portrait ? { display: "flex", alignItems: "center", flexShrink: 0, gap: 8 } : undefined}>
-                  {startsGenres && !portrait && (
+                <div key={item.key} style={strip ? { display: "flex", alignItems: "center", flexShrink: 0, gap: 8 } : undefined}>
+                  {startsGenres && !strip && (
                     <div style={{ height: 1, backgroundColor: theme.borderSubtle, margin: `${SPACE[1]} 14px` }} />
                   )}
                   <button
@@ -687,7 +690,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
                       outline: "none",
                       boxShadow: active ? SHADOW.md : "none",
                       textAlign: "start",
-                      ...pageRailItem(portrait),
+                      ...pageRailItem(strip),
                     }}
                   >
                     <span
