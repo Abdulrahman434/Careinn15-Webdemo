@@ -35,6 +35,18 @@ export const CHANGE_TYPES: { type: ChangeType; label: string }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: "1.15.0",
+    date: "2026-11-13",
+    changes: [
+      { type: "improved", area: "Patient Services", text: "On tablets and the bedside portrait screen the categories stay in a column beside the items, as in landscape, with 3 items per row." },
+      { type: "improved", area: "Live TV", text: "On tablets and the bedside portrait screen the categories stay in a column beside the channels, at the landscape width, so no category name is cut." },
+      { type: "improved", area: "Meal Ordering", text: "On phones the patient details take two rows instead of three, so more of the meals show." },
+      { type: "fixed", area: "Home", text: "The Feedback tile label is the same size as in landscape, and on phones every home tile label is the same size." },
+      { type: "fixed", area: "Home", text: "On tablets the greeting card keeps its bottom margin under Clear My Data." },
+      { type: "improved", area: "Phones", text: "Cards on every page use smaller corners on phones." },
+    ],
+  },
+  {
     version: "1.14.0",
     date: "2026-11-13",
     changes: [
