@@ -334,10 +334,11 @@ export function PatientGreeting({
         )}
       </div>
 
-      {/* Hospital image */}
+      {/* Hospital image — takes the card's spare height, and gives way first
+          (down to 96) so the buttons under it keep their bottom margin. */}
       <div
         ref={photoRef}
-        className={`overflow-hidden mx-4 mb-4 ${fillImage ? "flex-1 min-h-[120px]" : "shrink-0"} ${
+        className={`overflow-hidden mx-4 mb-4 ${fillImage ? "flex-1 min-h-[96px]" : "shrink-0"} ${
           onImageTap ? "cursor-pointer active:scale-[0.99] transition-all duration-200" : ""
         }`}
         style={{
