@@ -2028,10 +2028,14 @@ function useChoiceCardLayout() {
        heading. */
     wrap: portrait ? { minHeight: "auto", width: "100%" } : undefined,
     row: portrait ? { flexDirection: "column" as const, width: "100%", flex: "1 1 auto", minHeight: 0, gap: compact ? "12px" : "20px" } : undefined,
-    card: portrait ? { width: "100%", maxWidth: "560px", height: "auto", flex: "1 1 0", maxHeight: "400px", minHeight: compact ? "128px" : "220px", gap: compact ? "10px" : "36px" } : {},
-    badge: compact ? { top: "14px", right: "14px", width: "40px", height: "40px" } : {},
+    /* Phones: each choice is a row — icon, label, tick — so both fit on the
+       screen with the patient's details above them. */
+    card: compact
+      ? { width: "100%", height: "88px", flex: "0 0 auto", flexDirection: "row" as const, justifyContent: "flex-start", padding: "0 20px", gap: "16px" }
+      : portrait ? { width: "100%", maxWidth: "560px", height: "auto", flex: "1 1 0", maxHeight: "400px", minHeight: "220px", gap: "36px" } : {},
+    badge: compact ? { top: "50%", right: "auto", insetInlineEnd: "20px", transform: "translateY(-50%)", width: "36px", height: "36px" } : {},
     badgeTick: compact ? 20 : 32,
-    iconBox: compact ? { width: "64px", height: "64px" } : {},
+    iconBox: compact ? { width: "56px", height: "56px" } : {},
     label: compact ? "22px" : "32px",
   };
 }
@@ -2364,7 +2368,10 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
               style={{
                 width: portrait ? "100%" : "390px",
                 ...(portrait ? {
-                  flex: "1 0 auto", maxHeight: compact ? "220px" : "340px",
+                  /* The three share the height there is, so all three are on
+                     screen at once; never shorter than what the card says
+                     (phones) or 180 — past that the list scrolls. */
+                  flex: "1 1 0", minHeight: compact ? "min-content" : "180px", maxHeight: compact ? "220px" : "340px",
                   marginTop: mealIdx === 0 ? "auto" : undefined,
                   marginBottom: mealIdx === meals.length - 1 ? "auto" : undefined,
                 } : {}),
@@ -2411,7 +2418,7 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
                 style={{
                   display: "block", width: portrait ? (compact ? "128px" : "38%") : "100%",
                   height: portrait ? "auto" : "clamp(150px, 14vw, 190px)",
-                  minHeight: portrait ? (compact ? "156px" : "200px") : undefined,
+                  minHeight: portrait ? 0 : undefined,
                   objectFit: "cover", objectPosition: "center",
                   flexShrink: 0,
                 }}
