@@ -506,7 +506,11 @@ function BedsideScreen() {
   const scale = useScreenScale(DESIGN_W, DESIGN_H);
   /* Internal pages read the canvas size (useCanvasSize) to stack in portrait. */
   const canvasSizeValue = useMemo(() => canvasSize(DESIGN_W, DESIGN_H), [DESIGN_W, DESIGN_H]);
-  const PhoneRadii = canvasSizeValue.compact ? CompactRadii : Fragment;
+  /* Phones and tablets (a portrait screen under the bedside's 1080): the
+     smaller radius scale. Their canvas is scaled down to the screen, and the
+     bedside radii turn their cards into pills. The bedside screen keeps its own. */
+  const handheld = fluid && viewport.w < 1080;
+  const PhoneRadii = handheld ? CompactRadii : Fragment;
   const [showConfigurator, setShowConfigurator] = useState(false);
   const [showThemeAppearance, setShowThemeAppearance] = useState(false);
 
@@ -1840,8 +1844,8 @@ function BedsideScreen() {
         }}
         className={`flex flex-col overflow-hidden relative shrink-0 ${isTV ? "careinn-tv" : "careinn-kiosk"}`}
       >
-        {/* Phones: one smaller radius scale for every card on every page
-            (CompactRadii) — the bedside radii turn phone-sized cards into pills. */}
+        {/* Phones and tablets: one smaller radius scale for every card on
+            every page (CompactRadii). */}
         <PhoneRadii>
         <ToastProvider>
         {layoutMode === 2 ? (
