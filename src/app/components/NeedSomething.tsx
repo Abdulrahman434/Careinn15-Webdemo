@@ -247,10 +247,11 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
   const { theme } = useTheme();
   const { t, isRTL, fontFamily, locale } = useLocale();
   const { compact, portrait } = useCanvasSize();
-  /* Grid columns: 4 in landscape; in portrait as many as the pane under or
-     beside the rail holds — 3 on the bedside portrait screen, else 2. */
+  /* Grid columns: 4 in landscape; 2 in portrait (beside the category column
+     on tablets and the bedside screen, under the strip on phones) — at 3 the
+     items read too small there. */
   /* Portrait: the rail is a strip on top, so the grid has the full width. */
-  const gridCols = !portrait ? 4 : compact ? 2 : 3;
+  const gridCols = !portrait ? 4 : 2;
   /* The categories stay a column down the card's edge, as in landscape,
      wherever there is room beside them (tablets, the bedside portrait screen);
      only a phone turns them into a sideways strip over the items. */
