@@ -89,7 +89,7 @@ export function PatientGreeting({
   };
   const [showSignOutAppsConfirm, setShowSignOutAppsConfirm] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const { theme } = useTheme();
+  const { theme, activeConfigId } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
   const rippleElements = useRipple(theme.primarySubtle).rippleElements;
   const { isGuest } = useGuestMode();
@@ -277,7 +277,9 @@ export function PatientGreeting({
             </div>
           </div>
         )}
-        {/* Badges: [MRN] [Room] [Bed] */}
+        {/* Badges: [MRN] [Room] [Bed]. Burjeel shows no Bed chip: its room
+            and bed codes (BUHDR506 / BUHDS506) are too long for three chips
+            on one row, and Burjeel asked for one row. */}
         {!isGuest && !guest && (
           <div className="flex items-center flex-wrap gap-2" style={{ paddingTop: SPACE[1] }}>
             <div
@@ -310,7 +312,7 @@ export function PatientGreeting({
                 {t("greeting.room", displayRoom)}
               </span>
             </div>
-            {displayBed && (
+            {displayBed && activeConfigId !== "burjeel" && (
               <div
                 className="flex items-center px-3 py-1.5"
                 style={{
