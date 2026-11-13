@@ -1257,6 +1257,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
              floating in its middle — never shorter than what they say, never
              taller than 480. */
           .sm-hub-row { flex: 1 0 auto; margin: 0 !important; align-items: stretch !important; justify-content: center !important; }
+          ${compact ? "" : ".sm-hub { padding-top: 48px !important; padding-bottom: 48px !important; }"}
           .sm-root .sm-card { flex: 1 1 0 !important; min-height: min-content; max-height: 480px; justify-content: center; }`}`
           : `@media (max-width: 820px) {${smHeaderSmall}${smContentSmall}${smBodySmall}
         }
