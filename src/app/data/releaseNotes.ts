@@ -35,6 +35,17 @@ export const CHANGE_TYPES: { type: ChangeType; label: string }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: "1.14.0",
+    date: "2026-11-13",
+    changes: [
+      { type: "improved", area: "Tablets", text: "Tablets show the bedside portrait screen in proportion: smaller text, titles no longer cut, and more items per row." },
+      { type: "improved", area: "Phones", text: "Phones keep every element in proportion, with smaller headings, tabs and popups." },
+      { type: "fixed", area: "Phones", text: "No more black bands above and below the screen in Safari, and nothing hides under its bottom toolbar." },
+      { type: "improved", area: "Meal Ordering", text: "All three meals show at once on tablets; on phones, Patient and Guest are compact rows." },
+      { type: "improved", area: "About Us", text: "In portrait, the panel is as tall as its video or picture instead of leaving it adrift in empty space." },
+    ],
+  },
+  {
     version: "1.13.0",
     date: "2026-11-13",
     changes: [
