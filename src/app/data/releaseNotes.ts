@@ -35,6 +35,14 @@ export const CHANGE_TYPES: { type: ChangeType; label: string }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: "1.16.0",
+    date: "2026-11-13",
+    changes: [
+      { type: "improved", area: "Tablets", text: "Cards on every page use smaller corners on tablets, as on phones." },
+      { type: "improved", area: "Feedback", text: "In portrait, the Feedback cards share the panel's height instead of floating in its middle." },
+    ],
+  },
+  {
     version: "1.15.0",
     date: "2026-11-13",
     changes: [
