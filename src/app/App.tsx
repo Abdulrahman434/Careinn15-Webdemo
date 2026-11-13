@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef, lazy, Suspense, type CSSProperties } from "react";
 import { getAuthorizedCards, getNurseCardUid } from "./utils/nfc";
 import { isTvDevice } from "./utils/deviceDetect";
-import { ThemeProvider, useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "./components/ThemeContext";
+import { ThemeProvider, useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE, PHONE_TYPE_SCALE } from "./components/ThemeContext";
 import { IptvChannels } from "./components/IptvChannels";
 import { useSipCallState } from "./utils/androidBridge";
 import { useLocale, translateWithLocale } from "./components/i18n";
@@ -141,7 +141,12 @@ function useViewportSize() {
   useEffect(() => {
     const update = () => setSize({ w: window.innerWidth, h: window.innerHeight });
     window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+    /* Mobile Safari resizes the visible area as its toolbars show and hide. */
+    window.visualViewport?.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("resize", update);
+    };
   }, []);
   return size;
 }
@@ -483,13 +488,19 @@ function BedsideScreen() {
   /* Portrait is Layout 1 only; the other layouts keep their landscape canvas. */
   const screenPortrait = useIsPortrait();
   const portrait = screenPortrait && layoutMode === 1;
-  /* A real portrait screen gets a canvas the size of the screen (1080 wide at
-     most, scaled up past that), so the portrait Home flows to phones and
-     tablets at true size. Portrait forced on a wide window shows the
-     1080×1920 bedside screen scaled to fit. */
+  /* A real portrait screen gets a canvas with the screen's own shape, laid
+     out at a fixed width and scaled to the screen's width, so every element
+     keeps the same size relative to the others on any device:
+       phones   one-column phone layout, 440 wide (a phone narrower than that
+                shows it scaled down, a wider one at true size);
+       tablets  the 1080-wide bedside layout — the bedside screen in
+                proportion, not bedside-sized text on a narrower page.
+     Portrait forced on a wide window shows the 1080×1920 bedside screen
+     scaled to fit. */
   const viewport = useViewportSize();
   const fluid = portrait && viewport.h > viewport.w;
-  const fluidScale = Math.max(1, viewport.w / 1080);
+  const PHONE_W = 440;
+  const fluidScale = viewport.w < PHONE_W ? viewport.w / PHONE_W : viewport.w < 700 ? 1 : viewport.w / 1080;
   const DESIGN_W = !portrait ? 1920 : fluid ? Math.round(viewport.w / fluidScale) : 1080;
   const DESIGN_H = !portrait ? 1080 : fluid ? Math.round(viewport.h / fluidScale) : 1920;
   const scale = useScreenScale(DESIGN_W, DESIGN_H);
@@ -1799,9 +1810,16 @@ function BedsideScreen() {
 
   return (
     <CanvasSizeProvider value={canvasSizeValue}>
+    {/* Phones: the smaller type scale (see PHONE_TYPE_SCALE). */}
+    {canvasSizeValue.compact && (
+      <style>{`:root { ${Object.entries(PHONE_TYPE_SCALE).map(([k, v]) => `--ts-${k}: ${v};`).join(" ")} }`}</style>
+    )}
+    {/* Sized to the visible area, not 100vh: on mobile Safari 100vh is the
+        height with its toolbars hidden, which centred the canvas between
+        black bands and hid its bottom under the toolbar. */}
     <div
-      className="w-screen h-screen overflow-hidden flex items-center justify-center"
-      style={{ backgroundColor: "#0a0a0a" }}
+      className="fixed top-0 left-0 overflow-hidden flex items-center justify-center"
+      style={{ width: viewport.w, height: viewport.h, backgroundColor: "#0a0a0a" }}
     >
       <div
         dir={dir}
