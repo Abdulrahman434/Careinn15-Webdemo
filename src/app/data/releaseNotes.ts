@@ -35,6 +35,14 @@ export const CHANGE_TYPES: { type: ChangeType; label: string }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: "1.16.1",
+    date: "2026-11-13",
+    changes: [
+      { type: "fixed", area: "Phones and tablets", text: "Card corners are gentler: each hospital's own corners scaled down by a fifth, so portrait looks like landscape instead of another app." },
+      { type: "fixed", area: "Feedback", text: "On tablets the cards no longer touch the top and bottom of the panel." },
+    ],
+  },
+  {
     version: "1.16.0",
     date: "2026-11-13",
     changes: [
