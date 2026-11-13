@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, ZoomIn, ZoomOut, RotateCw, Maximize2, Minimize2 } from "lucide-react";
 import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
+import { useCanvasSize } from "../lib/canvasSize";
 
 interface MediaViewerModalProps {
   onClose: () => void;
@@ -13,6 +14,9 @@ interface MediaViewerModalProps {
 export function MediaViewerModal({ onClose, type, src, title }: MediaViewerModalProps) {
   const { theme } = useTheme();
   const { isRTL, fontFamily } = useLocale();
+  /* Portrait: the canvas is the screen itself, so the frame is sized to the
+     content area (not vw/vh), with 16 clear each side on phones. */
+  const { portrait, compact } = useCanvasSize();
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [isVideoFullscreen, setIsVideoFullscreen] = useState(type === "video");
@@ -66,7 +70,7 @@ export function MediaViewerModal({ onClose, type, src, title }: MediaViewerModal
             paddingRight: 4,
           }}
         >
-          <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: ".3px", opacity: 0.9 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: ".3px", opacity: 0.9, ...(compact ? { minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } : {}) }}>
             {title || (type === "image" ? "Image Viewer" : "Video Player")}
           </span>
 
@@ -104,15 +108,15 @@ export function MediaViewerModal({ onClose, type, src, title }: MediaViewerModal
       )}
 
       {/* MAIN MEDIA CONTENT WINDOW */}
-      <div className={`flex-1 relative flex items-center justify-center overflow-hidden ${isVideoFullscreen ? "p-0" : "p-8"}`}>
+      <div className={`flex-1 relative flex items-center justify-center overflow-hidden ${isVideoFullscreen ? "p-0" : compact ? "p-4" : "p-8"}`}>
         {type === "image" ? (
           <div className="relative overflow-hidden w-full h-full flex items-center justify-center">
             <img
               src={src}
               alt={title}
               style={{
-                maxHeight: "80vh",
-                maxWidth: "85vw",
+                maxHeight: portrait ? "100%" : "80vh",
+                maxWidth: portrait ? "100%" : "85vw",
                 objectFit: "contain",
                 borderRadius: "8px",
                 boxShadow: "0 15px 40px rgba(0, 0, 0, 0.4)",
@@ -157,10 +161,10 @@ export function MediaViewerModal({ onClose, type, src, title }: MediaViewerModal
               muted
               playsInline
               style={{
-                width: isVideoFullscreen ? "100vw" : "100%",
-                height: isVideoFullscreen ? "100vh" : "100%",
-                maxWidth: isVideoFullscreen ? "100vw" : "92vw",
-                maxHeight: isVideoFullscreen ? "100vh" : "82vh",
+                width: isVideoFullscreen && !portrait ? "100vw" : "100%",
+                height: isVideoFullscreen && !portrait ? "100vh" : "100%",
+                maxWidth: portrait ? "100%" : isVideoFullscreen ? "100vw" : "92vw",
+                maxHeight: portrait ? "100%" : isVideoFullscreen ? "100vh" : "82vh",
                 objectFit: "contain",
                 borderRadius: isVideoFullscreen ? "0px" : "12px",
                 boxShadow: isVideoFullscreen ? "none" : "0 20px 50px rgba(0, 0, 0, 0.6)",

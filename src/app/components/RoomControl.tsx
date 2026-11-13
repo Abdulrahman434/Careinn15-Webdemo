@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Sun, SunDim, Lightbulb, LightbulbOff, Wind, Snowflake, Thermometer, Power, Pause, ChevronUp, ChevronDown } from "lucide-react";
 import { useTheme, WEIGHT, SHADOW, TEXT_STYLE } from "./ThemeContext";
 import { useLocale } from "./i18n";
+import { useCanvasSize } from "../lib/canvasSize";
+import { pageRail, pageRailCard, pageRailItem, pageRailContentPad } from "./pageRail";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { ApiImage } from "./ApiImage";
 
@@ -43,6 +45,9 @@ function Toggle({ on, onToggle, accent, size = "normal" }: { on: boolean; onTogg
  * LIGHTS TAB
  * ══════════════════════════════════════════════════════════════════════ */
 function LightsTab({ theme, fontFamily, t }: { theme: any; fontFamily: string; t: any }) {
+  /* Portrait: the controls share the height the page gives them (RoomControl
+     caps it and centres the rest) instead of stretching down a tall screen. */
+  const { portrait } = useCanvasSize();
   const [zones, setZones] = useState([
     { id: "main", nameKey: "room.light.main", icon: Sun, on: true },
     { id: "bed", nameKey: "room.light.bedside", icon: SunDim, on: true },
@@ -53,7 +58,7 @@ function LightsTab({ theme, fontFamily, t }: { theme: any; fontFamily: string; t
   const allOn = zones.every(z => z.on);
 
   return (
-    <div className="flex flex-col gap-5 h-full">
+    <div className={`flex flex-col gap-5 ${portrait ? "flex-1" : "h-full"}`}>
       {/* Master Toggle */}
       <div style={{ backgroundColor: theme.surface, borderRadius: theme.radiusXl, border: theme.cardBorder, boxShadow: SHADOW.md, padding: "20px 28px" }}>
         <div className="flex items-center justify-between">
@@ -75,7 +80,7 @@ function LightsTab({ theme, fontFamily, t }: { theme: any; fontFamily: string; t
       </div>
 
       {/* Zone Grid */}
-      <div className="grid grid-cols-2 gap-4 flex-1">
+      <div className="grid grid-cols-2 gap-4 flex-1" style={portrait ? { gridAutoRows: "minmax(180px, 1fr)" } : undefined}>
         {zones.map(zone => {
           const Icon = zone.icon;
           return (
@@ -116,6 +121,8 @@ function LightsTab({ theme, fontFamily, t }: { theme: any; fontFamily: string; t
  * CURTAINS TAB — open / half / close
  * ══════════════════════════════════════════════════════════════════════ */
 function CurtainsTab({ theme, fontFamily, t }: { theme: any; fontFamily: string; t: any }) {
+  /* Portrait: the two cards share the capped height (see RoomControl). */
+  const { portrait } = useCanvasSize();
   const [curtains, setCurtains] = useState([
     { id: "window", nameKey: "room.curtain.window", state: "open" as "open" | "half" | "closed" },
     { id: "privacy", nameKey: "room.curtain.privacy", state: "closed" as "open" | "half" | "closed" },
@@ -130,10 +137,10 @@ function CurtainsTab({ theme, fontFamily, t }: { theme: any; fontFamily: string;
   ];
 
   return (
-    <div className="flex flex-col gap-5 h-full">
+    <div className={`flex flex-col gap-5 ${portrait ? "flex-1" : "h-full"}`}>
       {curtains.map(curtain => (
         <div key={curtain.id} style={{
-          flex: 1, padding: "28px", display: "flex", flexDirection: "column",
+          flex: portrait ? "1 0 auto" : 1, padding: "28px", display: "flex", flexDirection: "column",
           backgroundColor: theme.surface, borderRadius: theme.radiusXl,
           border: theme.cardBorder, boxShadow: SHADOW.md,
         }}>
@@ -183,6 +190,9 @@ function CurtainsTab({ theme, fontFamily, t }: { theme: any; fontFamily: string;
  * AC TAB — always visible, disabled when off
  * ══════════════════════════════════════════════════════════════════════ */
 function AcTab({ theme, fontFamily, t }: { theme: any; fontFamily: string; t: any }) {
+  /* Portrait: one column — the temperature card takes the spare height of
+     the capped block (see RoomControl). */
+  const { portrait } = useCanvasSize();
   const [acOn, setAcOn] = useState(true);
   const [temp, setTemp] = useState(22);
   const [fanSpeed, setFanSpeed] = useState(2);
@@ -201,8 +211,8 @@ function AcTab({ theme, fontFamily, t }: { theme: any; fontFamily: string; t: an
   const dim = acOn ? 1 : 0.35;
 
   return (
-    <div className="flex gap-6 h-full">
-      {/* Left — Temperature */}
+    <div className={`flex gap-6 ${portrait ? "flex-col flex-1" : "h-full"}`}>
+      {/* Left — Temperature (portrait: on top, the mode and fan under it) */}
       <div className="flex-1 flex flex-col items-center justify-center" style={{
         backgroundColor: theme.surface, borderRadius: theme.radiusXl,
         border: theme.cardBorder, boxShadow: SHADOW.md, padding: "32px",
@@ -262,7 +272,7 @@ function AcTab({ theme, fontFamily, t }: { theme: any; fontFamily: string; t: an
       </div>
 
       {/* Right — Mode + Fan (always visible, dimmed when off) */}
-      <div className="flex flex-col gap-5" style={{ width: "280px", opacity: dim, transition: "opacity 0.3s", pointerEvents: acOn ? "auto" : "none" }}>
+      <div className="flex flex-col gap-5" style={{ width: portrait ? "100%" : "280px", opacity: dim, transition: "opacity 0.3s", pointerEvents: acOn ? "auto" : "none" }}>
         <div style={{ flex: 1, padding: "24px", backgroundColor: theme.surface, borderRadius: theme.radiusXl, border: theme.cardBorder, boxShadow: SHADOW.md }}>
           <p style={{ fontFamily, fontSize: "12px", fontWeight: WEIGHT.bold, color: theme.textMuted, letterSpacing: "1.5px", marginBottom: "14px" }}>
             {t("room.ac.mode")}
@@ -326,10 +336,17 @@ const TABS: { key: TabKey; labelKey: string; Icon: (p: { size?: number; color?: 
   { key: "ac", labelKey: "room.tab.ac", Icon: AcIcon },
 ];
 
+/* Portrait: how tall each tab's controls may grow. Past that the block
+   (heading + controls) sits in the middle of the card instead of leaving the
+   controls small at the top of a tall white sheet. */
+const TAB_MAX_HEIGHT: Record<TabKey, number> = { lights: 780, curtains: 720, ac: 1000 };
+
 /* Same shell as Patient Services and Live TV: one large white card with the
    categories stacked in a rail down the leading edge. */
 export function RoomControl({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
+  /* Portrait: the tabs run across the top (the shared page-rail strip). */
+  const { compact, portrait } = useCanvasSize();
   const { t, fontFamily, isRTL } = useLocale();
   const [activeTab, setActiveTab] = useState<TabKey>("lights");
   const activeLabelKey = TABS.find(tab => tab.key === activeTab)!.labelKey;
@@ -346,10 +363,11 @@ export function RoomControl({ onClose }: { onClose: () => void }) {
       />
       <InternalPageHeader title={t("room.title")} icon={<AcIcon size={26} color="#fff" />} onClose={onClose} />
 
-      <div className="flex-1 min-h-0 px-12 pt-2 pb-8 relative z-10 flex flex-col">
+      <div className={`flex-1 min-h-0 pt-2 relative z-10 flex flex-col ${compact ? "px-4 pb-4" : "px-12 pb-8"}`}>
         <div
-          className="flex-1 min-h-0 flex overflow-hidden"
+          className="flex-1 min-h-0 overflow-hidden"
           style={{
+            ...pageRailCard(portrait),
             backgroundColor: theme.surface,
             borderRadius: theme.radiusXl,
             boxShadow: SHADOW.xl,
@@ -357,11 +375,10 @@ export function RoomControl({ onClose }: { onClose: () => void }) {
           }}
         >
           <nav
-            className="shrink-0 flex flex-col gap-2 py-7 px-5"
+            className="gap-2 py-7 px-5"
             style={{
-              width: 320,
+              ...pageRail(portrait, 320, theme.borderSubtle),
               backgroundColor: theme.surfaceInset,
-              borderInlineEnd: `1px solid ${theme.borderSubtle}`,
             }}
           >
             {TABS.map(tab => {
@@ -381,6 +398,7 @@ export function RoomControl({ onClose }: { onClose: () => void }) {
                     outline: "none",
                     boxShadow: active ? SHADOW.md : "none",
                     textAlign: "start",
+                    ...pageRailItem(portrait),
                   }}
                 >
                   <span
@@ -410,11 +428,14 @@ export function RoomControl({ onClose }: { onClose: () => void }) {
             })}
           </nav>
 
-          <div className="flex-1 min-w-0 min-h-0 overflow-y-auto px-8 py-7 flex flex-col" style={{ scrollbarWidth: "none" }}>
-            <h3 className="shrink-0 mb-5" style={{ ...TEXT_STYLE.pageTitle, fontFamily, color: theme.textHeading }}>
+          <div className="flex-1 min-w-0 min-h-0 overflow-y-auto flex flex-col" style={{ scrollbarWidth: "none", padding: pageRailContentPad(compact) }}>
+            <h3 className="shrink-0 mb-5" style={{ ...TEXT_STYLE.pageTitle, fontFamily, color: theme.textHeading, ...(portrait ? { marginTop: "auto" } : {}) }}>
               {t(activeLabelKey)}
             </h3>
-            <div className="flex-1 min-h-0">
+            <div
+              className={portrait ? "flex flex-col" : "flex-1 min-h-0"}
+              style={portrait ? { flex: "1 0 auto", maxHeight: TAB_MAX_HEIGHT[activeTab], marginBottom: "auto" } : undefined}
+            >
               {activeTab === "lights" && <LightsTab theme={theme} fontFamily={fontFamily} t={t} />}
               {activeTab === "curtains" && <CurtainsTab theme={theme} fontFamily={fontFamily} t={t} />}
               {activeTab === "ac" && <AcTab theme={theme} fontFamily={fontFamily} t={t} />}

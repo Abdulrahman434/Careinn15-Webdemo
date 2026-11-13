@@ -3,6 +3,8 @@ import { Info, FileText, Play, Film, Trophy, Star, Medal, Zap, Globe, MapPin } f
 import { useTheme, TYPE_SCALE, WEIGHT } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { InternalPageHeader } from "./InternalPageHeader";
+import { useCanvasSize } from "../lib/canvasSize";
+import { pageRail, pageRailCard, pageRailItem, pageRailContentPad } from "./pageRail";
 import { useCmsHospital, useCmsAboutUs } from '../../lib/useCmsContent';
 import { ApiImage } from "./ApiImage";
 import logoImg from "../../assets/496960c397c9050764df477822163c6970cb738d.webp";
@@ -931,6 +933,10 @@ Smart Hospital Features
 export function AboutUs({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
   const { t, isRTL, locale } = useLocale();
+  const { compact, portrait } = useCanvasSize();
+  /* Portrait (every size): the sections run across the top as a strip, so
+     the pictures and video get the screen's full width. */
+  const strip = portrait;
   const sections = getSections(theme.id, isRTL, locale);
   const [activeSection, setActiveSection] = useState(sections[0].id);
   const [videoPlaying, setVideoPlaying] = useState(false);
@@ -1031,16 +1037,18 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex gap-8 px-16 pb-10 min-h-0 relative z-10">
+      {/* Phones: the section buttons become a sideways strip above the
+          content sheet (pageRail), and the logo plate is left out. */}
+      <div className={`flex-1 min-h-0 relative z-10 ${compact ? "gap-3 px-4 pb-4" : strip ? "gap-4 px-12 pb-8" : "gap-8 px-16 pb-10"}`} style={pageRailCard(strip)}>
         {/* Left Sidebar — Vertical Tabs */}
         <div
           className="shrink-0 flex flex-col gap-6"
           style={{
-            width: "280px",
+            width: strip ? "100%" : "280px",
           }}
         >
           {/* Hospital Logo */}
-          <a
+          {!strip && <a
             href={theme.id === "imc" ? `https://www.imc.med.sa/${locale}` : theme.hospitalWebsiteUrl}
             target="_blank"
             rel="noopener noreferrer"
@@ -1066,10 +1074,13 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                 objectFit: "contain",
               }}
             />
-          </a>
+          </a>}
 
           {/* Tabs Container */}
-          <div className="flex-1 flex flex-col gap-3 overflow-y-auto about-tabs-sidebar">
+          <div
+            className={strip ? "about-tabs-sidebar" : "flex-1 flex flex-col gap-3 overflow-y-auto about-tabs-sidebar"}
+            style={strip ? { ...pageRail(true, 280, "transparent"), padding: 0 } : undefined}
+          >
             {sections.map((section) => {
               const isActive = section.id === activeSection;
               return (
@@ -1084,6 +1095,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                     border: "2px solid transparent",
                     borderColor: isActive ? "rgba(255,255,255,0.35)" : "transparent",
                     textAlign: isRTL ? "right" : "left",
+                    ...pageRailItem(strip),
                   }}
                 >
                   <div
@@ -1127,7 +1139,11 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
             boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
           }}
         >
-          <div key={currentSection.id} className="h-full flex flex-col px-12 py-6 about-content-wrapper">
+          <div
+            key={currentSection.id}
+            className={`h-full flex flex-col about-content-wrapper ${compact ? "" : "px-12 py-6"} ${portrait ? "overflow-y-auto" : ""}`}
+            style={compact ? { padding: pageRailContentPad(true) } : undefined}
+          >
             {/* Section Title - Only show for text-based sections */}
             {currentSection.content && (
               <h3
@@ -1147,20 +1163,22 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
               </h3>
             )}
 
-            {/* Section Image (if exists) */}
+            {/* Section Image (if exists). Portrait: a picture or video shorter
+                than the sheet sits in its middle (auto margins — they give way
+                to scrolling when it is taller). */}
             {currentSection.image && (
-              <div className="flex-1 rounded-2xl overflow-hidden flex items-center justify-center">
+              <div className={`rounded-2xl overflow-hidden flex items-center justify-center ${portrait ? "shrink-0 my-auto" : "flex-1"}`}>
                 <ApiImage
                   src={currentSection.image}
                   alt={currentSection.title}
-                  className="w-full h-full object-contain"
+                  className={portrait ? "w-full h-auto" : "w-full h-full object-contain"}
                 />
               </div>
             )}
 
             {/* Section Video (if exists) */}
             {currentSection.video && (
-              <div className="flex-1 rounded-2xl overflow-hidden relative" style={{ backgroundColor: "#0a0a14" }}>
+              <div className={`rounded-2xl overflow-hidden relative ${portrait ? "shrink-0 w-full my-auto" : "flex-1"}`} style={{ backgroundColor: "#0a0a14", ...(portrait ? { aspectRatio: "16 / 9" } : {}) }}>
                 {!videoPlaying ? (
                   /* Thumbnail with play button */
                   <button
@@ -1262,7 +1280,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
             {currentSection.id === "achievements" && (theme.id === "dsfh" || theme.id === "kauh") ? (
               <div className="flex-1 overflow-y-auto about-scrollable-content flex flex-col gap-6 pt-2">
                 {/* Achievement Banner — DSFH uses banner image, KAUH uses hero photo */}
-                <div className="shrink-0 rounded-3xl overflow-hidden shadow-sm border border-gray-100" style={{ height: "240px" }}>
+                <div className="shrink-0 rounded-3xl overflow-hidden shadow-sm border border-gray-100" style={{ height: compact ? "160px" : "240px" }}>
                   <ApiImage
                     src={theme.id === "kauh" ? kauhHeroImg : dsfhAchievementBanner}
                     alt="Latest achievements"
@@ -1271,7 +1289,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className={`grid gap-6 ${compact ? "grid-cols-1" : "grid-cols-2"}`}>
                   {theme.id === "kauh" ? (
                     [
                       { icon: <Trophy size={28} color={theme.primaryOn} />, title: locale === "ar" ? "اعتماد JCI الدولي" : "International JCI Accreditation", desc: locale === "ar" ? "اعتماد مستشفى جامعة الملك عبدالعزيز من قِبل المنظمة الدولية لاعتماد المستشفيات (JCI)، تأكيداً لأعلى معايير الجودة والسلامة." : "Accreditation of King Abdulaziz University Hospital by Joint Commission International (JCI), affirming the highest standards of quality and safety." },
@@ -1281,7 +1299,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                     ].map((item, idx) => (
                       <div
                         key={idx}
-                        className="p-8 rounded-3xl flex flex-col gap-4 transition-transform hover:scale-[1.02]"
+                        className={`${compact ? "p-5" : "p-8"} rounded-3xl flex flex-col gap-4 transition-transform hover:scale-[1.02]`}
                         style={{
                           backgroundColor: theme.surfaceElevated,
                           border: `1px solid ${theme.borderCardColor}`,
@@ -1325,7 +1343,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
                     [1, 2, 3, 4].map((num) => (
                     <div
                       key={num}
-                      className="p-8 rounded-3xl flex flex-col gap-4 transition-transform hover:scale-[1.02]"
+                      className={`${compact ? "p-5" : "p-8"} rounded-3xl flex flex-col gap-4 transition-transform hover:scale-[1.02]`}
                       style={{
                         backgroundColor: theme.surfaceElevated,
                         border: `1px solid ${theme.borderCardColor}`,

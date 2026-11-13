@@ -41,6 +41,7 @@ import { useTheme } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
 import { InternalPageHeader } from "./InternalPageHeader";
+import { useCanvasSize } from "../lib/canvasSize";
 /* pdf.js is ~128 KB gzipped. Every boot paid it so that a patient who
    opens a document does not wait; almost none of them open one. */
 const PdfReaderModal = lazy(() => import("./PdfReaderModal").then((m) => ({ default: m.PdfReaderModal })));
@@ -1454,6 +1455,8 @@ function getCategories(theme: any, locale: string = "en", t: any): Record<string
 
 function AppTile({ app, onTap, onLongPress, isLocked }: { app: AppItem; onTap: (e?: React.MouseEvent<HTMLElement>) => void; onLongPress: () => void; isLocked: boolean }) {
   const { theme } = useTheme();
+  /* Phones: the same tile drawn at 60% (zoom keeps each logo's own layout). */
+  const { compact } = useCanvasSize();
   const { t, locale } = useLocale();
   const [pressed, setPressed] = useState(false);
   const { onPointerDown, rippleElements } = useRipple("rgba(255,255,255,0.15)");
@@ -1472,7 +1475,7 @@ function AppTile({ app, onTap, onLongPress, isLocked }: { app: AppItem; onTap: (
       onClick={(e) => handleClick(() => onTap(e))}
       className="relative flex flex-col items-center gap-3 transition-transform duration-100 ease-out active:scale-95 cursor-pointer"
       style={{ 
-        width: 160, 
+        width: compact ? 104 : 160, 
         transform: pressed ? "scale(0.96)" : "scale(1)",
         outline: "none",
         border: "none",
@@ -1490,6 +1493,7 @@ function AppTile({ app, onTap, onLongPress, isLocked }: { app: AppItem; onTap: (
           background: app.bg,
           boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3), 0 8px 10px -6px rgba(0,0,0,0.3)",
           border: "1.5px solid rgba(255,255,255,0.1)",
+          ...(compact ? { zoom: 0.6 } : {}),
         }}
       >
         {rippleElements}
@@ -1524,11 +1528,11 @@ function AppTile({ app, onTap, onLongPress, isLocked }: { app: AppItem; onTap: (
       <span
         style={{
           color: "rgba(255,255,255,0.85)",
-          fontSize: "16px",
+          fontSize: compact ? "13px" : "16px",
           fontWeight: 500,
           textAlign: "center",
           lineHeight: 1.2,
-          maxWidth: "160px",
+          maxWidth: compact ? "104px" : "160px",
           whiteSpace: "pre-line",
         }}
       >
@@ -1612,6 +1616,7 @@ export function AppLauncher({
 }) {
   const { theme } = useTheme();
   const { t, locale, isRTL } = useLocale();
+  const { compact, portrait, height: canvasHeight } = useCanvasSize();
   const lockedIds = useLockedApps();
   const { isGuest } = useGuestMode();
 
@@ -1755,9 +1760,21 @@ export function AppLauncher({
     setPageIndex(0);
   }, [activeKey]);
 
+  /* A narrow screen scrolls the category bar: keep the open one in view. */
+  const categoryBarRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const bar = categoryBarRef.current;
+    const active = bar?.querySelector<HTMLElement>("[data-active=true]");
+    if (!bar || !active || bar.scrollWidth <= bar.clientWidth) return;
+    bar.scrollTo({ left: active.offsetLeft - (bar.clientWidth - active.offsetWidth) / 2, behavior: "smooth" });
+  }, [activeKey]);
+
   if (!category) return null;
 
-  const appsPerPage = 18; // 6 columns * 3 rows
+  /* Landscape 6×3; the portrait bedside screen 4×5; tablets 4×4; phones 3×4. */
+  const gridCols = compact ? 3 : portrait ? 4 : 6;
+  const gridRows = compact ? 4 : portrait ? (canvasHeight >= 1600 ? 5 : 4) : 3;
+  const appsPerPage = gridCols * gridRows;
   const numPages = Math.ceil(category.apps.length / appsPerPage);
 
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -2017,7 +2034,7 @@ export function AppLauncher({
 
       {/* Apps grid */}
       <div 
-        className="flex-1 min-h-0 px-16 pb-4 flex flex-col overflow-hidden" 
+        className={`flex-1 min-h-0 pb-4 flex flex-col overflow-hidden ${compact ? "px-4" : "px-16"}`}
         style={{ position: "relative", zIndex: 10, touchAction: "none" }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -2045,13 +2062,16 @@ export function AppLauncher({
                 style={{ width: `${100 / numPages}%` }}
               >
                 <div
-                  className="grid gap-x-12 gap-y-10"
+                  className={`grid ${compact ? "gap-x-3 gap-y-6" : "gap-x-12 gap-y-10"}`}
                   style={{
-                    gridTemplateColumns: `repeat(${Math.min(pageApps.length, 6)}, 160px)`,
-                    gridTemplateRows: `repeat(3, auto)`,
+                    gridTemplateColumns: `repeat(${Math.min(pageApps.length, gridCols)}, ${compact ? 104 : 160}px)`,
+                    /* Portrait: rows come from the apps themselves. Declared
+                       rows that stay empty still keep their gaps, which pulled
+                       a short page above the middle. */
+                    gridTemplateRows: portrait ? undefined : `repeat(${gridRows}, auto)`,
                     justifyContent: "center",
                     justifyItems: "center",
-                    marginTop: "-40px"
+                    marginTop: compact ? 0 : "-40px"
                   }}
                 >
                   {pageApps.map((app) => (
@@ -2094,10 +2114,14 @@ export function AppLauncher({
 
       {/* Category navigation bar */}
       <div
-        className="shrink-0 flex items-center justify-center gap-2 px-4"
+        ref={categoryBarRef}
+        className="shrink-0 flex items-center gap-2 px-4 overflow-x-auto"
         style={{
-          paddingBottom: 20,
-          paddingTop: 16,
+          /* Centred while it fits; scrolls from the start once it doesn't. */
+          justifyContent: "safe center",
+          paddingBottom: compact ? 16 : 20,
+          paddingTop: compact ? 12 : 16,
+          scrollbarWidth: "none",
           position: "relative",
           zIndex: 10,
           background: "linear-gradient(to top, rgba(0,0,0,0.25) 0%, transparent 100%)",
@@ -2111,10 +2135,11 @@ export function AppLauncher({
             <button
               key={key}
               onClick={() => setActiveKey(key)}
-              className="flex flex-col items-center justify-center transition-transform duration-200 active:scale-90"
+              data-active={isActive}
+              className="flex flex-col items-center justify-center shrink-0 transition-transform duration-200 active:scale-90"
               style={{
-                width: isActive ? 130 : 90,
-                height: 72,
+                width: isActive ? (compact ? 100 : 130) : (compact ? 76 : 90),
+                height: compact ? 64 : 72,
                 borderRadius: theme.radiusLg,
                 background: isActive ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.06)",
                 border: isActive ? "2px solid rgba(255,255,255,0.4)" : "1.5px solid rgba(255,255,255,0.08)",

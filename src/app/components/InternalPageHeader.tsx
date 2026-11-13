@@ -2,6 +2,7 @@ import { Home } from "lucide-react";
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { DemoControls } from "./DemoControls";
+import { useCanvasSize } from "../lib/canvasSize";
 
 interface InternalPageHeaderProps {
   title: React.ReactNode;
@@ -18,16 +19,34 @@ interface InternalPageHeaderProps {
 export function InternalPageHeader({ title, subtitle, icon, onClose, leadingIcon, rightAction, demoControls = true }: InternalPageHeaderProps) {
   const { theme } = useTheme();
   const { isRTL, fontFamily } = useLocale();
+  /* Phones: one slim row — the icon tile, divider and subtitle give way so
+     the title and the controls fit 390 wide. */
+  const { compact, portrait, width } = useCanvasSize();
+  /* Portrait tablets (under the 1080 bedside width): the title keeps its own
+     line — the icon tile and divider give way and the type steps down — where
+     it used to break in two beside a page's own actions. */
+  const tight = portrait && !compact && width < 1000;
+  const slim = compact || tight;
+  const oneLine = portrait ? { whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" } : {};
+  /* Phones: a long title takes a second line instead of being cut short. */
+  const titleFit = compact
+    ? { display: "-webkit-box", WebkitBoxOrient: "vertical" as const, WebkitLineClamp: 2, overflow: "hidden", textWrap: "balance" as const }
+    : oneLine;
+  /* Phones: the page's own action has no room beside the title and the demo
+     controls, so it takes its own row under the header — on every page. */
+  const ownRow = compact && !!rightAction;
   return (
-    /* iph-* class names are hooks for a page that wants its own small-screen
-       rules (e.g. Feedback); they carry no styles here. */
-    <div className="iph shrink-0 flex items-center gap-5 px-12 pt-10 pb-6 relative z-10">
+    <>
+    {/* iph-* class names are hooks for a page that wants its own small-screen
+        rules (e.g. Feedback); they carry no styles here. */}
+    <div className={`iph shrink-0 flex items-center relative z-10 ${compact ? "gap-3 px-4 pt-4 pb-3" : tight ? "gap-4 px-12 pt-8 pb-5" : "gap-5 px-12 pt-10 pb-6"}`}>
       <button
         onClick={onClose}
         className="flex items-center justify-center cursor-pointer active:scale-95"
         style={{
-          width: "52px",
-          height: "52px",
+          width: compact ? "44px" : "52px",
+          height: compact ? "44px" : "52px",
+          flexShrink: 0,
           borderRadius: "12px",
           backgroundColor: "rgba(255,255,255,0.12)",
           border: "1px solid rgba(255,255,255,0.15)",
@@ -40,9 +59,9 @@ export function InternalPageHeader({ title, subtitle, icon, onClose, leadingIcon
         {leadingIcon ?? <Home size={22} style={{ color: "#fff" }} />}
       </button>
       {/* Divider */}
-      <div className="iph-divider" style={{ width: "1.5px", height: "32px", backgroundColor: "rgba(255,255,255,0.18)", borderRadius: "1px" }} />
+      {!slim && <div className="iph-divider" style={{ width: "1.5px", height: "32px", backgroundColor: "rgba(255,255,255,0.18)", borderRadius: "1px" }} />}
       <div className="flex items-center gap-4 flex-1 min-w-0">
-        <div
+        {!slim && <div
           className="iph-icon flex items-center justify-center"
           style={{
             width: "52px",
@@ -53,21 +72,22 @@ export function InternalPageHeader({ title, subtitle, icon, onClose, leadingIcon
           }}
         >
           {icon}
-        </div>
+        </div>}
         <div className="min-w-0">
           <h2
             className="iph-title"
             style={{
               fontFamily: fontFamily,
               ...TEXT_STYLE.display,
-              fontSize: "32px",
+              fontSize: compact ? "20px" : tight ? "26px" : "32px",
               color: "#FFFFFF",
-              lineHeight: "36px",
+              lineHeight: compact ? "24px" : tight ? "32px" : "36px",
+              ...titleFit,
             }}
           >
             {title}
           </h2>
-          {subtitle && (
+          {subtitle && !compact && (
             <p
               className="iph-subtitle"
               style={{
@@ -75,6 +95,7 @@ export function InternalPageHeader({ title, subtitle, icon, onClose, leadingIcon
                 ...TEXT_STYLE.caption,
                 color: "rgba(255,255,255,0.55)",
                 marginTop: "2px",
+                ...oneLine,
               }}
             >
               {subtitle}
@@ -87,12 +108,18 @@ export function InternalPageHeader({ title, subtitle, icon, onClose, leadingIcon
           screen, so the demo never has to hunt for them. Rendered here rather
           than passed in by each page, which is how they drifted into a
           different corner on each screen. */}
-      {(rightAction || demoControls) && (
-        <div className="iph-actions shrink-0 flex items-center gap-3">
-          {rightAction}
+      {((rightAction && !ownRow) || demoControls) && (
+        <div className={`iph-actions shrink-0 flex items-center ${compact ? "gap-2" : "gap-3"}`}>
+          {!ownRow && rightAction}
           {demoControls && <DemoControls />}
         </div>
       )}
     </div>
+    {ownRow && (
+      <div className="iph-own shrink-0 flex items-center justify-end gap-2 px-4 pb-2 relative z-10">
+        {rightAction}
+      </div>
+    )}
+    </>
   );
 }

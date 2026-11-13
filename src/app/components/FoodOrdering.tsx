@@ -31,6 +31,7 @@ import {
   getMenuGroups, getKidsBreakfastGroups, MEAL_WINDOWS,
 } from "./menuData";
 import { useReloadHold } from "../lib/reloadSafety";
+import { useCanvasSize } from "../lib/canvasSize";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * TYPES
@@ -425,6 +426,7 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
   const { showToast } = useToast();
 
   const nurseStore = useNurseStore();
+  const { compact } = useCanvasSize();
 
   const [step, setStep] = useState<Step>("select-type");
   const [orderFor, setOrderFor] = useState<OrderFor>("patient");
@@ -944,7 +946,7 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
           48 at the sides, 8 under the header, 32 at the bottom — never pb-3,
           where the footer's buttons sat within 12px of the screen edge, the
           hardest band for a patient in bed to see and reach. */}
-      <div className="flex-1 min-h-0 px-12 pt-2 pb-8 relative flex flex-col">
+      <div className={`flex-1 min-h-0 pt-2 relative flex flex-col ${compact ? "px-4 pb-4" : "px-12 pb-8"}`}>
         {isFlow && (
           <div
             className="flex-1 min-h-0 flex flex-col overflow-hidden"
@@ -1097,11 +1099,11 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
             style={{ backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
           >
             <div
-              className="flex-1 flex flex-col m-8 mt-4 rounded-[28px] overflow-hidden"
+              className={`flex-1 flex flex-col rounded-[28px] overflow-hidden ${compact ? "m-4" : "m-8 mt-4"}`}
               style={{ backgroundColor: SHEET, boxShadow: "0 12px 48px rgba(0,0,0,0.25)" }}
             >
               {/* Overlay header */}
-              <div className="shrink-0 flex items-center justify-between px-8 py-5" style={{ borderBottom: CARD_LINE_1 }}>
+              <div className={`shrink-0 flex items-center justify-between ${compact ? "px-4 py-3" : "px-8 py-5"}`} style={{ borderBottom: CARD_LINE_1 }}>
                 <div className="flex items-center gap-3">
                   <div style={{
                     width: 40, height: 40, borderRadius: 10,
@@ -1118,7 +1120,7 @@ export function FoodOrdering({ onClose, initialView }: { onClose: () => void; in
                   onClick={() => setShowHistoryOverlay(false)}
                   className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
                   style={{
-                    width: 40, height: 40, borderRadius: 10,
+                    width: compact ? 44 : 40, height: compact ? 44 : 40, borderRadius: 10,
                     backgroundColor: theme.tileInactiveBg, border: "none", outline: "none",
                     color: theme.textMuted, fontSize: "20px",
                   }}
@@ -1190,25 +1192,24 @@ function TopBar({ onBack, onMyOrders, showMyOrders, onDemoClear, title, fontFami
   title: string; fontFamily: string; isRTL: boolean; BackArrow: any;
 }) {
   const [enforceTime, setEnforceTimeLocal] = React.useState(() => getEnforceOrderTime());
+  /* Phones: the header row is already full with the title and the demo trio,
+     so this page's own actions drop to a row of their own under it. */
+  const { compact } = useCanvasSize();
 
   const iconBtnStyle: React.CSSProperties = {
     display: "flex", alignItems: "center", justifyContent: "center",
-    width: "42px", height: "42px",
+    width: compact ? "44px" : "42px", height: compact ? "44px" : "42px",
     backgroundColor: "rgba(255,255,255,0.15)", borderRadius: "10px",
     color: "#fff", border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer",
   };
 
-  return (
-    <InternalPageHeader 
-      title={title}
-      icon={<Utensils size={24} />}
-      onClose={onBack}
-      rightAction={
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+  const actions = (
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", ...(compact ? { justifyContent: "flex-end" } : {}) }}>
           {/* My Orders (leftmost) */}
           {showMyOrders && (
             <button onClick={onMyOrders} style={{ 
               display: "flex", alignItems: "center", gap: "8px", 
+              ...(compact ? { minHeight: "44px" } : {}),
               backgroundColor: "rgba(255,255,255,0.15)", borderRadius: "12px", padding: "10px 16px",
               color: "#fff", fontFamily, fontWeight: 600, border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer"
             }}>
@@ -1240,7 +1241,14 @@ function TopBar({ onBack, onMyOrders, showMyOrders, onDemoClear, title, fontFami
             </svg>
           </button>
         </div>
-      }
+  );
+
+  return (
+    <InternalPageHeader 
+      title={title}
+      icon={<Utensils size={24} />}
+      onClose={onBack}
+      rightAction={actions}
     />
   );
 }
@@ -1271,22 +1279,29 @@ function PatientBar({
   onAllergiesClick?: () => void;
 }) {
   const isGuest = orderFor === "guest";
+  /* Portrait: the chips take their own row under the avatar and name, and
+     wrap there instead of running off the card.
+     Phones: they take one row under the name that scrolls sideways — the
+     same strip the section rails become (pageRail) — so the bar stays two
+     rows high and the step below keeps its room. */
+  const { portrait, compact } = useCanvasSize();
+  const pad = compact ? "12px 16px" : "16px 22px";
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className={`shrink-0 flex items-center justify-center gap-[16px] ${seamless ? "" : "mx-12 mt-[12px]"}`}
+      className={`shrink-0 flex items-center justify-center ${compact ? "gap-[12px]" : "gap-[16px]"} ${seamless ? "" : "mx-12 mt-[12px]"}`}
       style={
         seamless
           /* Top section of the card: the card clips the corners and carries the
              shadow, so all this contributes is the divider above the stepper. */
-          ? { backgroundColor: SHEET, padding: "16px 22px", borderBottom: CARD_LINE_1 }
-          : { backgroundColor: SHEET, borderRadius: "24px", padding: "16px 22px", border: CARD_LINE_1 }
+          ? { backgroundColor: SHEET, padding: pad, borderBottom: CARD_LINE_1, ...(portrait ? { flexWrap: "wrap", justifyContent: "flex-start", rowGap: "10px" } : {}) }
+          : { backgroundColor: SHEET, borderRadius: "24px", padding: pad, border: CARD_LINE_1 }
       }
     >
       {/* Avatar */}
-      <div className="shrink-0" style={{ width: "48px", height: "48px", borderRadius: "50%", backgroundColor: isGuest ? SECONDARY : TEAL, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div className="shrink-0" style={{ width: compact ? "40px" : "48px", height: compact ? "40px" : "48px", borderRadius: "50%", backgroundColor: isGuest ? SECONDARY : TEAL, display: "flex", alignItems: "center", justifyContent: "center" }}>
         {isGuest ? (
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -1298,11 +1313,15 @@ function PatientBar({
       </div>
 
       {/* Name + Pills row */}
-      <div className="flex-1 min-w-0 flex items-center justify-between">
-        <span style={{ fontFamily, fontSize: "22px", fontWeight: WEIGHT.bold, color: INK, whiteSpace: "nowrap" }}>
+      <div className="flex-1 min-w-0 flex items-center justify-between" style={portrait ? { display: "contents" } : undefined}>
+        <span style={{ fontFamily, fontSize: compact ? "20px" : "22px", fontWeight: WEIGHT.bold, color: INK, whiteSpace: "nowrap" }}>
           {name}
         </span>
-        <div className="flex items-center gap-[14px]">
+        {/* Portrait: the chips wrap — never a sideways strip, so the
+            allergies are always in sight. */}
+        <div className="flex items-center gap-[14px]" style={portrait
+          ? { flexBasis: "100%", minWidth: 0, flexWrap: "wrap", gap: compact ? "8px" : "10px" }
+          : undefined}>
           {mealName && <Pill icon={<MealSvg />} label={isRTL ? "الوجبة:" : "Meal:"} value={mealName} fontFamily={fontFamily} />}
           <Pill icon={<RoomSvg />} label={isRTL ? "الغرفة:" : "Room:"} value={DEMO_PATIENT.room.replace("Room ", "")} fontFamily={fontFamily} />
           <Pill
@@ -1348,6 +1367,7 @@ function Pill({
 }) {
   const isInteractive = Boolean(onClick);
   const Tag = isInteractive ? motion.button : "div";
+  const { compact } = useCanvasSize();
 
   return (
     <Tag
@@ -1356,14 +1376,15 @@ function Pill({
       style={{
         backgroundColor: isInteractive ? "rgba(var(--fo-primary-rgb), 0.08)" : TINT_BG,
         borderRadius: "10px",
-        padding: "9px 15px",
+        padding: compact ? "8px 12px" : "9px 15px",
+        ...(compact ? { minHeight: "44px", flexShrink: 0 } : {}),
         border: isInteractive ? `1.5px solid ${CARD_LINE}` : "1px solid transparent",
         outline: "none",
       }}
     >
       {icon}
-      <span style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.semibold, color: INK, whiteSpace: "nowrap", lineHeight: 1.2 }}>{label}</span>
-      <span style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.semibold, color: isInteractive ? TEAL_ON : INK, whiteSpace: "nowrap", lineHeight: 1.2 }}>{value}</span>
+      <span style={{ fontFamily, fontSize: compact ? "15px" : "16px", fontWeight: WEIGHT.semibold, color: INK, whiteSpace: "nowrap", lineHeight: 1.2 }}>{label}</span>
+      <span style={{ fontFamily, fontSize: compact ? "15px" : "16px", fontWeight: WEIGHT.semibold, color: isInteractive ? TEAL_ON : INK, whiteSpace: "nowrap", lineHeight: 1.2 }}>{value}</span>
       {isInteractive && (
         <svg
           width="13"
@@ -1514,6 +1535,8 @@ function DietAllergiesModal({
 }) {
   const [activeTab, setActiveTab] = useState<"diet" | "allergies">(initialTab);
   const [customAllergyInput, setCustomAllergyInput] = useState("");
+  const { compact } = useCanvasSize();
+  const px = compact ? "px-4" : "px-8";
 
   React.useEffect(() => {
     if (isOpen) {
@@ -1543,7 +1566,7 @@ function DietAllergiesModal({
   return (
     <AnimatePresence>
       <div
-        className="fixed inset-0 z-[100] flex items-center justify-center p-6"
+        className={`fixed inset-0 z-[100] flex items-center justify-center ${compact ? "p-4" : "p-6"}`}
         style={{ backgroundColor: "rgba(0, 0, 0, 0.55)", backdropFilter: "blur(6px)" }}
         onClick={onClose}
       >
@@ -1562,7 +1585,7 @@ function DietAllergiesModal({
         >
           {/* ── Header ── */}
           <div
-            className="shrink-0 flex items-center justify-between px-8 py-5"
+            className={`shrink-0 flex items-center justify-between gap-3 ${px} ${compact ? "py-4" : "py-5"}`}
             style={{ borderBottom: CARD_LINE_1, backgroundColor: TINT_BG }}
           >
             <div className="flex items-center gap-3.5">
@@ -1579,8 +1602,8 @@ function DietAllergiesModal({
               >
                 <SlidersHorizontal size={22} color={TEAL_ON} />
               </div>
-              <div>
-                <h3 style={{ fontSize: "20px", fontWeight: WEIGHT.bold, color: INK, margin: 0 }}>
+              <div className="min-w-0">
+                <h3 style={{ fontSize: compact ? "18px" : "20px", fontWeight: WEIGHT.bold, color: INK, margin: 0 }}>
                   {isRTL ? "الحمية والحساسية للمريض" : "Patient Diet & Allergies"}
                 </h3>
                 <p style={{ fontSize: "13px", fontWeight: WEIGHT.medium, color: INK_2, margin: 0, marginTop: "2px" }}>
@@ -1593,8 +1616,9 @@ function DietAllergiesModal({
               onClick={onClose}
               className="flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
               style={{
-                width: 38,
-                height: 38,
+                width: compact ? 44 : 38,
+                height: compact ? 44 : 38,
+                flexShrink: 0,
                 borderRadius: "50%",
                 backgroundColor: TINT_BG,
                 border: "none",
@@ -1608,7 +1632,7 @@ function DietAllergiesModal({
 
           {/* ── Tabs (Diet vs Allergies) ── */}
           <div
-            className="shrink-0 flex items-center gap-3 px-8 pt-4 pb-2"
+            className={`shrink-0 flex items-center gap-3 ${px} pt-4 pb-2`}
             style={{ borderBottom: CARD_LINE_1 }}
           >
             <button
@@ -1665,11 +1689,11 @@ function DietAllergiesModal({
           </div>
 
           {/* ── Content Body ── */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-8 py-5 fo-scroll">
+          <div className={`flex-1 min-h-0 overflow-y-auto ${px} py-5 fo-scroll`}>
             {activeTab === "diet" ? (
               <div className="flex flex-col gap-4">
                 {/* Diets Grid (Single Selection) */}
-                <div className="grid grid-cols-2 gap-3.5">
+                <div className={`grid gap-3.5 ${compact ? "grid-cols-1" : "grid-cols-2"}`}>
                   {ALL_DIET_OPTIONS.map((d) => {
                     const isSelected = currentDiet === d.id;
                     const Icon = d.icon;
@@ -1755,7 +1779,7 @@ function DietAllergiesModal({
               /* ── Allergies Section (Multiple Selection) ── */
               <div className="flex flex-col gap-5">
                 {/* Header info & clear button */}
-                <div className="flex items-center justify-between pb-1">
+                <div className={`flex items-center justify-between pb-1 ${compact ? "flex-wrap gap-2" : ""}`}>
                   <div>
                     <span style={{ fontSize: "14px", fontWeight: WEIGHT.bold, color: INK_2 }}>
                       {isRTL ? "الحساسيات المحددة:" : "Selected Allergies:"}
@@ -1874,7 +1898,7 @@ function DietAllergiesModal({
 
           {/* ── Footer ── */}
           <div
-            className="shrink-0 flex items-center justify-end px-8 py-4"
+            className={`shrink-0 flex items-center justify-end ${px} py-4`}
             style={{ borderTop: CARD_LINE_1, backgroundColor: TINT_BG }}
           >
             <button
@@ -1933,8 +1957,13 @@ const STEP_LABELS = [
 ];
 
 function Stepper({ current, fontFamily, isRTL }: { current: 1 | 2 | 3 | 4; fontFamily: string; isRTL: boolean }) {
+  /* Portrait narrower than the bedside screen: every step keeps its number,
+     only the current one keeps its name — four names do not fit. */
+  const { width, portrait, compact } = useCanvasSize();
+  const labelsAll = !portrait || width >= 1000;
+  const dot = compact ? 34 : 40;
   return (
-    <div className="shrink-0 flex items-center justify-center px-[60px] pt-[18px] pb-[18px]" style={{ borderBottom: CARD_LINE_1 }}>
+    <div className={`shrink-0 flex items-center justify-center ${!portrait ? "px-[60px] pt-[18px] pb-[18px]" : compact ? "px-[16px] py-[12px]" : "px-[32px] py-[18px]"}`} style={{ borderBottom: CARD_LINE_1 }}>
       <div className="flex items-center" style={{ width: "100%", maxWidth: "1200px" }}>
         {STEP_LABELS.map((s, i) => {
           const num = i + 1;
@@ -1943,9 +1972,10 @@ function Stepper({ current, fontFamily, isRTL }: { current: 1 | 2 | 3 | 4; fontF
           const active = num === current;
           // Final step renders as filled-green-with-tick when it's the active step (nothing left to complete)
           const filledTick = done || (active && isLast);
+          const showLabel = labelsAll || active;
           return (
             <React.Fragment key={i}>
-              <div className="flex items-center gap-[12px] shrink-0">
+              <div className={`flex items-center shrink-0 ${compact ? "gap-[8px]" : "gap-[12px]"}`}>
                 <motion.div
                   initial={false}
                   animate={{
@@ -1954,7 +1984,7 @@ function Stepper({ current, fontFamily, isRTL }: { current: 1 | 2 | 3 | 4; fontF
                   }}
                   transition={{ duration: 0.3 }}
                   style={{
-                    width: "40px", height: "40px", borderRadius: "50%",
+                    width: `${dot}px`, height: `${dot}px`, borderRadius: "50%",
                     border: "2.5px solid",
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}
@@ -1963,12 +1993,14 @@ function Stepper({ current, fontFamily, isRTL }: { current: 1 | 2 | 3 | 4; fontF
                     ? <Check size={20} color="#fff" strokeWidth={2.8} />
                     : <span style={{ fontFamily, fontSize: "17px", fontWeight: WEIGHT.bold, color: active ? GREEN : INK_3 }}>{num}</span>}
                 </motion.div>
-                <span style={{ fontFamily, fontSize: "18px", fontWeight: active || done ? WEIGHT.bold : WEIGHT.medium, color: active || done ? INK : INK_3, whiteSpace: "nowrap" }}>
-                  {isRTL ? s.ar : s.en}
-                </span>
+                {showLabel && (
+                  <span style={{ fontFamily, fontSize: compact ? "16px" : "18px", fontWeight: active || done ? WEIGHT.bold : WEIGHT.medium, color: active || done ? INK : INK_3, whiteSpace: "nowrap" }}>
+                    {isRTL ? s.ar : s.en}
+                  </span>
+                )}
               </div>
               {i < STEP_LABELS.length - 1 && (
-                <div style={{ flex: 1, height: "4px", margin: "0 16px", borderRadius: "2px", backgroundColor: done ? GREEN : "rgba(118,118,118,0.15)", transition: "background-color 0.3s" }} />
+                <div style={{ flex: 1, height: "4px", margin: compact ? "0 8px" : "0 16px", borderRadius: "2px", backgroundColor: done ? GREEN : "rgba(118,118,118,0.15)", transition: "background-color 0.3s" }} />
               )}
             </React.Fragment>
           );
@@ -1982,16 +2014,39 @@ function Stepper({ current, fontFamily, isRTL }: { current: 1 | 2 | 3 | 4; fontF
  * STEP 1: ORDER FOR
  * ═══════════════════════════════════════════════════════════════════════════ */
 
+/** Order For and Breakfast Type share one card. In portrait the pair stacks
+ *  and each card shares the height left over (never taller than the
+ *  landscape 400); on phones the card's contents shrink to suit. */
+function useChoiceCardLayout() {
+  const { portrait, compact } = useCanvasSize();
+  return {
+    portrait, compact,
+    root: portrait ? (compact ? "px-[16px] pt-[16px] pb-[16px] overflow-y-auto" : "px-[24px] pt-[24px] pb-[16px] overflow-y-auto") : "px-[40px] pt-[32px] pb-[16px]",
+    heading: compact ? "22px" : "28px",
+    /* Fills the step while the cards fit; once they don't, it keeps its
+       height and the step scrolls rather than the cards riding up over the
+       heading. */
+    wrap: portrait ? { minHeight: "auto", width: "100%" } : undefined,
+    row: portrait ? { flexDirection: "column" as const, width: "100%", flex: "1 1 auto", minHeight: 0, gap: compact ? "12px" : "20px" } : undefined,
+    card: portrait ? { width: "100%", maxWidth: "560px", height: "auto", flex: "1 1 0", maxHeight: "400px", minHeight: compact ? "128px" : "220px", gap: compact ? "10px" : "36px" } : {},
+    badge: compact ? { top: "14px", right: "14px", width: "40px", height: "40px" } : {},
+    badgeTick: compact ? 20 : 32,
+    iconBox: compact ? { width: "64px", height: "64px" } : {},
+    label: compact ? "22px" : "32px",
+  };
+}
+
 function OrderTypeStep({ orderFor, onSelect, fontFamily, isRTL, isNpo }: {
   orderFor: OrderFor; onSelect: (v: OrderFor) => void; fontFamily: string; isRTL: boolean; isNpo?: boolean;
 }) {
   const showNpoBlock = isNpo && orderFor === "patient";
+  const L = useChoiceCardLayout();
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}
-      className="h-full flex flex-col px-[40px] pt-[32px] pb-[16px] gap-[16px]">
+      className={`h-full flex flex-col ${L.root} gap-[16px]`}>
       {/* Centered heading — matches Choose Meal placement */}
       <div className="shrink-0 text-center">
-        <h2 style={{ fontFamily, fontSize: "28px", fontWeight: WEIGHT.bold, color: INK, letterSpacing: "0.4px", textTransform: "uppercase" }}>
+        <h2 style={{ fontFamily, fontSize: L.heading, fontWeight: WEIGHT.bold, color: INK, letterSpacing: "0.4px", textTransform: "uppercase" }}>
           {isRTL ? "الطلب لـ" : "Order For"}
         </h2>
         <p style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.medium, color: INK_2, marginTop: "6px" }}>
@@ -1999,8 +2054,8 @@ function OrderTypeStep({ orderFor, onSelect, fontFamily, isRTL, isNpo }: {
         </p>
       </div>
 
-      <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-[20px]">
-        <div className="flex items-center justify-center gap-[30px]">
+      <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-[20px]" style={L.wrap}>
+        <div className="flex items-center justify-center gap-[30px]" style={L.row}>
           {(["patient", "guest"] as OrderFor[]).map((type) => {
             const selected = orderFor === type;
             return (
@@ -2012,6 +2067,7 @@ function OrderTypeStep({ orderFor, onSelect, fontFamily, isRTL, isNpo }: {
                   position: "relative", cursor: "pointer", outline: "none",
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "36px",
                   transition: "all 0.22s ease",
+                  ...L.card,
                 }}>
                 {/* Checkmark badge */}
                 <div className="absolute" style={{ top: "32px", right: "32px",
@@ -2020,8 +2076,9 @@ function OrderTypeStep({ orderFor, onSelect, fontFamily, isRTL, isNpo }: {
                   border: selected ? "none" : `2px solid ${CARD_LINE}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   boxShadow: selected ? "0 4px 6.5px rgba(var(--fo-primary-rgb), 0.38)" : "none",
+                  ...L.badge,
                 }}>
-                  {selected && <Check size={32} color="#fff" strokeWidth={2.5} />}
+                  {selected && <Check size={L.badgeTick} color="#fff" strokeWidth={2.5} />}
                 </div>
 
                 {/* Icon circle */}
@@ -2029,10 +2086,11 @@ function OrderTypeStep({ orderFor, onSelect, fontFamily, isRTL, isNpo }: {
                   width: "120px", height: "120px", borderRadius: "60px",
                   backgroundColor: selected ? "#fff" : TINT_BG,
                   display: "flex", alignItems: "center", justifyContent: "center",
+                  ...L.iconBox,
                 }}>
                   {type === "patient"
-                    ? <User size={60} color={selected ? TEAL : TEAL} strokeWidth={1.8} />
-                    : <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke={SECONDARY_ON} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    ? <User size={L.compact ? 32 : 60} color={selected ? TEAL : TEAL} strokeWidth={1.8} />
+                    : <svg width={L.compact ? 32 : 60} height={L.compact ? 32 : 60} viewBox="0 0 24 24" fill="none" stroke={SECONDARY_ON} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                         <circle cx="9" cy="7" r="4"/>
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
@@ -2041,7 +2099,7 @@ function OrderTypeStep({ orderFor, onSelect, fontFamily, isRTL, isNpo }: {
                 </div>
 
                 {/* Label */}
-                <span style={{ fontFamily, fontSize: "32px", fontWeight: WEIGHT.bold, color: selected ? "#fff" : INK }}>
+                <span style={{ fontFamily, fontSize: L.label, fontWeight: WEIGHT.bold, color: selected ? "#fff" : INK }}>
                   {type === "patient" ? (isRTL ? "المريض" : "Patient") : (isRTL ? "المرافق" : "Guest")}
                 </span>
               </motion.button>
@@ -2055,7 +2113,7 @@ function OrderTypeStep({ orderFor, onSelect, fontFamily, isRTL, isNpo }: {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="flex items-center gap-4 px-8 py-5 rounded-2xl"
+            className={`flex items-center gap-4 rounded-2xl ${L.compact ? "px-4 py-4" : "px-8 py-5"}`}
             style={{ backgroundColor: CHIP_ERR, border: "1.5px solid #FECACA", maxWidth: "700px" }}
           >
             <div className="shrink-0 w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: CHIP_ERR }}>
@@ -2104,6 +2162,9 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
   const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
   const { t, locale } = useLocale();
   const { theme } = useTheme();
+  /* Portrait: the three cards share the width; on phones they stack and the
+     list scrolls under the day tabs. */
+  const { portrait, compact } = useCanvasSize();
   /* The meal whose menu is being read. Reading never leaves this screen: the
      patient is browsing, not part-way through an order, and a full screen with
      a back button would tell them otherwise. */
@@ -2138,10 +2199,10 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}
-      className="h-full flex flex-col px-[40px] pt-[32px] pb-[20px] gap-[16px] relative">
+      className={`h-full flex flex-col ${!portrait ? "px-[40px] pt-[32px] pb-[20px]" : compact ? "px-[16px] pt-[16px] pb-[16px]" : "px-[24px] pt-[24px] pb-[20px]"} gap-[16px] relative`}>
       {/* Centered heading */}
       <div className="shrink-0 text-center flex flex-col items-center gap-[10px]">
-        <h2 style={{ fontFamily, fontSize: "28px", fontWeight: WEIGHT.bold, color: INK, letterSpacing: "0.4px", textTransform: "uppercase" }}>
+        <h2 style={{ fontFamily, fontSize: compact ? "22px" : "28px", fontWeight: WEIGHT.bold, color: INK, letterSpacing: "0.4px", textTransform: "uppercase" }}>
           {isRTL ? "اختر وجباتك" : "Choose Your Meals"}
         </h2>
 
@@ -2149,7 +2210,7 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
             switching to one shows that day's menu. Which day can be ordered
             is said by the cards below, on their badge, so the tabs stay a
             plain row of dates rather than saying it twice. */}
-        <div className="flex items-center justify-center gap-3" dir={isRTL ? "rtl" : "ltr"}>
+        <div className={`flex items-center justify-center ${compact ? "gap-2 w-full" : "gap-3"}`} dir={isRTL ? "rtl" : "ltr"}>
           {ORDER_DAY_OFFSETS.map((offset) => {
             const active = offset === selectedDayOffset;
             const orderable = isOrderableDay(offset);
@@ -2165,6 +2226,7 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
                 className="active:scale-[0.97] transition-transform cursor-pointer"
                 style={{
                   minWidth: "190px", padding: "10px 20px", borderRadius: "16px",
+                  ...(compact ? { minWidth: 0, flex: "1 1 0", padding: "8px 6px" } : {}),
                   backgroundColor: active ? TEAL_15 : SHEET,
                   /* Constant 2px, colour only — otherwise the active tab is
                      two pixels taller than its neighbours and the row of
@@ -2199,8 +2261,15 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
       </div>
 
       {/* Cards row — narrower, centered with whitespace, photo-led */}
-      <div className="flex-1 min-h-0 flex items-center justify-center gap-[28px]" dir={isRTL ? "rtl" : "ltr"}>
-        {meals.map((meal) => {
+      <div className="flex-1 min-h-0 flex items-center justify-center gap-[28px]" dir={isRTL ? "rtl" : "ltr"}
+        style={portrait
+          /* Portrait: the three meals stack as rows. They share the height
+             there is, up to a cap, and what is left over is split above and
+             below them (the auto margins on the first and last card) — so a
+             tall screen never leaves the stack stranded at the top. */
+          ? { flexDirection: "column", alignItems: "stretch", justifyContent: "flex-start", gap: compact ? "12px" : "16px", overflowY: "auto", margin: compact ? "0 -16px" : 0, padding: compact ? "0 16px 4px" : "0 0 4px" }
+          : undefined}>
+        {meals.map((meal, mealIdx) => {
           /* In the basket for the day on screen — not sent to the kitchen. */
           const inOrder = pendingMealIds.has(meal.id);
           const placed = dayOrderable && placedMealTimes.has(meal.id);
@@ -2293,7 +2362,12 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
               whileHover={placed ? undefined : { y: -2 }}
               dir={isRTL ? "rtl" : "ltr"}
               style={{
-                width: "390px",
+                width: portrait ? "100%" : "390px",
+                ...(portrait ? {
+                  flex: "1 0 auto", maxHeight: compact ? "220px" : "340px",
+                  marginTop: mealIdx === 0 ? "auto" : undefined,
+                  marginBottom: mealIdx === meals.length - 1 ? "auto" : undefined,
+                } : {}),
                 borderRadius: "24px",
                 backgroundColor: SHEET,
                 /* A chosen card is framed as well as ticked. The width is the
@@ -2308,7 +2382,8 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
                 boxShadow: "none",
                 cursor: placed ? "default" : "pointer", outline: "none",
                 transition: "border-color 0.2s, box-shadow 0.2s, transform 0.2s",
-                display: "flex", flexDirection: "column", alignItems: "center",
+                /* Portrait rows: the photo along the start edge, the words beside it. */
+                display: "flex", flexDirection: portrait ? "row" : "column", alignItems: portrait ? "stretch" : "center",
                 /* No padding: the photograph runs to the card's own edges and
                    the card's radius is what rounds its top corners. */
                 padding: 0,
@@ -2334,8 +2409,9 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
                 alt={loc(photo.alt)}
                 loading="lazy"
                 style={{
-                  display: "block", width: "100%",
-                  height: "clamp(150px, 14vw, 190px)",
+                  display: "block", width: portrait ? (compact ? "128px" : "38%") : "100%",
+                  height: portrait ? "auto" : "clamp(150px, 14vw, 190px)",
+                  minHeight: portrait ? (compact ? "156px" : "200px") : undefined,
                   objectFit: "cover", objectPosition: "center",
                   flexShrink: 0,
                 }}
@@ -2343,21 +2419,24 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
 
               {/* Everything the card says, inset from the edges the photo owns */}
               <div className="w-full flex-1 flex flex-col items-center" style={{
-                padding: "18px 28px 24px", gap: "12px", justifyContent: "space-between",
+                padding: compact ? "14px 12px" : portrait ? "20px 24px" : "18px 28px 24px", gap: compact ? "10px" : "12px", justifyContent: "space-between", minWidth: 0,
               }}>
-                {/* Meal name */}
-                <span style={{ fontFamily, fontSize: "32px", fontWeight: WEIGHT.bold, color: INK, lineHeight: 1 }}>
+                {/* Meal name. In a portrait row the name and its status sit
+                    in the middle of the space above the action line (this auto
+                    margin pairs with the action's own), not pinned to the top. */}
+                <span style={{ fontFamily, fontSize: compact ? "26px" : "32px", fontWeight: WEIGHT.bold, color: INK, lineHeight: 1, ...(portrait ? { marginTop: "auto" } : {}) }}>
                   {loc(meal.label)}
                 </span>
 
                 {/* Status */}
                 <div className="flex items-center gap-2" data-fo-status style={{
-                  padding: "9px 18px", borderRadius: "100px",
+                  padding: compact ? "8px 12px" : portrait ? "9px 14px" : "9px 18px", borderRadius: "100px",
+                  ...(portrait ? { textAlign: "center" as const } : {}),
                   backgroundColor: statusBg,
                   border: `1.5px solid ${statusBorder}`,
                 }}>
                   {statusTick && <Check size={16} color={statusColor} strokeWidth={3} />}
-                  <span style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.bold, color: statusColor }}>
+                  <span style={{ fontFamily, fontSize: compact ? "15px" : "16px", fontWeight: WEIGHT.bold, color: statusColor, ...(compact ? { whiteSpace: "nowrap" as const } : {}) }}>
                     {statusText}
                   </span>
                 </div>
@@ -2366,16 +2445,22 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
                 <div className="w-full flex flex-col items-center" style={{ marginTop: "auto" }}>
                   <div style={{ width: "100%", height: "1px", backgroundColor: theme.borderDefault, marginBottom: "16px" }} />
                   <div className="flex items-center justify-center gap-2" data-fo-action={meal.id}>
-                    {/* The clock belongs to the deadline, not to "View menu". */}
-                    {canOrder && !placed && (
+                    {/* The clock belongs to the deadline, not to "View menu".
+                        In a portrait row the line may wrap, so the clock rides
+                        inside the text (below) and stays beside its first word
+                        instead of drifting to the card's edge. */}
+                    {canOrder && !placed && !portrait && (
                       <Clock size={15} color={actionIsDeadline ? ON_ERR : INK_2} className="shrink-0" />
                     )}
                     <span style={{
                       fontFamily, fontSize: "16px",
                       fontWeight: actionIsLink || actionIsDeadline ? WEIGHT.bold : WEIGHT.medium,
                       color: actionIsDeadline ? ON_ERR : actionIsLink ? TEAL_ON : INK_2,
-                      textAlign: "center",
+                      textAlign: "center", textWrap: "balance",
                     }}>
+                      {canOrder && !placed && portrait && (
+                        <Clock size={15} color={actionIsDeadline ? ON_ERR : INK_2} style={{ display: "inline", verticalAlign: "-2px", marginInlineEnd: "6px" }} />
+                      )}
                       {actionLabel}
                     </span>
                   </div>
@@ -2423,14 +2508,14 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
                 /* A day's menu is five groups of two to four dishes with long
                    names. At the old 880px it was a scrollbar with a window
                    around it; this fits most days whole. */
-                width: "1240px", maxHeight: "86%",
+                width: portrait ? "calc(100% - 32px)" : "1240px", maxHeight: "86%",
                 backgroundColor: SHEET, borderRadius: "24px",
                 boxShadow: "0 16px 48px rgba(0,0,0,0.25)",
                 overflow: "hidden",
               }}
             >
               {/* Header — which meal, which day, and the way out */}
-              <div className="shrink-0 flex items-center gap-5 px-10 py-7" style={{ borderBottom: CARD_LINE_1 }}>
+              <div className={`shrink-0 flex items-center ${compact ? "gap-3 px-4 py-4" : "gap-5 px-10 py-7"}`} style={{ borderBottom: CARD_LINE_1 }}>
                 <div style={{
                   width: "56px", height: "56px", borderRadius: "50%",
                   backgroundColor: menuMeal.id === "breakfast" ? "#FEF3C7" : menuMeal.id === "lunch" ? "#E0F2FE" : "#EDE9FE",
@@ -2471,7 +2556,7 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
               </div>
 
               {/* The menu itself — read, not chosen */}
-              <div className="flex-1 min-h-0 fo-scroll overflow-y-auto px-10 py-8 flex flex-col gap-8">
+              <div className={`flex-1 min-h-0 fo-scroll overflow-y-auto flex flex-col ${compact ? "px-4 py-5 gap-6" : "px-10 py-8 gap-8"}`}>
                 {menuMeal.groups.map((g) => (
                   <div key={g.id}>
                     <div className="flex items-center gap-2" style={{ marginBottom: "14px" }}>
@@ -2484,7 +2569,7 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
                         </span>
                       )}
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "14px 40px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "repeat(2, 1fr)", gap: compact ? "10px" : "14px 40px" }}>
                       {g.items.map((it) => (
                         <div key={it.id} className="flex items-center gap-3">
                           <div style={{
@@ -2502,7 +2587,7 @@ function ChooseMealStep({ meals, selectedMealId, onSelect, onDeselect, fontFamil
               </div>
 
               {/* Why it can only be read */}
-              <div className="shrink-0 flex items-center gap-3 px-10 py-6" style={{ borderTop: CARD_LINE_1, backgroundColor: CHIP_WARN }}>
+              <div className={`shrink-0 flex items-center gap-3 ${compact ? "px-4 py-4" : "px-10 py-6"}`} style={{ borderTop: CARD_LINE_1, backgroundColor: CHIP_WARN }}>
                 <Clock size={20} color={ON_WARN} className="shrink-0" />
                 <span style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.medium, color: ON_WARN, lineHeight: 1.45 }}>
                   {/* Named for the day it is, and answering the only question
@@ -2538,19 +2623,21 @@ function KidsBreakfastTypeStep({ selected, onSelect, fontFamily, isRTL }: {
   fontFamily: string;
   isRTL: boolean;
 }) {
+  const L = useChoiceCardLayout();
+  const ks = L.compact ? 32 : 60;
   const options: { id: KidsBreakfastType; icon: React.ReactNode; selectedIcon: React.ReactNode; label: { en: string; ar: string }; desc: { en: string; ar: string }; color: string }[] = [
     {
       id: "hot",
-      icon: <Flame size={60} color={ON_ERR} strokeWidth={1.8} />,
-      selectedIcon: <Flame size={60} color={ON_ERR} strokeWidth={1.8} />,
+      icon: <Flame size={ks} color={ON_ERR} strokeWidth={1.8} />,
+      selectedIcon: <Flame size={ks} color={ON_ERR} strokeWidth={1.8} />,
       label: { en: "Hot Breakfast", ar: "إفطار ساخن" },
       desc: { en: "Eggs, bacon, sausage, toast & more", ar: "بيض، بيكون، سجق، توست والمزيد" },
       color: ON_ERR,
     },
     {
       id: "cold",
-      icon: <Snowflake size={60} color={ON_INFO} strokeWidth={1.8} />,
-      selectedIcon: <Snowflake size={60} color={ON_INFO} strokeWidth={1.8} />,
+      icon: <Snowflake size={ks} color={ON_INFO} strokeWidth={1.8} />,
+      selectedIcon: <Snowflake size={ks} color={ON_INFO} strokeWidth={1.8} />,
       label: { en: "Cold Breakfast", ar: "إفطار بارد" },
       desc: { en: "Cold meats, dairy, cheese & more", ar: "لحوم باردة، ألبان، جبنة والمزيد" },
       color: ON_INFO,
@@ -2559,11 +2646,11 @@ function KidsBreakfastTypeStep({ selected, onSelect, fontFamily, isRTL }: {
   const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}
-      className="h-full flex flex-col px-[40px] pt-[32px] pb-[16px] gap-[16px]"
+      className={`h-full flex flex-col ${L.root} gap-[16px]`}
     >
       {/* Centered heading — same as Step 1 */}
       <div className="shrink-0 text-center">
-        <h2 style={{ fontFamily, fontSize: "28px", fontWeight: WEIGHT.bold, color: INK, letterSpacing: "0.4px", textTransform: "uppercase" }}>
+        <h2 style={{ fontFamily, fontSize: L.heading, fontWeight: WEIGHT.bold, color: INK, letterSpacing: "0.4px", textTransform: "uppercase" }}>
           {isRTL ? "نوع الإفطار" : "Breakfast Type"}
         </h2>
         <p style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.medium, color: INK_2, marginTop: "6px" }}>
@@ -2572,8 +2659,8 @@ function KidsBreakfastTypeStep({ selected, onSelect, fontFamily, isRTL }: {
       </div>
 
       {/* Cards — same dimensions & style as Patient/Guest */}
-      <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-[20px]">
-        <div className="flex items-center justify-center gap-[30px]">
+      <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-[20px]" style={L.wrap}>
+        <div className="flex items-center justify-center gap-[30px]" style={L.row}>
           {options.map((opt) => {
             const isActive = selected === opt.id;
             return (
@@ -2585,6 +2672,7 @@ function KidsBreakfastTypeStep({ selected, onSelect, fontFamily, isRTL }: {
                   position: "relative", cursor: "pointer", outline: "none",
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "36px",
                   transition: "all 0.22s ease",
+                  ...L.card,
                 }}>
                 {/* Checkmark badge */}
                 <div className="absolute" style={{ top: "32px", right: "32px",
@@ -2593,8 +2681,9 @@ function KidsBreakfastTypeStep({ selected, onSelect, fontFamily, isRTL }: {
                   border: isActive ? "none" : "2px solid #DADADA",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   boxShadow: isActive ? "0 4px 6.5px rgba(var(--fo-primary-rgb), 0.38)" : "none",
+                  ...L.badge,
                 }}>
-                  {isActive && <Check size={32} color="#fff" strokeWidth={2.5} />}
+                  {isActive && <Check size={L.badgeTick} color="#fff" strokeWidth={2.5} />}
                 </div>
 
                 {/* Icon circle */}
@@ -2602,17 +2691,18 @@ function KidsBreakfastTypeStep({ selected, onSelect, fontFamily, isRTL }: {
                   width: "120px", height: "120px", borderRadius: "60px",
                   backgroundColor: isActive ? "#fff" : TINT_BG,
                   display: "flex", alignItems: "center", justifyContent: "center",
+                  ...L.iconBox,
                 }}>
                   {isActive ? opt.selectedIcon : opt.icon}
                 </div>
 
                 {/* Label */}
-                <span style={{ fontFamily, fontSize: "32px", fontWeight: WEIGHT.bold, color: isActive ? "#fff" : INK }}>
+                <span style={{ fontFamily, fontSize: L.label, fontWeight: WEIGHT.bold, color: isActive ? "#fff" : INK }}>
                   {loc(opt.label)}
                 </span>
 
                 {/* Description */}
-                <span style={{ fontFamily, fontSize: "17px", fontWeight: WEIGHT.medium, color: isActive ? "rgba(255,255,255,0.75)" : INK_2, textAlign: "center", maxWidth: "320px" }}>
+                <span style={{ fontFamily, fontSize: L.compact ? "14px" : "17px", fontWeight: WEIGHT.medium, color: isActive ? "rgba(255,255,255,0.75)" : INK_2, textAlign: "center", maxWidth: "320px", ...(L.compact ? { padding: "0 16px" } : {}) }}>
                   {loc(opt.desc)}
                 </span>
               </motion.button>
@@ -2648,16 +2738,24 @@ function BuildMealStep({ meal, selections, onToggle, fontFamily, isRTL, dayOffse
      the day that can actually be ordered. On any other day this screen is a
      menu being read and the groups take the full width. */
   const showTray = isOrderableDay(dayOffset);
+  /* Portrait: the tray sits under the menu instead of beside it. Phones have
+     no room for two scrollers, so there the menu and the tray scroll as one
+     list and the footer stays pinned below it. */
+  const { portrait, compact } = useCanvasSize();
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}
-      className={`fo-build-row h-full flex px-[28px] pt-[16px] pb-[16px] ${showTray ? "gap-[20px]" : ""}`}>
+      /* Portrait: menu then tray, one list that scrolls as a whole — so the
+         tray sits straight under the last dish whatever the screen's height. */
+      className={`fo-build-row h-full flex ${compact ? "px-[12px] pt-[12px] pb-[12px] fo-scroll overflow-y-auto" : portrait ? "px-[20px] pt-[16px] pb-[16px] fo-scroll overflow-y-auto" : "px-[28px] pt-[16px] pb-[16px]"} ${showTray ? (compact ? "gap-[12px]" : "gap-[20px]") : ""}`}
+      style={portrait ? { flexDirection: "column" } : undefined}>
       {/* The groups. Full width when there is no tray beside them. */}
       <div className="flex-1 min-w-0 flex flex-col relative" style={{
         borderRadius: "20px",
         border: CARD_LINE_1,
         backgroundColor: SHEET,
         overflow: "hidden",
+        ...(portrait ? { flex: "0 0 auto" } : {}),
       }}>
         {/* The menu's header: this meal photographed, with the day it is for
             and the hour it is served written across it. The gradient runs from
@@ -2676,7 +2774,7 @@ function BuildMealStep({ meal, selections, onToggle, fontFamily, isRTL, dayOffse
           const mirrored = photo.foodSide !== foodBelongs;
           return (
             <div data-fo-menu-banner={meal.id} className="shrink-0 relative" style={{
-              height: "clamp(120px, 13vw, 165px)", overflow: "hidden", backgroundColor: TEAL_DARK,
+              height: compact ? "104px" : "clamp(120px, 13vw, 165px)", overflow: "hidden", backgroundColor: TEAL_DARK,
             }}>
               <ImageWithFallback
                 src={photo.src}
@@ -2693,20 +2791,20 @@ function BuildMealStep({ meal, selections, onToggle, fontFamily, isRTL, dayOffse
                 background: `linear-gradient(${isRTL ? 270 : 90}deg, rgba(${TEAL_DARK_RGB}, 0.94) 0%, rgba(${TEAL_DARK_RGB}, 0.85) 22%, rgba(${TEAL_DARK_RGB}, 0.45) 42%, rgba(${TEAL_DARK_RGB}, 0) 58%)`,
               }} />
               <div className="absolute inset-0 flex flex-col justify-center gap-1" style={{
-                padding: "0 28px",
+                padding: compact ? "0 16px" : "0 28px",
                 /* The lines stretch the full width and are placed by text-align:
                    in an RTL subtree a column flex-end resolves to the LEFT, which
                    put the text off the gradient entirely. */
                 alignItems: "stretch",
                 textAlign: isRTL ? "right" : "left",
               }}>
-                <span style={{ fontFamily, fontSize: "28px", fontWeight: WEIGHT.bold, color: TEXT_ON_BRAND, textShadow: PHOTO_TEXT_SHADOW, lineHeight: 1.15 }}>
+                <span style={{ fontFamily, fontSize: compact ? "22px" : "28px", fontWeight: WEIGHT.bold, color: TEXT_ON_BRAND, textShadow: PHOTO_TEXT_SHADOW, lineHeight: 1.15 }}>
                   {isRTL ? `قائمة ${loc(meal.label)}` : `${loc(meal.label)} Menu`}
                 </span>
                 {/* Opacity rather than a white with alpha baked in, so the
                     second line stays a shade of whatever the theme's inverse
                     text is. */}
-                <span style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.medium, color: TEXT_ON_BRAND, opacity: 0.88, textShadow: PHOTO_TEXT_SHADOW, lineHeight: 1.4 }}>
+                <span style={{ fontFamily, fontSize: compact ? "14px" : "16px", fontWeight: WEIGHT.medium, color: TEXT_ON_BRAND, opacity: 0.88, textShadow: PHOTO_TEXT_SHADOW, lineHeight: 1.4, ...(compact ? { maxWidth: "70%" } : {}) }}>
                   {`${dateStr} · ${locTimeRange(meal.timeRange, isRTL)}`}
                 </span>
               </div>
@@ -2715,13 +2813,13 @@ function BuildMealStep({ meal, selections, onToggle, fontFamily, isRTL, dayOffse
         })()}
 
         {/* Groups list */}
-        <div className="flex-1 min-h-0 fo-scroll-strong overflow-y-auto flex flex-col gap-[12px] p-[14px]">
+        <div className={`flex-1 min-h-0 flex flex-col gap-[12px] ${compact ? "p-[10px]" : portrait ? "p-[14px]" : "fo-scroll-strong overflow-y-auto p-[14px]"}`}>
           {requiredGroups.map((g, idx) => (
             <BuildGroup key={g.id} group={g} index={idx + 1} selections={selections[g.id] || []} onToggle={(itemId) => onToggle(g.id, itemId, g)} fontFamily={fontFamily} isRTL={isRTL} />
           ))}
 
           {includedGroups.length > 0 && (
-            <div style={{ padding: "14px 20px", borderRadius: "20px", border: CARD_LINE_1, backgroundColor: SHEET_2 }}>
+            <div style={{ padding: compact ? "12px 14px" : "14px 20px", borderRadius: "20px", border: CARD_LINE_1, backgroundColor: SHEET_2 }}>
               <div className="flex items-center gap-2 mb-2">
                 <Check size={18} color={GREEN} />
                 <span style={{ fontFamily, fontSize: "13px", fontWeight: WEIGHT.bold, color: INK_2, letterSpacing: "0.3px", textTransform: "uppercase" }}>
@@ -2740,15 +2838,16 @@ function BuildMealStep({ meal, selections, onToggle, fontFamily, isRTL, dayOffse
               </div>
             </div>
           )}
-          <div style={{ height: "16px" }} />
+          {!portrait && <div style={{ height: "16px" }} />}
         </div>
         {/* Bottom fade hint */}
-        <div className="pointer-events-none absolute left-0 right-0 bottom-0" style={{ height: "32px", background: `linear-gradient(to bottom, transparent 0%, ${SHEET} 100%)` }} />
+        {!portrait && <div className="pointer-events-none absolute left-0 right-0 bottom-0" style={{ height: "32px", background: `linear-gradient(to bottom, transparent 0%, ${SHEET} 100%)` }} />}
       </div>
 
       {/* RIGHT: meal tray — only for the day being ordered (see showTray) */}
       {showTray && (
-        <div className="fo-build-tray shrink-0 flex flex-col" style={{ width: "440px", borderRadius: "20px", backgroundColor: SHEET, border: CARD_LINE_1, overflow: "hidden" }}>
+        <div className="fo-build-tray shrink-0 flex flex-col" style={{ width: "440px", borderRadius: "20px", backgroundColor: SHEET, border: CARD_LINE_1, overflow: "hidden",
+          ...(portrait ? { width: "100%", flex: "0 0 auto", maxHeight: "none" } : {}) }}>
           {/* Header */}
           <div className="shrink-0 flex items-center gap-3 px-5 py-4" style={{ borderBottom: CARD_LINE_1 }}>
             <div style={{ width: "48px", height: "48px", borderRadius: "50%", backgroundColor: `${CARD_LINE}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -2767,7 +2866,7 @@ function BuildMealStep({ meal, selections, onToggle, fontFamily, isRTL, dayOffse
           {/* Items list */}
           <div className="flex-1 min-h-0 fo-scroll overflow-y-auto px-5 py-4 flex flex-col gap-4">
             {totalSelectedReq === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-3" style={{ minHeight: "180px" }}>
+              <div className="flex-1 flex flex-col items-center justify-center gap-3" style={{ minHeight: portrait ? "96px" : "180px" }}>
                 <Utensils size={40} color="#D1D5DB" />
                 <p style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.medium, color: INK_3 }}>
                   {isRTL ? "لم يتم اختيار أي عنصر" : "No item is selected"}
@@ -2801,8 +2900,10 @@ function BuildMealStep({ meal, selections, onToggle, fontFamily, isRTL, dayOffse
             )}
           </div>
 
-          {/* Included with your meal — pinned to bottom */}
-          {includedGroups.length > 0 && (
+          {/* Included with your meal — pinned to bottom. Not in portrait: the
+              menu above already ends with the same list, and the tray's
+              short band is better spent on what was picked. */}
+          {includedGroups.length > 0 && !portrait && (
             <div className="shrink-0" style={{ borderTop: CARD_LINE_1, backgroundColor: SHEET_2, borderRadius: "0 0 18px 18px", padding: "16px 20px" }}>
               <div className="flex items-center gap-2 mb-2">
                 <Check size={18} color={GREEN} />
@@ -2838,11 +2939,14 @@ function BuildGroup({ group, index, selections, onToggle, fontFamily, isRTL }: {
   const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
   const max = group.mode === "choose-2" ? 2 : 1;
   const done = selections.length >= max;
+  /* Phones: one dish per row, and the "Choose only" hint may wrap under the
+     group name. */
+  const { compact } = useCanvasSize();
 
   return (
-    <div style={{ padding: "16px 20px", borderRadius: "20px", border: CARD_LINE_1, backgroundColor: SHEET }}>
+    <div style={{ padding: compact ? "14px 12px" : "16px 20px", borderRadius: "20px", border: CARD_LINE_1, backgroundColor: SHEET }}>
       {/* Header: number circle + Item N + Choose only N */}
-      <div className="flex items-center gap-3 mb-3">
+      <div className="flex items-center gap-3 mb-3" style={compact ? { flexWrap: "wrap", rowGap: "4px" } : undefined}>
         <div style={{ width: "40px", height: "40px", borderRadius: "50%",
           backgroundColor: done ? GREEN : "#E7F1F1",
           display: "flex", alignItems: "center", justifyItems: "center", flexShrink: 0 }}>
@@ -2862,7 +2966,7 @@ function BuildGroup({ group, index, selections, onToggle, fontFamily, isRTL }: {
 
       {/* 2-column grid of equal width boxes with wrapped long text */}
       <div
-        style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px", paddingBottom: "4px" }}>
+        style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "repeat(2, 1fr)", gap: compact ? "8px" : "12px", paddingBottom: "4px" }}>
         {group.items.map((item) => {
           const sel = selections.includes(item.id);
           return (
@@ -2935,10 +3039,19 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
   const headlineOffset = summary.find((e) => e.mealId === meal.id)?.dayOffset ?? ORDER_DAY_OFFSETS[0];
   const deliveryDate = formatDayLong(headlineOffset, isRTL);
   const dayCount = new Set(summary.map((e) => e.dayOffset)).size;
+  /* Portrait: the success message sits above the details instead of beside
+     them, and the card centres only while it fits (margin: auto) so a tall
+     one scrolls from its top instead of being cut. */
+  const { portrait, compact } = useCanvasSize();
+  /* Phones: each detail row puts its values under its label rather than in
+     a narrow column beside it. */
+  const detailRow: React.CSSProperties = compact ? { flexDirection: "column", gap: "6px" } : {};
+  const detailValue: React.CSSProperties | undefined = compact ? { alignItems: "flex-start", paddingInlineStart: "42px", width: "100%" } : undefined;
 
   return (
     <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}
-      className="h-full flex items-center justify-center px-[40px] py-[24px] overflow-y-auto fo-scroll">
+      className={`h-full flex items-center justify-center overflow-y-auto fo-scroll ${compact ? "px-[12px] py-[12px]" : portrait ? "px-[24px] py-[24px]" : "px-[40px] py-[24px]"}`}
+      style={portrait ? { alignItems: "flex-start" } : undefined}>
       {/* Single seamless card */}
       <div style={{
         width: "100%", maxWidth: "1080px",
@@ -2946,10 +3059,11 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
         border: CARD_LINE_1,
         display: "grid", gridTemplateColumns: "1fr 1fr",
         overflow: "hidden",
+        ...(portrait ? { gridTemplateColumns: "1fr", maxWidth: "640px", margin: "auto", flexShrink: 0 } : {}),
       }}>
 
         {/* ── LEFT — Success message ── */}
-        <div style={{ padding: "36px 32px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "18px" }}>
+        <div style={{ padding: compact ? "24px 16px 8px" : "36px 32px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "18px" }}>
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 220, damping: 18, delay: 0.1 }}
             style={{ width: "72px", height: "72px", borderRadius: "50%", backgroundColor: theme.success, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: SHADOW.md }}>
             <Check size={38} color={theme.textInverse} strokeWidth={3} />
@@ -3014,7 +3128,7 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
         </div>
 
         {/* ── RIGHT — bordered details box with patient + details ── */}
-        <div style={{ padding: "24px 28px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div style={{ padding: compact ? "16px" : "24px 28px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
           {/* Bordered container */}
           <div style={{
             border: CARD_LINE_1, borderRadius: "16px",
@@ -3023,8 +3137,9 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
           }}>
             {/* Patient / Guest row — flush to container edges */}
             <div className="flex items-center gap-3" style={{
-              padding: "14px 20px",
+              padding: compact ? "12px 14px" : "14px 20px",
               backgroundColor: isGuest ? "rgba(var(--fo-secondary-rgb), 0.08)" : TEAL_15,
+              ...(compact ? { flexWrap: "wrap" as const, rowGap: "8px" } : {}),
             }}>
               <div style={{ width: "38px", height: "38px", borderRadius: "50%", backgroundColor: isGuest ? SECONDARY : TEAL, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <User size={19} color="#fff" strokeWidth={2.5} />
@@ -3048,9 +3163,9 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
             </div>
 
             {/* Details area */}
-            <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: compact ? "12px 14px" : "16px 20px", display: "flex", flexDirection: "column" }}>
             {/* Delivery Time */}
-            <div className="flex items-start justify-between gap-4" style={{ padding: "10px 0" }}>
+            <div className="flex items-start justify-between gap-4" style={{ padding: "10px 0", ...detailRow }}>
               <div className="flex items-center gap-2.5 shrink-0">
                 <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: TEAL_15, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Clock size={16} color={TEAL_ON} />
@@ -3059,7 +3174,7 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
                   {isRTL ? "وقت التوصيل" : "Delivery Time"}
                 </span>
               </div>
-              <div className="flex-1 min-w-0 flex flex-col items-end">
+              <div className="flex-1 min-w-0 flex flex-col items-end" style={detailValue}>
                 <p style={{ fontFamily, fontSize: "15px", fontWeight: WEIGHT.bold, color: TEAL_ON }}>
                   {loc(meal.label)} ({locTimeRange(meal.timeRange, isRTL)})
                 </p>
@@ -3072,7 +3187,7 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
             <RowDivider />
 
             {/* Your Meal Items */}
-            <div className="flex items-start justify-between gap-4" style={{ padding: "10px 0" }}>
+            <div className="flex items-start justify-between gap-4" style={{ padding: "10px 0", ...detailRow }}>
               <div className="flex items-center gap-2.5 shrink-0" style={{ marginTop: "2px" }}>
                 <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: TEAL_15, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Utensils size={16} color={TEAL_ON} />
@@ -3083,8 +3198,8 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
                     : (isRTL ? "عناصر وجبتك" : "Your Meal Items")}
                 </span>
               </div>
-              <div className="flex-1 min-w-0 flex flex-col items-end">
-                <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column" as const, gap: "4px", textAlign: "right" as const }}>
+              <div className="flex-1 min-w-0 flex flex-col items-end" style={detailValue}>
+                <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column" as const, gap: "4px", textAlign: compact ? "start" as const : "right" as const }}>
                   {selectedItems.map((name, i) => (
                     <li key={i} style={{ fontFamily, fontSize: "15px", fontWeight: WEIGHT.semibold, color: INK, lineHeight: 1.4 }}>{name}</li>
                   ))}
@@ -3095,7 +3210,7 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
             {includedItems.length > 0 && (
               <>
                 <RowDivider />
-                <div className="flex items-start justify-between gap-4" style={{ padding: "10px 0" }}>
+                <div className="flex items-start justify-between gap-4" style={{ padding: "10px 0", ...detailRow }}>
                   <div className="flex items-center gap-2.5 shrink-0" style={{ marginTop: "2px" }}>
                     <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: `${GREEN}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <Check size={16} color={GREEN} />
@@ -3106,8 +3221,8 @@ function ConfirmStep({ orderNumber, meal, selections, orderFor, patientName, roo
                         : (isRTL ? "مشمول مع وجبتك" : "Comes With Your Meal")}
                     </span>
                   </div>
-                  <div className="flex-1 min-w-0 flex flex-col items-end">
-                    <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column" as const, gap: "4px", textAlign: "right" as const }}>
+                  <div className="flex-1 min-w-0 flex flex-col items-end" style={detailValue}>
+                    <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column" as const, gap: "4px", textAlign: compact ? "start" as const : "right" as const }}>
                       {includedItems.map((name, i) => (
                         <li key={i} style={{ fontFamily, fontSize: "15px", fontWeight: WEIGHT.semibold, color: INK, lineHeight: 1.4 }}>{name}</li>
                       ))}
@@ -3160,25 +3275,33 @@ function BottomBar({ step, canContinue, onBack, showBack, onContinue, leftAction
   const ChevBack = isRTL ? ChevronRight : ChevronLeft;
   const ChevForward = isRTL ? ChevronLeft : ChevronRight;
   const continueEnabled = canContinue || step === "confirmed";
+  /* Phones: shorter buttons and tighter padding; when three actions do not
+     fit on one line (the confirmation) they wrap, each filling its row. */
+  const { compact } = useCanvasSize();
+  const h = compact ? "52px" : "60px";
+  const fit: React.CSSProperties = compact ? { flex: "1 1 auto", justifyContent: "center", padding: "0 18px" } : {};
   return (
     <div
       data-fo-footer={inCard ? "card" : "page"}
-      className="fo-footer shrink-0 flex items-center justify-between gap-[12px] px-[40px] py-[20px] relative z-10"
-      style={inCard ? {
+      className={`fo-footer shrink-0 flex items-center justify-between relative z-10 ${compact ? "gap-[8px] px-[12px] py-[12px]" : "gap-[12px] px-[40px] py-[20px]"}`}
+      style={{
+        ...(inCard ? {
         /* flex: none — never absorbed by, and never scrolled with, the body */
         flex: "0 0 auto",
         /* The card's own white, so nothing can show through the band, and the
            same hairline the Stepper draws under the card's header. */
         backgroundColor: SHEET,
         borderTop: CARD_LINE_1,
-      } : undefined}
+        } : {}),
+        ...(compact ? { flexWrap: "wrap" as const, paddingLeft: "12px", paddingRight: "12px" } : {}),
+      }}
     >
       {showBack !== false ? (
         <button onClick={onBack} className="active:scale-95 transition-transform cursor-pointer"
           style={{
-            height: "60px", padding: "0 32px", borderRadius: "16px",
+            height: h, padding: compact ? "0 18px" : "0 32px", borderRadius: "16px",
             backgroundColor: SHEET,
-            display: "flex", alignItems: "center", gap: "10px",
+            display: "flex", alignItems: "center", gap: compact ? "6px" : "10px",
             border: `1.5px solid ${TEAL}`,
             outline: "none",
             boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
@@ -3190,39 +3313,41 @@ function BottomBar({ step, canContinue, onBack, showBack, onContinue, leftAction
           ) : (
             <ChevBack size={22} color={TEAL_ON} strokeWidth={2.5} />
           )}
-          <span style={{ fontFamily, fontSize: "22px", fontWeight: WEIGHT.semibold, color: TEAL_ON }}>
+          <span style={{ fontFamily, fontSize: compact ? "18px" : "22px", fontWeight: WEIGHT.semibold, color: TEAL_ON }}>
             {backLabel}
           </span>
         </button>
       ) : leftAction ? (
         <button onClick={leftAction.onClick} className="active:scale-95 transition-transform cursor-pointer"
           style={{
-            height: "60px", padding: "0 28px", borderRadius: "16px",
+            height: h, padding: "0 28px", borderRadius: "16px",
             backgroundColor: SHEET,
             display: "flex", alignItems: "center", gap: "10px",
             border: `1.5px solid ${TEAL}`,
             outline: "none",
             boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+            ...fit,
           }}>
-          <span style={{ fontFamily, fontSize: "20px", fontWeight: WEIGHT.semibold, color: TEAL_ON }}>
+          <span style={{ fontFamily, fontSize: compact ? "18px" : "20px", fontWeight: WEIGHT.semibold, color: TEAL_ON }}>
             {leftAction.label}
           </span>
         </button>
       ) : <div />}
 
       {/* Right-side cluster: optional secondary + primary */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3" style={compact ? { flex: "1 1 auto", justifyContent: "flex-end", flexWrap: "wrap", gap: "8px" } : undefined}>
         {secondaryAction && (
           <button onClick={secondaryAction.onClick} className="active:scale-95 transition-transform cursor-pointer"
             style={{
-              height: "60px", padding: "0 28px", borderRadius: "16px",
+              height: h, padding: "0 28px", borderRadius: "16px",
               backgroundColor: SHEET,
               display: "flex", alignItems: "center", gap: "10px",
               border: `1.5px solid ${TEAL}`,
               outline: "none",
               boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              ...fit,
             }}>
-            <span style={{ fontFamily, fontSize: "20px", fontWeight: WEIGHT.semibold, color: TEAL_ON }}>
+            <span style={{ fontFamily, fontSize: compact ? "18px" : "20px", fontWeight: WEIGHT.semibold, color: TEAL_ON }}>
               {secondaryAction.label}
             </span>
           </button>
@@ -3231,7 +3356,8 @@ function BottomBar({ step, canContinue, onBack, showBack, onContinue, leftAction
           onClick={continueEnabled ? onContinue : undefined}
           whileTap={continueEnabled ? { scale: 0.97 } : {}}
           style={{
-            height: "60px", padding: "0 32px", borderRadius: "16px",
+            height: h, padding: compact ? "0 20px" : "0 32px", borderRadius: "16px",
+            ...(compact ? { justifyContent: "center" } : {}),
             backgroundColor: continueEnabled ? TEAL : SHEET,
             display: "flex", alignItems: "center", gap: "10px",
             border: `1px solid ${continueEnabled ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.3)"}`,
@@ -3246,7 +3372,7 @@ function BottomBar({ step, canContinue, onBack, showBack, onContinue, leftAction
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           )}
-          <span style={{ fontFamily, fontSize: "22px", fontWeight: WEIGHT.bold, color: continueEnabled ? "#fff" : TEAL_ON }}>
+          <span style={{ fontFamily, fontSize: compact ? "18px" : "22px", fontWeight: WEIGHT.bold, color: continueEnabled ? "#fff" : TEAL_ON }}>
             {continueLabel}
           </span>
           {step !== "confirmed" && (
@@ -3283,6 +3409,7 @@ function HistoryView({ activeOrders, pastOrders, fontFamily, isRTL, meals }: {
   const patientOrders = all.filter((o) => o.orderFor !== "guest");
   const companionOrders = all.filter((o) => o.orderFor === "guest");
   const display = tab === "all" ? all : tab === "patient" ? patientOrders : companionOrders;
+  const { compact } = useCanvasSize();
 
   const formatDate = (d: Date) => {
     const today = new Date();
@@ -3301,19 +3428,19 @@ function HistoryView({ activeOrders, pastOrders, fontFamily, isRTL, meals }: {
   return (
     <div className="flex-1 min-h-0 flex flex-col" style={{ overflow: "hidden" }}>
       {/* Tabs row */}
-      <div className="shrink-0 flex items-center justify-between px-[30px] pt-[28px] pb-[20px]">
-        <div className="flex items-center gap-3 flex-wrap">
+      <div className={`shrink-0 flex items-center justify-between ${compact ? "px-[16px] pt-[16px] pb-[12px] flex-wrap gap-2" : "px-[30px] pt-[28px] pb-[20px]"}`}>
+        <div className={`flex items-center flex-wrap ${compact ? "gap-2" : "gap-3"}`}>
           <HistoryTab active={tab === "all"} onClick={() => setTab("all")} label={isRTL ? "جميع الطلبات" : "All Orders"} count={all.length} fontFamily={fontFamily} />
           <HistoryTab active={tab === "patient"} onClick={() => setTab("patient")} label={isRTL ? "للمريض" : "Patient"} count={patientOrders.length} fontFamily={fontFamily} />
           <HistoryTab active={tab === "companion"} onClick={() => setTab("companion")} label={isRTL ? "للمرافق" : "Guest"} count={companionOrders.length} fontFamily={fontFamily} />
         </div>
-        <span style={{ fontFamily, fontSize: "22px", fontWeight: WEIGHT.semibold, color: INK_2 }}>
+        <span style={{ fontFamily, fontSize: compact ? "16px" : "22px", fontWeight: WEIGHT.semibold, color: INK_2 }}>
           {display.length} {isRTL ? (display.length > 1 ? "طلبات" : "طلب") : "Orders"}
         </span>
       </div>
 
       {/* List */}
-      <div className="flex-1 min-h-0 fo-scroll-strong overflow-y-auto pl-[30px] pr-[18px] pb-[24px] flex flex-col gap-[18px]">
+      <div className={`flex-1 min-h-0 fo-scroll-strong overflow-y-auto flex flex-col ${compact ? "px-[16px] pb-[16px] gap-[12px]" : "pl-[30px] pr-[18px] pb-[24px] gap-[18px]"}`}>
         {display.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 min-h-[300px]">
             <ClipboardList size={56} color="#D1D5DB" />
@@ -3344,6 +3471,22 @@ function OrderCard({ order, fontFamily, isRTL, formatDate, mealDef }: {
   const loc = (v: { en: string; ar: string }) => isRTL ? v.ar : v.en;
   const [open, setOpen] = useState(false);
   const isGuest = order.orderFor === "guest";
+  /* Phones: the "For Patient / Guest" tag moves under the order's details
+     instead of taking a fixed 185px beside them. Portrait: the details may
+     wrap, so they are spaced by a gap, not by dots that end up closing a line. */
+  const { compact, portrait } = useCanvasSize();
+  const forTag = (
+        <div className="flex items-center justify-center gap-2 shrink-0" style={{
+          width: compact ? "auto" : "185px", padding: compact ? "6px 12px" : "8px 16px", borderRadius: "10px",
+          backgroundColor: isGuest ? `rgba(var(--fo-secondary-rgb),0.08)` : TEAL_BG_TINT,
+          border: `1px solid ${isGuest ? `rgba(var(--fo-secondary-rgb),0.25)` : `${CARD_LINE}`}`,
+        }}>
+          <User size={16} color={isGuest ? SECONDARY : TEAL} />
+          <span style={{ fontFamily, fontSize: compact ? "14px" : "15px", fontWeight: WEIGHT.semibold, color: isGuest ? SECONDARY_ON : TEAL_ON, whiteSpace: "nowrap" }}>
+            {isGuest ? (isRTL ? "للمرافق" : "For Guest") : (isRTL ? "للمريض" : "For Patient")}
+          </span>
+        </div>
+  );
   const ChevronIcon = open ? ChevronDown : (isRTL ? ChevronLeft : ChevronRight);
   // Resolve meal label from mealId (language-independent) rather than stored mealType string
   const MEAL_LABELS: Record<string, { en: string; ar: string }> = {
@@ -3370,24 +3513,25 @@ function OrderCard({ order, fontFamily, isRTL, formatDate, mealDef }: {
         onClick={() => setOpen(!open)}
         className="w-full flex items-center active:scale-[0.995] transition-transform"
         style={{
-          padding: "20px 26px", gap: "20px",
+          padding: compact ? "14px 14px" : "20px 26px", gap: compact ? "12px" : "20px",
+          ...(compact ? { alignItems: "flex-start" } : {}),
           backgroundColor: "transparent", border: "none", outline: "none", cursor: "pointer",
           textAlign: isRTL ? "right" : "left",
         }}
       >
-        <div style={{ width: "60px", height: "60px", borderRadius: "50%", backgroundColor: isGuest ? "rgba(var(--fo-secondary-rgb,217,119,6),0.1)" : TEAL_15, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <Utensils size={28} color={isGuest ? SECONDARY : TEAL} />
+        <div style={{ width: compact ? "44px" : "60px", height: compact ? "44px" : "60px", borderRadius: "50%", backgroundColor: isGuest ? "rgba(var(--fo-secondary-rgb,217,119,6),0.1)" : TEAL_15, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Utensils size={compact ? 22 : 28} color={isGuest ? SECONDARY : TEAL} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3">
-            <span style={{ fontFamily, fontSize: "22px", fontWeight: WEIGHT.bold, color: INK }}>
+          <div className="flex items-center gap-3" style={compact ? { flexWrap: "wrap", rowGap: "2px" } : undefined}>
+            <span style={{ fontFamily, fontSize: compact ? "19px" : "22px", fontWeight: WEIGHT.bold, color: INK }}>
               {translatedMealType}
             </span>
             <span style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.normal, color: INK_2 }}>
               {orderRef(order.orderNumber)}
             </span>
           </div>
-          <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+          <div className={`flex mt-1.5 flex-wrap ${compact ? "flex-col items-start gap-1" : portrait ? "items-center gap-x-5 gap-y-1" : "items-center gap-3"}`}>
             <div className="flex items-center gap-1.5">
               <Clock size={14} color={INK_3} />
               <span style={{ fontFamily, fontSize: "14px", fontWeight: WEIGHT.medium, color: INK_2 }}>
@@ -3396,14 +3540,14 @@ function OrderCard({ order, fontFamily, isRTL, formatDate, mealDef }: {
             </div>
             {order.mealWindow && (
               <>
-                <span style={{ color: INK_3 }}>·</span>
+                {!portrait && <span style={{ color: INK_3 }}>·</span>}
                 <div className="flex items-center gap-1.5">
                   <Utensils size={14} color={INK_3} />
                   <span style={{ fontFamily, fontSize: "14px", fontWeight: WEIGHT.medium, color: INK_2 }}>
                     {isRTL ? "التوصيل" : "Delivery"} {locTimeRange(order.mealWindow, isRTL)}
                   </span>
                 </div>
-                <span style={{ color: INK_3 }}>·</span>
+                {!portrait && <span style={{ color: INK_3 }}>·</span>}
                 <div className="flex items-center gap-1.5">
                   <Calendar size={14} color={INK_3} />
                   <span style={{ fontFamily, fontSize: "14px", fontWeight: WEIGHT.medium, color: INK_2 }}>
@@ -3418,17 +3562,9 @@ function OrderCard({ order, fontFamily, isRTL, formatDate, mealDef }: {
               </>
             )}
           </div>
+          {compact && <div className="flex mt-2">{forTag}</div>}
         </div>
-        <div className="flex items-center justify-center gap-2 shrink-0" style={{
-          width: "185px", padding: "8px 16px", borderRadius: "10px",
-          backgroundColor: isGuest ? `rgba(var(--fo-secondary-rgb),0.08)` : TEAL_BG_TINT,
-          border: `1px solid ${isGuest ? `rgba(var(--fo-secondary-rgb),0.25)` : `${CARD_LINE}`}`,
-        }}>
-          <User size={16} color={isGuest ? SECONDARY : TEAL} />
-          <span style={{ fontFamily, fontSize: "15px", fontWeight: WEIGHT.semibold, color: isGuest ? SECONDARY_ON : TEAL_ON, whiteSpace: "nowrap" }}>
-            {isGuest ? (isRTL ? "للمرافق" : "For Guest") : (isRTL ? "للمريض" : "For Patient")}
-          </span>
-        </div>
+        {!compact && forTag}
         <div className="shrink-0 flex items-center justify-center" style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: TINT_BG }}>
           <ChevronIcon size={18} color={INK_2} />
         </div>
@@ -3437,8 +3573,8 @@ function OrderCard({ order, fontFamily, isRTL, formatDate, mealDef }: {
       {/* Expanded details — render unconditionally so siblings get natural layout */}
       {open && (
         <div>
-          <div style={{ padding: "0 26px 22px", borderTop: CARD_LINE_1 }}>
-              <div className="grid grid-cols-2 gap-4" style={{ paddingTop: "18px" }}>
+          <div style={{ padding: compact ? "0 14px 14px" : "0 26px 22px", borderTop: CARD_LINE_1 }}>
+              <div className={`grid gap-4 ${compact ? "grid-cols-1" : "grid-cols-2"}`} style={{ paddingTop: compact ? "14px" : "18px" }}>
                 {/* Your meal items — dedupe against comesWith so auto-included items never appear twice */}
                 {(() => {
                   const includedSet = new Set((comesWith || []).map((it: any) => `${it.en}|${it.ar}`));
@@ -3495,7 +3631,7 @@ function DetailBlock({ icon, label, count, isRTL, fontFamily, children, accentCo
         </span>
         {count !== undefined && (
           <div style={{
-            marginLeft: "auto",
+            marginLeft: "auto", flexShrink: 0, whiteSpace: "nowrap",
             padding: "3px 10px",
             borderRadius: "100px",
             backgroundColor: badgeBg || TEAL_15,
@@ -3515,15 +3651,17 @@ function DetailBlock({ icon, label, count, isRTL, fontFamily, children, accentCo
 function HistoryTab({ active, onClick, label, count, fontFamily, primary }: {
   active: boolean; onClick: () => void; label: string; count: number; fontFamily: string; primary?: boolean;
 }) {
+  const { compact } = useCanvasSize();
   return (
-    <button onClick={onClick} className="flex items-center gap-3 active:scale-95 transition-transform"
+    <button onClick={onClick} className={`flex items-center active:scale-95 transition-transform ${compact ? "gap-2" : "gap-3"}`}
       style={{
-        padding: "13px 22px", borderRadius: "30px",
+        padding: compact ? "8px 14px" : "13px 22px", borderRadius: "30px",
+        ...(compact ? { minHeight: "44px" } : {}),
         backgroundColor: active ? TEAL : SHEET,
         border: active ? "none" : CARD_LINE_1,
         outline: "none", cursor: "pointer",
       }}>
-      <span style={{ fontFamily, fontSize: "17px", fontWeight: WEIGHT.semibold, color: active ? "#fff" : INK_2 }}>
+      <span style={{ fontFamily, fontSize: compact ? "15px" : "17px", fontWeight: WEIGHT.semibold, color: active ? "#fff" : INK_2 }}>
         {label}
       </span>
       <div style={{

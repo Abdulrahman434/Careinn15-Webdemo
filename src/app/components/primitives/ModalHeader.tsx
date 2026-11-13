@@ -2,6 +2,7 @@ import { CSSProperties } from "react";
 import { X } from "lucide-react";
 import { useTheme, TEXT_STYLE, TYPE_SCALE, WEIGHT, LEADING } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import { useCanvasSize } from "../../lib/canvasSize";
 
 /**
  * ModalHeader — the one top row every app popup wears.
@@ -45,6 +46,9 @@ export function ModalHeader({
 }: ModalHeaderProps) {
   const { theme, setLocale } = useTheme();
   const { t, locale, isRTL, fontFamily } = useLocale();
+  /* On a phone the row is too narrow for the title beside four controls, so
+     the title takes a second line of its own under icon, language and close. */
+  const { compact } = useCanvasSize();
 
   const square: CSSProperties = {
     width: "48px",
@@ -54,21 +58,24 @@ export function ModalHeader({
 
   return (
     <div
-      className="shrink-0 flex items-center gap-4"
+      className={compact ? "shrink-0 flex flex-wrap items-center gap-x-3 gap-y-3" : "shrink-0 flex items-center gap-4"}
       style={{
-        padding: `20px ${padX}`,
+        padding: compact ? `16px ${padX}` : `20px ${padX}`,
         borderBottom: `1px solid ${theme.borderSubtle}`,
         ...style,
       }}
     >
       <div
         className="flex items-center justify-center shrink-0"
-        style={{ ...square, backgroundColor: theme.primarySubtle }}
+        style={{ ...square, backgroundColor: theme.primarySubtle, ...(compact ? { marginInlineEnd: "auto" } : null) }}
       >
         <Icon size={24} style={{ color: theme.primaryOn }} />
       </div>
 
-      <div className="flex-1 min-w-0" style={{ textAlign: isRTL ? "right" : "left" }}>
+      <div
+        className="flex-1 min-w-0"
+        style={{ textAlign: isRTL ? "right" : "left", ...(compact ? { order: 1, flexBasis: "100%" } : null) }}
+      >
         <h2
           style={{
             fontFamily,

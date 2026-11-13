@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { useCanvasSize } from "../lib/canvasSize";
 import { useTheme, SHADOW } from "./ThemeContext";
 import { useLocale } from "./i18n";
 
@@ -54,6 +55,7 @@ const MAX_W = 1200;
 const MAX_H = 900;
 
 export function ImageNotice({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  const canvas = useCanvasSize();
   const { theme } = useTheme();
   const { isRTL } = useLocale();
   const [visible, setVisible] = useState(false);
@@ -91,8 +93,9 @@ export function ImageNotice({ src, alt, onClose }: { src: string; alt: string; o
           draggable={false}
           className="block"
           style={{
-            maxWidth: MAX_W,
-            maxHeight: MAX_H,
+            /* Never past the canvas: a phone is far narrower than 1200. */
+            maxWidth: Math.min(MAX_W, canvas.width - 64),
+            maxHeight: Math.min(MAX_H, canvas.height - 160),
             width: "auto",
             height: "auto",
             objectFit: "contain",
