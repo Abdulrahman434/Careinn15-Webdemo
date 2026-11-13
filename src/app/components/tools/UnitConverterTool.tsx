@@ -1,6 +1,8 @@
 import { useState, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { toolHeader, toolHeaderGroup, toolHeaderButton, toolTitle, toolBody, toolFit } from "./toolLayout";
 import { ArrowLeft, ArrowRight, ArrowLeftRight } from "lucide-react";
 
 type ConversionCategory = "temperature" | "weight" | "length";
@@ -111,6 +113,7 @@ const conversions: Record<ConversionCategory, { units: ConversionUnit[]; icon: s
 export function UnitConverterTool({ onClose, onBackToTools }: { onClose: () => void; onBackToTools: () => void }) {
   const { theme } = useTheme();
   const { fontFamily, t, isRTL } = useLocale();
+  const { portrait, compact } = useCanvasSize();
   /* "Back" is to the right in Arabic and Urdu. */
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const [category, setCategory] = useState<ConversionCategory>("temperature");
@@ -144,18 +147,20 @@ export function UnitConverterTool({ onClose, onBackToTools }: { onClose: () => v
         className="shrink-0 flex items-center justify-between px-8"
         style={{
           height: "88px",
+          ...toolHeader(compact),
           backgroundColor: theme.surface,
           borderBottom: theme.cardBorder,
           boxShadow: SHADOW.lg,
         }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={toolHeaderGroup(compact)}>
           <button
             onClick={onBackToTools}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
             style={{
               width: "56px",
               height: "56px",
+              ...toolHeaderButton(compact),
               backgroundColor: theme.surfaceElevated,
               borderRadius: theme.radiusMd,
               border: "none",
@@ -170,6 +175,7 @@ export function UnitConverterTool({ onClose, onBackToTools }: { onClose: () => v
               fontSize: TYPE_SCALE.xl,
               fontWeight: WEIGHT.bold,
               color: theme.textHeading,
+              ...toolTitle(compact),
             }}
           >
             {t("tool.unitConverter")}
@@ -181,6 +187,7 @@ export function UnitConverterTool({ onClose, onBackToTools }: { onClose: () => v
           style={{
             width: "56px",
             height: "56px",
+            ...toolHeaderButton(compact),
             backgroundColor: theme.surfaceElevated,
             borderRadius: theme.radiusMd,
             border: "none",
@@ -192,9 +199,19 @@ export function UnitConverterTool({ onClose, onBackToTools }: { onClose: () => v
       </div>
 
       {/* Converter Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-16 py-12">
+      <div
+        className="flex-1 flex flex-col items-center justify-center px-16 py-12"
+        style={{ ...toolBody(portrait, compact), ...(portrait ? { justifyContent: "safe center" } : {}) }}
+      >
         {/* Category Selector */}
-        <div className="flex gap-4 mb-12">
+        <div
+          className="flex gap-4 mb-12"
+          style={
+            compact
+              ? { gap: "8px", marginBottom: "16px", maxWidth: "100%", flexShrink: 0, overflowX: "auto", scrollbarWidth: "none" }
+              : undefined
+          }
+        >
           {(Object.keys(conversions) as ConversionCategory[]).map((cat) => (
             <button
               key={cat}
@@ -206,7 +223,8 @@ export function UnitConverterTool({ onClose, onBackToTools }: { onClose: () => v
               }}
               className="cursor-pointer transition-transform"
               style={{
-                padding: "16px 32px",
+                padding: compact ? "12px 16px" : "16px 32px",
+                ...(portrait ? { flexShrink: 0 } : {}),
                 backgroundColor: category === cat ? theme.primary : theme.surface,
                 borderRadius: theme.radiusMd,
                 border: category === cat ? "none" : theme.cardBorder,
@@ -215,11 +233,11 @@ export function UnitConverterTool({ onClose, onBackToTools }: { onClose: () => v
               }}
             >
               <div className="flex items-center gap-3">
-                <span style={{ fontSize: "32px" }}>{conversions[cat].icon}</span>
+                <span style={{ fontSize: compact ? "24px" : "32px" }}>{conversions[cat].icon}</span>
                 <span
                   style={{
                     fontFamily: fontFamily,
-                    fontSize: TYPE_SCALE.md,
+                    fontSize: compact ? TYPE_SCALE.base : TYPE_SCALE.md,
                     fontWeight: WEIGHT.bold,
                     color: category === cat ? theme.textInverse : theme.textHeading,
                   }}
@@ -236,11 +254,13 @@ export function UnitConverterTool({ onClose, onBackToTools }: { onClose: () => v
           className="flex flex-col gap-6"
           style={{
             width: "800px",
+            ...toolFit(portrait, "800px"),
+            ...(portrait ? { flexShrink: 0 } : {}),
             backgroundColor: theme.surface,
             borderRadius: theme.radiusCard,
             border: theme.cardBorder,
             boxShadow: SHADOW.xl,
-            padding: "48px",
+            padding: compact ? "20px" : "48px",
           }}
         >
           {/* From Input */}
@@ -256,7 +276,7 @@ export function UnitConverterTool({ onClose, onBackToTools }: { onClose: () => v
             >
               From
             </label>
-            <div className="flex gap-4">
+            <div className="flex gap-4" style={compact ? { flexDirection: "column", gap: "12px" } : undefined}>
               <input
                 type="number"
                 value={fromValue}
@@ -333,7 +353,7 @@ export function UnitConverterTool({ onClose, onBackToTools }: { onClose: () => v
             >
               To
             </label>
-            <div className="flex gap-4">
+            <div className="flex gap-4" style={compact ? { flexDirection: "column", gap: "12px" } : undefined}>
               <div
                 className="flex-1 flex items-center"
                 style={{

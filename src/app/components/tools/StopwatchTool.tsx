@@ -1,11 +1,14 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { toolHeader, toolHeaderGroup, toolHeaderButton, toolTitle, toolBody, toolPanes, toolSidePanel } from "./toolLayout";
 import { ArrowLeft, ArrowRight, Play, Pause, RotateCcw, Timer } from "lucide-react";
 
 export function StopwatchTool({ onClose, onBackToTools }: { onClose: () => void; onBackToTools: () => void }) {
   const { theme } = useTheme();
   const { fontFamily, t, isRTL } = useLocale();
+  const { portrait, compact } = useCanvasSize();
   /* "Back" is to the right in Arabic and Urdu. */
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const [time, setTime] = useState(0);
@@ -73,18 +76,20 @@ export function StopwatchTool({ onClose, onBackToTools }: { onClose: () => void;
         className="shrink-0 flex items-center justify-between px-8"
         style={{
           height: "88px",
+          ...toolHeader(compact),
           backgroundColor: theme.surface,
           borderBottom: theme.cardBorder,
           boxShadow: SHADOW.lg,
         }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={toolHeaderGroup(compact)}>
           <button
             onClick={onBackToTools}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
             style={{
               width: "56px",
               height: "56px",
+              ...toolHeaderButton(compact),
               backgroundColor: theme.surfaceElevated,
               borderRadius: theme.radiusMd,
               border: "none",
@@ -99,6 +104,7 @@ export function StopwatchTool({ onClose, onBackToTools }: { onClose: () => void;
               fontSize: TYPE_SCALE.xl,
               fontWeight: WEIGHT.bold,
               color: theme.textHeading,
+              ...toolTitle(compact),
             }}
           >
             {t("tool.stopwatch")}
@@ -110,6 +116,7 @@ export function StopwatchTool({ onClose, onBackToTools }: { onClose: () => void;
           style={{
             width: "56px",
             height: "56px",
+            ...toolHeaderButton(compact),
             backgroundColor: theme.surfaceElevated,
             borderRadius: theme.radiusMd,
             border: "none",
@@ -121,14 +128,15 @@ export function StopwatchTool({ onClose, onBackToTools }: { onClose: () => void;
       </div>
 
       {/* Stopwatch Content */}
-      <div className="flex-1 flex gap-8 px-16 py-12">
+      <div className="flex-1 flex gap-8 px-16 py-12" style={{ ...toolBody(portrait, compact), ...toolPanes(portrait, compact) }}>
         {/* Timer Display */}
-        <div className="flex-1 flex flex-col items-center justify-center">
+        <div className="flex-1 flex flex-col items-center justify-center" style={portrait ? { flex: "none" } : undefined}>
           <div
             className="relative flex items-center justify-center mb-12"
             style={{
               width: "480px",
               height: "480px",
+              ...(compact ? { width: "300px", height: "300px", marginBottom: "24px" } : {}),
               backgroundColor: theme.surface,
               borderRadius: "50%",
               border: theme.cardBorder,
@@ -152,7 +160,7 @@ export function StopwatchTool({ onClose, onBackToTools }: { onClose: () => void;
                 <span
                   style={{
                     fontFamily: fontFamily,
-                    fontSize: "96px",
+                    fontSize: compact ? "64px" : "96px",
                     fontWeight: WEIGHT.bold,
                     color: theme.textHeading,
                     lineHeight: 1,
@@ -163,7 +171,7 @@ export function StopwatchTool({ onClose, onBackToTools }: { onClose: () => void;
                 <span
                   style={{
                     fontFamily: fontFamily,
-                    fontSize: "64px",
+                    fontSize: compact ? "44px" : "64px",
                     fontWeight: WEIGHT.bold,
                     color: theme.textMuted,
                     lineHeight: 1,
@@ -174,7 +182,7 @@ export function StopwatchTool({ onClose, onBackToTools }: { onClose: () => void;
                 <span
                   style={{
                     fontFamily: fontFamily,
-                    fontSize: "96px",
+                    fontSize: compact ? "64px" : "96px",
                     fontWeight: WEIGHT.bold,
                     color: theme.textHeading,
                     lineHeight: 1,
@@ -185,7 +193,7 @@ export function StopwatchTool({ onClose, onBackToTools }: { onClose: () => void;
                 <span
                   style={{
                     fontFamily: fontFamily,
-                    fontSize: "48px",
+                    fontSize: compact ? "32px" : "48px",
                     fontWeight: WEIGHT.semibold,
                     color: theme.textMuted,
                     lineHeight: 1,
@@ -269,6 +277,8 @@ export function StopwatchTool({ onClose, onBackToTools }: { onClose: () => void;
           className="flex flex-col"
           style={{
             width: "400px",
+            ...toolSidePanel(portrait),
+            ...(portrait ? { flexGrow: 1, minHeight: compact ? "240px" : "480px" } : {}),
             backgroundColor: theme.surface,
             borderRadius: theme.radiusCard,
             border: theme.cardBorder,

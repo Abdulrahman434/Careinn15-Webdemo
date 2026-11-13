@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { toolHeader, toolHeaderGroup, toolHeaderButton, toolTitle, toolBody, toolPanes, toolSidePanel } from "./toolLayout";
 import { ArrowLeft, ArrowRight, Play, Pause, Wind } from "lucide-react";
 
 type BreathingPhase = "inhale" | "hold1" | "exhale" | "hold2";
@@ -36,6 +38,7 @@ const techniques: BreathingTechnique[] = [
 export function BreathingTool({ onClose, onBackToTools }: { onClose: () => void; onBackToTools: () => void }) {
   const { theme } = useTheme();
   const { fontFamily, t, isRTL } = useLocale();
+  const { portrait, compact } = useCanvasSize();
   /* "Back" is to the right in Arabic and Urdu. */
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const [selectedTechnique, setSelectedTechnique] = useState<BreathingTechnique>(techniques[0]);
@@ -133,18 +136,20 @@ export function BreathingTool({ onClose, onBackToTools }: { onClose: () => void;
         className="shrink-0 flex items-center justify-between px-8"
         style={{
           height: "88px",
+          ...toolHeader(compact),
           backgroundColor: theme.surface,
           borderBottom: theme.cardBorder,
           boxShadow: SHADOW.lg,
         }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={toolHeaderGroup(compact)}>
           <button
             onClick={onBackToTools}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
             style={{
               width: "56px",
               height: "56px",
+              ...toolHeaderButton(compact),
               backgroundColor: theme.surfaceElevated,
               borderRadius: theme.radiusMd,
               border: "none",
@@ -159,6 +164,7 @@ export function BreathingTool({ onClose, onBackToTools }: { onClose: () => void;
               fontSize: TYPE_SCALE.xl,
               fontWeight: WEIGHT.bold,
               color: theme.textHeading,
+              ...toolTitle(compact),
             }}
           >
             {t("tool.breathing")}
@@ -170,6 +176,7 @@ export function BreathingTool({ onClose, onBackToTools }: { onClose: () => void;
           style={{
             width: "56px",
             height: "56px",
+            ...toolHeaderButton(compact),
             backgroundColor: theme.surfaceElevated,
             borderRadius: theme.radiusMd,
             border: "none",
@@ -181,15 +188,17 @@ export function BreathingTool({ onClose, onBackToTools }: { onClose: () => void;
       </div>
 
       {/* Breathing Content */}
-      <div className="flex-1 flex gap-8 px-16 py-12">
-        {/* Breathing Visualization */}
-        <div className="flex-1 flex flex-col items-center justify-center">
+      <div className="flex-1 flex gap-8 px-16 py-12" style={{ ...toolBody(portrait, compact), ...toolPanes(portrait, compact) }}>
+        {/* Breathing Visualization — portrait: takes the spare height and keeps
+            the circle in its middle, the techniques under it. */}
+        <div className="flex-1 flex flex-col items-center justify-center" style={portrait ? { flex: "1 0 auto" } : undefined}>
           {/* Breathing Circle */}
           <div
             className="relative flex items-center justify-center mb-12"
             style={{
               width: "500px",
               height: "500px",
+              ...(compact ? { width: "280px", height: "280px", marginBottom: "24px" } : {}),
             }}
           >
             {/* Animated Circle */}
@@ -217,10 +226,11 @@ export function BreathingTool({ onClose, onBackToTools }: { onClose: () => void;
             {/* Text Content */}
             <div className="relative z-10 text-center">
               <p
-                className="mb-4"
+                className={compact ? "mb-2" : "mb-4"}
                 style={{
                   fontFamily: fontFamily,
-                  fontSize: TYPE_SCALE["2xl"],
+                  /* Phones: the resting circle is ~175px — the label must fit inside it. */
+                  fontSize: compact ? TYPE_SCALE.base : TYPE_SCALE["2xl"],
                   fontWeight: WEIGHT.bold,
                   color: theme.textHeading,
                 }}
@@ -231,7 +241,7 @@ export function BreathingTool({ onClose, onBackToTools }: { onClose: () => void;
                 <p
                   style={{
                     fontFamily: fontFamily,
-                    fontSize: "96px",
+                    fontSize: compact ? "64px" : "96px",
                     fontWeight: WEIGHT.bold,
                     color: selectedTechnique.color,
                     lineHeight: 1,
@@ -241,18 +251,19 @@ export function BreathingTool({ onClose, onBackToTools }: { onClose: () => void;
                 </p>
               )}
               {!isActive && (
-                <Wind size={96} color={theme.textMuted} strokeWidth={1.5} />
+                <Wind size={compact ? 56 : 96} color={theme.textMuted} strokeWidth={1.5} className="mx-auto" />
               )}
             </div>
           </div>
 
           {/* Controls */}
-          <div className="flex items-center gap-6 mb-6">
+          <div className="flex items-center gap-6 mb-6" style={compact ? { gap: "12px" } : undefined}>
             {!isActive ? (
               <button
                 onClick={handleStart}
                 className="flex items-center gap-3 px-12 py-5 cursor-pointer active:scale-95 transition-transform"
                 style={{
+                  ...(compact ? { paddingInline: "24px" } : {}),
                   backgroundColor: selectedTechnique.color,
                   borderRadius: theme.radiusMd,
                   border: "none",
@@ -278,6 +289,7 @@ export function BreathingTool({ onClose, onBackToTools }: { onClose: () => void;
                   onClick={handlePause}
                   className="flex items-center gap-3 px-12 py-5 cursor-pointer active:scale-95 transition-transform"
                   style={{
+                    ...(compact ? { paddingInline: "24px" } : {}),
                     backgroundColor: "#D10044",
                     borderRadius: theme.radiusMd,
                     border: "none",
@@ -301,6 +313,7 @@ export function BreathingTool({ onClose, onBackToTools }: { onClose: () => void;
                   onClick={handleReset}
                   className="px-12 py-5 cursor-pointer active:scale-95 transition-transform"
                   style={{
+                    ...(compact ? { paddingInline: "24px" } : {}),
                     backgroundColor: theme.surfaceElevated,
                     borderRadius: theme.radiusMd,
                     border: "none",
@@ -346,6 +359,7 @@ export function BreathingTool({ onClose, onBackToTools }: { onClose: () => void;
           className="flex flex-col gap-4"
           style={{
             width: "400px",
+            ...toolSidePanel(portrait),
           }}
         >
           <h3

@@ -1,6 +1,8 @@
 import { useState, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { toolHeader, toolHeaderGroup, toolHeaderButton, toolTitle, toolBody, toolPanes, toolSidePanel } from "./toolLayout";
 import { ArrowLeft, ArrowRight, Plus, Trash2, FileText } from "lucide-react";
 
 interface Note {
@@ -13,6 +15,7 @@ interface Note {
 export function NotesTool({ onClose, onBackToTools }: { onClose: () => void; onBackToTools: () => void }) {
   const { theme } = useTheme();
   const { fontFamily, t, isRTL } = useLocale();
+  const { portrait, compact } = useCanvasSize();
   /* "Back" is to the right in Arabic and Urdu. */
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const [notes, setNotes] = useState<Note[]>([
@@ -99,18 +102,20 @@ export function NotesTool({ onClose, onBackToTools }: { onClose: () => void; onB
         className="shrink-0 flex items-center justify-between px-8"
         style={{
           height: "88px",
+          ...toolHeader(compact),
           backgroundColor: theme.surface,
           borderBottom: theme.cardBorder,
           boxShadow: SHADOW.lg,
         }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={toolHeaderGroup(compact)}>
           <button
             onClick={onBackToTools}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
             style={{
               width: "56px",
               height: "56px",
+              ...toolHeaderButton(compact),
               backgroundColor: theme.surfaceElevated,
               borderRadius: theme.radiusMd,
               border: "none",
@@ -125,16 +130,19 @@ export function NotesTool({ onClose, onBackToTools }: { onClose: () => void; onB
               fontSize: TYPE_SCALE.xl,
               fontWeight: WEIGHT.bold,
               color: theme.textHeading,
+              ...toolTitle(compact),
             }}
           >
             {t("tool.notes")}
           </h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={toolHeaderGroup(compact)}>
           <button
             onClick={handleCreateNote}
+            aria-label="New Note"
             className="flex items-center gap-2 px-6 py-3 cursor-pointer active:scale-95 transition-transform"
             style={{
+              ...toolHeaderButton(compact),
               backgroundColor: theme.primary,
               borderRadius: theme.radiusMd,
               border: "none",
@@ -142,7 +150,7 @@ export function NotesTool({ onClose, onBackToTools }: { onClose: () => void; onB
             }}
           >
             <Plus size={20} color={theme.textInverse} />
-            <span
+            {!compact && <span
               style={{
                 fontFamily: fontFamily,
                 fontSize: TYPE_SCALE.base,
@@ -151,7 +159,7 @@ export function NotesTool({ onClose, onBackToTools }: { onClose: () => void; onB
               }}
             >
               New Note
-            </span>
+            </span>}
           </button>
           <button
             onClick={onClose}
@@ -159,6 +167,7 @@ export function NotesTool({ onClose, onBackToTools }: { onClose: () => void; onB
             style={{
               width: "56px",
               height: "56px",
+              ...toolHeaderButton(compact),
               backgroundColor: theme.surfaceElevated,
               borderRadius: theme.radiusMd,
               border: "none",
@@ -171,13 +180,18 @@ export function NotesTool({ onClose, onBackToTools }: { onClose: () => void; onB
       </div>
 
       {/* Notes Content */}
-      <div className="flex-1 flex gap-6 px-8 py-6 overflow-hidden">
+      <div
+        className="flex-1 flex gap-6 px-8 py-6 overflow-hidden"
+        style={{ ...toolBody(portrait, compact), ...toolPanes(portrait, compact) }}
+      >
         {/* Notes List */}
         <div
           className="flex flex-col gap-3 overflow-y-auto"
           style={{
             width: "400px",
             padding: "8px",
+            ...toolSidePanel(portrait),
+            ...(portrait ? { maxHeight: "40%", padding: 0 } : {}),
           }}
         >
           {notes.length === 0 ? (
@@ -255,7 +269,7 @@ export function NotesTool({ onClose, onBackToTools }: { onClose: () => void; onB
         </div>
 
         {/* Note Editor */}
-        <div className="flex-1 flex flex-col gap-4">
+        <div className="flex-1 flex flex-col gap-4" style={portrait ? { minHeight: compact ? "360px" : "640px" } : undefined}>
           {selectedNote ? (
             <div
               className="flex-1 flex flex-col"
@@ -264,7 +278,7 @@ export function NotesTool({ onClose, onBackToTools }: { onClose: () => void; onB
                 borderRadius: theme.radiusCard,
                 border: theme.cardBorder,
                 boxShadow: SHADOW.md,
-                padding: "32px",
+                padding: compact ? "20px" : "32px",
               }}
             >
               {/* Title Input */}
