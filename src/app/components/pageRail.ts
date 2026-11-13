@@ -3,10 +3,11 @@ import type { CSSProperties } from "react";
 /**
  * The section rail of a two-pane internal page (Room Control, Patient
  * Services, Live TV, About Us…): a column down the leading edge of the page
- * card in landscape, and in portrait (useCanvasSize().portrait — every size)
- * a strip of the same buttons across its top that scrolls sideways, so the
- * section's content under it gets the full width. Callers pass that flag
- * as `compact` below.
+ * card, and — where a page has no room for the column (phones for Patient
+ * Services and Live TV; every portrait size for pages that pass
+ * useCanvasSize().portrait) — a strip of the same buttons across its top
+ * that scrolls sideways, so the content under it gets the full width.
+ * Callers pass that choice as `compact` below.
  *
  *   pageRailCard  the white page card: row (rail | content) or column.
  *   pageRail      the rail itself.
@@ -35,9 +36,10 @@ export function pageRail(compact: boolean, width: number, divider: string): CSSP
     : {
         display: "flex",
         flexDirection: "column",
-        /* Full width on the wide landscape card; on a portrait tablet the
-           rail gives way so the content keeps most of the card. */
-        width: `clamp(220px, 28%, ${width}px)`,
+        /* The landscape width everywhere it is a column (portrait tablets
+           and the bedside portrait screen included), so no label that fits
+           in landscape is cut short there. */
+        width: `${width}px`,
         flexShrink: 0,
         borderInlineEnd: `1px solid ${divider}`,
       };
