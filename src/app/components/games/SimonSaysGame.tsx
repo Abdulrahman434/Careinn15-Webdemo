@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderGroup, gameHeaderClose, gameBody, GameBoardArea, gameBoard, gameModal, gameControl } from "./gameLayout";
 import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, ArrowLeft, Play } from "lucide-react";
@@ -19,6 +21,7 @@ const SPEED_CONFIG: Record<Speed, number> = {
 
 export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
+  const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
   const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-simon-says') ?? (locale === 'ar' ? 'ar' : 'en'));
   const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
@@ -201,10 +204,11 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
           backgroundColor: theme.surface,
           borderBottom: theme.cardBorder,
           boxShadow: SHADOW.lg,
+          ...gameHeader(size),
         }}
       >
-          <div className="flex items-center gap-4">
-            <GameLanguageToggle gameKey="simon-says" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
+          <div className="flex items-center gap-4" style={gameHeaderLead(size)}>
+            {!size.portrait && <GameLanguageToggle gameKey="simon-says" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />}
           <button
             onClick={onBackToGames}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
@@ -225,21 +229,23 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
               fontSize: TYPE_SCALE.xl,
               fontWeight: WEIGHT.bold,
               color: theme.textHeading,
+              ...gameTitle(size),
             }}
           >
             {gt.simonSays}
           </h1>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-6" style={gameHeaderTools(size)}>
+          {size.portrait && <GameLanguageToggle gameKey="simon-says" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />}
           {/* Settings */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" style={gameHeaderGroup(size)}>
             <select 
               value={speed}
               onChange={(e) => setSpeed(e.target.value as Speed)}
               style={{
                 fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.medium,
-                padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder,
+                padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder, ...gameControl(size),
                 backgroundColor: theme.surfaceElevated, color: theme.textHeading, outline: 'none'
               }}
             >
@@ -255,7 +261,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
               }}
               style={{
                 fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.medium,
-                padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder,
+                padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder, ...gameControl(size),
                 backgroundColor: theme.surfaceElevated, color: theme.textHeading, outline: 'none'
               }}
             >
@@ -264,7 +270,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
             </select>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4" style={gameHeaderGroup(size)}>
             <div className="flex flex-col items-end">
               <span style={{ fontFamily, fontSize: '12px', color: theme.textMuted }}>{gt.best}: {highScore}</span>
               <span style={{ fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.bold, color: theme.primaryOn }}>{gt.score}: {score}</span>
@@ -301,6 +307,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
                 borderRadius: theme.radiusMd,
                 border: "none",
                 outline: "none",
+              ...gameHeaderClose(size),
               }}
             >
               <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
@@ -310,7 +317,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
       </div>
 
       {/* Game Board */}
-      <div className="flex-1 flex flex-col items-center justify-center px-16 py-12 gap-8">
+      <div className="flex-1 flex flex-col items-center justify-center px-16 py-12 gap-8" style={gameBody(size)}>
         <h2
           style={{
             fontFamily: fontFamily,
@@ -321,11 +328,13 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
         >
           {message}
         </h2>
+        <GameBoardArea>
         <div
           className="grid gap-4"
           style={{
             gridTemplateColumns: `repeat(${mode === 'classic' ? 2 : 3}, 160px)`,
             gridTemplateRows: `repeat(${mode === 'classic' ? 2 : 2}, 160px)`,
+            ...gameBoard(size, mode === 'classic' ? 2 : 3, 2),
           }}
         >
           {currentColors.map((color, index) => (
@@ -344,6 +353,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
             />
           ))}
         </div>
+        </GameBoardArea>
       </div>
 
       {/* Game Over Modal */}
@@ -362,6 +372,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
               backgroundColor: theme.surface,
               borderRadius: theme.radiusCard,
               boxShadow: SHADOW["2xl"],
+              ...gameModal(size),
               border: theme.cardBorder,
             }}
           >
@@ -440,6 +451,7 @@ export function SimonSaysGame({ onClose, onBackToGames }: { onClose: () => void;
               backgroundColor: theme.surface,
               borderRadius: theme.radiusCard,
               boxShadow: SHADOW["2xl"],
+              ...gameModal(size),
               border: theme.cardBorder,
               maxWidth: "500px",
               width: "90%"

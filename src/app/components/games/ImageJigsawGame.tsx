@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose, gameBody, gameGroup, GameBoardArea, gameModal } from "./gameLayout";
 import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, ArrowLeft, Camera, Image as ImageIcon } from "lucide-react";
@@ -35,6 +37,7 @@ const IMAGES: Record<Category, string[]> = {
 
 export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
+  const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
   const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-jigsaw-puzzle') ?? (locale === 'ar' ? 'ar' : 'en'));
   const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
@@ -247,8 +250,8 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }} dir={dir}>
-      <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg }}>
-        <div className="flex items-center gap-4">
+      <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg, ...gameHeader(size) }}>
+        <div className="flex items-center gap-4" style={gameHeaderLead(size)}>
           <button
             onClick={() => {
               if (gameState !== "menu") {
@@ -262,10 +265,10 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
           >
             <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
-          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.puzzle}</h1>
+          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading, ...gameTitle(size) }}>{gt.puzzle}</h1>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-6" style={gameHeaderTools(size)}>
           {gameState === "playing" && (
             <>
               <div className="flex flex-col items-end">
@@ -295,13 +298,13 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
             </>
           )}
           <GameLanguageToggle gameKey="jigsaw-puzzle" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
-          <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
+          <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none", ...gameHeaderClose(size) }}>
             <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
           </button>
         </div>
       </div>
 
-      <div className="flex-1 relative flex flex-col items-center justify-center p-8 overflow-auto">
+      <div className="flex-1 relative flex flex-col items-center justify-center p-8 overflow-auto" style={gameBody(size)}>
         {gameState === "menu" && (
           <div className="w-full max-w-6xl flex flex-col items-center gap-10">
             <div className="text-center">
@@ -390,18 +393,20 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
           <>
             <div
               className="absolute top-8 left-8 w-[200px] rounded-xl overflow-hidden shadow-md z-10 pointer-events-none"
-              style={{ border: `2px solid ${theme.textMuted || '#ccc'}`, aspectRatio: imageAspectRatio || 1 }}
+              style={{ border: `2px solid ${theme.textMuted || '#ccc'}`, aspectRatio: imageAspectRatio || 1, ...(size.portrait ? { position: "static", flexShrink: 0, width: size.compact ? 120 : 200 } : {}) }}
             >
               <ApiImage src={imageUrl} alt="Puzzle preview" className="w-full h-full object-contain bg-gray-100" />
             </div>
-            <div className="relative flex flex-col items-center gap-8">
+            <div className="relative flex flex-col items-center gap-8" style={gameGroup(size)}>
+              <GameBoardArea>
               <div
                 className="grid gap-1 bg-gray-200 p-1 rounded-xl shadow-2xl overflow-hidden"
                 style={{
                   direction: "ltr",
                   gridTemplateColumns: `repeat(${difficulty}, 1fr)`,
                   width: "min(80vw, 600px)",
-                  aspectRatio: imageAspectRatio || 1
+                  aspectRatio: imageAspectRatio || 1,
+                  ...(size.portrait ? { width: `min(100cqw, calc(100cqh * ${imageAspectRatio || 1}))` } : {}),
                 }}
               >
                 {pieces.map((id, i) => {
@@ -439,6 +444,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
                   );
                 })}
               </div>
+              </GameBoardArea>
               <div className="flex gap-4">
                 <div className="px-6 py-3 bg-white rounded-2xl shadow-md border border-gray-100 flex flex-col items-center">
                   <span className="text-xs uppercase text-gray-400 font-bold">{gt.jigsawCategory}</span>
@@ -523,6 +529,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
               backgroundColor: theme.surface,
               borderRadius: theme.radiusCard,
               boxShadow: SHADOW["2xl"],
+              ...gameModal(size),
               border: theme.cardBorder,
               maxWidth: "500px",
               width: "90%"

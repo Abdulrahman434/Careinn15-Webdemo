@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose, gamePanel, gameModal, gameControl } from "./gameLayout";
 import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Timer, RotateCcw, ArrowLeft, Zap } from "lucide-react";
@@ -10,6 +12,7 @@ type Rating = 'Excellent!' | 'Good' | 'Slow';
 
 export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
+  const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
   const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-reaction-time') ?? (locale === 'ar' ? 'ar' : 'en'));
   const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
@@ -155,15 +158,15 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }} dir={dir}>
-      <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg }}>
-        <div className="flex items-center gap-4">
+      <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg, ...gameHeader(size) }}>
+        <div className="flex items-center gap-4" style={gameHeaderLead(size)}>
           <button onClick={onBackToGames} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
             <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
-          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.reactionTime}</h1>
+          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading, ...gameTitle(size) }}>{gt.reactionTime}</h1>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={gameHeaderTools(size)}>
           <GameLanguageToggle gameKey="reaction-time" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
           <select
             value={mode}
@@ -177,7 +180,7 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
                 setShowResumeModal(true);
               }
             }}
-            style={{ padding: "8px 12px", borderRadius: theme.radiusMd, border: theme.cardBorder, outline: "none", fontFamily: fontFamily }}
+            style={{ padding: "8px 12px", borderRadius: theme.radiusMd, border: theme.cardBorder, outline: "none", fontFamily: fontFamily, ...gameControl(size) }}
           >
             <option value="click">{gt.reactionVisualClick}</option>
             <option value="sound">{gt.reactionAudioBeep}</option>
@@ -190,15 +193,15 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
             <RotateCcw size={20} color={theme.textInverse} />
             <span style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold, color: theme.textInverse }}>{gt.reset}</span>
           </button>
-          <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
+          <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none", ...gameHeaderClose(size) }}>
             <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
           </button>
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden" style={size.portrait ? { flexDirection: "column", overflowY: "auto" } : undefined}>
         {/* Left Side: Leaderboard */}
-        <div className="w-80 border-r p-8 flex flex-col gap-6" style={{ backgroundColor: theme.surface, borderColor: theme.cardBorder }}>
+        <div className="w-80 border-r p-8 flex flex-col gap-6" style={{ backgroundColor: theme.surface, borderColor: theme.cardBorder, ...gamePanel(size), ...(size.portrait ? { order: 2, borderRightWidth: 0, borderTopWidth: 1, ...(size.compact ? { padding: 16, gap: 16 } : {}) } : {}) }}>
           <h2 style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.reactionTop5} ({mode === 'click' ? gt.reactionVisualClick : mode === 'sound' ? gt.reactionAudioBeep : gt.reactionSymbolCheck})</h2>
           <div className="flex flex-col gap-3">
             {leaderboard[mode].length === 0 ? (
@@ -225,10 +228,11 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
           className="flex-1 flex flex-col items-center justify-center cursor-pointer transition-colors duration-200"
           onClick={handleTap}
           style={{
+            ...(size.portrait ? { flexShrink: 0, minHeight: Math.round(size.height * 0.55), ...(size.compact ? { padding: 16 } : {}) } : {}),
             backgroundColor: gameState === "active" ? "#4ADE80" : gameState === "waiting" ? "#F87171" : gameState === "too-early" ? "#F59E0B" : theme.background
           }}
         >
-          <div className="flex flex-col items-center gap-8 p-12 bg-white/10 backdrop-blur-md rounded-[40px] border border-white/20 shadow-2xl max-w-md w-full text-center">
+          <div className="flex flex-col items-center gap-8 p-12 bg-white/10 backdrop-blur-md rounded-[40px] border border-white/20 shadow-2xl max-w-md w-full text-center" style={size.compact ? { padding: 24 } : undefined}>
             {gameState === "idle" && (
               <>
                 <div className="w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
@@ -324,6 +328,7 @@ export function ReactionTimeGame({ onClose, onBackToGames }: { onClose: () => vo
               backgroundColor: theme.surface,
               borderRadius: theme.radiusCard,
               boxShadow: SHADOW["2xl"],
+              ...gameModal(size),
               border: theme.cardBorder,
               maxWidth: "500px",
               width: "90%"

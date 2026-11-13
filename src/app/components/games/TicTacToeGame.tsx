@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose, gameBody, gameGroup, gamePanel, GameBoardArea, gameBoard, gameModal } from "./gameLayout";
 import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, Circle, X, ArrowLeft } from "lucide-react";
@@ -24,6 +26,7 @@ function calculateWinner(squares: Player[]): Player {
 
 export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
+  const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
   const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-tictactoe') ?? (locale === 'ar' ? 'ar' : 'en'));
   const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
@@ -198,9 +201,10 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
           backgroundColor: theme.surface,
           borderBottom: theme.cardBorder,
           boxShadow: SHADOW.lg,
+          ...gameHeader(size),
         }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={gameHeaderLead(size)}>
           <button
             onClick={onBackToGames}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
@@ -221,12 +225,13 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
               fontSize: TYPE_SCALE.xl,
               fontWeight: WEIGHT.bold,
               color: theme.textHeading,
+              ...gameTitle(size),
             }}
           >
             {gt.ticTacToe}
           </h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={gameHeaderTools(size)}>
           <GameLanguageToggle gameKey="tictactoe" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
           <button
             onClick={resetGame}
@@ -276,6 +281,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
               borderRadius: theme.radiusMd,
               border: "none",
               outline: "none",
+            ...gameHeaderClose(size),
             }}
           >
             <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
@@ -284,9 +290,9 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
       </div>
 
       {/* Game Content */}
-      <div className="flex-1 flex items-center justify-center gap-16 px-16 py-12">
+      <div className="flex-1 flex items-center justify-center gap-16 px-16 py-12" style={gameBody(size)}>
         {/* Game Board */}
-        <div className="flex flex-col items-center gap-8">
+        <div className="flex flex-col items-center gap-8" style={gameGroup(size)}>
           {/* Status */}
           <div
             className="px-8 py-4"
@@ -310,11 +316,13 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
           </div>
 
           {/* Board */}
+          <GameBoardArea>
           <div
             className="grid gap-4"
             style={{
               gridTemplateColumns: "repeat(3, 180px)",
               gridTemplateRows: "repeat(3, 180px)",
+              ...gameBoard(size, 3),
             }}
           >
             {squares.map((square, i) => (
@@ -336,6 +344,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
               </button>
             ))}
           </div>
+          </GameBoardArea>
 
           {/* Game Mode Selection - Under the board */}
           <div className="flex gap-4 p-1 bg-gray-100 rounded-2xl" style={{ backgroundColor: theme.surfaceElevated, border: theme.cardBorder }}>
@@ -373,6 +382,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
             border: theme.cardBorder,
             boxShadow: SHADOW.md,
             minWidth: "320px",
+            ...gamePanel(size),
           }}
         >
           <h2
@@ -523,6 +533,7 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
               backgroundColor: theme.surface,
               borderRadius: theme.radiusCard,
               boxShadow: SHADOW["2xl"],
+              ...gameModal(size),
               border: theme.cardBorder,
               maxWidth: "500px",
               width: "90%"

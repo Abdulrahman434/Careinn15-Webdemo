@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "../ThemeContext";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderGroup, gameHeaderClose, gameBody, GameBoardArea, gameBoard, gameCellFont, gameModal, gameControl } from "./gameLayout";
 import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, ArrowLeft } from "lucide-react";
@@ -30,6 +32,7 @@ const DIFFICULTY_CONFIG: Record<Difficulty, { grid: number; pairs: number }> = {
 
 export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
+  const size = useCanvasSize();
   const { t, fontFamily, isRTL, dir, locale } = useLocale();
   const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-memory-match') ?? (locale === 'ar' ? 'ar' : 'en'));
   const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
@@ -262,9 +265,10 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
           backgroundColor: theme.surface,
           borderBottom: theme.cardBorder,
           boxShadow: SHADOW.lg,
+          ...gameHeader(size),
         }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={gameHeaderLead(size)}>
           <button
             onClick={onBackToGames}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
@@ -285,21 +289,22 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
               fontSize: TYPE_SCALE.xl,
               fontWeight: WEIGHT.bold,
               color: theme.textHeading,
+              ...gameTitle(size),
             }}
           >
             {gt.memoryMatch}
           </h1>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-6" style={gameHeaderTools(size)}>
           {/* Controls */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" style={gameHeaderGroup(size)}>
             <select
               value={difficulty}
               onChange={(e) => initializeGame(e.target.value as Difficulty, currentTheme)}
               style={{
                 fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.medium,
-                padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder,
+                padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder, ...gameControl(size),
                 backgroundColor: theme.surfaceElevated, color: theme.textHeading, outline: 'none'
               }}
             >
@@ -312,7 +317,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
               onChange={(e) => initializeGame(difficulty, e.target.value as Theme)}
               style={{
                 fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.medium,
-                padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder,
+                padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder, ...gameControl(size),
                 backgroundColor: theme.surfaceElevated, color: theme.textHeading, outline: 'none'
               }}
             >
@@ -323,7 +328,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
             </select>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4" style={gameHeaderGroup(size)}>
             <div className="flex flex-col items-end">
               <span style={{ fontFamily, fontSize: '12px', color: theme.textMuted }}>{gt.best}: {bestScores[difficulty] ? formatTime(bestScores[difficulty]) : '--:--'}</span>
               <span style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.bold, color: theme.primaryOn }}>{formatTime(timer)}</span>
@@ -379,6 +384,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
                 borderRadius: theme.radiusMd,
                 border: "none",
                 outline: "none",
+              ...gameHeaderClose(size),
               }}
             >
               <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
@@ -388,12 +394,15 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
       </div>
 
       {/* Game Board */}
-      <div className="flex-1 flex items-center justify-center overflow-auto p-8">
+      <div className="flex-1 flex items-center justify-center overflow-auto p-8" style={gameBody(size)}>
+        <GameBoardArea>
         <div
           className="grid gap-3"
           style={{
             gridTemplateColumns: `repeat(${DIFFICULTY_CONFIG[difficulty].grid}, ${difficulty === 'hard' ? '80px' : difficulty === 'medium' ? '110px' : '150px'})`,
             gridTemplateRows: `repeat(${DIFFICULTY_CONFIG[difficulty].grid}, ${difficulty === 'hard' ? '80px' : difficulty === 'medium' ? '110px' : '150px'})`,
+            ...gameBoard(size, DIFFICULTY_CONFIG[difficulty].grid),
+            ...(size.compact ? { gap: 8 } : {}),
           }}
         >
           {cards.map((card) => (
@@ -417,7 +426,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
               <div
                 className="absolute inset-0 flex items-center justify-center"
                 style={{
-                  fontSize: difficulty === 'hard' ? '32px' : difficulty === 'medium' ? '48px' : '64px',
+                  fontSize: gameCellFont(size, difficulty === 'hard' ? 32 : difficulty === 'medium' ? 48 : 64, DIFFICULTY_CONFIG[difficulty].grid),
                   transition: "opacity 0.3s",
                   opacity: card.isFlipped || card.isMatched ? 1 : 0,
                 }}
@@ -439,6 +448,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
             </button>
           ))}
         </div>
+        </GameBoardArea>
       </div>
 
       {/* Start Screen / Resume Modal */}
@@ -457,6 +467,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
               backgroundColor: theme.surface,
               borderRadius: theme.radiusCard,
               boxShadow: SHADOW["2xl"],
+              ...gameModal(size),
               border: theme.cardBorder,
               maxWidth: "500px",
               width: "90%"
@@ -511,6 +522,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
               backgroundColor: theme.surface,
               borderRadius: theme.radiusCard,
               boxShadow: SHADOW["2xl"],
+              ...gameModal(size),
               border: theme.cardBorder,
             }}
           >

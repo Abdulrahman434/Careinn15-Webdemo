@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose, gameBody, gameGroup, GameBoardArea, gameBoard, gameCellFont, gameModal, gameControl } from "./gameLayout";
 import { useLocale } from "../i18n";
 import { Trophy, RotateCcw, Shuffle, ArrowLeft } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
@@ -21,6 +23,7 @@ const DIFFICULTY_CONFIG: Record<Difficulty, number> = {
 
 export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
+  const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
   const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-sliding-puzzle') ?? (locale === 'ar' ? 'ar' : 'en'));
   const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
@@ -300,9 +303,10 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
           backgroundColor: theme.surface,
           borderBottom: theme.cardBorder,
           boxShadow: SHADOW.lg,
+          ...gameHeader(size),
         }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={gameHeaderLead(size)}>
           <button
             onClick={onBackToGames}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
@@ -323,18 +327,19 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
               fontSize: TYPE_SCALE.xl,
               fontWeight: WEIGHT.bold,
               color: theme.textHeading,
+              ...gameTitle(size),
             }}
           >
             {gt.slidingPuzzle}
           </h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={gameHeaderTools(size)}>
           <select
             value={difficulty}
             onChange={(e) => initializeGame(e.target.value as Difficulty)}
             style={{
               fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.medium,
-              padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder,
+              padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder, ...gameControl(size),
               backgroundColor: theme.surfaceElevated, color: theme.textHeading, outline: 'none'
             }}
           >
@@ -413,6 +418,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
               borderRadius: theme.radiusMd,
               border: "none",
               outline: "none",
+            ...gameHeaderClose(size),
             }}
           >
             <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
@@ -421,10 +427,11 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
       </div>
 
       {/* Game Board */}
-      <div className="flex-1 flex items-center justify-center overflow-auto p-8">
-        <div className="flex gap-12 items-center">
+      <div className="flex-1 flex items-center justify-center overflow-auto p-8" style={gameBody(size)}>
+        <div className="flex gap-12 items-center" style={gameGroup(size)}>
           {/* Current Puzzle */}
-          <div className="flex flex-col items-center gap-6">
+          <div className="flex flex-col items-center gap-6" style={gameGroup(size)}>
+            <GameBoardArea>
             <div
               className="grid gap-2 p-4"
               style={{
@@ -434,6 +441,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
                 borderRadius: theme.radiusCard,
                 border: theme.cardBorder,
                 boxShadow: SHADOW.md,
+                ...gameBoard(size, gridSize),
               }}
             >
               {tiles.map((tile, index) => (
@@ -456,7 +464,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
                     <span
                       style={{
                         fontFamily: fontFamily,
-                        fontSize: difficulty === 'hard' ? '32px' : difficulty === 'medium' ? '48px' : '64px',
+                        fontSize: gameCellFont(size, difficulty === 'hard' ? 32 : difficulty === 'medium' ? 48 : 64, gridSize),
                         fontWeight: WEIGHT.extrabold,
                         color: "#2D3436",
                         textShadow: "0 1px 2px rgba(255,255,255,0.5)",
@@ -468,6 +476,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
                 </button>
               ))}
             </div>
+            </GameBoardArea>
           </div>
 
           {/* Solution Reference */}
@@ -555,6 +564,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
               backgroundColor: theme.surface,
               borderRadius: theme.radiusCard,
               boxShadow: SHADOW["2xl"],
+              ...gameModal(size),
               border: theme.cardBorder,
               maxWidth: "500px",
               width: "90%"
@@ -609,6 +619,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
               backgroundColor: theme.surface,
               borderRadius: theme.radiusCard,
               boxShadow: SHADOW["2xl"],
+              ...gameModal(size),
               border: theme.cardBorder,
             }}
           >

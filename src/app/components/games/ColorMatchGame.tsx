@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose, gameBody, GameBoardArea, gameBoard, gameModal } from "./gameLayout";
 import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, Timer, ArrowLeft } from "lucide-react";
@@ -23,6 +25,7 @@ const COLORS: ColorOption[] = [
 
 export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
+  const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
   const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-color-match') ?? (locale === 'ar' ? 'ar' : 'en'));
   const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
@@ -180,10 +183,11 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
           backgroundColor: theme.surface,
           borderBottom: theme.cardBorder,
           boxShadow: SHADOW.lg,
+          ...gameHeader(size),
         }}
       >
-        <div className="flex items-center gap-4">
-          <GameLanguageToggle gameKey="color-match" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
+        <div className="flex items-center gap-4" style={gameHeaderLead(size)}>
+          {!size.portrait && <GameLanguageToggle gameKey="color-match" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />}
           <button
             onClick={onBackToGames}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
@@ -204,12 +208,14 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
               fontSize: TYPE_SCALE.xl,
               fontWeight: WEIGHT.bold,
               color: theme.textHeading,
+              ...gameTitle(size),
             }}
           >
             {gt.colorMatch}
           </h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={gameHeaderTools(size)}>
+          {size.portrait && <GameLanguageToggle gameKey="color-match" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />}
           <div className="flex flex-col items-end">
             <span style={{ fontFamily, fontSize: '12px', color: theme.textMuted }}>{gt.highScore}: {highScore}</span>
             <span style={{ fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.bold, color: theme.primaryOn }}>{gt.combo}: {combo}x</span>
@@ -301,6 +307,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
               borderRadius: theme.radiusMd,
               border: "none",
               outline: "none",
+            ...gameHeaderClose(size),
             }}
           >
             <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
@@ -309,7 +316,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
       </div>
 
       {/* Game Content */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-16 px-16 py-12">
+      <div className="flex-1 flex flex-col items-center justify-center gap-16 px-16 py-12" style={gameBody(size)}>
         {!isPlaying && timeLeft === 30 ? (
           /* Start Screen */
           <div className="flex flex-col items-center gap-8">
@@ -412,6 +419,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 borderRadius: theme.radiusCard,
                 border: theme.cardBorder,
                 boxShadow: SHADOW.xl,
+                ...(size.compact ? { paddingInline: 24, maxWidth: "100%" } : {}),
               }}
             >
               <p
@@ -440,11 +448,14 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
             </div>
 
             {/* Color Grid */}
+            <GameBoardArea>
             <div
               className="grid gap-6"
               style={{
                 gridTemplateColumns: "repeat(4, 180px)",
                 gridTemplateRows: "repeat(2, 180px)",
+                ...gameBoard(size, 4, 2),
+                ...(size.compact ? { gap: 16 } : {}),
               }}
             >
               {LOCALIZED_COLORS.map((colorOption) => (
@@ -462,6 +473,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
                 />
               ))}
             </div>
+            </GameBoardArea>
           </>
         )}
       </div>
@@ -521,6 +533,7 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
               backgroundColor: theme.surface,
               borderRadius: theme.radiusCard,
               boxShadow: SHADOW["2xl"],
+              ...gameModal(size),
               border: theme.cardBorder,
               maxWidth: "500px",
               width: "90%"
