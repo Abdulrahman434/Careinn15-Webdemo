@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Sun, Moon, CloudSun, CloudMoon, Cloud, CloudDrizzle, CloudRain,
   CloudLightning, CloudSnow, CloudFog, Haze, Wind,
@@ -114,4 +115,18 @@ export async function fetchCityWeather(city: string, hourCount = 5): Promise<Cit
   } catch {
     return null;
   }
+}
+
+/** The city's current weather, refreshed every 30 minutes — for a compact
+ *  pill. Null until the first reading arrives (or if it never does). */
+export function useCurrentWeather(city: string): CityWeather | null {
+  const [weather, setWeather] = useState<CityWeather | null>(null);
+  useEffect(() => {
+    let live = true;
+    const load = () => fetchCityWeather(city, 1).then((w) => { if (live && w) setWeather(w); });
+    load();
+    const id = setInterval(load, 30 * 60 * 1000);
+    return () => { live = false; clearInterval(id); };
+  }, [city]);
+  return weather;
 }

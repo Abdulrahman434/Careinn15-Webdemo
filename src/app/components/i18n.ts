@@ -566,6 +566,9 @@ const translations: Record<string, TranslationEntry> = {
   "spotlight.roomControl.sub": { en: "Adjust & Manage", ar: "اضبط وتحكّم", ur: "ایڈجسٹ اور کنٹرول کریں" },
   "spotlight.cast": { en: "Casting", ar: "البث إلى التلفاز", ur: "کاسٹنگ" },
   "spotlight.cast.sub": { en: "Share to TV", ar: "شارك على التلفاز", ur: "ٹی وی پر شیئر کریں" },
+  "portrait.prayerTimes": { en: "Prayer Times", ar: "أوقات الصلاة", ur: "نماز کے اوقات" },
+  "portrait.menu": { en: "Menu", ar: "القائمة", ur: "مینو" },
+  "portrait.weather": { en: "Weather", ar: "الطقس", ur: "موسم" },
 
   /* ─── Shortcut Items ─── */
   "shortcut.whatsapp": { en: "WhatsApp", ar: "واتساب", ur: "واٹس ایپ" },

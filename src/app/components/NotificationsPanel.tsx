@@ -497,7 +497,7 @@ export function NotificationsPanel({
       <div
         className="relative h-full flex flex-col"
         style={{
-          width: "480px",
+          width: "min(480px, 100%)",
           backdropFilter: "blur(28px)",
           WebkitBackdropFilter: "blur(28px)",
           backgroundColor: theme.panelBg,

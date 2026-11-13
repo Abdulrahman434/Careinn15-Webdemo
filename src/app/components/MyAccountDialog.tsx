@@ -292,6 +292,17 @@ export function MyPreferencesDialog({
     }
   });
 
+  /* careinn-orientation — read by App.tsx (useIsPortrait). Unset = follow
+     the screen's shape; "portrait" / "landscape" force one for a demo. */
+  const [orientationValue, setOrientationValue] = useState<"auto" | "landscape" | "portrait">(() => {
+    try {
+      const v = localStorage.getItem('careinn-orientation');
+      return v === 'portrait' || v === 'landscape' ? v : 'auto';
+    } catch {
+      return 'auto';
+    }
+  });
+
   // Server Config state
   const [serverIp, setServerIp] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -438,6 +449,17 @@ export function MyPreferencesDialog({
     }
     setLayoutModeValue(mode);
     window.dispatchEvent(new Event('layout-mode-changed'));
+  };
+
+  const saveOrientation = (value: "auto" | "landscape" | "portrait") => {
+    try {
+      if (value === 'auto') localStorage.removeItem('careinn-orientation');
+      else localStorage.setItem('careinn-orientation', value);
+    } catch {
+      // ignore storage errors
+    }
+    setOrientationValue(value);
+    window.dispatchEvent(new Event('orientation-changed'));
   };
 
   if (!open) return null;
@@ -912,6 +934,35 @@ export function MyPreferencesDialog({
                     </span>
                   </div>
                   {layoutModeValue === option.id ? (
+                    <Check size={18} style={{ color: t.primaryOn }} />
+                  ) : null}
+                </button>
+              ))}
+            </div>
+            <span style={{ fontFamily: t.fontFamily, fontSize: "13px", fontWeight: 700, color: t.textMuted, padding: "20px 0 8px" }}>
+              Screen
+            </span>
+            <div className="flex flex-col gap-3">
+              {([
+                { id: "auto", title: "Auto", subtitle: "Follow the screen: portrait when it's taller than wide" },
+                { id: "landscape", title: "Landscape", subtitle: "1920 × 1080" },
+                { id: "portrait", title: "Portrait", subtitle: "1080 × 1920 — Home in one column" },
+              ] as const).map((option) => (
+                <button
+                  key={option.id}
+                  onClick={() => saveOrientation(option.id)}
+                  className="flex items-center gap-3 w-full text-left cursor-pointer active:scale-[0.98] transition-transform"
+                  style={{ padding: "16px", borderRadius: t.radiusLg, backgroundColor: t.tileInactiveBg, border: "none" }}
+                >
+                  <div className="flex-1 flex flex-col gap-1">
+                    <span style={{ fontFamily: t.fontFamily, fontSize: "15px", fontWeight: 700, color: t.textHeading }}>
+                      {option.title}
+                    </span>
+                    <span style={{ fontFamily: t.fontFamily, fontSize: "13px", color: t.textMuted }}>
+                      {option.subtitle}
+                    </span>
+                  </div>
+                  {orientationValue === option.id ? (
                     <Check size={18} style={{ color: t.primaryOn }} />
                   ) : null}
                 </button>

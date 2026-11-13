@@ -3,6 +3,7 @@ import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTheme, SHADOW, SPACE, TEXT_STYLE, WEIGHT } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { ApiImage } from "./ApiImage";
+import { useCanvasSize } from "../lib/canvasSize";
 
 /**
  * HeroGallery — the greeting card's photos, opened full screen.
@@ -32,6 +33,9 @@ export function HeroGallery({
 }) {
   const { theme } = useTheme();
   const { t, isRTL, fontFamily } = useLocale();
+  /* Phones: the 128 side gutters that hold the arrows would leave the photo
+     a sliver, so the photo spans the width and the arrows sit on it. */
+  const { compact } = useCanvasSize();
   const count = images.length;
   const [index, setIndex] = useState(() => Math.min(Math.max(startIndex, 0), count - 1));
   const [shown, setShown] = useState(false);
@@ -133,10 +137,10 @@ export function HeroGallery({
       {/* Header — title and counter at the start, close at the end */}
       <div
         className="shrink-0 flex items-center justify-between"
-        style={{ padding: `${SPACE[4]} ${SPACE[6]} 0` }}
+        style={{ padding: `${SPACE[4]} ${compact ? SPACE[2] : SPACE[6]} 0`, gap: compact ? SPACE[2] : undefined }}
       >
-        <div className="flex items-baseline" style={{ gap: SPACE[2], color: theme.textInverse }}>
-          {title && <span style={{ ...TEXT_STYLE.subtitle, fontWeight: WEIGHT.bold }}>{title}</span>}
+        <div className="flex items-baseline" style={{ gap: SPACE[2], color: theme.textInverse, ...(compact ? { minWidth: 0 } : {}) }}>
+          {title && <span style={{ ...TEXT_STYLE.subtitle, fontWeight: WEIGHT.bold, ...(compact ? { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } : {}) }}>{title}</span>}
           {count > 1 && (
             <span style={{ ...TEXT_STYLE.body, color: theme.textInverseMuted }} dir="ltr">
               {index + 1} / {count}
@@ -145,7 +149,7 @@ export function HeroGallery({
         </div>
         <button
           className="cursor-pointer active:scale-90 transition-transform"
-          style={glassBtn}
+          style={compact ? { ...glassBtn, flexShrink: 0 } : glassBtn}
           onClick={(e) => {
             e.stopPropagation();
             onClose();
@@ -174,7 +178,7 @@ export function HeroGallery({
             <div
               key={i}
               className="shrink-0 w-full h-full flex items-center justify-center"
-              style={{ padding: `${SPACE[4]} ${SPACE[16]}` }}
+              style={{ padding: `${SPACE[4]} ${compact ? SPACE[2] : SPACE[16]}` }}
             >
               <div className="w-full h-full flex items-center justify-center" style={{ containerType: "size" }}>
               {/* Only this photo and its neighbours are decoded. */}
@@ -215,7 +219,7 @@ export function HeroGallery({
         {count > 1 && index > 0 && (
           <button
             className="absolute top-1/2 -translate-y-1/2 cursor-pointer active:scale-90 transition-transform"
-            style={{ ...glassBtn, insetInlineStart: SPACE[3] }}
+            style={{ ...glassBtn, insetInlineStart: compact ? SPACE[1] : SPACE[3] }}
             onClick={(e) => {
               e.stopPropagation();
               go(-1);
@@ -228,7 +232,7 @@ export function HeroGallery({
         {count > 1 && index < count - 1 && (
           <button
             className="absolute top-1/2 -translate-y-1/2 cursor-pointer active:scale-90 transition-transform"
-            style={{ ...glassBtn, insetInlineEnd: SPACE[3] }}
+            style={{ ...glassBtn, insetInlineEnd: compact ? SPACE[1] : SPACE[3] }}
             onClick={(e) => {
               e.stopPropagation();
               go(1);

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Globe, Moon, Sun, Maximize, Minimize } from "lucide-react";
+import { useCanvasSize } from "../lib/canvasSize";
 import { useTheme, TYPE_SCALE, WEIGHT, LEADING } from "./ThemeContext";
 import { type Locale } from "./i18n";
 
@@ -35,6 +36,9 @@ export function DemoControls({
   variant?: "onBrand" | "onSurface";
 }) {
   const { theme, locale, setLocale, darkMode, setDarkMode } = useTheme();
+  /* Phones: language and dark mode only — a phone browser's own controls
+     handle fullscreen, and page titles need the room. */
+  const { compact: phone } = useCanvasSize();
   const [isFullscreen, setIsFullscreen] = useState(
     () => typeof document !== "undefined" && !!document.fullscreenElement,
   );
@@ -112,7 +116,7 @@ export function DemoControls({
         {darkMode ? <Sun size={glyph} /> : <Moon size={glyph} />}
       </button>
 
-      <button
+      {!phone && <button
         onClick={toggleFullscreen}
         title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
         aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
@@ -120,7 +124,7 @@ export function DemoControls({
         style={btn}
       >
         {isFullscreen ? <Minimize size={glyph} /> : <Maximize size={glyph} />}
-      </button>
+      </button>}
     </div>
   );
 }
