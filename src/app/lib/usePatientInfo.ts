@@ -1,6 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNurseStore } from "../components/NurseDataStore";
 import { useLocale } from "../components/i18n";
+import { useTheme } from "../components/ThemeContext";
+
+/* Burjeel's real record shape (long MRN, room and bed codes), shown in place
+   of the built-in demo patient so the greeting chips are tested on the data
+   that wrapped to two rows at Burjeel. A record from the API still wins.
+   The name stays the demo patient's, Sara Saleh, as in every hospital. */
+const DEMO_MRN = "00-284619";
+const BURJEEL_TEST_PATIENT = {
+  mrn: "0011013447",
+  room: "BUHDR506",
+  bed: "BUHDS506",
+};
 
 export interface PatientInfoResult {
   patient: ReturnType<typeof useNurseStore>["patient"];
@@ -18,7 +30,11 @@ export interface PatientInfoResult {
 export function usePatientInfo(): PatientInfoResult {
   const nurseStore = useNurseStore();
   const { t, isRTL } = useLocale();
-  const p = nurseStore.patient;
+  const { activeConfigId } = useTheme();
+  const p =
+    activeConfigId === "burjeel" && nurseStore.patient.mrn === DEMO_MRN
+      ? { ...nurseStore.patient, ...BURJEEL_TEST_PATIENT }
+      : nurseStore.patient;
 
   const [nameMode, setNameMode] = useState<string | null>(() =>
     localStorage.getItem("careinn-display-name-mode")
