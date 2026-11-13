@@ -1281,11 +1281,13 @@ function PatientBar({
   const isGuest = orderFor === "guest";
   /* Portrait: the chips take their own row under the avatar and name, and
      wrap there instead of running off the card.
-     Phones: they take one row under the name that scrolls sideways — the
-     same strip the section rails become (pageRail) — so the bar stays two
-     rows high and the step below keeps its room. */
+     Phones: two rows instead of three — the room moves up beside the name,
+     and the chips drop their "Diet:" / "Allergies:" words (the icons say it;
+     the editors still name them), so the step below keeps its room. The
+     chips still wrap rather than scroll, so every allergy stays in sight. */
   const { portrait, compact } = useCanvasSize();
-  const pad = compact ? "12px 16px" : "16px 22px";
+  const pad = compact ? "10px 16px" : "16px 22px";
+  const roomPill = <Pill icon={<RoomSvg />} label={isRTL ? "الغرفة:" : "Room:"} value={DEMO_PATIENT.room.replace("Room ", "")} fontFamily={fontFamily} />;
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -1301,7 +1303,7 @@ function PatientBar({
       }
     >
       {/* Avatar */}
-      <div className="shrink-0" style={{ width: compact ? "40px" : "48px", height: compact ? "40px" : "48px", borderRadius: "50%", backgroundColor: isGuest ? SECONDARY : TEAL, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div className="shrink-0" style={{ width: compact ? "36px" : "48px", height: compact ? "36px" : "48px", borderRadius: "50%", backgroundColor: isGuest ? SECONDARY : TEAL, display: "flex", alignItems: "center", justifyContent: "center" }}>
         {isGuest ? (
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -1314,16 +1316,17 @@ function PatientBar({
 
       {/* Name + Pills row */}
       <div className="flex-1 min-w-0 flex items-center justify-between" style={portrait ? { display: "contents" } : undefined}>
-        <span style={{ fontFamily, fontSize: compact ? "20px" : "22px", fontWeight: WEIGHT.bold, color: INK, whiteSpace: "nowrap" }}>
+        <span style={{ fontFamily, fontSize: compact ? "18px" : "22px", fontWeight: WEIGHT.bold, color: INK, whiteSpace: "nowrap", ...(compact ? { flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" } : {}) }}>
           {name}
         </span>
+        {compact && roomPill}
         {/* Portrait: the chips wrap — never a sideways strip, so the
             allergies are always in sight. */}
         <div className="flex items-center gap-[14px]" style={portrait
           ? { flexBasis: "100%", minWidth: 0, flexWrap: "wrap", gap: compact ? "8px" : "10px" }
           : undefined}>
           {mealName && <Pill icon={<MealSvg />} label={isRTL ? "الوجبة:" : "Meal:"} value={mealName} fontFamily={fontFamily} />}
-          <Pill icon={<RoomSvg />} label={isRTL ? "الغرفة:" : "Room:"} value={DEMO_PATIENT.room.replace("Room ", "")} fontFamily={fontFamily} />
+          {!compact && roomPill}
           <Pill
             icon={<DietSvg />}
             label={isRTL ? "الحمية:" : "Diet:"}
@@ -1372,19 +1375,21 @@ function Pill({
   return (
     <Tag
       {...(isInteractive ? { onClick, whileTap: { scale: 0.96 }, title: tooltip } : {})}
-      className={`flex items-center gap-[8px] ${isInteractive ? "cursor-pointer group transition-all" : ""}`}
+      className={`flex items-center ${compact ? "gap-[6px]" : "gap-[8px]"} ${isInteractive ? "cursor-pointer group transition-all" : ""}`}
       style={{
         backgroundColor: isInteractive ? "rgba(var(--fo-primary-rgb), 0.08)" : TINT_BG,
         borderRadius: "10px",
-        padding: compact ? "8px 12px" : "9px 15px",
-        ...(compact ? { minHeight: "44px", flexShrink: 0 } : {}),
+        padding: compact ? "6px 10px" : "9px 15px",
+        ...(compact ? { minHeight: "40px", flexShrink: 0 } : {}),
         border: isInteractive ? `1.5px solid ${CARD_LINE}` : "1px solid transparent",
         outline: "none",
       }}
     >
       {icon}
-      <span style={{ fontFamily, fontSize: compact ? "15px" : "16px", fontWeight: WEIGHT.semibold, color: INK, whiteSpace: "nowrap", lineHeight: 1.2 }}>{label}</span>
-      <span style={{ fontFamily, fontSize: compact ? "15px" : "16px", fontWeight: WEIGHT.semibold, color: isInteractive ? TEAL_ON : INK, whiteSpace: "nowrap", lineHeight: 1.2 }}>{value}</span>
+      {/* Phones: the icon names the chip (Room's bed, Diet's bowl, the
+          allergy warning), so the word is left out to keep one row. */}
+      {!compact && <span style={{ fontFamily, fontSize: "16px", fontWeight: WEIGHT.semibold, color: INK, whiteSpace: "nowrap", lineHeight: 1.2 }}>{label}</span>}
+      <span title={compact ? `${label} ${value}` : undefined} style={{ fontFamily, fontSize: compact ? "14px" : "16px", fontWeight: WEIGHT.semibold, color: isInteractive ? TEAL_ON : INK, whiteSpace: "nowrap", lineHeight: 1.2 }}>{value}</span>
       {isInteractive && (
         <svg
           width="13"
