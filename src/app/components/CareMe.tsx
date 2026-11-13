@@ -1,6 +1,7 @@
 import { ModalHeader } from "./primitives";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, LEADING, primaryRgba, TEXT_STYLE, SPACE } from "./ThemeContext";
 import { ApiImage } from "./ApiImage";
+import { useCanvasSize } from "../lib/canvasSize";
 import { useLocale, type Locale, textDirection } from "./i18n";
 import { useNurseStore, type SectionKey, nurseActions } from "./NurseDataStore";
 import { useAuth } from "./AuthContext";
@@ -948,6 +949,10 @@ function DemoBannerHeader({
 
 function PatientProfileSlide({ theme, isExpanded = false }: { theme: any; isExpanded?: boolean }) {
   const R = roles(isExpanded);
+  /* The expanded card on a phone is too narrow for two facts a row at the
+     expanded type size — "Tawuniya" broke mid-word — so they stack. */
+  const { compact } = useCanvasSize();
+  const stackFacts = isExpanded && compact;
   const { t, isRTL, localizeNumber } = useLocale();
   const nurseStore = useNurseStore();
   const p = nurseStore.patient;
@@ -1004,7 +1009,7 @@ function PatientProfileSlide({ theme, isExpanded = false }: { theme: any; isExpa
         <div className="flex flex-col gap-5">
           {leadRow(User, t("care.fullName"), isRTL && p.nameAr ? p.nameAr : (p.nameKey ? t(p.nameKey) : p.name))}
 
-          <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+          <div className={`grid ${stackFacts ? "grid-cols-1" : "grid-cols-2"} gap-x-6 gap-y-5`}>
             {infoRow(Hash, t("greeting.mrn"), <Ltr nowrap>{p.mrn}</Ltr>)}
             {infoRow(Shield, t("care.insurance"), t("care.insurance.tawuniya"))}
             {infoRow(CalendarDays, t("care.age"), t("care.ageUnits", localizeNumber(calculatedAge)))}
@@ -1034,7 +1039,7 @@ function PatientProfileSlide({ theme, isExpanded = false }: { theme: any; isExpa
           )}
           <div className="flex flex-col gap-5">
             {leadRow(User, t("care.emergencyContact"), t("care.emergencyName").split(' (')[0], "danger")}
-            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+            <div className={`grid ${stackFacts ? "grid-cols-1" : "grid-cols-2"} gap-x-6 gap-y-4`}>
               {infoRow(Phone, t("care.mobile"), <Ltr nowrap>{p.contact}</Ltr>, "danger")}
               {infoRow(Heart, t("care.relative"), p.emergencyName.split('(')[1]?.replace(')', '') || "Mother", "danger")}
             </div>
@@ -1992,6 +1997,9 @@ function observationTime(raw: any): Date | null {
 
 function ClinicalObservationsSlide({ theme, isExpanded = false }: { theme: any; isExpanded?: boolean }) {
   const R = roles(isExpanded);
+  /* On a phone the expanded tile is too narrow for the disc and a label side
+     by side ("Respiratory" broke mid-word), so the label goes under the disc. */
+  const { compact } = useCanvasSize();
   const { t, isRTL, locale } = useLocale();
   const nurseStore = useNurseStore();
   const [showDemo, setShowDemo] = useState(false);
@@ -2123,7 +2131,7 @@ function ClinicalObservationsSlide({ theme, isExpanded = false }: { theme: any; 
               >
                 {isExpanded ? (
                   <>
-                    <div className="flex items-center min-w-0" style={{ gap: "9px" }}>
+                    <div className={compact ? "flex flex-col items-start min-w-0" : "flex items-center min-w-0"} style={{ gap: "9px" }}>
                       <div
                         className="flex items-center justify-center shrink-0"
                         style={{
@@ -2982,6 +2990,10 @@ function BoardComposer({ theme, dir, onCancel, onSave }: {
   const { t, fontFamily } = useLocale();
   const [text, setText] = useState("");
   const [pain, setPain] = useState<number | null>(null);
+  /* Phones: the sheet fills the width less a 16px margin and its gutters
+     tighten to match — the same rule as the other CareMe sheets. */
+  const { compact } = useCanvasSize();
+  const padX = compact ? "16px" : "26px";
 
   /* Either half is enough on its own: words, or a number. */
   const ready = !!text.trim() || pain !== null;
@@ -3000,7 +3012,7 @@ function BoardComposer({ theme, dir, onCancel, onSave }: {
       <div
         className="relative flex flex-col"
         style={{
-          width: "min(880px, 92%)",
+          width: compact ? "calc(100% - 32px)" : "min(880px, 92%)",
           maxHeight: "92%",
           borderRadius: theme.radiusXl,
           backgroundColor: theme.surface,
@@ -3013,10 +3025,10 @@ function BoardComposer({ theme, dir, onCancel, onSave }: {
           icon={MessageCircleQuestion}
           title={t("care.pcc.board.compose")}
           onClose={onCancel}
-          padX="26px"
+          padX={padX}
         />
 
-        <div className="flex-1 min-h-0 overflow-y-auto careme-scroll" style={{ padding: "22px 26px" }}>
+        <div className="flex-1 min-h-0 overflow-y-auto careme-scroll" style={{ padding: `22px ${padX}` }}>
           {/* Pain first: it is the entry that needs nothing else. */}
           <span style={{ fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.semibold, color: theme.textMuted, display: "block", marginBottom: SPACE[1] }}>
             {t("care.pcc.board.pain")}
@@ -3071,7 +3083,7 @@ function BoardComposer({ theme, dir, onCancel, onSave }: {
         </div>
 
         <div className="shrink-0 flex items-center justify-end gap-3"
-          style={{ padding: "16px 26px", borderTop: `1px solid ${theme.borderDefault}`, backgroundColor: theme.surfaceInset }}>
+          style={{ padding: `16px ${padX}`, borderTop: `1px solid ${theme.borderDefault}`, backgroundColor: theme.surfaceInset }}>
           <button
             onClick={onCancel}
             className="cursor-pointer active:scale-[0.98] transition-transform"
@@ -4102,12 +4114,52 @@ export function CareMeExpanded({ onClose, onOpenPreferences }: { onClose: () => 
   const { t, isRTL } = useLocale();
   const nurseStore = useNurseStore();
   const primary = theme.primary;
+  const { portrait, compact, width } = useCanvasSize();
 
   // Filter slides by nurse visibility
   const slides = useMemo(() =>
     ALL_SLIDES.filter((s) => slideVisible(s.key, nurseStore.sectionVisibility)),
     [nurseStore.sectionVisibility]
   );
+
+  /* Portrait: a grid of equal cards, in as many columns as the screen is wide
+     enough for; the page scrolls down through the rows. Care Overview sets
+     the height — it is shown whole, with no empty space under it, and every
+     other card takes the same height and scrolls inside when it holds more.
+     That holds on a screen shorter than the card too: Care Overview is never
+     cut. Only when it is hidden do the cards fall back to the landscape
+     height, giving way on a short screen for the next one to peek in. */
+  const GRID_GAP = 16;
+  const MIN_CARD_WIDTH = 360;
+  const CARD_HEIGHT = 710;
+  const gridCols = Math.max(1, Math.floor((width - (compact ? 32 : 48) + GRID_GAP) / (MIN_CARD_WIDTH + GRID_GAP)));
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const [fitHeight, setFitHeight] = useState<number | null>(null);
+  useEffect(() => {
+    const index = slides.findIndex((s) => s.key === "overview");
+    const card = portrait && index >= 0 ? (gridRef.current?.children[index] as HTMLElement | undefined) : undefined;
+    const body = card?.querySelector<HTMLElement>(":scope > .careme-scroll");
+    if (!card || !body) { setFitHeight(null); return; }
+    const measure = () => {
+      const last = body.lastElementChild;
+      if (!last) return;
+      /* On-screen boxes are in screen px; the canvas may be scaled to fit
+         the window, so bring them back to the canvas's own px. */
+      const bodyBox = body.getBoundingClientRect();
+      const scale = body.offsetHeight ? bodyBox.height / body.offsetHeight : 1;
+      if (!scale) return;
+      const content = (last.getBoundingClientRect().bottom - bodyBox.top) / scale
+        + body.scrollTop + parseFloat(getComputedStyle(body).paddingBottom);
+      /* Header and borders: whatever of the card is not its body. */
+      const chrome = card.offsetHeight - body.clientHeight;
+      setFitHeight(Math.ceil(chrome + content));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(card);
+    Array.from(body.children).forEach((child) => observer.observe(child));
+    return () => observer.disconnect();
+  }, [portrait, slides, width, nurseStore]);
 
   return (
     <div
@@ -4136,8 +4188,19 @@ export function CareMeExpanded({ onClose, onOpenPreferences }: { onClose: () => 
 
       {/* Vertically centered content area */}
       <div className="flex-1 flex flex-col justify-center relative z-10 min-h-0 pt-4">
-        {/* Horizontal Scrolling Columns — 4 visible at once */}
-        <div className={`flex-1 flex gap-4 pb-12 overflow-x-auto no-scrollbar ${isRTL ? "pr-[172px] pl-10" : "pl-[172px] pr-10"}`}>
+        {/* Horizontal Scrolling Columns — 4 visible at once. In portrait the
+            cards stack into a grid of equal cards that scrolls down; a card
+            with more than fits scrolls inside its own frame. */}
+        <div
+          ref={gridRef}
+          className={portrait
+            ? `flex-1 min-h-0 overflow-y-auto no-scrollbar grid content-start gap-4 ${compact ? "px-4 pb-4" : "px-6 pb-8"}`
+            : `flex-1 flex gap-4 pb-12 overflow-x-auto no-scrollbar ${isRTL ? "pr-[172px] pl-10" : "pl-[172px] pr-10"}`}
+          style={portrait ? {
+            gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+            gridAutoRows: fitHeight ? `${fitHeight}px` : `min(${CARD_HEIGHT}px, calc(100% - 88px))`,
+          } : undefined}
+        >
           {slides.map((slide) => (
             <CareMeCard
               key={slide.key}
@@ -4159,13 +4222,15 @@ export function CareMeExpanded({ onClose, onOpenPreferences }: { onClose: () => 
               }
               title={t(slide.titleKey)}
               actions={slide.key === "preferences" ? <PreferencesResetButton /> : undefined}
-              style={{
+              style={portrait ? {
+                animation: "caremeExpandIn 0.3s ease-out both",
+              } : {
                 width: "calc(25% - 12px)",
                 /* The row is a grid of equal cards — a fixed height here, and
                    content that stays at the top INSIDE each one. Letting the
                    frames size to their content left them ragged and floating
                    in an empty expanse. */
-                height: "710px",
+                height: `${CARD_HEIGHT}px`,
                 flexShrink: 0,
                 alignSelf: "center",
                 animation: "caremeExpandIn 0.3s ease-out both",
