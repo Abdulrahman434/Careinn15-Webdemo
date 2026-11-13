@@ -794,8 +794,12 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
 
         {/* Center Content Area */}
         <div
-          className="flex-1 rounded-3xl overflow-hidden relative"
+          className={`${portrait ? "min-h-0" : "flex-1"} rounded-3xl overflow-hidden relative`}
           style={{
+            /* Portrait: the sheet is as tall as what it holds (a video is a
+               16:9 strip, not a white page with a picture adrift in it), and
+               scrolls once that is taller than the screen. */
+            ...(portrait ? { flex: "0 1 auto" } : {}),
             /* Token, not a white wash: this sheet is the page's reading
                surface, and a literal white kept the content light while the
                rest of the app went dark. */
@@ -805,7 +809,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
         >
           <div
             key={currentSection.id}
-            className={`h-full flex flex-col about-content-wrapper ${compact ? "" : "px-12 py-6"} ${portrait ? "overflow-y-auto" : ""}`}
+            className={`${portrait ? "max-h-full overflow-y-auto" : "h-full"} flex flex-col about-content-wrapper ${compact ? "" : "px-12 py-6"}`}
             style={compact ? { padding: pageRailContentPad(true) } : undefined}
           >
             {/* Section Title - Only show for text-based sections */}
@@ -827,11 +831,10 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
               </h3>
             )}
 
-            {/* Section Image (if exists). Portrait: a picture or video shorter
-                than the sheet sits in its middle (auto margins — they give way
-                to scrolling when it is taller). */}
+            {/* Section Image (if exists). Portrait: full width at its own
+                height — the sheet sizes itself around it. */}
             {currentSection.image && (
-              <div className={`rounded-2xl overflow-hidden flex items-center justify-center ${portrait ? "shrink-0 my-auto" : "flex-1"}`}>
+              <div className={`rounded-2xl overflow-hidden flex items-center justify-center ${portrait ? "shrink-0" : "flex-1"}`}>
                 <ApiImage
                   src={currentSection.image}
                   alt={currentSection.title}
@@ -842,7 +845,7 @@ export function AboutUs({ onClose }: { onClose: () => void }) {
 
             {/* Section Video (if exists) */}
             {currentSection.video && (
-              <div className={`rounded-2xl overflow-hidden relative ${portrait ? "shrink-0 w-full my-auto" : "flex-1"}`} style={{ backgroundColor: "#0a0a14", ...(portrait ? { aspectRatio: "16 / 9" } : {}) }}>
+              <div className={`rounded-2xl overflow-hidden relative ${portrait ? "shrink-0 w-full" : "flex-1"}`} style={{ backgroundColor: "#0a0a14", ...(portrait ? { aspectRatio: "16 / 9" } : {}) }}>
                 {!videoPlaying ? (
                   /* Thumbnail with play button */
                   <button
