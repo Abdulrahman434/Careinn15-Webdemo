@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { X, CloudSun, Thermometer, Droplets, Wind, MapPin } from "lucide-react";
 import { useTheme, TEXT_STYLE, TYPE_SCALE, WEIGHT, SHADOW, WEATHER_TINT } from "./ThemeContext";
 import { useLocale } from "./i18n";
+import { useCanvasSize } from "../lib/canvasSize";
 import { CityWeather, WeatherKind, WEATHER_GLYPH, fetchCityWeather, panelCitiesFor } from "../lib/weather";
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -39,6 +40,8 @@ const isPreview = () =>
 export function WeatherPanel({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
   const { t, isRTL, fontFamily, locale } = useLocale();
+  const { portrait, compact } = useCanvasSize();
+  const pad = compact ? 16 : 32;
   const preview = isPreview();
   const cities = preview ? PREVIEW_KINDS : panelCitiesFor(theme.id, theme.location);
   const [data, setData] = useState<Record<string, CityWeather | null | undefined>>({});
@@ -81,8 +84,8 @@ export function WeatherPanel({ onClose }: { onClose: () => void }) {
           /* Shrink to fit: cards stay 456 wide whether there are one, two
              or three of them, and the panel wraps them (1 → 520,
              2 → 1000, 3 → 1480). */
-          width: preview ? 1800 : cities.length * 456 + (cities.length - 1) * 24 + 64,
-          maxHeight: preview ? 1000 : undefined,
+          width: preview ? 1800 : portrait ? `min(${456 + 2 * pad}px, calc(100% - 32px))` : cities.length * 456 + (cities.length - 1) * 24 + 64,
+          maxHeight: preview ? 1000 : portrait ? "90%" : undefined,
           display: "flex",
           flexDirection: "column",
           backgroundColor: theme.surface,
@@ -97,7 +100,7 @@ export function WeatherPanel({ onClose }: { onClose: () => void }) {
         {/* Header */}
         <div
           className="flex items-center gap-4"
-          style={{ padding: "26px 32px", borderBottom: `1px solid ${theme.borderSubtle}` }}
+          style={{ padding: compact ? "16px 20px" : "26px 32px", borderBottom: `1px solid ${theme.borderSubtle}` }}
         >
           <div
             className="flex items-center justify-center shrink-0"
@@ -130,13 +133,14 @@ export function WeatherPanel({ onClose }: { onClose: () => void }) {
         <div
           className="grid"
           style={{
-            gridTemplateColumns: preview ? "repeat(4, 1fr)" : `repeat(${cities.length}, 456px)`,
+            /* Portrait: the cities stack, and the list scrolls under the header. */
+            gridTemplateColumns: preview ? "repeat(4, 1fr)" : portrait ? "1fr" : `repeat(${cities.length}, 456px)`,
             justifyContent: "center",
-            gap: 24,
-            padding: 32,
-            overflowY: preview ? "auto" : undefined,
+            gap: compact ? 16 : 24,
+            padding: pad,
+            overflowY: preview || portrait ? "auto" : undefined,
             gridAutoRows: "max-content",
-            flex: preview ? "1 1 auto" : undefined,
+            flex: preview || portrait ? "1 1 auto" : undefined,
             minHeight: 0,
           }}
         >

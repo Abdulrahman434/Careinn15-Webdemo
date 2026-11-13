@@ -224,7 +224,8 @@ function ToastViewport({ toasts, onDismiss }: { toasts: ToastItem[]; onDismiss: 
         gap: SPACE[2],
         zIndex: 80,
         width: "480px",
-        maxWidth: "480px",
+        /* Phones are narrower than a toast: keep the same inset both sides. */
+        maxWidth: `calc(100% - 2 * ${SPACE[3]})`,
       }}
     >
       {toasts.map((t) => (

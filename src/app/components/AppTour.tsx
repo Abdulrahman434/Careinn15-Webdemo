@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useLayoutEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Navigation,
@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useTheme, TEXT_STYLE, WEIGHT, SHADOW, TYPE_SCALE, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
+import { useCanvasSize } from "../lib/canvasSize";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * TOUR STEP DEFINITIONS
@@ -176,11 +177,17 @@ const STEPS: TourStep[] = [
 export function AppTour({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
   const { t, isRTL } = useLocale();
+  /* Portrait: the home is a different arrangement (and scrolls on phones),
+     so the spotlight is measured from the element tagged data-tour="<step
+     id>" instead of the landscape coordinates. Prayer times live in
+     Settings there, so that step is left out. */
+  const { portrait, width: cw, height: ch } = useCanvasSize();
+  const steps = useMemo(() => (portrait ? STEPS.filter((s) => s.id !== "prayer") : STEPS), [portrait]);
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1); // 1 = forward, -1 = back
 
-  const current = STEPS[step];
-  const total = STEPS.length;
+  const current = steps[step];
+  const total = steps.length;
   const isFirst = step === 0;
   const isLast = step === total - 1;
   const progress = ((step + 1) / total) * 100;
@@ -214,12 +221,24 @@ export function AppTour({ onClose }: { onClose: () => void }) {
   }, [onClose, next, back, isRTL]);
 
   /* ── Spotlight coords ── */
-  const region = current.region;
+  const [measured, setMeasured] = useState<TourStep["region"]>(null);
+  useLayoutEffect(() => {
+    if (!portrait || !current.region) { setMeasured(null); return; }
+    const canvas = document.getElementById("careinn-canvas");
+    const el = canvas?.querySelector<HTMLElement>(`[data-tour="${current.id}"]`);
+    if (!canvas || !el) { setMeasured(null); return; }
+    el.scrollIntoView({ block: "start", behavior: "instant" as ScrollBehavior });
+    const c = canvas.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    const k = canvas.offsetWidth / c.width; // screen px → canvas px
+    setMeasured({ x: (r.left - c.left) * k, y: (r.top - c.top) * k, w: r.width * k, h: r.height * k, r: 24 });
+  }, [portrait, current]);
+  const region = portrait ? measured : current.region;
   const pad = 10; // breathing room around the spotlight
   const spot = region
     ? (() => {
         const rawX = region.x;
-        const mirroredX = isRTL ? (1920 - rawX - region.w) : rawX;
+        const mirroredX = isRTL && !portrait ? (1920 - rawX - region.w) : rawX;
         return {
           x: mirroredX - pad,
           y: region.y - pad,
@@ -241,10 +260,24 @@ export function AppTour({ onClose }: { onClose: () => void }) {
       default: return p;
     }
   };
-  const placement = flipPlacement(current.placement);
+  const placement = portrait && !spot ? "center" : flipPlacement(current.placement);
 
   /* ── Tooltip position calculation ── */
   const tooltipStyle = useMemo((): React.CSSProperties => {
+    /* Portrait: the card spans the width (up to 460) and sits on whichever
+       side of the spotlight has room — under it, or over it, or pinned to
+       the bottom edge when the spotlight fills the screen. */
+    if (portrait) {
+      const w = Math.min(460, cw - 32);
+      const left = (cw - w) / 2;
+      if (!spot) return { position: "absolute", left, top: "50%", transform: "translateY(-50%)", width: w };
+      const room = 460; // the card's height with its longest step
+      const below = ch - (spot.y + spot.h) - 16;
+      const above = spot.y - 16;
+      if (below >= room && below >= above) return { position: "absolute", left, top: spot.y + spot.h + 16, width: w };
+      if (above >= room) return { position: "absolute", left, bottom: ch - spot.y + 16, width: w };
+      return { position: "absolute", left, bottom: 16, width: w };
+    }
     const cardW = 460;
     const cardH = 480; // actual tooltip height accounting for all content
     const vw = 1920;
@@ -303,7 +336,7 @@ export function AppTour({ onClose }: { onClose: () => void }) {
       top: `${clampY(y)}px`,
       width: `${cardW}px`,
     };
-  }, [spot, placement]);
+  }, [spot, placement, portrait, cw, ch]);
 
   const Icon = current.icon;
 
@@ -313,7 +346,7 @@ export function AppTour({ onClose }: { onClose: () => void }) {
       <svg className="absolute inset-0 w-full h-full" style={{ pointerEvents: "none" }}>
         <defs>
           <mask id="tour-mask">
-            <rect x="0" y="0" width="1920" height="1080" fill="white" />
+            <rect x="0" y="0" width={portrait ? cw : 1920} height={portrait ? ch : 1080} fill="white" />
             {spot && (
               <motion.rect
                 key={`mask-${step}`}
@@ -342,8 +375,8 @@ export function AppTour({ onClose }: { onClose: () => void }) {
         <rect
           x="0"
           y="0"
-          width="1920"
-          height="1080"
+          width={portrait ? cw : 1920}
+          height={portrait ? ch : 1080}
           fill="rgba(0,0,0,0.62)"
           mask="url(#tour-mask)"
         />
@@ -546,7 +579,7 @@ export function AppTour({ onClose }: { onClose: () => void }) {
 
               {/* ── Step dots ── */}
               <div className="flex items-center gap-[6px] justify-center" style={{ marginTop: "28px", marginBottom: "24px" }}>
-                {STEPS.map((_, i) => (
+                {steps.map((_, i) => (
                   <motion.div
                     key={i}
                     animate={{

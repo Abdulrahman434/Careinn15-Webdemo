@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ApiImage } from "./ApiImage";
-import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE } from "./ThemeContext";
+import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE, LEADING } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useRipple } from "./useRipple";
 import svgPaths from "../../imports/svg-ca68x68c4i";
@@ -51,7 +51,7 @@ const DEFAULT_VISIBILITY: SectionVisibility = {
   show_care_team: true,
 };
 
-interface ShortcutItem {
+export interface ShortcutItem {
   labelKey: string;
   icon: string;
   url: string;
@@ -59,7 +59,7 @@ interface ShortcutItem {
   lucideIcon?: LucideIcon;
 }
 
-const getShortcutItems = (hospitalId: string, patientGuidePdf?: string): ShortcutItem[] => {
+export const getShortcutItems = (hospitalId: string, patientGuidePdf?: string): ShortcutItem[] => {
   let podcastData: ShortcutItem | null;
   if (hospitalId === "qumc" || hospitalId === "ksumc") {
     // No podcast of their own, and the fallback below is Fakeeh's.
@@ -154,15 +154,16 @@ const surveyItem = {
 };
 
 /* ─── Hub Icon (32px rendered inside viewBox for scale) ─── */
-function HubIcon({ label, color }: { label: string; color?: string }) {
+function HubIcon({ label, color, size }: { label: string; color?: string; size?: number }) {
   const { theme } = useTheme();
   const iconColor = color || theme.primary;
+  const box = size ?? SPACE[5];
 
   /* Education uses lucide BookOpenText instead of SVG paths */
   if (label === "Education") {
     return (
-      <div className="relative shrink-0" style={{ width: SPACE[5], height: SPACE[5] }}>
-        <BookOpenText size={40} color={iconColor} strokeWidth={1.5} />
+      <div className="relative shrink-0" style={{ width: box, height: box }}>
+        <BookOpenText size={size ?? 40} color={iconColor} strokeWidth={1.5} />
       </div>
     );
   }
@@ -172,7 +173,7 @@ function HubIcon({ label, color }: { label: string; color?: string }) {
   const vb = config.viewBox || "0 0 20 20";
   const sw = vb === "0 0 24 24" ? "2" : "1.66667";
   return (
-    <div className="relative shrink-0" style={{ width: SPACE[5], height: SPACE[5] }}>
+    <div className="relative shrink-0" style={{ width: box, height: box }}>
       <svg className="block size-full" fill="none" viewBox={vb}>
         {config.paths[0]?.clipId ? (
           <g clipPath={`url(#${config.paths[0].clipId})`}>
@@ -261,7 +262,7 @@ function HubCard({
           transition: "background-color 0.1s ease-out",
         }}
       >
-        <HubIcon label={item.label} color={pressed ? theme.textInverse : theme.engagementIconColor} />
+        <HubIcon label={item.label} color={pressed ? theme.textInverse : theme.engagementIconColor} size={compact ? 26 : undefined} />
       </div>
       {/* Label */}
       <span
@@ -389,14 +390,15 @@ function ServiceCard({ item, onTap, square, contained, compact, onLongPress, isL
 }
 
 /* ─── Survey Card — filled version for ShortcutsColumn ─── */
-function SurveyCardFilled({ onOpen, compact, onLongPress, isLocked, guestLocked }: { onOpen: (e?: React.MouseEvent<HTMLElement>) => void; compact?: boolean; onLongPress: () => void; isLocked: boolean; /** Guest session: feedback is the patient's — dimmed, with a padlock. */ guestLocked?: boolean }) {
+function SurveyCardFilled({ onOpen, compact, small, onLongPress, isLocked, guestLocked }: { onOpen: (e?: React.MouseEvent<HTMLElement>) => void; compact?: boolean;
+  /** Phones: the small label size, matching the shortcut labels beside it. */ small?: boolean; onLongPress: () => void; isLocked: boolean; /** Guest session: feedback is the patient's — dimmed, with a padlock. */ guestLocked?: boolean }) {
   const { theme } = useTheme();
   const { t, fontFamily } = useLocale();
   const { onPointerDown, rippleElements } = useRipple("rgba(255,255,255,0.12)");
   const [pressed, setPressed] = useState(false);
 
-  const iconBoxSize = compact ? "48px" : "72px";
-  const iconSize = compact ? 28 : 40;
+  const iconBoxSize = compact ? "44px" : "72px";
+  const iconSize = compact ? 24 : 40;
   const iconRadius = compact ? theme.radiusMd : theme.radiusLg;
 
   const { handlers, handleClick } = useLongPress(onLongPress, 600);
@@ -408,7 +410,7 @@ function SurveyCardFilled({ onOpen, compact, onLongPress, isLocked, guestLocked 
       onPointerUp={() => { handlers.onPointerUp(); setPressed(false); }}
       onPointerLeave={() => { handlers.onPointerLeave(); setPressed(false); }}
       onClick={(e) => handleClick(() => onOpen(e))}
-      className={`relative overflow-hidden flex flex-col items-center justify-center ${compact ? "gap-1" : "gap-3"} w-full h-full transition-transform duration-150 cursor-pointer`}
+      className={`relative overflow-hidden flex flex-col items-center justify-center ${compact ? "gap-1.5" : "gap-3"} w-full h-full transition-transform duration-150 cursor-pointer`}
       style={{
         backgroundColor: pressed ? theme.accent : theme.engagementSurface,
         backgroundImage: pressed ? "none" : theme.engagementCardGradientShort,
@@ -448,6 +450,7 @@ function SurveyCardFilled({ onOpen, compact, onLongPress, isLocked, guestLocked 
         style={{
           fontFamily: fontFamily,
           ...TEXT_STYLE.button,
+          ...(compact && { fontSize: small ? TYPE_SCALE.sm : TYPE_SCALE.base, lineHeight: LEADING.tight, textAlign: "center" as const }),
           fontWeight: WEIGHT.semibold,
           color: pressed ? theme.textInverse : theme.textHeading,
           transition: "color 0.15s",
@@ -568,7 +571,7 @@ function ShortcutTile({ item, contained, onTap, onLongPress, isLocked }: { item:
           style={{
             width: SPACE[12],
             height: SPACE[12],
-            backgroundColor: (item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.burjeelPodcast") ? "#00A3C1" : item.labelKey === "shortcut.adminPortal" ? "#4EBEE3" : "#fff",
+            backgroundColor: item.labelKey === "shortcut.dallahPodcast" ? theme.primary : item.labelKey === "shortcut.burjeelPodcast" ? "#00A3C1" : item.labelKey === "shortcut.adminPortal" ? "#4EBEE3" : "#fff",
             borderRadius: theme.radiusXl,
             display: "flex",
             alignItems: "center",
@@ -640,7 +643,12 @@ function ShortcutTile({ item, contained, onTap, onLongPress, isLocked }: { item:
 }
 
 /* ─── Shortcut Tile — compact version for right column ─── */
-function ShortcutTileCompact({ item, onTap, onLongPress, isLocked }: { item: ShortcutItem; onTap: (e?: React.MouseEvent<HTMLElement>) => void; onLongPress: () => void; isLocked: boolean }) {
+function ShortcutTileCompact({ item, onTap, onLongPress, isLocked, iconSize, small }: { item: ShortcutItem; onTap: (e?: React.MouseEvent<HTMLElement>) => void; onLongPress: () => void; isLocked: boolean;
+  /** Portrait row: a smaller icon (this size). */
+  iconSize?: number;
+  /** Phones: the small label size, up to two lines. */
+  small?: boolean }) {
+  const box = iconSize ? `${iconSize}px` : "88px";
   const { theme } = useTheme();
   const { t, fontFamily } = useLocale();
   const [pressed, setPressed] = useState(false);
@@ -656,7 +664,7 @@ function ShortcutTileCompact({ item, onTap, onLongPress, isLocked }: { item: Sho
       onPointerUp={() => { handlers.onPointerUp(); setPressed(false); }}
       onPointerLeave={() => { handlers.onPointerLeave(); setPressed(false); }}
       onClick={(e) => handleClick(() => onTap(e))}
-      className="relative overflow-hidden flex flex-col items-center justify-center gap-2.5 transition-transform duration-150 cursor-pointer w-full h-full"
+      className={`relative overflow-hidden flex flex-col justify-center ${iconSize ? "gap-1.5" : "gap-2.5"} items-center transition-transform duration-150 cursor-pointer w-full h-full`}
       style={{
         borderRadius: theme.radiusLg,
         backgroundColor: pressed ? theme.primary : "transparent",
@@ -671,8 +679,9 @@ function ShortcutTileCompact({ item, onTap, onLongPress, isLocked }: { item: Sho
       {item.lucideIcon ? (
         <div
           style={{
-            width: "88px",
-            height: "88px",
+            width: box,
+            height: box,
+            flexShrink: 0,
             backgroundColor: theme.primary,
             borderRadius: theme.radiusLg,
             display: "flex",
@@ -680,19 +689,20 @@ function ShortcutTileCompact({ item, onTap, onLongPress, isLocked }: { item: Sho
             justifyContent: "center",
           }}
         >
-          <item.lucideIcon size={44} color={theme.brandOnPrimary} strokeWidth={1.75} />
+          <item.lucideIcon size={iconSize ? Math.round(iconSize / 2) : 44} color={theme.brandOnPrimary} strokeWidth={1.75} />
         </div>
       ) : item.labelKey === "shortcut.patientPortal" || item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.burjeelPodcast" || item.labelKey === "shortcut.adminPortal" ? (
         <div 
           style={{
-            width: "88px",
-            height: "88px",
-            backgroundColor: (item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.burjeelPodcast") ? "#00A3C1" : item.labelKey === "shortcut.adminPortal" ? "#4EBEE3" : "#fff",
+            width: box,
+            height: box,
+            flexShrink: 0,
+            backgroundColor: item.labelKey === "shortcut.dallahPodcast" ? theme.primary : item.labelKey === "shortcut.burjeelPodcast" ? "#00A3C1" : item.labelKey === "shortcut.adminPortal" ? "#4EBEE3" : "#fff",
             borderRadius: theme.radiusLg,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: 6,
+            padding: iconSize ? 4 : 6,
             border: "1px solid #eeeeee",
           }}
         >
@@ -710,8 +720,9 @@ function ShortcutTileCompact({ item, onTap, onLongPress, isLocked }: { item: Sho
       ) : item.labelKey === "shortcut.roomControl" ? (
         <div
           style={{
-            width: "88px",
-            height: "88px",
+            width: box,
+            height: box,
+            flexShrink: 0,
             borderRadius: theme.radiusLg,
             backgroundColor: ROOM_CONTROL_TILE,
             display: "flex",
@@ -731,8 +742,9 @@ function ShortcutTileCompact({ item, onTap, onLongPress, isLocked }: { item: Sho
           src={item.icon}
           alt={t(item.labelKey)}
           style={{
-            width: "88px",
-            height: "88px",
+            width: box,
+            height: box,
+            flexShrink: 0,
             borderRadius: theme.radiusLg,
             objectFit: "cover",
           }}
@@ -741,10 +753,14 @@ function ShortcutTileCompact({ item, onTap, onLongPress, isLocked }: { item: Sho
       <span
         style={{
           fontFamily: fontFamily,
-          fontSize: TYPE_SCALE.base,
+          fontSize: small ? TYPE_SCALE.sm : TYPE_SCALE.base,
           fontWeight: WEIGHT.semibold,
+          /* Two lines of room on every tile, so the icons line up whether a
+             label takes one line or two. */
+          ...(small && { lineHeight: LEADING.tight, minHeight: `${2 * LEADING.tight}em`, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }),
           color: pressed ? theme.textInverse : theme.textMuted,
           textAlign: "center",
+          lineHeight: iconSize ? LEADING.tight : undefined,
           transition: "color 0.15s",
         }}
       >
@@ -802,7 +818,7 @@ function ShortcutTileBare({ item, onTap, onLongPress, isLocked }: { item: Shortc
           style={{
             width: "120px",
             height: "120px",
-            backgroundColor: (item.labelKey === "shortcut.dallahPodcast" || item.labelKey === "shortcut.burjeelPodcast") ? "#00A3C1" : item.labelKey === "shortcut.adminPortal" ? "#4EBEE3" : "#fff",
+            backgroundColor: item.labelKey === "shortcut.dallahPodcast" ? theme.primary : item.labelKey === "shortcut.burjeelPodcast" ? "#00A3C1" : item.labelKey === "shortcut.adminPortal" ? "#4EBEE3" : "#fff",
             borderRadius: theme.radiusXl,
             display: "flex",
             alignItems: "center",
@@ -1018,8 +1034,8 @@ export function ServicesGrid({
 
   return (
     <div className={`flex flex-col flex-1 min-h-0`}>
-      {/* 4×2 hub grid */}
-      <div className={`grid grid-cols-4 ${gridGap} flex-1 min-h-0`}>
+      {/* 4×2 hub grid (data-tour: the portrait tour spotlights it by name) */}
+      <div data-tour="hub" className={`grid grid-cols-4 ${gridGap} flex-1 min-h-0`}>
         {[0, 1, 2, 3].map((col) => {
           const top = hubItems[col];
           const bottom = hubItems[col + 4];
@@ -1062,6 +1078,7 @@ export function ServicesGrid({
 
       {/* Bottom row — services (default) or shortcuts (swapped) */}
       <div
+        data-tour="services"
         className={`grid grid-cols-4 ${gridGap} shrink-0 items-center`}
         style={{ height: bottomHeight }}
       >
@@ -1166,7 +1183,13 @@ export function ServicesGrid({
 }
 
 /* ─── Right Column — shortcuts (default) or services (swapped) ─── */
-export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped, onRequestPinSetup, guestMode }: { contained?: boolean; onOpenSurvey?: () => void; onLaunchTool?: (id: string) => void; swapped?: boolean; onRequestPinSetup?: () => void; guestMode?: boolean }) {
+export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped, onRequestPinSetup, guestMode, portrait }: { contained?: boolean; onOpenSurvey?: () => void; onLaunchTool?: (id: string) => void; swapped?: boolean; onRequestPinSetup?: () => void; guestMode?: boolean;
+  /** Portrait Home splits the rail in two: "shortcuts" is the same tiles in
+   *  one row across its parent (More last when they don't fit); "feedback"
+   *  is the Feedback card alone. Both fill their parent. */
+  portrait?: { part: "shortcuts"; iconSize: number; small?: boolean; moreColumns?: number;
+    /** Tiles in the row, More included when there are more shortcuts. */
+    maxTiles?: number } | { part: "feedback"; compact?: boolean; small?: boolean } }) {
   const { theme } = useTheme();
   const { t } = useLocale();
   const lockedIds = useLockedApps();
@@ -1182,7 +1205,7 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
 
   /* The rail holds 4 rows. With more shortcuts, the 4th row becomes "More",
      which opens the rest in a panel — nothing is squeezed or dropped. */
-  const RAIL_ROWS = 4;
+  const RAIL_ROWS = (portrait?.part === "shortcuts" && portrait.maxTiles) || 4;
   const overflow = shortcutItems.length > RAIL_ROWS;
   const moreItems = overflow ? shortcutItems.slice(RAIL_ROWS - 1) : [];
   const moreItem: ShortcutItem = { labelKey: "shortcut.more", icon: "", url: "__more", lucideIcon: LayoutGrid };
@@ -1297,7 +1320,49 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
 
   return (
     <div className="flex flex-col h-full" style={{ gap: SPACE[3] }}>
-      {/* Shortcuts container — single white card behind all */}
+      {portrait?.part === "feedback" ? (
+        <div className="flex-1 min-h-0">
+          <SurveyCardFilled
+            compact={portrait.compact}
+            small={portrait.small}
+            onOpen={(e) => guestMode ? setGuestPrompt(true) : handleTileTap(e, "service.shareFeedback", t("service.shareFeedback"), undefined, lockedIds.has("service.shareFeedback"), () => onOpenSurvey?.())}
+            onLongPress={() => { if (!guestMode) handleTileLongPress("service.shareFeedback", t("service.shareFeedback"), lockedIds.has("service.shareFeedback")); }}
+            isLocked={lockedIds.has("service.shareFeedback")}
+            guestLocked={!!guestMode}
+          />
+        </div>
+      ) : portrait?.part === "shortcuts" ? (
+        /* The rail's card and tiles, as one row sharing its width. */
+        <div
+          className="flex flex-row flex-1 min-h-0"
+          style={{
+            backgroundColor: theme.engagementSurface,
+            backgroundImage: theme.engagementCardGradient,
+            borderRadius: theme.radiusCard,
+            boxShadow: SHADOW.md,
+            border: theme.engagementCardBorder,
+            padding: SPACE[1],
+            gap: 4,
+          }}
+        >
+          {railItems.map((item) => (
+            <div key={item.labelKey} className="flex-1 min-w-0">
+              {item === moreItem ? (
+                <ShortcutTileCompact item={item} iconSize={portrait.iconSize} small={portrait.small} onTap={() => setShowMore(true)} onLongPress={() => {}} isLocked={false} />
+              ) : (
+              <ShortcutTileCompact
+                item={item}
+                iconSize={portrait.iconSize} small={portrait.small}
+                onTap={(e) => handleTileTap(e, item.labelKey, t(item.labelKey), undefined, lockedIds.has(item.labelKey), () => launchShortcut(item))}
+                onLongPress={() => handleTileLongPress(item.labelKey, t(item.labelKey), lockedIds.has(item.labelKey))}
+                isLocked={lockedIds.has(item.labelKey)}
+              />
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+      /* Shortcuts container — single white card behind all */
       <div
         className="flex flex-col gap-3 flex-1 min-h-0"
         style={{
@@ -1329,6 +1394,7 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
           ))}
         </div>
       </div>
+      )}
 
       {showMore && (
         <div
@@ -1341,7 +1407,7 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
           <div
             onClick={(e) => e.stopPropagation()}
             className="flex flex-col overflow-hidden"
-            style={{ backgroundColor: theme.surface, borderRadius: theme.radiusXl, boxShadow: SHADOW.xl, border: theme.cardBorder }}
+            style={{ backgroundColor: theme.surface, borderRadius: theme.radiusXl, boxShadow: SHADOW.xl, border: theme.cardBorder, maxWidth: "calc(100% - 32px)" }}
           >
             <div className="flex items-center gap-4" style={{ padding: "26px 32px", borderBottom: `1px solid ${theme.borderSubtle}` }}>
               <div
@@ -1367,7 +1433,7 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
                 clear the list scrolls. */}
             <div
               className="grid overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden"
-              style={{ gridTemplateColumns: `repeat(${Math.min(moreItems.length, 4)}, 200px)`, gap: SPACE[2], padding: SPACE[4], maxHeight: 148 * 3 + 16 * 3 + 56 + 64, overscrollBehavior: "contain", scrollbarWidth: "none" }}
+              style={{ gridTemplateColumns: `repeat(${Math.min(moreItems.length, (portrait?.part === "shortcuts" && portrait.moreColumns) || 4)}, minmax(0, 200px))`, gap: SPACE[2], padding: SPACE[4], maxHeight: 148 * 3 + 16 * 3 + 56 + 64, overscrollBehavior: "contain", scrollbarWidth: "none" }}
             >
               {moreItems.map((item) => (
                 <div key={item.labelKey} style={{ height: 148 }}>
@@ -1385,7 +1451,7 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
       )}
 
       {/* Survey — separate card, same height as services row (190px). */}
-      {(
+      {!portrait && (
         <div className="shrink-0" style={{ height: "192px" }}>
           <SurveyCardFilled
             onOpen={(e) => guestMode ? setGuestPrompt(true) : handleTileTap(e, "service.shareFeedback", t("service.shareFeedback"), undefined, lockedIds.has("service.shareFeedback"), () => onOpenSurvey?.())}

@@ -1888,4 +1888,17 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
+/** Phones: the same cards with a smaller radius scale. The radii are sized
+ *  for cards on a 1920 screen, and on a 390 phone they turn small cards into
+ *  pills. Everything inside reads its radius from the theme, so one wrapper
+ *  rescales every card at once. */
+export function CompactRadii({ children }: { children: ReactNode }) {
+  const ctx = useContext(ThemeContext);
+  const value = useMemo(
+    () => ({ ...ctx, theme: { ...ctx.theme, radiusCard: "24px", radiusXl: "20px", radiusLg: "16px", radiusMd: "12px" } }),
+    [ctx],
+  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+}
+
 export { buildTheme };

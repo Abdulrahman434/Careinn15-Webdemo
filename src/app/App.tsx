@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, lazy, Suspense, type CSSProperties } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef, lazy, Suspense, type CSSProperties } from "react";
 import { getAuthorizedCards, getNurseCardUid } from "./utils/nfc";
 import { isTvDevice } from "./utils/deviceDetect";
 import { ThemeProvider, useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "./components/ThemeContext";
@@ -17,6 +17,7 @@ import { IdleScreen } from "./components/IdleScreen";
 import CiHomescreen from "../imports/CiHomescreen";
 import KidsHomescreen from "./components/KidsHomescreen";
 import SpotlightHomescreen from "./components/SpotlightHomescreen";
+import PortraitHome from "./components/PortraitHome";
 import { RippleStyles } from "./components/useRipple";
 import { AppLauncher } from "./components/AppLauncher";
 import { SurveyModal } from "./components/SurveyModal";
@@ -102,13 +103,50 @@ import { OnboardingWizard } from "./components/OnboardingWizard";
 import { isOnboardingComplete } from "./lib/onboardingStore";
 import { startDataLifecycleWatchers } from "./lib/dataLifecycle";
 import { matchBinding } from "./lib/handsetConfig";
+import { CanvasSizeProvider, canvasSize } from "./lib/canvasSize";
 import { sip, iptv, _getIptvChannels, _getIptvPlayingId, isAndroidApp, IptvChannel } from "./utils/androidBridge";
 
 
-const DESIGN_W = 1920;
-const DESIGN_H = 1080;
+/* A portrait screen gets its own 1080×1920 canvas rather than the landscape
+   one shrunk to fit: text, buttons and keypads keep the same physical size.
+   "careinn-orientation" ("portrait" | "landscape", set from My Account →
+   Layout Mode) forces one for demos; unset follows the screen's shape.
+   Changes broadcast as "orientation-changed". */
+const ORIENTATION_KEY = "careinn-orientation";
 
-function useScreenScale() {
+function readPortrait(): boolean {
+  let forced: string | null = null;
+  try { forced = localStorage.getItem(ORIENTATION_KEY); } catch { /* storage blocked */ }
+  if (forced === "portrait") return true;
+  if (forced === "landscape") return false;
+  return window.innerHeight > window.innerWidth;
+}
+
+function useIsPortrait(): boolean {
+  const [portrait, setPortrait] = useState(readPortrait);
+  useEffect(() => {
+    const update = () => setPortrait(readPortrait());
+    window.addEventListener("resize", update);
+    window.addEventListener("orientation-changed", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientation-changed", update);
+    };
+  }, []);
+  return portrait;
+}
+
+function useViewportSize() {
+  const [size, setSize] = useState(() => ({ w: window.innerWidth, h: window.innerHeight }));
+  useEffect(() => {
+    const update = () => setSize({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  return size;
+}
+
+function useScreenScale(DESIGN_W: number, DESIGN_H: number) {
   const getScale = useCallback(() => {
     const isTV = isTvDevice();
 
@@ -139,11 +177,12 @@ function useScreenScale() {
     const sy = h / DESIGN_H;
     const scale = Math.min(sx, sy);
     return Math.max(0.5, Math.min(2.0, scale));
-  }, []);
+  }, [DESIGN_W, DESIGN_H]);
 
   const [scale, setScale] = useState(getScale);
 
   useEffect(() => {
+    setScale(getScale());
     const t1 = setTimeout(() => setScale(getScale()), 100);
     const t2 = setTimeout(() => setScale(getScale()), 500);
     const t3 = setTimeout(() => setScale(getScale()), 1500);
@@ -280,7 +319,6 @@ function BedsideScreen() {
   const { isFullAccess, lockedHospitalId } = useAuth();
   const { t, locale, isRTL, dir, fontFamily } = useLocale();
   const { orders } = useOrders();
-  const scale = useScreenScale();
   const isOnline = useNetworkStatus();
 
   const [bypassOffline, setBypassOffline] = useState(false);
@@ -442,6 +480,21 @@ function BedsideScreen() {
     }
   });
   const [layoutMode, setLayoutMode] = useState<1 | 2 | 3 | 4>(getSavedLayoutMode);
+  /* Portrait is Layout 1 only; the other layouts keep their landscape canvas. */
+  const screenPortrait = useIsPortrait();
+  const portrait = screenPortrait && layoutMode === 1;
+  /* A real portrait screen gets a canvas the size of the screen (1080 wide at
+     most, scaled up past that), so the portrait Home flows to phones and
+     tablets at true size. Portrait forced on a wide window shows the
+     1080×1920 bedside screen scaled to fit. */
+  const viewport = useViewportSize();
+  const fluid = portrait && viewport.h > viewport.w;
+  const fluidScale = Math.max(1, viewport.w / 1080);
+  const DESIGN_W = !portrait ? 1920 : fluid ? Math.round(viewport.w / fluidScale) : 1080;
+  const DESIGN_H = !portrait ? 1080 : fluid ? Math.round(viewport.h / fluidScale) : 1920;
+  const scale = useScreenScale(DESIGN_W, DESIGN_H);
+  /* Internal pages read the canvas size (useCanvasSize) to stack in portrait. */
+  const canvasSizeValue = useMemo(() => canvasSize(DESIGN_W, DESIGN_H), [DESIGN_W, DESIGN_H]);
   const [showConfigurator, setShowConfigurator] = useState(false);
   const [showThemeAppearance, setShowThemeAppearance] = useState(false);
 
@@ -1745,6 +1798,7 @@ function BedsideScreen() {
     activeGame, activeTool, showIptv, matchBinding]);
 
   return (
+    <CanvasSizeProvider value={canvasSizeValue}>
     <div
       className="w-screen h-screen overflow-hidden flex items-center justify-center"
       style={{ backgroundColor: "#0a0a0a" }}
@@ -1833,6 +1887,34 @@ function BedsideScreen() {
             onOpenNotifications={() => setShowNotifications(true)}
             onOpenSurvey={() => setShowSurvey(true)}
             unreadCount={getUnreadCount()}
+          />
+        ) : portrait ? (
+          <PortraitHome
+            width={DESIGN_W}
+            height={DESIGN_H}
+            visibility={v}
+            onOpenCategory={handleOpenCategory}
+            onLaunchTool={(id) => setActiveTool(id as any)}
+            guestSession={guestSession}
+            onRequestPinSetup={() => { setOpenAccountDirectly(true); setShowSettings(true); }}
+            careMeCard={guestSession ? (
+              <GuestCareMeCard />
+            ) : (!isGuest || careMeUnlocked) ? (
+              <CareMe onExpand={() => setShowCareMeExpanded(true)} onOpenPreferences={() => setShowPreferenceForm(true)} />
+            ) : (
+              <CareMeLockedPlaceholder onTap={() => setShowCareMePinDialog(true)} />
+            )}
+            onOpenAboutUs={() => setShowAboutUs(true)}
+            showAboutUs={v.show_about_us}
+            onOpenTour={() => setShowTour(true)}
+            onImageTap={(url, images, index, origin) => setCtaMediaConfig({ type: "image", url, title: theme.hospitalName, images, index, origin })}
+            onOpenWeather={() => setShowWeather(true)}
+            onOpenSettings={() => setShowSettings(true)}
+            onOpenNotifications={() => setShowNotifications(true)}
+            onOpenSurvey={() => setShowSurvey(true)}
+            onDhuhrTap={() => setShowConfigurator(true)}
+            unreadCount={getUnreadCount()}
+            tickerPaused={showTasbih || isLocked}
           />
         ) : (
           <>
@@ -2412,21 +2494,19 @@ function BedsideScreen() {
           </div>
         )}
         <UpdateBanner screenKey={screenKey} idle={showTasbih} />
+
+        {/* Survey Modal — inside the canvas so it scales with every other page */}
+        {showSurvey && (
+          <SurveyModal
+            initialPath={surveyInitialPath}
+            onClose={() => {
+              setShowSurvey(false);
+              setSurveyInitialPath("hub");
+            }}
+          />
+        )}
         </ToastProvider>
       </div>
-
-
-
-      {/* Survey Modal */}
-      {showSurvey && (
-        <SurveyModal
-          initialPath={surveyInitialPath}
-          onClose={() => {
-            setShowSurvey(false);
-            setSurveyInitialPath("hub");
-          }}
-        />
-      )}
 
       {/* PDF Reader Modal from CTA */}
       {ctaPdfConfig && (
@@ -2622,6 +2702,7 @@ function BedsideScreen() {
 
       <Toaster position="bottom-center" />
     </div>
+    </CanvasSizeProvider>
   );
 }
 
