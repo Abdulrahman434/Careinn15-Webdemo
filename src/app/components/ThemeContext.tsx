@@ -1904,16 +1904,21 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
-/** Phones: the same cards with a smaller radius scale. The radii are sized
- *  for cards on a 1920 screen, and on a 390 phone they turn small cards into
- *  pills. Everything inside reads its radius from the theme, so one wrapper
- *  rescales every card at once. */
+/** Phones and tablets: the same cards with their corners scaled down by a
+ *  fifth. The radii are sized for cards on a 1920 screen; on a phone or a
+ *  tablet's portrait page the cards are smaller, and the full radius turned
+ *  them into pills — while a fixed small set made the app look like another
+ *  one. Scaling each hospital's own radii keeps its look, only gentler.
+ *  Everything inside reads its radius from the theme, so one wrapper rescales
+ *  every card at once. */
+const HANDHELD_RADIUS = 0.8;
+const scaleRadius = (r: string) => `${Math.round(parseFloat(r) * HANDHELD_RADIUS)}px`;
 export function CompactRadii({ children }: { children: ReactNode }) {
   const ctx = useContext(ThemeContext);
-  const value = useMemo(
-    () => ({ ...ctx, theme: { ...ctx.theme, radiusCard: "24px", radiusXl: "20px", radiusLg: "16px", radiusMd: "12px" } }),
-    [ctx],
-  );
+  const value = useMemo(() => {
+    const t = ctx.theme;
+    return { ...ctx, theme: { ...t, radiusCard: scaleRadius(t.radiusCard), radiusXl: scaleRadius(t.radiusXl), radiusLg: scaleRadius(t.radiusLg), radiusMd: scaleRadius(t.radiusMd) } };
+  }, [ctx]);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
