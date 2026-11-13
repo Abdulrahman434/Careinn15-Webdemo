@@ -35,6 +35,20 @@ export const CHANGE_TYPES: { type: ChangeType; label: string }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: "1.13.0",
+    date: "2026-11-13",
+    changes: [
+      { type: "new", area: "Home", text: "Portrait home for the bedside screen, tablets and phones, with date, time and connection status in the header." },
+      { type: "new", area: "Home", text: "Layout 4 \"Spotlight\": the hospital photo fills the screen with glass cards on top. Choose it in My Account → Layout Mode." },
+      { type: "improved", area: "Internal pages", text: "Meal Ordering, Call, Room Control, Live TV, About Us, Settings, Feedback, all tools and all games fit portrait screens and phones." },
+      { type: "improved", area: "CareMe", text: "In portrait, all CareMe cards are the same height, sized so Care Overview shows in full; longer cards scroll inside." },
+      { type: "improved", area: "Feedback", text: "Survey answers wrap as one group, so no answer sits alone on its own row." },
+      { type: "new", area: "Feedback", text: "Burjeel collects feedback through its two QR posters: Rate Us on Google Maps and the Patient Form." },
+      { type: "improved", area: "Home", text: "Burjeel's patient chips fit on one row, and the patient is Sara Saleh in every hospital." },
+      { type: "improved", area: "Branding", text: "Dallah uses its exact cyan brand colour." },
+    ],
+  },
+  {
     version: "1.12.0",
     date: "2026-11-11",
     changes: [
