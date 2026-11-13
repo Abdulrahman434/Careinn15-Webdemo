@@ -492,6 +492,7 @@ function buildTheme(core: {
   heroOpacity?: number;
   primary: string;
   onPrimary?: string;
+  exactBrandColor?: boolean;
   primaryDark?: string;
   primaryLight?: string;
   accent: string;
@@ -566,7 +567,7 @@ function buildTheme(core: {
     const ENG_L = engagementTokens(c.primary, c.accent, "#FFFFFF", {
       tint: 0.09, border: 0.18, iconBg: 0.06, stroke: 0.35,
       minBorder: 1.35, minIconBg: 1.05, minStroke: 1.7, minGlyph: 4.5,
-    }, c.onPrimary);
+    }, c.onPrimary, c.exactBrandColor);
     const chipOnTintL = overlayHex(P.seed, P.subtleAlpha, ENG_L.engagementTint);
     const backdropsL = ["#FFFFFF", "#F8F8F8", "#F9FAFB", P.subtleSolid, A.subtleSolid,
       ENG_L.engagementTint, chipOnTintL];
@@ -576,11 +577,11 @@ function buildTheme(core: {
       ...shared,
       primarySubtle: P.subtle,
       accentSubtle: A.subtle,
-      primaryOn: ensureContrastAll(c.primary, backdropsL, 4.5),
+      primaryOn: c.exactBrandColor ? c.primary : ensureContrastAll(c.primary, backdropsL, 4.5),
       accentOn: ensureContrastAll(c.accent, backdropsL, 4.5),
       surfaceInset: "rgba(0,0,0,0.026)",
       borderInset: `1px solid ${hexToRgba("#1B2A32", 0.12)}`,
-      primaryOnLight: ensureContrast(c.primary, "#FFFFFF", 4.5),
+      primaryOnLight: c.exactBrandColor ? c.primary : ensureContrast(c.primary, "#FFFFFF", 4.5),
       accentOnLight: ensureContrast(c.accent, "#FFFFFF", 4.5),
       pageGradient: `linear-gradient(160deg, ${c.primary} 0%, ${c.primaryDark} 40%, #0a1628 100%)`,
       pageGradientFlat: `linear-gradient(160deg, ${c.primary} 0%, ${c.primaryDark} 100%)`,
@@ -609,7 +610,7 @@ function buildTheme(core: {
       textInverseMuted: "rgba(255,255,255,0.7)",
 
       iconDefault: ensureContrast("#95A3AD", "#FFFFFF", 3),
-      iconBrand: ensureContrast(c.primary, "#FFFFFF", 3),
+      iconBrand: c.exactBrandColor ? c.primary : ensureContrast(c.primary, "#FFFFFF", 3),
       iconInverse: "#FFFFFF",
 
       tileActiveBg: c.primary,
@@ -1016,19 +1017,21 @@ function engagementTokens(
   spec: { tint: number; border: number; iconBg: number; stroke: number;
           minBorder: number; minIconBg: number; minStroke: number; minGlyph: number },
   onPrimary?: string,
+  exact?: boolean,
 ) {
   // The glyph carries meaning, so it leads: pull the brand color to a readable
   // lightness on this surface, then tint everything else from that same color
   // so a navy brand stays navy instead of collapsing into the gray surface.
-  const seed = ensureContrast(primary, surface, spec.minGlyph);
+  // An exact brand keeps its color and the design percentages as given.
+  const seed = exact ? primary : ensureContrast(primary, surface, spec.minGlyph);
 
-  const iconBgAlpha = solveAlpha(seed, surface, spec.minIconBg, spec.iconBg);
+  const iconBgAlpha = exact ? spec.iconBg : solveAlpha(seed, surface, spec.minIconBg, spec.iconBg);
   const iconBg = overlayHex(seed, iconBgAlpha, surface);
   // The glyph sits on the container, not the card, so re-check it against that.
-  const glyph = ensureContrast(seed, iconBg, spec.minGlyph);
+  const glyph = exact ? primary : ensureContrast(seed, iconBg, spec.minGlyph);
 
-  const borderAlpha = solveAlpha(glyph, surface, spec.minBorder, spec.border);
-  const strokeAlpha = solveAlpha(glyph, iconBg, spec.minStroke, spec.stroke);
+  const borderAlpha = exact ? spec.border : solveAlpha(glyph, surface, spec.minBorder, spec.border);
+  const strokeAlpha = exact ? spec.stroke : solveAlpha(glyph, iconBg, spec.minStroke, spec.stroke);
   const tint = overlayHex(glyph, Math.max(spec.tint, iconBgAlpha), surface);
 
   // The filled container must read as a filled container. A brand whose color
@@ -1191,6 +1194,7 @@ export const DALLAH_CORE: HospitalCoreConfig = {
   heroCropPosition: "50% 45%",
   primary: "#00C4D3",
   onPrimary: "#FFFFFF",
+  exactBrandColor: true,
   accent: "#4A4E4F",
   location: "Riyadh",
 };
@@ -1259,6 +1263,7 @@ export const PRIME_CORE: HospitalCoreConfig = {
   hospitalWebsiteUrl: "https://www.primehospital.com/",
   heroImageUrl: primeHero,
   primary: "#F47B20",
+  onPrimary: "#FFFFFF",
   primaryDark: "#C45E0A",
   primaryLight: "#F9B27A",
   accent: "#6D6E71",
@@ -1357,6 +1362,11 @@ export interface HospitalCoreConfig {
    *  brand guide prescribes it (Dallah: white on its cyan); otherwise it is
    *  chosen for contrast. */
   onPrimary?: string;
+  /** Optional: on light surfaces, brand icons, borders, outline buttons and
+   *  brand-coloured text use `primary` exactly instead of being darkened to
+   *  the contrast floor. Set only when the brand guide asks for it — Dallah
+   *  uses its light cyan this way on its own site. */
+  exactBrandColor?: boolean;
   /** Optional — auto-derived from `primary` when absent */
   primaryDark?: string;
   /** Optional — auto-derived from `primary` when absent */
