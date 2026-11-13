@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback, type CSSProperties } from "react";
 import { InternalPageHeader } from "./InternalPageHeader";
+import { useCanvasSize } from "../lib/canvasSize";
+import { pageRail, pageRailCard, pageRailItem } from "./pageRail";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE, TEXT_STYLE, LEADING } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import {
@@ -192,6 +194,7 @@ function ChannelPlayerSimulation({
   onStop: () => void;
 }) {
   const { t, locale, isRTL, fontFamily } = useLocale();
+  const { compact } = useCanvasSize();
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
@@ -257,7 +260,7 @@ function ChannelPlayerSimulation({
       />
 
       {/* Top bar */}
-      <div className={`relative z-20 flex items-center justify-between px-10 pt-8 pb-4 transition-opacity duration-300 ${showControls ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
+      <div className={`relative z-20 flex items-center justify-between ${compact ? "flex-wrap gap-3 px-4 pt-4 pb-2" : "px-10 pt-8 pb-4"} transition-opacity duration-300 ${showControls ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
         <button
           onClick={onClose}
           type="button"
@@ -323,9 +326,9 @@ function ChannelPlayerSimulation({
       </div>
 
       {/* Bottom controls */}
-      <div className={`relative z-20 px-10 pb-8 pt-4 transition-opacity duration-300 ${showControls ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
+      <div className={`relative z-20 ${compact ? "px-4 pb-4" : "px-10 pb-8"} pt-4 transition-opacity duration-300 ${showControls ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
         <div
-          className="max-w-4xl mx-auto flex items-center justify-between px-8 py-4 rounded-2xl backdrop-blur-xl shadow-2xl"
+          className={`max-w-4xl mx-auto flex items-center justify-between ${compact ? "flex-wrap gap-3 px-4 py-3" : "px-8 py-4"} rounded-2xl backdrop-blur-xl shadow-2xl`}
           style={{ backgroundColor: "rgba(15, 23, 42, 0.8)", border: "1px solid rgba(255, 255, 255, 0.15)" }}
         >
           <div className="flex items-center gap-3 min-w-0">
@@ -378,6 +381,9 @@ function ChannelPlayerSimulation({
 export function IptvChannels({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
   const { t, fontFamily, locale, isRTL } = useLocale();
+  const { compact, portrait, width: canvasWidth } = useCanvasSize();
+  /* Portrait: the rail is a strip on top, so the grid has the full width. */
+  const gridCols = `repeat(${!portrait ? 5 : compact ? 2 : canvasWidth >= 1000 ? 4 : 3}, minmax(0, 1fr))`;
   const { channels, loading, error, reload } = useIptvChannels();
   const [playingId, setPlayingId] = useState<number | null>(null);
   const [favourites, setFavourites] = useState<string[]>(() => readIds(FAVOURITES_KEY));
@@ -641,10 +647,11 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
         }
       />
 
-      <div className="flex-1 min-h-0 px-12 pt-2 pb-8 relative z-10 flex flex-col">
+      <div className={`flex-1 min-h-0 pt-2 relative z-10 flex flex-col ${compact ? "px-4 pb-4" : "px-12 pb-8"}`}>
         <div
-          className="flex-1 min-h-0 flex overflow-hidden"
+          className="flex-1 min-h-0 overflow-hidden"
           style={{
+            ...pageRailCard(portrait),
             backgroundColor: theme.surface,
             borderRadius: theme.radiusXl,
             boxShadow: SHADOW.xl,
@@ -653,11 +660,10 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
         >
           {/* Category rail — the patient's own lists first, then genres. */}
           <nav
-            className="tv-scroll shrink-0 flex flex-col gap-2 py-7 px-5 overflow-y-auto"
+            className={`tv-scroll gap-2 py-7 px-5 ${portrait ? "" : "overflow-y-auto"}`}
             style={{
-              width: 320,
+              ...pageRail(portrait, 320, theme.borderSubtle),
               backgroundColor: theme.surfaceInset,
-              borderInlineEnd: `1px solid ${theme.borderSubtle}`,
             }}
           >
             {railItems.map((item, i) => {
@@ -665,8 +671,8 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
               const RIcon = item.Icon;
               const startsGenres = item.key === "all" && i > 0;
               return (
-                <div key={item.key}>
-                  {startsGenres && (
+                <div key={item.key} style={portrait ? { display: "flex", alignItems: "center", flexShrink: 0, gap: 8 } : undefined}>
+                  {startsGenres && !portrait && (
                     <div style={{ height: 1, backgroundColor: theme.borderSubtle, margin: `${SPACE[1]} 14px` }} />
                   )}
                   <button
@@ -681,6 +687,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
                       outline: "none",
                       boxShadow: active ? SHADOW.md : "none",
                       textAlign: "start",
+                      ...pageRailItem(portrait),
                     }}
                   >
                     <span
@@ -739,7 +746,10 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
 
           {/* Body */}
           <div className="flex-1 min-w-0 min-h-0 flex flex-col">
-            <div className="shrink-0 flex items-center gap-6 px-8 pt-7 pb-5">
+            <div
+              className={`tv-head shrink-0 flex ${portrait ? "flex-col items-stretch gap-3" : "items-center gap-6 px-8 pt-7 pb-5"}`}
+              style={portrait ? { padding: compact ? "16px 16px 12px" : "28px 32px 20px" } : undefined}
+            >
               <div className="flex-1 min-w-0">
                 <h3 className="truncate" style={{ ...TEXT_STYLE.pageTitle, fontFamily, color: theme.textHeading }}>
                   {heading}
@@ -752,9 +762,9 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
               <SearchField value={query} onChange={setQuery} placeholder={t("tv.search")} clearLabel={t("tv.clearSearch")} />
             </div>
 
-            <div ref={gridRef} className="tv-scroll flex-1 min-h-0 overflow-y-auto px-8 pb-8" style={{ overscrollBehavior: "contain" }}>
+            <div ref={gridRef} className={`tv-scroll flex-1 min-h-0 overflow-y-auto ${compact ? "px-4 pb-4" : "px-8 pb-8"}`} style={{ overscrollBehavior: "contain" }}>
               {loading && channels.length === 0 ? (
-                <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr))" }}>
+                <div className={`grid ${compact ? "gap-3" : "gap-5"}`} style={{ gridTemplateColumns: gridCols }}>
                   {Array.from({ length: 18 }).map((_, i) => (
                     <div
                       key={i}
@@ -778,7 +788,7 @@ export function IptvChannels({ onClose }: { onClose: () => void }) {
                   </p>
                 </div>
               ) : (
-                <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr))" }}>
+                <div className={`grid ${compact ? "gap-3" : "gap-5"}`} style={{ gridTemplateColumns: gridCols }}>
                   {visible.map(channel => {
                     const isPlaying = playingId === channel.id;
                     const isPressed = pressedId === channel.id || launchingId === channel.id;

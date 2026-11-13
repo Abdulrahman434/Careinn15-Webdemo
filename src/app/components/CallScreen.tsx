@@ -43,6 +43,8 @@ import { useLocale } from "./i18n";
 import { playTone } from "./useRipple";
 import { usePressFlash } from "./usePressFlash";
 import type { LucideIcon } from "lucide-react";
+import { useCanvasSize } from "../lib/canvasSize";
+import { pageRail, pageRailCard, pageRailItem } from "./pageRail";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * DATA
@@ -237,6 +239,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
   const { theme } = useTheme();
   const { t, isRTL, fontFamily, locale } = useLocale();
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
+  const { portrait, compact } = useCanvasSize();
 
   // SIP Data
   const contacts = useSipContacts();
@@ -427,6 +430,14 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
   const [historyTab, setHistoryTab] = useState<"all" | "missed" | "attended">("all");
   const [showKeypad, setShowKeypad] = useState(false);
   const [inCallDigits, setInCallDigits] = useState("");
+  /* Phones show one pane at a time; the keypad is the main one. */
+  const [phonePane, setPhonePane] = useState<"keypad" | "history" | "directory">("keypad");
+  const phoneRailRef = useRef<HTMLElement | null>(null);
+  /* Picking a contact switches back to the keypad, whose tab may have
+     scrolled out of the strip. */
+  useEffect(() => {
+    phoneRailRef.current?.querySelector('[data-active="true"]')?.scrollIntoView({ inline: "nearest", block: "nearest" });
+  }, [phonePane]);
 
   const callTimer = useCallTimer(callState === "active");
   useCallAudio(callState);
@@ -759,7 +770,7 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
                 </div>
               ) : (
                 /* ── Normal call controls ── */
-                <div className="flex items-center justify-center gap-10">
+                <div className={`flex items-center justify-center ${compact ? "gap-3" : "gap-10"}`}>
                   <CallControlButton icon={(isSipAvailable ? sip.isMuted() : muted) ? MicOff : Mic} label={(isSipAvailable ? sip.isMuted() : muted) ? t("call.unmute") : t("call.mute")} active={isSipAvailable ? sip.isMuted() : muted} onTap={() => isSipAvailable ? sip.setMuted(!sip.isMuted()) : setMuted(!muted)} fontFamily={fontFamily} />
                   <CallControlButton icon={Volume2} label={t("call.speaker")} active={speaker} onTap={() => setSpeaker(!speaker)} fontFamily={fontFamily} />
                   <CallControlButton icon={onHold ? Play : Pause} label={onHold ? t("call.resume") : t("call.hold")} active={onHold} onTap={() => setOnHold(!onHold)} fontFamily={fontFamily} />
@@ -822,6 +833,219 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
   /* ═══════════════════════════════════════════════════════════════════════
    * RENDER — Idle / Directory + Keypad + History — CareMe expanded pattern
    * ═══════════════════════════════════════════════════════════════════════ */
+
+  /* The three panes are built once and arranged per canvas: side by side in
+     landscape; in portrait History | Directory on top with the keypad under
+     them; on phones one card with the shared page-rail strip switching panes. */
+  const cardShell = (extra: React.CSSProperties): React.CSSProperties => ({
+    backgroundColor: theme.surface,
+    /* In dark mode SHADOW.xl is a dark shadow on a dark ground and does
+       nothing: the border is the only thing holding the card off the
+       backdrop, which is why these three read as melted into it while
+       CareMe's identical columns did not. cardBorder is "none" in light
+       mode, so this costs nothing there. */
+    border: theme.cardBorder,
+    borderRadius: theme.radiusXl, boxShadow: SHADOW.xl,
+    ...extra,
+  });
+  /* The same fixed card as CareMe's expanded columns — 415 x 710 — so the
+     two screens read as one system. Three of these do not fill the row, so
+     the row centres them rather than stretching them. */
+  const landscapeCard: React.CSSProperties = { width: "415px", flexShrink: 0, height: "710px" };
+
+  const cardHeader = (Icon: LucideIcon, title: string) => (
+    <div
+      className="flex items-center gap-3 px-[22px] py-[18px] shrink-0"
+      style={{ borderBottom: theme.borderCard }}
+    >
+      <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ backgroundColor: theme.primarySubtle, color: theme.primaryOn, borderRadius: theme.radiusMd }}>
+        <Icon size={16} />
+      </div>
+      <span style={{ fontFamily, fontSize: "20px", fontWeight: WEIGHT.bold, color: theme.textHeading }}>{title}</span>
+    </div>
+  );
+
+  const historyBody = (
+    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      {/* Row 2 — Tab toggle */}
+      <div className="shrink-0 px-5 pt-5 pb-3">
+        <div className="flex gap-1" style={{
+          borderRadius: theme.radiusFull, backgroundColor: theme.background,
+          border: theme.borderInset, padding: "4px",
+        }}>
+          {(["all", "missed", "attended"] as const).map((key) => {
+            const active = historyTab === key;
+            const count = key === "missed" ? displayMissed.length : key === "attended" ? displayAttended.length : displayAll.length;
+            return (
+              <button
+                key={key}
+                onClick={() => setHistoryTab(key)}
+                className="flex-1 flex items-center justify-center gap-2 cursor-pointer transition-transform"
+                style={{
+                  padding: "9px 12px", borderRadius: theme.radiusFull,
+                  backgroundColor: active ? theme.primary : "transparent",
+                  boxShadow: active ? SHADOW.sm : "none",
+                  border: "none", outline: "none",
+                  ...(compact ? { padding: "9px 6px", minHeight: 44 } : {}),
+                }}
+              >
+                <span style={{ fontFamily, fontSize: "15px", fontWeight: WEIGHT.bold, color: active ? "#fff" : theme.textMuted }}>
+                  {t(`call.${key}`)}
+                </span>
+                {count > 0 && (
+                  <span className="flex items-center justify-center" style={{
+                    minWidth: "20px", height: "20px", borderRadius: theme.radiusFull, padding: "0 5px",
+                    backgroundColor: active ? "rgba(255,255,255,0.25)" : theme.primarySubtle,
+                    fontFamily, fontSize: "14px", fontWeight: WEIGHT.bold,
+                    color: active ? "#fff" : theme.primaryOn,
+                  }}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div style={{ height: "1px", backgroundColor: theme.borderSubtle, margin: "0 16px" }} />
+
+      <div className="flex-1 min-h-0 overflow-y-auto callscreen-scroll" style={{ padding: "20px 16px 16px 16px" }}>
+        <AnimatePresence mode="wait">
+          <motion.div key={historyTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
+            {historyEntries.length === 0 ? (
+              <EmptyState message={t(historyTab === "all" ? "call.noHistory" : historyTab === "missed" ? "call.noMissed" : "call.noAttended")} />
+            ) : (
+              <div className="flex flex-col">
+                <p className="px-2 pt-1 pb-2" style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "16px", color: theme.textMuted }}>{t("call.today")}</p>
+                {historyEntries.map((entry, i) => (
+                  <CallLogRow key={entry.id} entry={entry} isLast={i === historyEntries.length - 1} onCallback={(e) => {
+                    handleDial({ extension: e.ext, displayName: e.nameKey.startsWith('call.') ? t(e.nameKey) : e.nameKey });
+                  }} />
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+
+  const keypadBody = (
+    <div
+      className={`flex-1 flex flex-col justify-center min-h-0 pb-4 ${compact ? "overflow-y-auto callscreen-scroll pt-4" : "overflow-hidden"}`}
+      /* Phones: a short screen scrolls the keypad rather than cutting its top. */
+      style={{ minWidth: 0, ...(compact ? { justifyContent: "safe center" } : {}) }}
+    >
+
+      {/* Display — the extension, and whose extension it is */}
+      <div className="shrink-0 flex flex-col items-center justify-center px-5 mb-4" style={{ minHeight: "84px" }}>
+        <span style={{
+          fontFamily: theme.fontFamilyMono, fontSize: "48px", fontWeight: WEIGHT.bold,
+          color: dialInput ? theme.primaryOn : theme.textDisabled,
+          letterSpacing: "8px", textAlign: "center", minHeight: "56px",
+          textShadow: "none",
+          transition: "all 0.3s ease",
+        }}>
+          {dialInput || "—"}
+        </span>
+        <span style={{
+          fontFamily, fontSize: "17px", fontWeight: WEIGHT.medium, color: theme.textMuted,
+          textAlign: "center", minHeight: "24px", transition: "opacity 0.2s ease",
+          opacity: dialContact ? 1 : 0,
+        }}>
+          {dialContact?.displayName ?? " "}
+        </span>
+      </div>
+
+      {/* Keypad grid */}
+      <div dir="ltr" className="flex flex-col justify-center items-center px-4 gap-3">
+        {[["1","2","3"],["4","5","6"],["7","8","9"]].map((row, ri) => (
+          <div key={ri} className="flex gap-3 justify-center">
+            {row.map((digit) => (
+              <KeypadButton key={digit} digit={digit} onPress={onKeypadPress} />
+            ))}
+          </div>
+        ))}
+        {/* Bottom row: empty | 0 | delete */}
+        <div className="flex gap-3 justify-center">
+          <div style={{ width: "72px", height: "72px" }} />
+          <KeypadButton digit="0" onPress={onKeypadPress} />
+          <KeypadDeleteButton onPress={onKeypadDelete} disabled={!dialInput} />
+        </div>
+
+        {/* Call button */}
+        <div className="flex justify-center pt-4 w-full px-6">
+          <button
+            onClick={handleDialCustom}
+            className="flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform duration-300"
+            style={{
+              width: "100%", maxWidth: "280px", height: "60px", borderRadius: theme.radiusFull,
+              backgroundColor: dialInput ? "#22C55E" : theme.borderSubtle,
+              border: "none", outline: "none",
+              opacity: dialInput ? 1 : 0.5,
+              boxShadow: dialInput ? "0 8px 32px rgba(34,197,94,0.4)" : "none",
+            }}
+            disabled={!dialInput}
+          >
+            <Phone size={24} color="#fff" />
+            <span style={{ fontFamily, ...TEXT_STYLE.buttonSm, fontSize: "18px", color: "#fff" }}>{t("call.title")}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const directoryBody = (
+    <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto callscreen-scroll" style={{ padding: "16px 12px 12px 12px" }}>
+        <p className="px-2 pb-2" style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "16px", color: theme.textMuted }}>
+          {t("call.chooseContact")}
+        </p>
+        <div className="flex flex-col">
+          {displayContacts.map((c, i) => (
+            <ContactRow
+              key={c.extension}
+              contact={c}
+              selected={dialInput === c.extension}
+              isLast={i === displayContacts.length - 1}
+              /* On phones the directory hides the keypad, so picking a
+                 contact brings the keypad back with the number loaded. */
+              onSelect={() => { setDialInput(c.extension); if (compact) setPhonePane("keypad"); }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  /* Your extension, and the demo's "simulate incoming call" trigger. */
+  const extensionPill = (
+    <button
+      onClick={handleSimulateIncoming}
+      className="flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform hover:brightness-110"
+      style={{
+        borderRadius: theme.radiusLg, backgroundColor: "rgba(255,255,255,0.1)",
+        border: "1px solid rgba(255,255,255,0.15)", padding: "10px 24px 10px 16px", boxShadow: SHADOW.sm,
+        outline: "none",
+      }}
+    >
+      <div className="w-10 h-10 flex items-center justify-center shrink-0"
+        style={{ backgroundColor: "rgba(255,255,255,0.12)", color: "#fff", borderRadius: theme.radiusMd }}>
+        <Phone size={20} />
+      </div>
+      <div className="text-left">
+        <p style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "14px", color: "rgba(255,255,255,0.7)" }}>{t("call.yourExtension")}</p>
+        <p style={{ fontFamily: theme.fontFamilyMono, fontSize: "20px", fontWeight: WEIGHT.bold, color: "#fff", letterSpacing: "1px", lineHeight: 1 }}>{localExtension || '—'}</p>
+      </div>
+    </button>
+  );
+
+  const PHONE_PANES: { key: "keypad" | "history" | "directory"; label: string; Icon: LucideIcon }[] = [
+    { key: "keypad", label: t("call.keypad"), Icon: Grid3X3 },
+    { key: "history", label: t("call.history"), Icon: PhoneCall },
+    { key: "directory", label: t("call.directory"), Icon: BookUser },
+  ];
+
   return (
     <div
       className="absolute inset-0 z-50 flex flex-col"
@@ -847,258 +1071,93 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
           <Phone size={26} fill={regState === 'Ok' ? "#22C55E" : regState === 'Progress' ? "#EAB308" : "#EF4444"} style={{ color: regState === 'Ok' ? "#22C55E" : regState === 'Progress' ? "#EAB308" : "#EF4444" }} />
         }
         onClose={onClose}
-        rightAction={
-          <button 
-            onClick={handleSimulateIncoming}
-            className="flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform hover:brightness-110" 
-            style={{
-              borderRadius: theme.radiusLg, backgroundColor: "rgba(255,255,255,0.1)",
-              border: "1px solid rgba(255,255,255,0.15)", padding: "10px 24px 10px 16px", boxShadow: SHADOW.sm,
-              outline: "none",
-            }}
-          >
-            <div className="w-10 h-10 flex items-center justify-center shrink-0"
-              style={{ backgroundColor: "rgba(255,255,255,0.12)", color: "#fff", borderRadius: theme.radiusMd }}>
-              <Phone size={20} />
-            </div>
-            <div className="text-left">
-              <p style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "14px", color: "rgba(255,255,255,0.7)" }}>{t("call.yourExtension")}</p>
-              <p style={{ fontFamily: theme.fontFamilyMono, fontSize: "20px", fontWeight: WEIGHT.bold, color: "#fff", letterSpacing: "1px", lineHeight: 1 }}>{localExtension || '—'}</p>
-            </div>
-          </button>
-        }
+        rightAction={extensionPill}
       />
 
-      {/* ── 3-Column Content ── */}
-      <div className={`min-h-0 flex items-center justify-center pt-8 pb-20 relative z-10 ${isRTL ? "pr-[172px] pl-[172px]" : "pl-[172px] pr-[172px]"}`} style={{ flex: "1 1 0", maxHeight: "calc(100% - 130px)", gap: "16px" }}>
-
-        <div className="flex flex-col min-w-0 overflow-hidden" style={{
-          backgroundColor: theme.surface,
-          /* In dark mode SHADOW.xl is a dark shadow on a dark ground and does
-             nothing: the border is the only thing holding the card off the
-             backdrop, which is why these three read as melted into it while
-             CareMe's identical columns did not. cardBorder is "none" in light
-             mode, so this costs nothing there. */
-          border: theme.cardBorder,
-          borderRadius: theme.radiusXl, boxShadow: SHADOW.xl,
-          /* The same fixed card as CareMe's expanded columns — 415 x 710 — so
-             the two screens read as one system. Three of these do not fill the
-             row, so the row centres them rather than stretching them. */
-          width: "415px",
-          flexShrink: 0,
-          height: "710px",
-        }}>
-           {/* Header Row */}
-           <div
-             className="flex items-center gap-3 px-[22px] py-[18px] shrink-0"
-             style={{ borderBottom: theme.borderCard }}
-           >
-              <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ backgroundColor: theme.primarySubtle, color: theme.primaryOn, borderRadius: theme.radiusMd }}>
-                <PhoneCall size={16} />
-              </div>
-              <span style={{ fontFamily, fontSize: "20px", fontWeight: WEIGHT.bold, color: theme.textHeading }}>{t("call.history")}</span>
-           </div>
-
-           {/* Card Content */}
-           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-             {/* Row 2 — Tab toggle */}
-          {/* Row 2 — Tab toggle */}
-           <div className="shrink-0 px-5 pt-5 pb-3">
-            <div className="flex gap-1" style={{
-              borderRadius: theme.radiusFull, backgroundColor: theme.background,
-              border: theme.borderInset, padding: "4px",
-            }}>
-              {(["all", "missed", "attended"] as const).map((key) => {
-                const active = historyTab === key;
-                const count = key === "missed" ? displayMissed.length : key === "attended" ? displayAttended.length : displayAll.length;
+      {compact ? (
+        /* ── Phones: one card, the shared rail strip switches panes ── */
+        <div className="flex-1 min-h-0 px-4 pt-1 pb-4 relative z-10 flex flex-col gap-3">
+          <div className="flex-1 min-h-0 overflow-hidden" style={cardShell(pageRailCard(true))}>
+            <nav ref={phoneRailRef} style={{ ...pageRail(true, 0, theme.borderSubtle), backgroundColor: theme.surfaceInset }}>
+              {PHONE_PANES.map(({ key, label, Icon }) => {
+                const active = phonePane === key;
                 return (
                   <button
                     key={key}
-                    onClick={() => setHistoryTab(key)}
-                    className="flex-1 flex items-center justify-center gap-2 cursor-pointer transition-transform"
+                    data-active={active}
+                    onClick={() => setPhonePane(key)}
+                    className="flex items-center gap-3 w-full cursor-pointer active:scale-[0.98] transition-transform"
                     style={{
-                      padding: "9px 12px", borderRadius: theme.radiusFull,
+                      minHeight: 64,
+                      padding: "10px 14px",
+                      borderRadius: theme.radiusMd,
                       backgroundColor: active ? theme.primary : "transparent",
-                      boxShadow: active ? SHADOW.sm : "none",
-                      border: "none", outline: "none",
+                      border: "none",
+                      outline: "none",
+                      boxShadow: active ? SHADOW.md : "none",
+                      textAlign: "start",
+                      ...pageRailItem(true),
                     }}
                   >
-                    <span style={{ fontFamily, fontSize: "15px", fontWeight: WEIGHT.bold, color: active ? "#fff" : theme.textMuted }}>
-                      {t(`call.${key}`)}
+                    <span className="shrink-0 flex items-center justify-center" style={{
+                      width: 40, height: 40, borderRadius: theme.radiusSm,
+                      backgroundColor: active ? "rgba(255,255,255,0.18)" : theme.primarySubtle,
+                    }}>
+                      <Icon size={20} color={active ? theme.textInverse : theme.primaryOn} />
                     </span>
-                    {count > 0 && (
-                      <span className="flex items-center justify-center" style={{
-                        minWidth: "20px", height: "20px", borderRadius: theme.radiusFull, padding: "0 5px",
-                        backgroundColor: active ? "rgba(255,255,255,0.25)" : theme.primarySubtle,
-                        fontFamily, fontSize: "14px", fontWeight: WEIGHT.bold,
-                        color: active ? "#fff" : theme.primaryOn,
-                      }}>
-                        {count}
-                      </span>
-                    )}
+                    <span style={{ ...TEXT_STYLE.buttonSm, fontFamily, color: active ? theme.textInverse : theme.textHeading, lineHeight: 1.25 }}>
+                      {label}
+                    </span>
                   </button>
                 );
               })}
-            </div>
-          </div>
-          <div style={{ height: "1px", backgroundColor: theme.borderSubtle, margin: "0 16px" }} />
-
-          <div className="flex-1 min-h-0 overflow-y-auto callscreen-scroll" style={{ padding: "20px 16px 16px 16px" }}>
-            <AnimatePresence mode="wait">
-              <motion.div key={historyTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
-                {historyEntries.length === 0 ? (
-                  <EmptyState message={t(historyTab === "all" ? "call.noHistory" : historyTab === "missed" ? "call.noMissed" : "call.noAttended")} />
-                ) : (
-                  <div className="flex flex-col">
-                    <p className="px-2 pt-1 pb-2" style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "16px", color: theme.textMuted }}>{t("call.today")}</p>
-                    {historyEntries.map((entry, i) => (
-                      <CallLogRow key={entry.id} entry={entry} isLast={i === historyEntries.length - 1} onCallback={(e) => {
-                        handleDial({ extension: e.ext, displayName: e.nameKey.startsWith('call.') ? t(e.nameKey) : e.nameKey });
-                      }} />
-                    ))}
-                  </div>
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
-      </div>
-
-        {/* Column 2 — Keypad (center, takes remaining space) */}
-        <div className="flex flex-col min-w-0 overflow-hidden" style={{
-          backgroundColor: theme.surface,
-          /* In dark mode SHADOW.xl is a dark shadow on a dark ground and does
-             nothing: the border is the only thing holding the card off the
-             backdrop, which is why these three read as melted into it while
-             CareMe's identical columns did not. cardBorder is "none" in light
-             mode, so this costs nothing there. */
-          border: theme.cardBorder,
-          borderRadius: theme.radiusXl, boxShadow: SHADOW.xl,
-          /* The same fixed card as CareMe's expanded columns — 415 x 710 — so
-             the two screens read as one system. Three of these do not fill the
-             row, so the row centres them rather than stretching them. */
-          width: "415px",
-          flexShrink: 0,
-          height: "710px",
-        }}>
-          {/* Header Row */}
-          <div
-            className="flex items-center gap-3 px-[22px] py-[18px] shrink-0"
-            style={{ borderBottom: theme.borderCard }}
-          >
-             <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ backgroundColor: theme.primarySubtle, color: theme.primaryOn, borderRadius: theme.radiusMd }}>
-               <Grid3X3 size={16} />
-             </div>
-             <span style={{ fontFamily, fontSize: "20px", fontWeight: WEIGHT.bold, color: theme.textHeading }}>{t("call.keypadHint")}</span>
-          </div>
-
-          <div className="flex-1 flex flex-col justify-center min-h-0 overflow-hidden pb-4" style={{ minWidth: 0 }}>
-
-          {/* Display — the extension, and whose extension it is */}
-          <div className="shrink-0 flex flex-col items-center justify-center px-5 mb-4" style={{ minHeight: "84px" }}>
-            <span style={{
-              fontFamily: theme.fontFamilyMono, fontSize: "48px", fontWeight: WEIGHT.bold,
-              color: dialInput ? theme.primaryOn : theme.textDisabled,
-              letterSpacing: "8px", textAlign: "center", minHeight: "56px",
-              textShadow: "none",
-              transition: "all 0.3s ease",
-            }}>
-              {dialInput || "—"}
-            </span>
-            <span style={{
-              fontFamily, fontSize: "17px", fontWeight: WEIGHT.medium, color: theme.textMuted,
-              textAlign: "center", minHeight: "24px", transition: "opacity 0.2s ease",
-              opacity: dialContact ? 1 : 0,
-            }}>
-              {dialContact?.displayName ?? "\u00A0"}
-            </span>
-          </div>
-
-          {/* Keypad grid */}
-          <div dir="ltr" className="flex flex-col justify-center items-center px-4 gap-3">
-            {[["1","2","3"],["4","5","6"],["7","8","9"]].map((row, ri) => (
-              <div key={ri} className="flex gap-3 justify-center">
-                {row.map((digit) => (
-                  <KeypadButton key={digit} digit={digit} onPress={onKeypadPress} />
-                ))}
-              </div>
-            ))}
-            {/* Bottom row: empty | 0 | delete */}
-            <div className="flex gap-3 justify-center">
-              <div style={{ width: "72px", height: "72px" }} />
-              <KeypadButton digit="0" onPress={onKeypadPress} />
-              <KeypadDeleteButton onPress={onKeypadDelete} disabled={!dialInput} />
-            </div>
-
-            {/* Call button */}
-            <div className="flex justify-center pt-4 w-full px-6">
-              <button
-                onClick={handleDialCustom}
-                className="flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform duration-300"
-                style={{
-                  width: "100%", maxWidth: "280px", height: "60px", borderRadius: theme.radiusFull,
-                  backgroundColor: dialInput ? "#22C55E" : theme.borderSubtle,
-                  border: "none", outline: "none",
-                  opacity: dialInput ? 1 : 0.5,
-                  boxShadow: dialInput ? "0 8px 32px rgba(34,197,94,0.4)" : "none",
-                }}
-                disabled={!dialInput}
-              >
-                <Phone size={24} color="#fff" />
-                <span style={{ fontFamily, ...TEXT_STYLE.buttonSm, fontSize: "18px", color: "#fff" }}>{t("call.title")}</span>
-              </button>
+            </nav>
+            <div className="flex-1 min-h-0 flex flex-col">
+              {phonePane === "keypad" ? keypadBody : phonePane === "history" ? historyBody : directoryBody}
             </div>
           </div>
         </div>
-      </div>
-
-        <div className="flex flex-col min-w-0 overflow-hidden" style={{
-          backgroundColor: theme.surface,
-          /* In dark mode SHADOW.xl is a dark shadow on a dark ground and does
-             nothing: the border is the only thing holding the card off the
-             backdrop, which is why these three read as melted into it while
-             CareMe's identical columns did not. cardBorder is "none" in light
-             mode, so this costs nothing there. */
-          border: theme.cardBorder,
-          borderRadius: theme.radiusXl, boxShadow: SHADOW.xl,
-          /* The same fixed card as CareMe's expanded columns — 415 x 710 — so
-             the two screens read as one system. Three of these do not fill the
-             row, so the row centres them rather than stretching them. */
-          width: "415px",
-          flexShrink: 0,
-          height: "710px",
-        }}>
-          {/* Header Row */}
-          <div
-            className="flex items-center gap-3 px-[22px] py-[18px] shrink-0"
-            style={{ borderBottom: theme.borderCard }}
-          >
-             <div className="w-8 h-8 flex items-center justify-center shrink-0" style={{ backgroundColor: theme.primarySubtle, color: theme.primaryOn, borderRadius: theme.radiusMd }}>
-               <BookUser size={16} />
-             </div>
-             <span style={{ fontFamily, fontSize: "20px", fontWeight: WEIGHT.bold, color: theme.textHeading }}>{t("call.hospitalDirectory")}</span>
-          </div>
-
-          <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
-          <div className="flex-1 min-h-0 overflow-y-auto callscreen-scroll" style={{ padding: "16px 12px 12px 12px" }}>
-            <p className="px-2 pb-2" style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "16px", color: theme.textMuted }}>
-              {t("call.chooseContact")}
-            </p>
-            <div className="flex flex-col">
-              {displayContacts.map((c, i) => (
-                <ContactRow
-                  key={c.extension}
-                  contact={c}
-                  selected={dialInput === c.extension}
-                  isLast={i === displayContacts.length - 1}
-                  onSelect={() => setDialInput(c.extension)}
-                />
-              ))}
+      ) : portrait ? (
+        /* ── Portrait: History | Directory on top, the keypad under them,
+              near the hand; all three cards the same height ── */
+        <div className="flex-1 min-h-0 px-12 pt-2 pb-8 relative z-10 flex flex-col gap-4 overflow-y-auto callscreen-scroll">
+          <div className="flex gap-4" style={{ flex: "1 1 0", minHeight: "320px" }}>
+            <div className="flex flex-col min-w-0 overflow-hidden" style={cardShell({ flex: "1 1 0" })}>
+              {cardHeader(PhoneCall, t("call.history"))}
+              {historyBody}
+            </div>
+            <div className="flex flex-col min-w-0 overflow-hidden" style={cardShell({ flex: "1 1 0" })}>
+              {cardHeader(BookUser, t("call.hospitalDirectory"))}
+              {directoryBody}
             </div>
           </div>
+          {/* The same height as the two cards above: the rows split the
+              screen evenly. */}
+          <div className="flex flex-col min-w-0 overflow-hidden" style={cardShell({ width: "100%", flex: "1 1 0", minHeight: "min-content" })}>
+            {cardHeader(Grid3X3, t("call.keypadHint"))}
+            {keypadBody}
+          </div>
         </div>
-      </div>
-    </div>
+      ) : (
+        /* ── 3-Column Content ── */
+        <div className={`min-h-0 flex items-center justify-center pt-8 pb-20 relative z-10 ${isRTL ? "pr-[172px] pl-[172px]" : "pl-[172px] pr-[172px]"}`} style={{ flex: "1 1 0", maxHeight: "calc(100% - 130px)", gap: "16px" }}>
+          <div className="flex flex-col min-w-0 overflow-hidden" style={cardShell(landscapeCard)}>
+            {cardHeader(PhoneCall, t("call.history"))}
+            {historyBody}
+          </div>
+
+          {/* Column 2 — Keypad (center) */}
+          <div className="flex flex-col min-w-0 overflow-hidden" style={cardShell(landscapeCard)}>
+            {cardHeader(Grid3X3, t("call.keypadHint"))}
+            {keypadBody}
+          </div>
+
+          <div className="flex flex-col min-w-0 overflow-hidden" style={cardShell(landscapeCard)}>
+            {cardHeader(BookUser, t("call.hospitalDirectory"))}
+            {directoryBody}
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes callScreenIn { from { opacity:0; transform:scale(1.02); } to { opacity:1; transform:scale(1); } }

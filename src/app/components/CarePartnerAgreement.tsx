@@ -8,6 +8,7 @@ import { SignaturePad } from "./nurse/SignaturePad";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { CARE_PARTNER_ITEMS, type CarePartnerRecord } from "./carePartnerStore";
 import { useReloadHold } from "../lib/reloadSafety";
+import { useCanvasSize } from "../lib/canvasSize";
 
 /**
  * CarePartnerAgreement — the hospital's Care Partner Agreement Checklist, as a
@@ -32,6 +33,10 @@ export function CarePartnerAgreement({
   // A form on screen is a form being filled in; do not replace it underneath.
   useReloadHold(true, "care-partner-agreement", "care partner agreement open");
   const { t: tr, fontFamily, isRTL, dir } = useLocale();
+  /* Phones: the sheet fills the width less a 16px margin and its gutters
+     tighten to match; the four fields stack in one column. */
+  const { compact } = useCanvasSize();
+  const padX = compact ? "16px" : "28px";
 
   const [name, setName] = useState(initial.name);
   const [relationship, setRelationship] = useState(initial.relationship);
@@ -114,7 +119,7 @@ export function CarePartnerAgreement({
       <div
         className="relative flex flex-col"
         style={{
-          width: "min(1100px, 92%)",
+          width: compact ? "calc(100% - 32px)" : "min(1100px, 92%)",
           maxHeight: "92%",
           borderRadius: t.radiusXl,
           backgroundColor: t.surface,
@@ -127,10 +132,11 @@ export function CarePartnerAgreement({
           icon={UserRound}
           title={tr("care.cp.title")}
           onClose={requestClose}
+          padX={padX}
         />
 
         {/* The agreement itself */}
-        <div className="flex-1 min-h-0 overflow-y-auto careme-scroll" style={{ padding: "24px 28px" }}>
+        <div className="flex-1 min-h-0 overflow-y-auto careme-scroll" style={{ padding: `24px ${padX}` }}>
           <p style={{
             fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.bold,
             color: t.textHeading, margin: "0 0 16px",
@@ -207,7 +213,7 @@ export function CarePartnerAgreement({
           </label>
 
           {/* The signature block, in the order the paper form has it */}
-          <div className="grid grid-cols-2" style={{ gap: "16px" }}>
+          <div className={compact ? "grid grid-cols-1" : "grid grid-cols-2"} style={{ gap: "16px" }}>
             <div>
               <label style={label}>{tr("care.cp.field.name")} <span style={{ color: t.errorOn }}>*</span></label>
               {/* auto reads the value, and an empty value reads as English —
@@ -292,12 +298,12 @@ export function CarePartnerAgreement({
 
         {/* Footer */}
         <div
-          className="shrink-0 flex items-center justify-between gap-3"
-          style={{ padding: "18px 28px", borderTop: `1px solid ${t.borderDefault}`, backgroundColor: t.surfaceInset }}
+          className={`shrink-0 flex items-center justify-between gap-3${compact ? " flex-wrap" : ""}`}
+          style={{ padding: `18px ${padX}`, borderTop: `1px solid ${t.borderDefault}`, backgroundColor: t.surfaceInset }}
         >
           {/* The one thing still standing between here and a signed agreement.
               Silent once nothing is. */}
-          <span className="flex items-center gap-2" style={{ flex: 1, minWidth: 0 }}>
+          <span className="flex items-center gap-2" style={{ flex: 1, minWidth: 0, ...(compact ? { flexBasis: "100%" } : null) }}>
             {missing && (
               <>
                 <AlertTriangle size={17} style={{ color: t.warningOn }} strokeWidth={2.4} className="shrink-0" />
@@ -310,10 +316,13 @@ export function CarePartnerAgreement({
               </>
             )}
           </span>
+          {/* On a phone the two buttons do not fit one row, so each takes a
+              full row of its own instead of wrapping ragged. */}
           <button
             onClick={requestClose}
             className="cursor-pointer active:scale-[0.98] transition-transform"
             style={{
+              ...(compact ? { flex: "1 1 auto" } : null),
               minHeight: "54px", padding: "0 26px", borderRadius: t.radiusLg,
               backgroundColor: "transparent", border: `1.5px solid color-mix(in srgb, ${t.textMuted} 35%, transparent)`,
               fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.medium,
@@ -325,8 +334,9 @@ export function CarePartnerAgreement({
           <button
             disabled={!ready}
             onClick={() => onAccept({ name: name.trim(), relationship: relationship.trim(), mobile: mobile.trim(), signature, signedOn })}
-            className="flex items-center gap-2 cursor-pointer active:scale-[0.98] transition-transform"
+            className={`flex items-center gap-2 cursor-pointer active:scale-[0.98] transition-transform${compact ? " justify-center" : ""}`}
             style={{
+              ...(compact ? { flex: "1 1 auto" } : null),
               minHeight: "54px", padding: "0 28px", borderRadius: t.radiusLg,
               backgroundColor: t.primary, border: "none", outline: "none",
               opacity: ready ? 1 : 0.45,

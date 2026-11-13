@@ -74,6 +74,7 @@ import { resetAppLockTutorial } from "../lib/appLockTutorialStore";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { RELEASES, CHANGE_TYPES } from "../data/releaseNotes";
 import { useGuestMode } from "../lib/guestMode";
+import { useCanvasSize } from "../lib/canvasSize";
 
 /* ═══════════════════════════════════════════════════════════════
  * All colors/fonts/radii in this file come from ThemeContext.
@@ -1179,6 +1180,7 @@ function PrayerCard({
 }) {
   const { theme: t } = useTheme();
   const { t: tr, isRTL, fontFamily, locale } = useLocale();
+  const { compact } = useCanvasSize();
   return (
     <div
       style={{
@@ -1240,7 +1242,9 @@ function PrayerCard({
               {tr("prayer.upcoming")}
             </span>
           </div>
-          <div className="flex items-baseline gap-3" style={{ paddingLeft: "2px" }}>
+          {/* On a phone the time drops under the name whole ("5:07 PM"),
+              rather than breaking in two beside it. */}
+          <div className="flex items-baseline gap-3" style={{ paddingLeft: "2px", ...(compact ? { flexWrap: "wrap", rowGap: 0 } : {}) }}>
             <span
               style={{
                 fontFamily: t.fontFamily,
@@ -1261,6 +1265,7 @@ function PrayerCard({
                 letterSpacing: "0.5px",
                 fontVariantNumeric: "tabular-nums",
                 marginLeft: "4px",
+                ...(compact ? { whiteSpace: "nowrap" } : {}),
               }}
             >
               {formatPrayerTime(prayerData.targetTime, locale, tr)}
@@ -1363,6 +1368,7 @@ export function SettingsPanel({
   openCareTeamDirectly?: boolean;
 }) {
   const { theme: t, darkMode, setDarkMode, castDevice, setCastDevice, locale: currentLocale, setLocale, prayerAlarm, setPrayerAlarm } = useTheme();
+  const { compact } = useCanvasSize();
   const { t: tr, isRTL, fontFamily, locale } = useLocale();
   const { logout } = useAuth();
   const { isGuest } = useGuestMode();
@@ -1564,7 +1570,8 @@ export function SettingsPanel({
       <div
         className="relative h-full flex flex-col"
         style={{
-          width: "480px",
+          /* A phone is narrower than the panel: it fills the screen. */
+          width: compact ? "100%" : "480px",
           backdropFilter: "blur(28px)",
           WebkitBackdropFilter: "blur(28px)",
           backgroundColor: t.panelBg,

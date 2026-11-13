@@ -6,6 +6,7 @@ import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "./ThemeContext";
 import { useLocale, textDirection } from "./i18n";
 import { CARE_GOALS, isListedGoal, careGoalLabel } from "./careGoals";
 import { useReloadHold } from "../lib/reloadSafety";
+import { useCanvasSize } from "../lib/canvasSize";
 
 /**
  * CareGoalPicker — the patient chooses what today is for.
@@ -30,6 +31,10 @@ export function CareGoalPicker({
   // A form on screen is a form being filled in; do not replace it underneath.
   useReloadHold(true, "care-goal-picker", "care goal picker open");
   const { t: tr, fontFamily, dir, locale } = useLocale();
+  /* Phones: the sheet fills the width less a 16px margin and its gutters
+     tighten to match. */
+  const { compact } = useCanvasSize();
+  const padX = compact ? "16px" : "28px";
 
   const startedListed = isListedGoal(initial);
   const [selected, setSelected] = useState(startedListed ? initial : "");
@@ -86,7 +91,7 @@ export function CareGoalPicker({
       <div
         className="relative flex flex-col"
         style={{
-          width: "min(860px, 92%)",
+          width: compact ? "calc(100% - 32px)" : "min(860px, 92%)",
           maxHeight: "92%",
           borderRadius: t.radiusXl,
           backgroundColor: t.surface,
@@ -100,10 +105,11 @@ export function CareGoalPicker({
           title={tr("care.pcc.goal.title")}
           subtitle={tr("goal.picker.subtitle")}
           onClose={onClose}
+          padX={padX}
         />
 
         {/* ── Search ── */}
-        <div className="shrink-0" style={{ padding: "18px 28px 0" }}>
+        <div className="shrink-0" style={{ padding: `18px ${padX} 0` }}>
           <div
             className="flex items-center gap-3"
             style={{
@@ -129,7 +135,7 @@ export function CareGoalPicker({
         </div>
 
         {/* ── The list ── */}
-        <div className="flex-1 overflow-y-auto" style={{ padding: "16px 28px" }}>
+        <div className="flex-1 overflow-y-auto" style={{ padding: `16px ${padX}` }}>
           <div className="flex flex-col gap-2">
             {matches.map((goal) => {
               /* The English is the answer; the label is only how it reads. */
@@ -201,8 +207,8 @@ export function CareGoalPicker({
 
         {/* ── Footer ── */}
         <div
-          className="flex items-center justify-between gap-3 shrink-0"
-          style={{ padding: "18px 28px", borderTop: `1px solid ${t.borderSubtle}` }}
+          className={`flex items-center justify-between gap-3 shrink-0${compact ? " flex-wrap" : ""}`}
+          style={{ padding: `18px ${padX}`, borderTop: `1px solid ${t.borderSubtle}` }}
         >
           {/* Only offered once there is something to take back. */}
           {initial.trim() ? (
@@ -219,7 +225,9 @@ export function CareGoalPicker({
             </button>
           ) : <span />}
 
-          <div className="flex items-center gap-3">
+          {/* On a phone the three do not fit one row: Cancel and Save drop to
+              their own, at the end, rather than each wrapping its label. */}
+          <div className="flex items-center gap-3" style={compact ? { marginInlineStart: "auto", whiteSpace: "nowrap" } : undefined}>
             <button
               onClick={onClose}
               className="cursor-pointer"

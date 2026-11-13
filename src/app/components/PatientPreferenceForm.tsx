@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { QuestionProgress, QuestionProgressBar } from "./QuestionProgress";
 import { useReloadHold } from "../lib/reloadSafety";
+import { useCanvasSize } from "../lib/canvasSize";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * Patient Preferences Form (source: Patient Preference Form V12)
@@ -702,6 +703,9 @@ function TimeWheelPicker({
      a record from when this question still offered a "no preference" answer —
      starts the wheels at their resting value instead. */
   const stored = value && /^\d{2}:\d{2}$/.test(value) ? value : undefined;
+  /* Three columns at 1.9× the row height overrun a phone-width card. */
+  const { compact } = useCanvasSize();
+  const colW = Math.round(itemH * (compact ? 1.6 : 1.9));
   const restAt = rest && /^\d{2}:\d{2}$/.test(rest) ? toWheel(rest) : WHEEL_REST;
 
   const [draft, setDraft] = useState<WheelState>(() => (stored ? toWheel(stored) : restAt));
@@ -786,7 +790,7 @@ function TimeWheelPicker({
             index={draft.hour - 1}
             onIndex={(i) => commit({ ...draft, hour: i + 1 })}
             itemH={itemH}
-            width={Math.round(itemH * 1.9)}
+            width={colW}
             ariaLabel={t("ppf.time.hour")}
             theme={theme}
             fontFamily={fontFamily}
@@ -807,7 +811,7 @@ function TimeWheelPicker({
             index={Math.max(0, WHEEL_MINUTES.indexOf(draft.minute as (typeof WHEEL_MINUTES)[number]))}
             onIndex={(i) => commit({ ...draft, minute: WHEEL_MINUTES[i] })}
             itemH={itemH}
-            width={Math.round(itemH * 1.9)}
+            width={colW}
             ariaLabel={t("ppf.time.minute")}
             theme={theme}
             fontFamily={fontFamily}
@@ -819,7 +823,7 @@ function TimeWheelPicker({
             index={draft.pm ? 1 : 0}
             onIndex={(i) => commit({ ...draft, pm: i === 1 })}
             itemH={itemH}
-            width={Math.round(itemH * 1.9)}
+            width={colW}
             ariaLabel={t("ppf.time.period")}
             theme={theme}
             fontFamily={fontFamily}
@@ -849,6 +853,7 @@ export function PatientPreferenceForm({
   // A form on screen is a form being filled in; do not replace it underneath.
   useReloadHold(true, "preference-form", "preferences form open");
   const { t, locale, isRTL, fontFamily } = useLocale();
+  const { compact } = useCanvasSize();
 
   /* THE BRAND FOREGROUND of this form: content icons, their section labels,
    * the selected pill and the Back button all resolve to this one value.
@@ -1499,8 +1504,9 @@ export function PatientPreferenceForm({
      floor would be taller than the room the card is given. */
   const MODAL_MIN_H = dense ? "540px" : "600px";
 
-  /* Body, header and footer gutters — sized for a 760px card. */
-  const padX = "32px";
+  /* Body, header and footer gutters — sized for a 760px card; a phone-width
+     card gives them back to the content. */
+  const padX = compact ? "16px" : "32px";
 
   const renderShell = (body: React.ReactNode) => {
     const fieldCss = (
@@ -1525,7 +1531,7 @@ export function PatientPreferenceForm({
         className="fixed inset-0 flex items-center justify-center"
         style={{
           zIndex: 8600, // above the onboarding wizard (z-8000) that opens it
-          padding: "24px", // the backdrop stays visible on all four sides
+          padding: compact ? "16px" : "24px", // the backdrop stays visible on all four sides
           backgroundColor: theme.overlay,
           backdropFilter: "blur(4px)",
           WebkitBackdropFilter: "blur(4px)",

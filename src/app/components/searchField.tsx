@@ -1,11 +1,13 @@
 import { Search, X } from "lucide-react";
 import { useTheme, TEXT_STYLE } from "./ThemeContext";
 import { useLocale } from "./i18n";
+import { useCanvasSize } from "../lib/canvasSize";
 
 /* ─── Search field ───
  * One search box for every grid page with a category rail (Live TV, Patient
  * Services). It sits at the end of the heading row: 440 × 56, inset fill,
- * search icon at the start, a clear (×) button once something is typed. */
+ * search icon at the start, a clear (×) button once something is typed.
+ * In portrait the heading row stacks and the box spans it. */
 export function SearchField({
   value, onChange, placeholder, clearLabel,
 }: {
@@ -16,11 +18,12 @@ export function SearchField({
 }) {
   const { theme } = useTheme();
   const { fontFamily } = useLocale();
+  const { portrait } = useCanvasSize();
   return (
     <label
       className="ck-search-box shrink-0 flex items-center gap-3"
       style={{
-        width: 440,
+        width: portrait ? "100%" : 440,
         height: 56,
         paddingInlineStart: 18,
         paddingInlineEnd: 8,

@@ -20,6 +20,8 @@ import {
 import { useTheme, TYPE_SCALE, WEIGHT, TEXT_STYLE, SHADOW, SPACE, LEADING } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { InternalPageHeader } from "./InternalPageHeader";
+import { useCanvasSize } from "../lib/canvasSize";
+import { pageRail, pageRailCard, pageRailItem, pageRailContentPad } from "./pageRail";
 import { ApiImage } from "./ApiImage";
 import { PatientServicesIcon } from "./appIcons";
 
@@ -244,6 +246,13 @@ type Tab = NeedKind;
 export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
   const { theme } = useTheme();
   const { t, isRTL, fontFamily, locale } = useLocale();
+  const { compact, portrait, width: canvasWidth } = useCanvasSize();
+  /* Grid columns: 4 in landscape; in portrait as many as the pane under or
+     beside the rail holds — 3 on the bedside portrait screen, else 2. */
+  /* Portrait: the rail is a strip on top, so the grid has the full width. */
+  const gridCols = !portrait ? 4 : compact ? 2 : canvasWidth >= 1000 ? 4 : 3;
+  /* Icon art ring for the tabs without photos, scaled to the card width. */
+  const ring = compact ? { size: 64, border: 6, icon: 30 } : portrait ? { size: 84, border: 8, icon: 40 } : { size: 126, border: 12, icon: 60 };
 
   /* ── Semantic status styles — all from theme tokens, so they re-theme ── */
   /* Friendly status display. Colours are intentionally config-independent
@@ -536,7 +545,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
       />
 
       {/* ─── Main content — large white rounded card ─── */}
-      <div className="flex-1 min-h-0 px-12 pt-2 pb-8 relative z-10 flex flex-col">
+      <div className={`flex-1 min-h-0 pt-2 relative z-10 flex flex-col ${compact ? "px-4 pb-4" : "px-12 pb-8"}`}>
         {success ? (
           /* Success — lives in the same white card as every other page */
           <motion.div
@@ -597,8 +606,9 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
           </motion.div>
         ) : (
         <div
-          className="flex-1 min-h-0 flex overflow-hidden"
+          className="flex-1 min-h-0 overflow-hidden"
           style={{
+            ...pageRailCard(portrait),
             backgroundColor: theme.surface,
             borderRadius: theme.radiusXl,
             boxShadow: SHADOW.xl,
@@ -610,11 +620,10 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
               Report an Issue stays in red — the one category that is not a
               request — but sits in line with the rest. */}
           <nav
-            className="shrink-0 flex flex-col gap-2 py-7 px-5"
+            className="gap-2 py-7 px-5"
             style={{
-              width: 320,
+              ...pageRail(portrait, 320, theme.borderSubtle),
               backgroundColor: theme.surfaceInset,
-              borderInlineEnd: `1px solid ${theme.borderSubtle}`,
             }}
           >
             {tabs.map((tb) => {
@@ -637,6 +646,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                     outline: "none",
                     boxShadow: active ? SHADOW.md : "none",
                     textAlign: "start",
+                    ...pageRailItem(portrait),
                   }}
                 >
                   <span
@@ -689,9 +699,10 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
           </nav>
 
           {/* Body */}
-          <div className="ns-scroll flex-1 min-w-0 min-h-0 overflow-y-auto px-8 py-7 flex flex-col">
-            {/* Section heading */}
-            <div className="shrink-0 mb-4 flex items-center gap-6">
+          <div className="ns-scroll flex-1 min-w-0 min-h-0 overflow-y-auto flex flex-col" style={{ padding: pageRailContentPad(compact) }}>
+            {/* Section heading — in portrait the search goes under the title,
+                full width */}
+            <div className={`ns-head shrink-0 mb-4 flex ${portrait ? "flex-col items-stretch gap-3" : "items-center gap-6"}`}>
               <div className="flex-1 min-w-0">
                 <h3 className="truncate" style={{ ...TEXT_STYLE.pageTitle, fontFamily, color: theme.textHeading }}>
                   {t(titleKey)}
@@ -724,10 +735,10 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                            height a 16:9 photo plus its label needs at this
                            width. Icon-only tabs use the same frame, so cards
                            never change size when the patient switches tab. */
-                        gridTemplateColumns: "repeat(4, 1fr)",
-                        gridAutoRows: "245px",
-                        columnGap: "24px",
-                        rowGap: "20px",
+                        gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
+                        gridAutoRows: portrait ? "auto" : "245px",
+                        columnGap: portrait ? "16px" : "24px",
+                        rowGap: portrait ? "16px" : "20px",
                         padding: "4px 4px 0",
                       }}
                     >
@@ -838,14 +849,14 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                                 <div
                                   className="flex items-center justify-center"
                                   style={{
-                                    width: 126,
-                                    height: 126,
+                                    width: ring.size,
+                                    height: ring.size,
                                     borderRadius: "50%",
-                                    border: `12px solid color-mix(in srgb, ${accentColor} 15%, #fff)`,
+                                    border: `${ring.border}px solid color-mix(in srgb, ${accentColor} 15%, #fff)`,
                                     backgroundColor: `color-mix(in srgb, ${accentColor} 6%, #fff)`,
                                   }}
                                 >
-                                  <CardIcon size={60} color={accentColor} strokeWidth={1.6} />
+                                  <CardIcon size={ring.icon} color={accentColor} strokeWidth={1.6} />
                                 </div>
                               </div>
                               <div className="shrink-0 text-center" style={{ padding: "10px 8px 12px" }}>
@@ -949,8 +960,9 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
                       className="shrink-0 flex items-center justify-between"
                       style={{
-                        margin: "16px -32px -28px",
-                        padding: "20px 40px",
+                        margin: compact ? "12px -16px -16px" : "16px -32px -28px",
+                        padding: compact ? "12px 16px" : "20px 40px",
+                        gap: 12,
                         backgroundColor: theme.surface,
                         borderTop: `1.5px solid ${theme.borderCardColor}`,
                       }}
@@ -966,10 +978,12 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                           border: `1.5px solid ${theme.primary}`,
                           outline: "none",
                           boxShadow: SHADOW.md,
+                          /* Portrait: the two buttons share a narrow row, one line each. */
+                          ...(portrait ? { height: 56, padding: "0 12px", gap: 8, whiteSpace: "nowrap" as const } : {}),
                         }}
                       >
-                        <X size={20} color={theme.primaryOn} strokeWidth={2.5} />
-                        <span style={{ ...TEXT_STYLE.button, fontWeight: WEIGHT.semibold, fontFamily, color: theme.primaryOn }}>
+                        <X size={portrait ? 18 : 20} color={theme.primaryOn} strokeWidth={2.5} />
+                        <span style={{ ...(portrait ? TEXT_STYLE.buttonSm : TEXT_STYLE.button), fontWeight: WEIGHT.semibold, fontFamily, color: theme.primaryOn }}>
                           {t("need.multi.clear")}
                         </span>
                       </button>
@@ -984,17 +998,18 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                           border: "none",
                           outline: "none",
                           boxShadow: SHADOW.md,
+                          ...(portrait ? { height: 56, padding: "0 16px", whiteSpace: "nowrap" as const } : {}),
                         }}
                       >
-                        <span style={{ ...TEXT_STYLE.button, fontFamily, color: theme.textInverse }}>
+                        <span style={{ ...(portrait ? TEXT_STYLE.buttonSm : TEXT_STYLE.button), ...(portrait ? { fontWeight: WEIGHT.bold } : {}), fontFamily, color: theme.textInverse }}>
                           {t("need.multi.continue")} ({picked.length})
                         </span>
-                        <ChevronRight
+                        {!portrait && <ChevronRight
                           size={22}
                           color={theme.textInverse}
                           strokeWidth={2.4}
                           style={isRTL ? { transform: "scaleX(-1)" } : undefined}
-                        />
+                        />}
                       </button>
                     </motion.div>
                   )}
@@ -1186,11 +1201,11 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
             style={{ backgroundColor: theme.overlay, backdropFilter: "blur(4px)" }}
           >
             <div
-              className="flex-1 flex flex-col m-8 mt-4 rounded-[28px] overflow-hidden"
+              className={`flex-1 flex flex-col rounded-[28px] overflow-hidden ${compact ? "m-4 mt-3" : "m-8 mt-4"}`}
               style={{ backgroundColor: theme.surface, border: theme.cardBorder, boxShadow: SHADOW["2xl"] }}
             >
               {/* Overlay header */}
-              <div className="shrink-0 flex items-center justify-between px-8 py-5" style={{ borderBottom: `1px solid ${theme.borderDefault}` }}>
+              <div className={`shrink-0 flex items-center justify-between ${compact ? "px-4 py-4" : "px-8 py-5"}`} style={{ borderBottom: `1px solid ${theme.borderDefault}` }}>
                 <div className="flex items-center gap-3">
                   <div style={{
                     width: 40, height: 40, borderRadius: 10,
@@ -1230,8 +1245,13 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                 ];
                 const shown = mineFilter === "all" ? requests : requests.filter((r) => r.kind === mineFilter);
                 return (
-                  <div className="shrink-0 flex items-center justify-between gap-4 px-8 pt-6 pb-4">
-                    <div className="flex items-center gap-3 flex-wrap">
+                  /* Phones: the filters scroll sideways in one row, the
+                     total under them. */
+                  <div className={`shrink-0 flex justify-between ${compact ? "flex-col items-stretch gap-2 px-4 pt-4 pb-2" : "items-center gap-4 px-8 pt-6 pb-4"}`}>
+                    <div
+                      className={`flex items-center ${compact ? "gap-2" : "gap-3 flex-wrap"}`}
+                      style={compact ? { overflowX: "auto", scrollbarWidth: "none", margin: "0 -16px", padding: "0 16px" } : undefined}
+                    >
                       {filters.map((f) => {
                         const active = mineFilter === f.key;
                         const count = f.key === "all" ? requests.length : requests.filter((r) => r.kind === f.key).length;
@@ -1241,7 +1261,8 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                             onClick={() => setMineFilter(f.key)}
                             className="flex items-center gap-3 cursor-pointer active:scale-95 transition-transform"
                             style={{
-                              padding: "13px 22px",
+                              ...(compact ? { flexShrink: 0, whiteSpace: "nowrap" as const } : {}),
+                              padding: compact ? "11px 16px" : "13px 22px",
                               borderRadius: theme.radiusFull,
                               backgroundColor: active ? theme.primary : theme.surface,
                               border: active ? "none" : `1.5px solid ${theme.borderCardColor}`,
@@ -1274,7 +1295,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                 );
               })()}
               {/* Overlay content */}
-              <div className="flex-1 min-h-0 overflow-y-auto px-8 pt-2 pb-6 flex flex-col">
+              <div className={`flex-1 min-h-0 overflow-y-auto pt-2 flex flex-col ${compact ? "px-4 pb-4" : "px-8 pb-6"}`}>
                 {(mineFilter === "all" ? requests : requests.filter((r) => r.kind === mineFilter)).length === 0 ? (
                   /* flex-1: centred in the space under the tabs, not pinned to the top */
                   <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 min-h-[300px]">
@@ -1305,7 +1326,7 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                       style={{
                         marginTop: 8,
                         height: 60,
-                        padding: "0 28px",
+                        padding: compact ? "0 18px" : "0 28px",
                         borderRadius: theme.radiusMd,
                         backgroundColor: theme.surface,
                         border: `1.5px solid ${theme.primary}`,
@@ -1337,26 +1358,53 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                           : r.kind === "complaint" ? MessageSquareWarning
                           : r.kind === "medical" ? Stethoscope
                           : HandHelping;
+                      /* Status pill — at the row's end; on phones under the
+                         row's text, where there is width for it. */
+                      const statusPill = (
+                          <div
+                            className={`shrink-0 ${compact ? "inline-flex mt-2" : "flex"} items-center gap-2`}
+                            style={{
+                              padding: compact ? "8px 14px" : "10px 18px",
+                              borderRadius: theme.radiusFull,
+                              backgroundColor: `color-mix(in srgb, ${st.fg} 12%, transparent)`,
+                              border: `1.5px solid color-mix(in srgb, ${st.fg} 28%, transparent)`,
+                            }}
+                          >
+                            <StatusIcon size={18} color={st.fg} strokeWidth={2.2} />
+                            <span
+                              style={{
+                                fontFamily,
+                                fontSize: TYPE_SCALE.base,
+                                fontWeight: WEIGHT.bold,
+                                color: st.fg,
+                                whiteSpace: "nowrap",
+                                lineHeight: 1,
+                              }}
+                            >
+                              {statusLabel(r.kind, status)}
+                            </span>
+                          </div>
+                      );
                       return (
                         <div
                           key={r.id}
-                          className="flex items-center gap-5"
+                          className={`flex ${compact ? "items-start gap-3" : "items-center gap-5"}`}
                           style={{
                             backgroundColor: theme.surface,
                             borderRadius: theme.radiusLg,
                             border: theme.borderCard,
-                            padding: "18px 22px",
+                            padding: compact ? "14px" : "18px 22px",
                           }}
                         >
                           <div
                             className="shrink-0 flex items-center justify-center"
                             style={{
-                              width: 60, height: 60,
+                              width: compact ? 44 : 60, height: compact ? 44 : 60,
                               borderRadius: theme.radiusMd,
                               backgroundColor: isComplaint ? theme.errorSubtle : theme.primaryLight,
                             }}
                           >
-                            <RowIcon size={30} color={isComplaint ? theme.errorOn : theme.primaryOnLight} strokeWidth={1.8} />
+                            <RowIcon size={compact ? 22 : 30} color={isComplaint ? theme.errorOn : theme.primaryOnLight} strokeWidth={1.8} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <span
@@ -1406,30 +1454,9 @@ export function NeedSomething({ onClose, initialTab }: NeedSomethingProps) {
                             >
                               {t("need.ref", refFor(r))}
                             </span>
+                            {compact && statusPill}
                           </div>
-                          <div
-                            className="shrink-0 flex items-center gap-2"
-                            style={{
-                              padding: "10px 18px",
-                              borderRadius: theme.radiusFull,
-                              backgroundColor: `color-mix(in srgb, ${st.fg} 12%, transparent)`,
-                              border: `1.5px solid color-mix(in srgb, ${st.fg} 28%, transparent)`,
-                            }}
-                          >
-                            <StatusIcon size={18} color={st.fg} strokeWidth={2.2} />
-                            <span
-                              style={{
-                                fontFamily,
-                                fontSize: TYPE_SCALE.base,
-                                fontWeight: WEIGHT.bold,
-                                color: st.fg,
-                                whiteSpace: "nowrap",
-                                lineHeight: 1,
-                              }}
-                            >
-                              {statusLabel(r.kind, status)}
-                            </span>
-                          </div>
+                          {!compact && statusPill}
                         </div>
                       );
                     })}

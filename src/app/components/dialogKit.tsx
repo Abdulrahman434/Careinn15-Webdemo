@@ -23,7 +23,8 @@
  *              outline: grey outline means Cancel and nothing else.
  *   Actions    56 tall, radius LG, side by side: Cancel first (grey text, the
  *              muted outline), the main action last (brand fill, or red for
- *              something that can't be undone).
+ *              something that can't be undone). Equal widths; when the two
+ *              labels can't both fit on one line, each takes its own row.
  *
  * Touch: every control is at least 44×44 (× and Back are a 44 target around a
  * 36 disc); PIN keys stay 64 with 14 between them (see pinMetrics.ts).
@@ -138,7 +139,8 @@ export function DialogFrame({
           dir={dir}
           className="relative flex flex-col"
           style={{
-            width: `${size === "content" ? DIALOG.content : size === "device" ? DIALOG.device : DIALOG.small}px`,
+            /* A phone is narrower than the popup: keep 16 clear each side. */
+            width: `min(${size === "content" ? DIALOG.content : size === "device" ? DIALOG.device : DIALOG.small}px, calc(100% - 32px))`,
             /* px of the 1920x1080 canvas, which the kiosk scales as a whole;
                90% still guards a canvas shorter than that. A keypad never
                scrolls: with the guest choice under it, a PIN popup is taller
@@ -336,12 +338,12 @@ export function DialogActions({ children, style }: { children: React.ReactNode; 
      The content's own bottom inset is the gap above the buttons. */
   if (footer) {
     return createPortal(
-      <div className="flex w-full" style={{ gap: DIALOG.gap }}>{children}</div>,
+      <div className="flex flex-wrap w-full" style={{ gap: DIALOG.gap }}>{children}</div>,
       footer,
     );
   }
   return (
-    <div className="flex w-full shrink-0" style={{ gap: DIALOG.gap, marginTop: "24px", ...style }}>
+    <div className="flex flex-wrap w-full shrink-0" style={{ gap: DIALOG.gap, marginTop: "24px", ...style }}>
       {children}
     </div>
   );
@@ -372,8 +374,12 @@ export function DialogButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="flex-1 flex items-center justify-center cursor-pointer active:scale-[0.98] transition-transform"
+      className="flex items-center justify-center cursor-pointer active:scale-[0.98] transition-transform"
       style={{
+        /* Side by side, sharing the row — and when two labels can't both fit
+           on one line, each takes a full row rather than breaking its words
+           (a narrow phone, a long Arabic label). */
+        flex: "1 1 0", minWidth: "max-content",
         /* minHeight, not height: stacked in a column, flex-1 would otherwise
            squash the button to nothing. */
         minHeight: DIALOG.action, flexShrink: 0, gap: "8px", padding: "0 16px",
@@ -387,7 +393,7 @@ export function DialogButton({
       }}
     >
       {icon}
-      <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogButton, color: fg }}>{label}</span>
+      <span style={{ fontFamily: t.fontFamily, ...TEXT_STYLE.dialogButton, color: fg, whiteSpace: "nowrap" }}>{label}</span>
     </button>
   );
 }

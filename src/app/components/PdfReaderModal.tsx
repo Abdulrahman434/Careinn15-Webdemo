@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { getApiConfig } from "../lib/apiConfig";
 import { isAggressiveMemoryMode } from "../lib/deviceCapability";
+import { useCanvasSize } from "../lib/canvasSize";
 import * as pdfjsLib from "pdfjs-dist";
 // ?url makes Vite emit the worker as its own asset and hand back its hashed
 // path, so it is served from the same origin as everything else.
@@ -92,7 +93,10 @@ export function PdfReaderModal({ onClose, pdfSource, title }: Props) {
   const effectiveViewMode = forceSinglePage ? "single" : viewMode;
 
   // ─── UI state ───
-  const [showSidebar, setShowSidebar] = useState(true);
+  /* Phones: the 200 thumbnail column beside the 56 rail would leave the page
+     a sliver, so it starts closed there (the grid button opens it). */
+  const { compact } = useCanvasSize();
+  const [showSidebar, setShowSidebar] = useState(() => !compact);
   const [sidebarTab, setSidebarTab] = useState<"pages" | "bookmarks">("pages");
   const [showViewMenu, setShowViewMenu] = useState(false);
   const [showKeypad, setShowKeypad] = useState(false);
@@ -720,11 +724,11 @@ export function PdfReaderModal({ onClose, pdfSource, title }: Props) {
       {/* ═══ TOP BAR ═══ */}
       <div className="shrink-0 flex items-center justify-between"
         style={{ height: 48, backgroundColor: "#2b2d30", borderBottom: "1px solid #1a1a1a", zIndex: 20, color: "#fff", paddingLeft: 20, paddingRight: 4 }}>
-        <div className="flex items-center gap-3">
+        <div className={compact ? "flex items-center gap-3 min-w-0" : "flex items-center gap-3"}>
           <button className="rail-btn" style={{ width: 36, height: 36 }} onClick={() => setShowSidebar(s => !s)}>
             <LayoutGrid size={18} />
           </button>
-          <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: ".3px", opacity: .9 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: ".3px", opacity: .9, ...(compact ? { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } : {}) }}>
             {title || "Document Viewer"}
           </span>
         </div>
@@ -1093,8 +1097,9 @@ export function PdfReaderModal({ onClose, pdfSource, title }: Props) {
       {/* ═══ SEARCH PANEL ═══ */}
       {showSearch && (
         <div className="shrink-0 flex flex-col" style={{
-          width: 280, backgroundColor: "#1E1F22", borderRight: "1px solid #3A3A3A",
-          position: "absolute", left: showSidebar ? SIDEBAR_W : 0, top: 0, bottom: 0, zIndex: 50,
+          /* Phones: over the page, clear of the right rail. */
+          width: compact ? `calc(100% - ${RAIL_W}px)` : 280, backgroundColor: "#1E1F22", borderRight: "1px solid #3A3A3A",
+          position: "absolute", left: showSidebar && !compact ? SIDEBAR_W : 0, top: 0, bottom: 0, zIndex: 50,
         }}>
           <div className="flex items-center gap-2 px-3" style={{ height: 52, borderBottom: "1px solid #2A2A2A" }}>
             <Search size={16} color="#888" />
