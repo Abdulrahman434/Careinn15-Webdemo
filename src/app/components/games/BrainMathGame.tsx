@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose, gameBody, gameModal } from "./gameLayout";
 import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, ArrowLeft, Timer, Zap, Brain, Heart } from "lucide-react";
@@ -15,6 +17,7 @@ type Equation = {
 
 export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
+  const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
   const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-brain-math') ?? (locale === 'ar' ? 'ar' : 'en'));
   const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
@@ -249,15 +252,15 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }} dir={dir}>
-      <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg }}>
-        <div className="flex items-center gap-4">
+      <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg, ...gameHeader(size) }}>
+        <div className="flex items-center gap-4" style={gameHeaderLead(size)}>
           <button onClick={onBackToGames} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
             <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
-          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.brainMath}</h1>
+          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading, ...gameTitle(size) }}>{gt.brainMath}</h1>
         </div>
 
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-8" style={gameHeaderTools(size)}>
           {/* Lives Indicator */}
           <div className="flex items-center gap-3 px-6 py-3 bg-red-50 rounded-2xl border border-red-100 shadow-sm">
             <div className="flex gap-1">
@@ -285,13 +288,13 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
           </div>
 
           <GameLanguageToggle gameKey="brain-math" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
-          <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
+          <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none", ...gameHeaderClose(size) }}>
             <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
           </button>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center p-8">
+      <div className="flex-1 flex flex-col items-center justify-center p-8" style={gameBody(size)}>
         {gameState === "idle" && (
           <div className="flex flex-col items-center gap-8 max-w-md text-center">
             <div className="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center shadow-inner">
@@ -323,7 +326,7 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
         )}
 
         {gameState === "playing" && equation && (
-          <div className="w-full max-w-2xl flex flex-col items-center gap-12">
+          <div className={`w-full max-w-2xl flex flex-col items-center ${size.compact ? "gap-8" : "gap-12"}`}>
             <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden shadow-inner">
               <div
                 className="h-full bg-red-500 transition-all duration-100"
@@ -342,7 +345,7 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
                   </div>
                 )}
               </div>
-              <div className="text-8xl font-black flex items-center gap-6" style={{ color: theme.textHeading }}>
+              <div className={`${size.compact ? "text-6xl gap-3" : "text-8xl gap-6"} font-black flex items-center`} style={{ color: theme.textHeading }}>
                 <span>{equation.num1}</span>
                 <span className="text-blue-500">{equation.operator === "*" ? "×" : equation.operator === "/" ? "÷" : equation.operator}</span>
                 <span>{equation.num2}</span>
@@ -351,12 +354,12 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 w-full">
+            <div className={`grid grid-cols-2 ${size.compact ? "gap-4" : "gap-6"} w-full`}>
               {equation.options.map((opt, i) => (
                 <button
                   key={i}
                   onClick={() => handleAnswer(opt)}
-                  className="py-10 bg-white border-4 border-gray-100 hover:border-blue-500 hover:bg-blue-50 rounded-[32px] text-5xl font-black transition-all active:scale-95 shadow-lg"
+                  className={`${size.compact ? "py-6" : "py-10"} bg-white border-4 border-gray-100 hover:border-blue-500 hover:bg-blue-50 rounded-[32px] text-5xl font-black transition-all active:scale-95 shadow-lg`}
                   style={{ color: theme.textHeading }}
                 >
                   {opt}
@@ -424,6 +427,7 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
               backgroundColor: theme.surface,
               borderRadius: theme.radiusCard,
               boxShadow: SHADOW["2xl"],
+              ...gameModal(size),
               border: theme.cardBorder,
               maxWidth: "500px",
               width: "90%"

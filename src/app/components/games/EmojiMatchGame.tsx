@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose, gameBody, gameModal, gameControl } from "./gameLayout";
 import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, Timer, ArrowLeft } from "lucide-react";
@@ -23,6 +25,9 @@ const CATEGORIES: Record<Category, string[]> = {
 
 export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
+  const size = useCanvasSize();
+  const emojiColumn = size.portrait ? { flex: "1 1 0", minWidth: 0, ...(size.compact ? { gap: 12 } : {}) } : undefined;
+  const emojiButton = size.portrait ? { width: "100%", ...(size.compact ? { height: "80px" } : {}) } : {};
   const { fontFamily, isRTL, dir, locale } = useLocale();
   const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-emoji-match') ?? (locale === 'ar' ? 'ar' : 'en'));
   const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
@@ -297,10 +302,11 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
           backgroundColor: theme.surface,
           borderBottom: theme.cardBorder,
           boxShadow: SHADOW.lg,
+          ...gameHeader(size),
         }}
       >
-          <div className="flex items-center gap-4">
-            <GameLanguageToggle gameKey="emoji-match" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
+          <div className="flex items-center gap-4" style={gameHeaderLead(size)}>
+            {!size.portrait && <GameLanguageToggle gameKey="emoji-match" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />}
           <button
             onClick={onBackToGames}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
@@ -321,18 +327,20 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
               fontSize: TYPE_SCALE.xl,
               fontWeight: WEIGHT.bold,
               color: theme.textHeading,
+              ...gameTitle(size),
             }}
           >
             {gt.emojiMatchGame}
           </h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={gameHeaderTools(size)}>
+          {size.portrait && <GameLanguageToggle gameKey="emoji-match" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />}
           <select
             value={category}
             onChange={(e) => startGame(e.target.value as Category)}
             style={{
               fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.medium,
-              padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder,
+              padding: '8px 12px', borderRadius: theme.radiusMd, border: theme.cardBorder, ...gameControl(size),
               backgroundColor: theme.surfaceElevated, color: theme.textHeading, outline: 'none'
             }}
           >
@@ -417,6 +425,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
               borderRadius: theme.radiusMd,
               border: "none",
               outline: "none",
+            ...gameHeaderClose(size),
             }}
           >
             <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
@@ -425,7 +434,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
       </div>
 
       {/* Game Content */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-12 px-16 py-12">
+      <div className="flex-1 flex flex-col items-center justify-center gap-12 px-16 py-12" style={gameBody(size)}>
         {!isPlaying && leftEmojis.length === 0 ? (
           /* Start Screen */
           <div className="flex flex-col items-center gap-8">
@@ -590,9 +599,9 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
           </div>
         ) : (
           /* Playing Screen */
-          <div className="flex gap-16 items-start">
+          <div className="flex gap-16 items-start" style={size.portrait ? { width: "100%", flexWrap: "wrap", gap: size.compact ? 16 : 32 } : undefined}>
             {/* Left Column */}
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-5" style={emojiColumn}>
               {leftEmojis.map((item, index) => (
                 <button
                   key={index}
@@ -602,6 +611,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                   style={{
                     width: "200px",
                     height: "140px",
+                    ...emojiButton,
                     backgroundColor: item.matched
                       ? theme.primarySubtle
                       : selectedLeft === index
@@ -611,7 +621,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                     border: selectedLeft === index ? `3px solid ${theme.primary}` : theme.cardBorder,
                     boxShadow: selectedLeft === index ? `0 0 20px ${theme.primary}40` : SHADOW.md,
                     outline: "none",
-                    fontSize: "72px",
+                    fontSize: size.compact ? "48px" : "72px",
                     opacity: item.matched ? 0.4 : 1,
                   }}
                 >
@@ -621,10 +631,11 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
             </div>
 
             {/* Center Indicator */}
-            <div className="flex items-center" style={{ height: "840px" }}>
+            <div className="flex items-center" style={{ height: "840px", ...(size.portrait ? { height: "auto", order: -1, width: "100%", justifyContent: "center" } : {}) }}>
               <div
                 className="flex flex-col items-center justify-center gap-4 px-8 py-6"
                 style={{
+                  ...(size.portrait ? { flexDirection: "row", paddingBlock: 12 } : {}),
                   backgroundColor: theme.surface,
                   borderRadius: theme.radiusCard,
                   border: theme.cardBorder,
@@ -666,7 +677,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
             </div>
 
             {/* Right Column */}
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-5" style={emojiColumn}>
               {rightEmojis.map((item, index) => (
                 <button
                   key={index}
@@ -676,6 +687,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                   style={{
                     width: "200px",
                     height: "140px",
+                    ...emojiButton,
                     backgroundColor: item.matched
                       ? theme.primarySubtle
                       : selectedRight === index
@@ -685,7 +697,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
                     border: selectedRight === index ? `3px solid ${theme.primary}` : theme.cardBorder,
                     boxShadow: selectedRight === index ? `0 0 20px ${theme.primary}40` : SHADOW.md,
                     outline: "none",
-                    fontSize: "72px",
+                    fontSize: size.compact ? "48px" : "72px",
                     opacity: item.matched ? 0.4 : 1,
                   }}
                 >
@@ -728,6 +740,7 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
               backgroundColor: theme.surface,
               borderRadius: theme.radiusCard,
               boxShadow: SHADOW["2xl"],
+              ...gameModal(size),
               border: theme.cardBorder,
               maxWidth: "500px",
               width: "90%"

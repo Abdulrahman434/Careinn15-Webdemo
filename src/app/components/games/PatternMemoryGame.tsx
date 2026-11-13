@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose, gameBody, GameBoardArea, gameBoard, gameModal } from "./gameLayout";
 import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, ArrowLeft } from "lucide-react";
@@ -11,6 +13,7 @@ type GameState = "idle" | "showing" | "playing" | "correct" | "wrong" | "gameove
 
 export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
+  const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
   const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-pattern-memory') ?? (locale === 'ar' ? 'ar' : 'en'));
   const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
@@ -195,10 +198,11 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
           backgroundColor: theme.surface,
           borderBottom: theme.cardBorder,
           boxShadow: SHADOW.lg,
+          ...gameHeader(size),
         }}
       >
-        <div className="flex items-center gap-4">
-          <GameLanguageToggle gameKey="pattern-memory" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
+        <div className="flex items-center gap-4" style={gameHeaderLead(size)}>
+          {!size.portrait && <GameLanguageToggle gameKey="pattern-memory" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />}
           <button
             onClick={onBackToGames}
             className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
@@ -219,12 +223,14 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
               fontSize: TYPE_SCALE.xl,
               fontWeight: WEIGHT.bold,
               color: theme.textHeading,
+              ...gameTitle(size),
             }}
           >
             {gt.patternMemory}
           </h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={gameHeaderTools(size)}>
+          {size.portrait && <GameLanguageToggle gameKey="pattern-memory" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />}
           <div
             className="px-6 py-3"
             style={{
@@ -316,6 +322,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
               borderRadius: theme.radiusMd,
               border: "none",
               outline: "none",
+            ...gameHeaderClose(size),
             }}
           >
             <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
@@ -324,7 +331,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
       </div>
 
       {/* Game Content */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-12 px-16 py-12">
+      <div className="flex-1 flex flex-col items-center justify-center gap-12 px-16 py-12" style={gameBody(size)}>
         {gameState === "idle" ? (
           /* Start Screen */
           <div className="flex flex-col items-center gap-8">
@@ -443,6 +450,8 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
                 boxShadow: SHADOW.md,
                 minWidth: "400px",
                 textAlign: "center",
+                ...(size.portrait ? { minWidth: "min(400px, 100%)" } : {}),
+                ...(size.compact ? { paddingInline: 24 } : {}),
               }}
             >
               <h3
@@ -461,11 +470,13 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
             </div>
 
             {/* Pattern Grid */}
+            <GameBoardArea>
             <div
               className="grid gap-4"
               style={{
                 gridTemplateColumns: "repeat(4, 180px)",
                 gridTemplateRows: "repeat(2, 180px)",
+                ...gameBoard(size, 4, 2),
               }}
             >
               {COLORS.map((color, index) => (
@@ -486,6 +497,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
                 />
               ))}
             </div>
+            </GameBoardArea>
           </>
         )}
       </div>
@@ -545,6 +557,7 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
               backgroundColor: theme.surface,
               borderRadius: theme.radiusCard,
               boxShadow: SHADOW["2xl"],
+              ...gameModal(size),
               border: theme.cardBorder,
               maxWidth: "500px",
               width: "90%"

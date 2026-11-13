@@ -1,5 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose, gameBody, gameModal } from "./gameLayout";
 import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, ArrowLeft, CheckCircle2, XCircle, ChevronRight, HelpCircle, RotateCcw } from "lucide-react";
@@ -289,6 +291,7 @@ const TRIVIA_DATA_AR: Record<Category, Question[]> = {
 
 export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
+  const size = useCanvasSize();
   const { fontFamily, locale, isRTL, dir } = useLocale();
   const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-trivia-quiz') ?? (locale === 'ar' ? 'ar' : 'en'));
   const [gameState, setGameState] = useState<"category" | "playing" | "summary">("category");
@@ -399,28 +402,28 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }} dir={dir}>
-      <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg }}>
-        <div className="flex items-center gap-4">
+      <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg, ...gameHeader(size) }}>
+        <div className="flex items-center gap-4" style={gameHeaderLead(size)}>
           <button onClick={onBackToGames} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
             <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
-          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.triviaQuiz}</h1>
+          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading, ...gameTitle(size) }}>{gt.triviaQuiz}</h1>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={gameHeaderTools(size)}>
           <GameLanguageToggle gameKey="trivia-quiz" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
           {gameState === "playing" && (
             <div className="px-4 py-2 bg-blue-50 rounded-full">
               <span className="font-bold text-blue-600">{gt.question} {currentQuestionIdx + 1}/{questions.length}</span>
             </div>
           )}
-          <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
+          <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none", ...gameHeaderClose(size) }}>
             <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
           </button>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center overflow-auto p-8">
+      <div className="flex-1 flex flex-col items-center justify-center overflow-auto p-8" style={gameBody(size)}>
         {gameState === "category" && (
           <div className="w-full max-w-4xl flex flex-col items-center gap-10">
             <div className="text-center">
@@ -432,6 +435,7 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
                 <button
                   key={cat}
                   onClick={() => selectCategory(cat)}
+                  style={size.compact ? { padding: 20 } : undefined}
                   className="group flex flex-col items-center gap-4 p-8 bg-white border-2 border-gray-100 hover:border-blue-500 hover:bg-blue-50 rounded-3xl transition-all shadow-md active:scale-95"
                 >
                   <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -453,7 +457,7 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
               />
             </div>
 
-            <div className="bg-white p-12 rounded-[40px] shadow-xl border border-gray-100">
+            <div className="bg-white p-12 rounded-[40px] shadow-xl border border-gray-100" style={size.compact ? { padding: 24 } : undefined}>
               <h3 className="text-3xl font-bold leading-tight mb-10" style={{ color: theme.textHeading }}>
                 {questions[currentQuestionIdx].question}
               </h3>
@@ -495,7 +499,7 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
                 </div>
               </div>
 
-              <div className="overflow-y-auto p-8 flex flex-col gap-6" style={{ minHeight: 0 }}>
+              <div className="overflow-y-auto p-8 flex flex-col gap-6" style={{ minHeight: 0, ...(size.compact ? { padding: 16, gap: 16 } : {}) }}>
                 {questions.map((q, i) => (
                   <div key={i} className="bg-gray-50 p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -551,6 +555,7 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
               backgroundColor: theme.surface,
               borderRadius: theme.radiusCard,
               boxShadow: SHADOW["2xl"],
+              ...gameModal(size),
               border: theme.cardBorder,
               maxWidth: "500px",
               width: "90%"

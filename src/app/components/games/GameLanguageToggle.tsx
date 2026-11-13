@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { gameControl } from "./gameLayout";
 
 export default function GameLanguageToggle({ gameKey, initial, onChange }: { gameKey: string; initial?: string; onChange?: (lang: string) => void }) {
   const storageKey = `game-lang-${gameKey}`;
   const [open, setOpen] = useState(false);
+  const size = useCanvasSize();
   const [lang, setLang] = useState<string>(initial || (localStorage.getItem(storageKey) ?? 'en'));
 
   useEffect(() => {
@@ -12,7 +15,7 @@ export default function GameLanguageToggle({ gameKey, initial, onChange }: { gam
 
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>
-      <button onClick={() => setOpen(s => !s)} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(0,0,0,0.08)', background: '#fff', cursor: 'pointer' }}>
+      <button onClick={() => setOpen(s => !s)} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(0,0,0,0.08)', background: '#fff', cursor: 'pointer', ...gameControl(size) }}>
         {lang === 'ar' ? 'العربية' : 'English'} ▾
       </button>
       {open && (

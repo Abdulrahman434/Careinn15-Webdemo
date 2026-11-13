@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, User, Trophy, RotateCcw } from 'lucide-react';
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from '../ThemeContext';
+import { useCanvasSize } from "../../lib/canvasSize";
+import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose, gameBody, gameModal } from "./gameLayout";
 import { useLocale } from '../i18n';
 import GameLanguageToggle from './GameLanguageToggle';
 import { GAME_TRANSLATIONS } from './gameTranslations';
@@ -91,6 +93,7 @@ function normalizeWord(word: string, isArabic: boolean): string {
 
 export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
+  const size = useCanvasSize();
   const { isRTL, dir, locale } = useLocale();
   const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-word-chain') ?? (locale === 'ar' ? 'ar' : 'en'));
   const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
@@ -304,17 +307,17 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }} dir={dir}>
-      <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg }}>
-        <div className="flex items-center gap-4">
+      <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg, ...gameHeader(size) }}>
+        <div className="flex items-center gap-4" style={gameHeaderLead(size)}>
           <button onClick={onBackToGames} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
             <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
-          <h1 style={{ fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.wordChain}</h1>
+          <h1 style={{ fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading, ...gameTitle(size) }}>{gt.wordChain}</h1>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={gameHeaderTools(size)}>
           <GameLanguageToggle gameKey="word-chain" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
-          <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
+          <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none", ...gameHeaderClose(size) }}>
             <div style={{ width: "24px", height: "24px", position: "relative" }}>
               <div style={{ position: "absolute", top: "50%", left: "50%", width: "20px", height: "2px", backgroundColor: theme.textHeading, transform: "translate(-50%, -50%) rotate(45deg)", borderRadius: "2px" }} />
               <div style={{ position: "absolute", top: "50%", left: "50%", width: "20px", height: "2px", backgroundColor: theme.textHeading, transform: "translate(-50%, -50%) rotate(-45deg)", borderRadius: "2px" }} />
@@ -323,9 +326,9 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center overflow-auto p-8 relative">
+      <div className="flex-1 flex flex-col items-center justify-center overflow-auto p-8 relative" style={gameBody(size)}>
         {gameState === 'menu' && (
-          <div className="w-full max-w-2xl bg-white p-10 rounded-3xl shadow-xl">
+          <div className="w-full max-w-2xl bg-white p-10 rounded-3xl shadow-xl" style={size.compact ? { padding: 24 } : undefined}>
             {isArabic ? (
               <div className="space-y-8 text-right">
                 <div className="space-y-3">
@@ -406,9 +409,9 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
         )}
 
         {gameState === 'playing' && (
-          <div className="w-full max-w-4xl flex flex-col h-full gap-8 py-4 relative">
+          <div className="w-full max-w-4xl flex flex-col h-full gap-8 py-4 relative" style={size.compact ? { gap: 16, paddingBlock: 0 } : undefined}>
             {/* Top Section: Player Info */}
-            <div className="shrink-0 flex justify-between items-center bg-white p-6 rounded-3xl shadow-md border border-gray-100">
+            <div className="shrink-0 flex justify-between items-center bg-white p-6 rounded-3xl shadow-md border border-gray-100" style={size.compact ? { padding: 16 } : undefined}>
               <div className={`flex flex-col items-center gap-2 transition-all duration-300 ${currentPlayer === 1 ? 'scale-110' : 'opacity-40 grayscale'}`} style={{ color: currentPlayer === 1 ? theme.primaryOn : undefined }}>
                 <div className="w-16 h-16 rounded-full flex items-center justify-center bg-blue-50 border-2 border-blue-100">
                   <User size={32} color={theme.primaryOn} />
@@ -473,7 +476,8 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
                       backgroundColor: i === chain.length - 1 ? theme.primary : 'white', 
                       color: i === chain.length - 1 ? theme.textInverse : theme.textHeading, 
                       borderColor: i === chain.length - 1 ? theme.primary : theme.primarySubtle,
-                      minWidth: '320px',
+                      minWidth: size.portrait ? 'min(320px, 100%)' : '320px',
+                      ...(size.compact ? { paddingInline: 16 } : {}),
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -522,7 +526,7 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
             )}
 
             {/* Bottom Section: Input Area */}
-            <div className="shrink-0 flex flex-col gap-4 bg-white p-8 rounded-3xl shadow-xl border border-gray-100 mb-4 relative overflow-visible">
+            <div className="shrink-0 flex flex-col gap-4 bg-white p-8 rounded-3xl shadow-xl border border-gray-100 mb-4 relative overflow-visible" style={size.compact ? { padding: 16, marginBottom: 0 } : undefined}>
               <div className="flex justify-between items-center px-2">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 border border-blue-100">
@@ -547,7 +551,7 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
                 </div>
               </div>
 
-              <form onSubmit={handleSubmit} className="flex gap-4">
+              <form onSubmit={handleSubmit} className="flex gap-4" style={size.compact ? { gap: 8 } : undefined}>
                 <div className="flex-1 relative group">
                   <div className="absolute left-6 top-1/2 -translate-y-1/2 text-4xl font-black pointer-events-none select-none opacity-10 group-focus-within:opacity-20 transition-opacity" style={{ color: theme.primaryOn }}>
                     {isArabic ? getLastArabicLetter(chain[chain.length - 1]) : chain[chain.length - 1][chain[chain.length - 1].length - 1].toUpperCase()}
@@ -559,13 +563,14 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
                     value={inputValue}
                     onChange={e => setInputValue(e.target.value)}
                     placeholder={gt.typeWordIn(category === 'animals' ? gt.catAnimalsW : category === 'countries' ? gt.catCountries : gt.catFoods)}
+                    style={size.compact ? { fontSize: TYPE_SCALE.md } : undefined}
                     className="w-full h-20 pl-16 pr-6 text-3xl font-black bg-gray-50 border-4 border-transparent rounded-2xl focus:bg-white focus:border-blue-500 focus:outline-none transition-all shadow-inner uppercase placeholder:text-gray-300"
                   />
                 </div>
                 <button 
                   type="submit" 
+                  style={{ backgroundColor: theme.primary, ...(size.compact ? { paddingInline: 20 } : {}) }}
                   className="px-10 h-20 text-white font-black text-xl rounded-2xl active:scale-95 transition-all shadow-lg hover:brightness-110 flex items-center justify-center" 
-                  style={{ backgroundColor: theme.primary }}
                 >
                   {gt.submit}
                 </button>
@@ -575,7 +580,7 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
         )}
 
         {gameState === 'gameover' && (
-          <div className="w-full max-w-2xl flex flex-col items-center gap-8 bg-white p-10 rounded-3xl shadow-xl animate-in zoom-in-95">
+          <div className="w-full max-w-2xl flex flex-col items-center gap-8 bg-white p-10 rounded-3xl shadow-xl animate-in zoom-in-95" style={size.compact ? { padding: 24 } : undefined}>
             <Trophy size={80} className="text-yellow-400" />
 
             <div className="text-center">
@@ -622,6 +627,7 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
               backgroundColor: theme.surface,
               borderRadius: theme.radiusCard,
               boxShadow: SHADOW["2xl"],
+              ...gameModal(size),
               border: theme.cardBorder,
               maxWidth: "500px",
               width: "90%"

@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
+import { useCanvasSize } from "../../lib/canvasSize";
+import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose, gameBody, gameGroup, gamePanel, GameBoardArea, gameBoard, gameCellFont, gameModal, gameControl } from "./gameLayout";
 import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, ArrowLeft, Search } from "lucide-react";
@@ -42,6 +44,7 @@ const HIGHLIGHT_COLORS = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8",
 
 export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
   const { theme } = useTheme();
+  const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
   const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-word-search') ?? (locale === 'ar' ? 'ar' : 'en'));
   const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
@@ -311,19 +314,19 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col" style={{ backgroundColor: theme.background }} dir={dir}>
-      <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg }}>
-        <div className="flex items-center gap-4">
+      <div className="shrink-0 flex items-center justify-between px-8" style={{ height: "88px", backgroundColor: theme.surface, borderBottom: theme.cardBorder, boxShadow: SHADOW.lg, ...gameHeader(size) }}>
+        <div className="flex items-center gap-4" style={gameHeaderLead(size)}>
           <button onClick={onBackToGames} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
             <ArrowLeft size={24} color={theme.textHeading} className={isRTL ? 'rotate-180' : ''} />
           </button>
-          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.wordSearch}</h1>
+          <h1 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading, ...gameTitle(size) }}>{gt.wordSearch}</h1>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={gameHeaderTools(size)}>
           <select 
             value={difficulty}
             onChange={(e) => initializeGame(e.target.value as Difficulty, currentCategory)}
-            style={{ padding: "8px 12px", borderRadius: theme.radiusMd, border: theme.cardBorder, outline: "none", fontFamily: fontFamily }}
+            style={{ padding: "8px 12px", borderRadius: theme.radiusMd, border: theme.cardBorder, outline: "none", fontFamily: fontFamily, ...gameControl(size) }}
           >
             <option value="easy">{gt.wsEasy}</option>
             <option value="medium">{gt.wsMedium}</option>
@@ -332,7 +335,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
           <select 
             value={currentCategory} 
             onChange={(e) => initializeGame(difficulty, e.target.value as any)}
-            style={{ padding: "8px 12px", borderRadius: theme.radiusMd, border: theme.cardBorder, outline: "none", fontFamily: fontFamily }}
+            style={{ padding: "8px 12px", borderRadius: theme.radiusMd, border: theme.cardBorder, outline: "none", fontFamily: fontFamily, ...gameControl(size) }}
           >
             {Object.keys(WORD_CATEGORIES).map(cat => <option key={cat} value={cat}>{(gt[`ws${cat as keyof typeof WORD_CATEGORIES}` as keyof typeof gt] as string) || cat}</option>)}
           </select>
@@ -344,15 +347,16 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
             <span style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold, color: theme.textInverse }}>{gt.reset}</span>
           </button>
           <GameLanguageToggle gameKey="word-search" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
-          <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none" }}>
+          <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none", ...gameHeaderClose(size) }}>
             <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
           </button>
         </div>
       </div>
 
-      <div className="flex-1 flex px-16 py-8 gap-8 overflow-hidden">
-        <div className="flex-1 flex items-center justify-center overflow-auto">
-          <div className="grid gap-1 bg-white p-4 rounded-xl shadow-inner" style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }}>
+      <div className="flex-1 flex px-16 py-8 gap-8 overflow-hidden" style={gameBody(size)}>
+        <div className="flex-1 flex items-center justify-center overflow-auto" style={gameGroup(size)}>
+          <GameBoardArea>
+          <div className="grid gap-1 bg-white p-4 rounded-xl shadow-inner" style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)`, ...gameBoard(size, gridSize), ...(size.compact ? { padding: 8 } : {}) }}>
             {grid.map((row, r) => row.map((char, c) => {
               const isSelected = selectedCells.some(cell => cell.r === r && cell.c === c);
               const isHinted = hintCells?.some(cell => cell.r === r && cell.c === c);
@@ -372,6 +376,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
                     width: difficulty === 'hard' ? '24px' : difficulty === 'medium' ? '32px' : '48px',
                     height: difficulty === 'hard' ? '24px' : difficulty === 'medium' ? '32px' : '48px',
                     fontSize: difficulty === 'hard' ? '12px' : difficulty === 'medium' ? '16px' : '20px',
+                    ...(size.portrait ? { width: "auto", height: "auto", minWidth: 0, minHeight: 0, fontSize: gameCellFont(size, 32, gridSize, 0.55) } : {}),
                     backgroundColor: isSelected ? theme.primary : foundColor || (isHinted ? '#fde68a' : "transparent"),
                     color: isSelected ? theme.textInverse : foundColor ? "#2D3436" : isHinted ? '#92400e' : theme.textNormal,
                     border: "1px solid rgba(0,0,0,0.05)",
@@ -384,9 +389,10 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
               );
             }))}
           </div>
+          </GameBoardArea>
         </div>
         
-        <div className="w-80 flex flex-col gap-4 overflow-auto">
+        <div className="w-80 flex flex-col gap-4 overflow-auto" style={gamePanel(size)}>
           <div className="flex items-center justify-between">
             <h2 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.wsWords}</h2>
             <button 
@@ -396,7 +402,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
               {gt.hint}
             </button>
           </div>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2" style={size.portrait ? { display: "grid", gridTemplateColumns: `repeat(${size.compact ? 2 : 3}, minmax(0, 1fr))` } : undefined}>
             {targetWords.map((word, idx) => {
               const fIdx = foundWords.indexOf(word);
               const isFound = fIdx !== -1;
@@ -414,7 +420,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
 
       {isComplete && (
         <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", zIndex: 100 }}>
-          <div className="flex flex-col items-center gap-6 px-12 py-10" style={{ backgroundColor: theme.surface, borderRadius: theme.radiusCard, boxShadow: SHADOW["2xl"], border: theme.cardBorder }}>
+          <div className="flex flex-col items-center gap-6 px-12 py-10" style={{ backgroundColor: theme.surface, borderRadius: theme.radiusCard, boxShadow: SHADOW["2xl"], border: theme.cardBorder, ...gameModal(size) }}>
             <Trophy size={80} color={theme.primaryOn} strokeWidth={1.5} />
             <h2 style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE["2xl"], fontWeight: WEIGHT.bold, color: theme.textHeading }}>{gt.wsCongrats}</h2>
             <p style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.medium, color: theme.textMuted }}>{gt.wsAllFound}</p>
@@ -457,6 +463,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
               backgroundColor: theme.surface,
               borderRadius: theme.radiusCard,
               boxShadow: SHADOW["2xl"],
+              ...gameModal(size),
               border: theme.cardBorder,
               maxWidth: "500px",
               width: "90%"
