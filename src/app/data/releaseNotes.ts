@@ -35,6 +35,14 @@ export const CHANGE_TYPES: { type: ChangeType; label: string }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: "1.17.0",
+    date: "2026-11-14",
+    changes: [
+      { type: "improved", area: "Feedback", text: "The option cards are bigger: wider cards, a larger icon and larger text, so two cards fill about half the panel instead of a third." },
+      { type: "fixed", area: "Patient Services", text: "In portrait, items show 2 per row." },
+    ],
+  },
+  {
     version: "1.16.1",
     date: "2026-11-13",
     changes: [
