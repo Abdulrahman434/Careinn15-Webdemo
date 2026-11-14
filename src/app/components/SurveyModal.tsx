@@ -388,9 +388,17 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
   /* ═══════════════════════════════════════════════════════════════
    * RENDER: HUB SCREEN (cards side-by-side)
    * ═══════════════════════════════════════════════════════════════ */
+  /* One card size for every hospital: 416 wide, 24 apart. Two cards and the
+     gap (856) are exactly the portrait panel's inner width, so portrait
+     stacks them in that same 856 column. */
+  const HUB_CARD_W = 416;
+  const hubCards = isBurjeel || isFakeeh ? 2 : 3;
+  const hubPerRow = Math.min(hubCards, 3);
+  const hubRowMax = portrait ? 2 * HUB_CARD_W + 24 : hubPerRow * HUB_CARD_W + (hubPerRow - 1) * 24;
+
   const renderHubScreen = () => (
     <div className="sm-hub sm-pad flex flex-col items-center justify-center h-full px-16 text-center">
-      <div className={`sm-hub-row flex items-center justify-center gap-6 w-full ${isBurjeel ? "max-w-[660px]" : "max-w-[1000px]"}`}>
+      <div className="sm-hub-row flex items-center justify-center gap-6 w-full" style={{ maxWidth: hubRowMax }}>
         {/* Burjeel collects feedback through its own QR posters only */}
         {!isBurjeel && (
         <>
@@ -399,7 +407,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
           onClick={() => setPath("survey")}
           className="sm-card flex-1 flex flex-col items-center cursor-pointer"
           style={{
-            padding: "48px 24px",
+            padding: "56px 32px",
             borderRadius: theme.radiusCard,
             backgroundColor: theme.surface,
             border: `1.5px solid ${theme.borderCardColor}`,
@@ -409,14 +417,14 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
         >
           <div
             className="sm-iconbox flex items-center justify-center mb-6"
-            style={{ width: 80, height: 80, borderRadius: theme.radiusFull, backgroundColor: theme.primarySubtle }}
+            style={{ width: 112, height: 112, borderRadius: theme.radiusFull, backgroundColor: theme.primarySubtle }}
           >
-            <FileText size={40} style={{ color: BRAND }} />
+            <FileText size={56} style={{ color: BRAND }} />
           </div>
-          <span style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "8px" }}>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "8px" }}>
             {t("feedback.quickSurvey")}
           </span>
-          <span style={{ fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.medium, color: theme.textMuted }}>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.medium, color: theme.textMuted }}>
             {isRTL ? "عن إقامتك · دقيقتان" : "About your stay · 2 min"}
           </span>
         </button>
@@ -427,7 +435,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
           onClick={() => window.open(FAKEEH_OVR_URL, "_blank", "noopener,noreferrer")}
           className="sm-card flex-1 flex flex-col items-center cursor-pointer"
           style={{
-            padding: "48px 24px",
+            padding: "56px 32px",
             borderRadius: theme.radiusCard,
             backgroundColor: theme.surface,
             border: `1.5px solid ${theme.borderCardColor}`,
@@ -437,14 +445,14 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
         >
           <div
             className="sm-iconbox flex items-center justify-center mb-6"
-            style={{ width: 80, height: 80, borderRadius: theme.radiusFull, backgroundColor: theme.accentSubtle }}
+            style={{ width: 112, height: 112, borderRadius: theme.radiusFull, backgroundColor: theme.accentSubtle }}
           >
-            <MessageSquareWarning size={40} style={{ color: theme.accentOn }} />
+            <MessageSquareWarning size={56} style={{ color: theme.accentOn }} />
           </div>
-          <span style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "8px" }}>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "8px" }}>
             {t("feedback.suggestionsComplaints")}
           </span>
-          <span style={{ fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.medium, color: theme.textMuted }}>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.medium, color: theme.textMuted }}>
             {t("feedback.suggestionsComplaintsDesc")}
           </span>
         </button>
@@ -455,7 +463,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
           onClick={() => setPath("concern")}
           className="sm-card flex-1 flex flex-col items-center cursor-pointer"
           style={{
-            padding: "48px 24px",
+            padding: "56px 32px",
             borderRadius: theme.radiusCard,
             backgroundColor: theme.surface,
             border: `1.5px solid ${theme.borderCardColor}`,
@@ -465,14 +473,14 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
         >
           <div
             className="sm-iconbox flex items-center justify-center mb-6"
-            style={{ width: 80, height: 80, borderRadius: theme.radiusFull, backgroundColor: CONCERN_SUBTLE }}
+            style={{ width: 112, height: 112, borderRadius: theme.radiusFull, backgroundColor: CONCERN_SUBTLE }}
           >
-            <AlertTriangle size={40} style={{ color: CONCERN_COLOR }} />
+            <AlertTriangle size={56} style={{ color: CONCERN_COLOR }} />
           </div>
-          <span style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "8px" }}>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "8px" }}>
             {t("feedback.raiseConcern")}
           </span>
-          <span style={{ fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.medium, color: theme.textMuted }}>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.medium, color: theme.textMuted }}>
             {isRTL ? "بلغ عن مشكلة · دقيقة واحدة" : "Report an issue · 1 min"}
           </span>
         </button>
@@ -482,7 +490,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
           onClick={() => setPath("appreciation")}
           className="sm-card flex-1 flex flex-col items-center cursor-pointer"
           style={{
-            padding: "48px 24px",
+            padding: "56px 32px",
             borderRadius: theme.radiusCard,
             backgroundColor: theme.surface,
             border: `1.5px solid ${theme.borderCardColor}`,
@@ -492,14 +500,14 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
         >
           <div
             className="sm-iconbox flex items-center justify-center mb-6"
-            style={{ width: 80, height: 80, borderRadius: theme.radiusFull, backgroundColor: APPRECIATION_SUBTLE }}
+            style={{ width: 112, height: 112, borderRadius: theme.radiusFull, backgroundColor: APPRECIATION_SUBTLE }}
           >
-            <Heart size={40} style={{ color: APPRECIATION_COLOR }} />
+            <Heart size={56} style={{ color: APPRECIATION_COLOR }} />
           </div>
-          <span style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "8px" }}>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "8px" }}>
             {t("feedback.sendAppreciation")}
           </span>
-          <span style={{ fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.medium, color: theme.textMuted }}>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.medium, color: theme.textMuted }}>
             {isRTL ? "اشكر فريقنا · ٣٠ ثانية" : "Thank our team · 30 sec"}
           </span>
         </button>
@@ -515,7 +523,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
           onClick={() => openPoster(burjeelGoogleReviewQr)}
           className="sm-card flex-1 flex flex-col items-center cursor-pointer"
           style={{
-            padding: "48px 24px",
+            padding: "56px 32px",
             borderRadius: theme.radiusCard,
             backgroundColor: theme.surface,
             border: `1.5px solid ${theme.borderCardColor}`,
@@ -525,14 +533,14 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
         >
           <div
             className="sm-iconbox flex items-center justify-center mb-6"
-            style={{ width: 80, height: 80, borderRadius: theme.radiusFull, backgroundColor: theme.primarySubtle }}
+            style={{ width: 112, height: 112, borderRadius: theme.radiusFull, backgroundColor: theme.primarySubtle }}
           >
-            <Star size={40} style={{ color: BRAND }} />
+            <Star size={56} style={{ color: BRAND }} />
           </div>
-          <span style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "8px" }}>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "8px" }}>
             {t("feedback.rateUs")}
           </span>
-          <span style={{ fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.medium, color: theme.textMuted }}>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.medium, color: theme.textMuted }}>
             {t("feedback.rateUsDesc")}
           </span>
         </button>
@@ -542,7 +550,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
           onClick={() => openPoster(burjeelPatientFormQr)}
           className="sm-card flex-1 flex flex-col items-center cursor-pointer"
           style={{
-            padding: "48px 24px",
+            padding: "56px 32px",
             borderRadius: theme.radiusCard,
             backgroundColor: theme.surface,
             border: `1.5px solid ${theme.borderCardColor}`,
@@ -552,14 +560,14 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
         >
           <div
             className="sm-iconbox flex items-center justify-center mb-6"
-            style={{ width: 80, height: 80, borderRadius: theme.radiusFull, backgroundColor: theme.primarySubtle }}
+            style={{ width: 112, height: 112, borderRadius: theme.radiusFull, backgroundColor: theme.primarySubtle }}
           >
-            <ClipboardList size={40} style={{ color: BRAND }} />
+            <ClipboardList size={56} style={{ color: BRAND }} />
           </div>
-          <span style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "8px" }}>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.xl, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "8px" }}>
             {t("feedback.patientForm")}
           </span>
-          <span style={{ fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.medium, color: theme.textMuted }}>
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.medium, color: theme.textMuted }}>
             {t("feedback.patientFormDesc")}
           </span>
         </button>
