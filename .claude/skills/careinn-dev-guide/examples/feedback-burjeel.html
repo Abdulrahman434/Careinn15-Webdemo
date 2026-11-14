@@ -1,0 +1,799 @@
+<title>Burjeel Feedback Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&family=JetBrains+Mono:wght@400;600&family=Montserrat:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a technical spec — sticky contents rail on wide screens, one reading column, specimens and tables at full column width. */
+:root {
+  --bg: #F4F6F9;
+  --paper: #FFFFFF;
+  --ink: #17212B;
+  --ink-2: #4A5764;
+  --ink-3: #6F7C88;
+  --rule: #DDE3EA;
+  --rule-soft: #EBEFF3;
+  --accent: #1B2F5B;
+  --accent-soft: #E7EBF3;
+  --code-bg: #F0F3F7;
+  --warn: #B4232F;
+  --warn-soft: #FBECEE;
+  --ok: #1A7F4B;
+  --ok-soft: #E8F5EE;
+  --star: #9A5B00;
+  --star-soft: #FFF3DC;
+  --new: #1D5FBF;
+  --new-soft: #E6EEFA;
+  --chg: #6B3FC4;
+  --chg-soft: #EFE9FB;
+  --f-display: "Montserrat", "Segoe UI", Arial, sans-serif;
+  --f-body: "Public Sans", "Segoe UI", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F141A; --paper: #161D25; --ink: #E6ECF1; --ink-2: #B3BFCA; --ink-3: #8E9BA7;
+    --rule: #2A3540; --rule-soft: #212B35; --accent: #9DB4E8; --accent-soft: #1F2A3D;
+    --code-bg: #1C2530; --warn: #FF8A93; --warn-soft: #3A1F24; --ok: #6FD49E; --ok-soft: #173126;
+    --star: #F2B85B; --star-soft: #3A2C14; --new: #8DB4F5; --new-soft: #1C2A40; --chg: #B79AF2; --chg-soft: #2A2140; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F141A; --paper: #161D25; --ink: #E6ECF1; --ink-2: #B3BFCA; --ink-3: #8E9BA7;
+  --rule: #2A3540; --rule-soft: #212B35; --accent: #9DB4E8; --accent-soft: #1F2A3D;
+  --code-bg: #1C2530; --warn: #FF8A93; --warn-soft: #3A1F24; --ok: #6FD49E; --ok-soft: #173126;
+  --star: #F2B85B; --star-soft: #3A2C14; --new: #8DB4F5; --new-soft: #1C2A40; --chg: #B79AF2; --chg-soft: #2A2140; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.6; }
+.wrap {
+  max-width: 1480px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 80px;
+  display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 40px;
+}
+@media (max-width: 960px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 16px; } }
+
+.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; font-size: 14px; }
+.toc h2 { font-family: var(--f-display); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 10px; }
+.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.toc a { display: flex; gap: 10px; padding: 6px 10px; border-radius: 8px; color: var(--ink-2); text-decoration: none; }
+.toc a:focus-visible { background: var(--accent-soft); color: var(--ink); outline: none; }
+.toc .n { font-family: var(--f-mono); font-size: 12px; color: var(--ink-3); min-width: 18px; padding-top: 2px; }
+.toc .top { color: var(--star); font-weight: 600; }
+.toc a.active { background: var(--accent); color: var(--paper); font-weight: 700; }
+.toc a.active .n { color: var(--paper); opacity: .75; }
+.toc a.active.top { background: var(--star); color: var(--paper); }
+@media (max-width: 960px) {
+  .toc { position: static; background: var(--paper); border: 1px solid var(--rule); border-radius: 14px; padding: 14px; }
+  .toc ol { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+}
+
+main { min-width: 0; display: grid; gap: 28px; }
+header.doc { background: var(--paper); border: 1px solid var(--rule); border-radius: 18px; padding: 28px 28px 24px; }
+.eyebrow { font-family: var(--f-display); font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(28px, 4vw, 40px); line-height: 1.15; margin: 0 0 12px; letter-spacing: -.01em; text-wrap: balance; }
+.lede { font-size: 17px; color: var(--ink-2); max-width: 70ch; margin: 0 0 18px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 0; }
+.facts div { background: var(--bg); border-radius: 10px; padding: 10px 12px; }
+.facts dt { font-size: 12px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .08em; }
+.facts dd { margin: 2px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+section.card { background: var(--paper); border: 1px solid var(--rule); border-radius: 18px; padding: 28px; scroll-margin-top: 20px; }
+@media (max-width: 600px) { section.card, header.doc { padding: 20px 16px; } }
+.sec-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+.sec-num { font-family: var(--f-mono); font-size: 14px; color: var(--ink-3); }
+h2 { font-family: var(--f-display); font-size: clamp(21px, 2.6vw, 26px); font-weight: 800; margin: 0; line-height: 1.25; text-wrap: balance; }
+h3 { font-family: var(--f-display); font-size: 17px; font-weight: 700; margin: 26px 0 10px; }
+h4 { font-size: 14px; font-weight: 700; margin: 18px 0 8px; color: var(--ink-2); text-transform: uppercase; letter-spacing: .06em; }
+p { margin: 0 0 12px; max-width: 75ch; }
+.sum { color: var(--ink-2); font-size: 16.5px; margin: 6px 0 16px; }
+.badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; }
+.badge.top { background: var(--star-soft); color: var(--star); }
+.badge.fix { background: var(--warn-soft); color: var(--warn); }
+code { font-family: var(--f-mono); font-size: .88em; background: var(--code-bg); padding: 1px 6px; border-radius: 5px; overflow-wrap: anywhere; }
+ul.tight, ol.tight { margin: 0 0 12px; padding-inline-start: 20px; max-width: 75ch; }
+ul.tight li, ol.tight li { margin: 4px 0; }
+
+.pf { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 14px 0 6px; }
+.pf > * { min-width: 0; }
+.pf > div { border-radius: 12px; padding: 12px 14px; font-size: 15px; }
+.pf .now { background: var(--warn-soft); }
+.pf .want { background: var(--ok-soft); }
+.pf b { display: block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+.pf .now b { color: var(--warn); }
+.pf .want b { color: var(--ok); }
+
+.tbl { overflow-x: auto; margin: 10px 0 16px; border: 1px solid var(--rule); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 560px; }
+th, td { text-align: start; padding: 9px 12px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+th { background: var(--bg); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); font-weight: 700; }
+tr:last-child td { border-bottom: 0; }
+td.v { font-family: var(--f-mono); font-size: 13px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.sw { display: inline-block; width: 14px; height: 14px; border-radius: 4px; vertical-align: -2px; margin-inline-end: 6px; border: 1px solid rgba(0,0,0,.12); }
+
+.code { position: relative; margin: 10px 0 16px; }
+.code pre { margin: 0; background: var(--code-bg); border-radius: 12px; padding: 14px 16px; overflow-x: auto; font-family: var(--f-mono); font-size: 13px; line-height: 1.6; color: var(--ink); }
+.code .lang { position: absolute; top: 8px; inset-inline-end: 64px; font-size: 11px; color: var(--ink-3); font-family: var(--f-mono); }
+.code button { position: absolute; top: 6px; inset-inline-end: 8px; font: 600 12px var(--f-body); color: var(--ink-2); background: var(--paper); border: 1px solid var(--rule); border-radius: 7px; padding: 3px 9px; cursor: pointer; }
+.code button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+figure { margin: 12px 0 18px; }
+figure img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--rule); }
+figcaption { font-size: 13.5px; color: var(--ink-3); margin-top: 8px; }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.pair > * { min-width: 0; }
+.pair.narrow figure img { max-width: 360px; margin-inline: auto; }
+
+.diagram { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid var(--rule); }
+.diagram img { display: block; width: 100%; height: auto; border: 0; border-radius: 0; }
+.zone { position: absolute; border: 2px dashed; border-radius: 6px; display: flex; align-items: flex-start; justify-content: center; }
+.zone span { font: 700 clamp(9px, 1.15vw, 14px)/1.25 var(--f-mono); background: rgba(10,16,24,.82); color: #fff; padding: 3px 7px; border-radius: 5px; margin-top: 6px; text-align: center; white-space: nowrap; }
+.z1 { border-color: #E2453A; background: rgba(226,69,58,.06); }
+.z2 { border-color: #2C7BE5; background: rgba(44,123,229,.05); }
+.z3 { border-color: #1E9E6A; background: rgba(30,158,106,.07); }
+.z4 { border-color: #8A5CF6; background: rgba(138,92,246,.05); }
+
+.ratio { display: flex; height: 64px; margin: 12px 0 6px; min-width: 760px; gap: 0; font: 600 12px/1.25 var(--f-mono); }
+.ratio > div { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border-radius: 8px; min-width: 0; }
+.ratio b { font: 700 13px var(--f-body); }
+.ratio .sp { background: transparent; border-radius: 0; color: var(--ink-3); font-weight: 500; }
+.ratio .g { background: #FBE3E1; color: #8E2A23; border: 1.5px solid #E2453A; }
+.ratio .c { background: #E1ECFB; color: #1D4F94; border: 1.5px solid #2C7BE5; }
+.ratio .s { background: #DDF2E8; color: #146546; border: 1.5px solid #1E9E6A; }
+.ratio-legend { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13.5px; color: var(--ink-3); margin: 0 0 12px; }
+.ratio-wrap { overflow-x: auto; }
+
+/* product specimens (fixed product colours on purpose) */
+.specimens { display: flex; flex-wrap: wrap; gap: 18px; padding: 22px; background: #E9EDF1; border-radius: 14px; margin: 12px 0 16px; }
+.specimens.dark { background: #0E1317; }
+.spec { display: grid; gap: 8px; justify-items: center; }
+.spec small { font: 600 12px var(--f-mono); color: #4A5764; }
+.specimens.dark .spec small { color: #9FA9AD; }
+.hub {
+  width: 168px; height: 208px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  background-color: #FFFFFF; border: 1px solid rgba(27,42,50,.10);
+  box-shadow: 0 1px 3px rgba(31,41,46,.04), 0 4px 12px rgba(31,41,46,.06);
+  font: 600 17px var(--f-display); color: #1B2A32;
+}
+.hub .ib { width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center; border: 1px solid; }
+.hub.dk { background-color: #1B2227; border-color: rgba(255,255,255,.12); color: #E7EBED; }
+.hub.heavy { box-shadow: 0 8px 28px rgba(0,0,0,.28); border-color: transparent; }
+.hub.flat { background-image: none !important; }
+.more-tile { display: grid; justify-items: center; gap: 10px; padding: 14px 18px; border-radius: 18px; background: #fff; }
+.more-tile .sq { width: 88px; height: 88px; border-radius: 24px; display: flex; align-items: center; justify-content: center; background: #871C55; }
+.more-tile span { font: 600 18px var(--f-display); color: #56646F; }
+
+.ar-demo { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin: 12px 0 16px; }
+.ar-demo > * { min-width: 0; }
+.ar-box { background: #fff; border-radius: 12px; padding: 16px; border: 1px solid #DDE3EA; color: #1B2A32; }
+.ar-box b { display: block; font: 700 12px var(--f-body); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
+.ar-box.bad b { color: #B4232F; } .ar-box.good b { color: #1A7F4B; }
+.ar-line { font-family: "Almarai", sans-serif; font-weight: 800; font-size: 30px; direction: rtl; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: repeating-linear-gradient(0deg, transparent 0 10px, rgba(44,123,229,.06) 10px 11px); }
+.ar-box.bad .ar-line { line-height: 1.0; letter-spacing: -0.5px; }
+.ar-box.good .ar-line { line-height: 1.5; letter-spacing: 0; }
+
+.fixlist td:first-child { font-family: var(--f-mono); color: var(--ink-3); width: 36px; }
+.fixlist tr.prio td { background: var(--star-soft); }
+.fixlist a { color: var(--accent); font-weight: 600; text-decoration: none; white-space: nowrap; }
+.note { border-inline-start: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 0 10px 10px 0; margin: 12px 0 16px; font-size: 15px; max-width: 80ch; }
+footer { color: var(--ink-3); font-size: 13.5px; text-align: center; padding-top: 6px; }
+/* ── Revision blocks ── */
+main > * { min-width: 0; }
+main { grid-template-columns: minmax(0, 1fr); }
+.tag { display: inline-flex; align-items: center; font: 700 11.5px/1 var(--f-body); letter-spacing: .07em; text-transform: uppercase; padding: 5px 9px; border-radius: 999px; white-space: nowrap; }
+.tag.new { background: var(--new-soft); color: var(--new); }
+.tag.open { background: var(--star-soft); color: var(--star); }
+.tag.chg { background: var(--chg-soft); color: var(--chg); }
+.tag.issue { background: var(--warn-soft); color: var(--warn); }
+.rev-top { border: 2px solid var(--accent); }
+.rev-date { font-family: var(--f-mono); font-size: 13px; color: var(--ink-3); margin-inline-start: auto; }
+.done-well { background: var(--ok-soft); color: var(--ink); border-radius: 10px; padding: 10px 14px; max-width: none; }
+.done-well b { color: var(--ok); margin-inline-end: 6px; }
+.finger-note { border-inline-start: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 12px 12px 0; padding: 12px 16px 4px; margin: 0 0 14px; }
+.finger-note .tbl { background: var(--paper); }
+tr.finger td { background: var(--accent-soft); }
+tr.finger td:first-child { font-weight: 700; color: var(--accent); white-space: nowrap; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 14px; color: var(--ink-2); margin: 4px 0 4px; }
+.legend > span { display: inline-flex; align-items: center; gap: 8px; }
+.revlist td { padding-block: 6px; }
+.revlist td:first-child { font-family: var(--f-mono); color: var(--ink-3); white-space: nowrap; }
+.revlist a { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; min-height: 30px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-weight: 800; text-decoration: none; }
+.revlist tr.grp-row td { background: var(--bg); font: 700 11.5px var(--f-display); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); padding-block: 6px; }
+.next-up { color: var(--ink-2); font-size: 15px; margin-top: 4px; max-width: none; }
+.rev-item .sec-head .tag { margin-inline-start: 4px; }
+.now-chip, .want-chip { display: inline-block; font: 700 11px/1.2 var(--f-body); letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; margin-inline-end: 6px; }
+.now-chip { background: var(--warn-soft); color: var(--warn); }
+.want-chip { background: var(--ok-soft); color: var(--ok); }
+.shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; align-items: start; margin: 12px 0 18px; }
+.shots > * { min-width: 0; margin: 0; }
+.shots img { max-width: 100%; width: auto; margin-inline: auto; }
+.rev-nav { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; border-top: 1px solid var(--rule); margin-top: 20px; padding-top: 14px; }
+.rev-nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--rule); color: var(--ink); text-decoration: none; font-weight: 600; font-size: 15px; background: var(--bg); }
+.rev-nav a:active { background: var(--accent-soft); }
+.rev-nav a:last-child { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+tr.hl td { background: var(--ok-soft); }
+.err-t { color: var(--warn); font-weight: 600; }
+.miss { color: var(--warn); font-style: italic; }
+.str-note, .refs { font-size: 14px; color: var(--ink-3); }
+.refs a { color: var(--accent); font-weight: 600; }
+.rev-mark { display: inline-flex; font: 700 11px/1 var(--f-body); letter-spacing: .05em; text-transform: uppercase; padding: 4px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); text-decoration: none; white-space: nowrap; }
+.rev-mark.chg { background: var(--chg-soft); color: var(--chg); }
+.toc .grp { font-family: var(--f-display); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin: 14px 10px 4px; }
+.toc .grp:first-of-type { margin-top: 0; }
+.toc .rt { margin-inline-start: auto; width: 8px; height: 8px; border-radius: 50%; flex: none; align-self: center; }
+.toc .rt.new { background: var(--new); } .toc .rt.open { background: var(--star); } .toc .rt.chg { background: var(--chg); } .toc .rt.issue { background: var(--warn); }
+@media (min-width: 961px) { .toc { max-height: calc(100vh - 40px); overflow-y: auto; } }
+@media (max-width: 960px) { .toc .grp { grid-column: 1 / -1; } }
+/* scrollbar specimen (fixed product colours on purpose) */
+.sb-demo { position: relative; display: inline-grid; grid-template-columns: 220px 12px; gap: 0; padding: 14px; background: #FFFFFF; border: 1px solid #DDE3EA; border-radius: 16px; margin: 8px 0 16px; }
+.sb-body { display: grid; gap: 8px; height: 150px; overflow: hidden; }
+.sb-body span { display: block; height: 22px; border-radius: 8px; background: rgba(0,0,0,.05); }
+.sb-track { position: relative; height: 150px; }
+.sb-track i { position: absolute; top: 4px; inset-inline-end: 2px; width: 4px; height: 56px; border-radius: 2px; background: rgba(22,39,77,.30); }
+.sb-demo small { grid-column: 1 / -1; margin-top: 8px; font: 600 12px var(--f-mono); color: #4A5764; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+/* ── Feedback guide: grid diagrams ── */
+.gridset { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin: 12px 0 18px; }
+.gcase { background: var(--bg); border: 1px solid var(--rule); border-radius: 12px; padding: 10px 10px 8px; display: grid; gap: 8px; justify-items: center; min-width: 0; }
+.gcase b { font: 700 12px var(--f-mono); color: var(--ink-2); }
+.gcase small { font: 500 11.5px var(--f-mono); color: var(--ink-3); text-align: center; }
+.gpanel { width: 100%; aspect-ratio: 1824 / 918; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 3px; padding: 4px; }
+.gpanel i { display: block; width: 22%; height: 36%; border-radius: 3px; background: var(--accent-soft); border: 1px solid var(--accent); }
+.gcase.today { border-color: var(--ok); background: var(--ok-soft); }
+.formula { font: 600 14px/1.7 var(--f-mono); background: var(--code-bg); border-radius: 12px; padding: 12px 16px; margin: 10px 0 16px; overflow-x: auto; white-space: pre; }
+</style>
+
+<div class="wrap">
+  <nav class="toc" aria-label="Contents">
+    <h2>Contents</h2>
+    <ol>
+      <li class="grp">Feedback · Burjeel · 14 Nov</li>
+      <li><a href="#fb" class="top"><span class="n">FB</span>All items</a></li>
+      <li class="grp">FB · The screen</li>
+      <li><a href="#fb-1"><span class="n">1</span>Page and panel<span class="rt new" title="New"></span></a></li>
+      <li><a href="#fb-2"><span class="n">2</span>Option card<span class="rt new" title="New"></span></a></li>
+      <li class="grp">FB · How many cards</li>
+      <li><a href="#fb-3"><span class="n">3</span>Two cards (today)<span class="rt new" title="New"></span></a></li>
+      <li><a href="#fb-4"><span class="n">4</span>More than two ★<span class="rt new" title="New"></span></a></li>
+      <li><a href="#fb-5"><span class="n">5</span>Order and wording<span class="rt new" title="New"></span></a></li>
+      <li class="grp">FB · QR poster</li>
+      <li><a href="#fb-6"><span class="n">6</span>Poster view<span class="rt new" title="New"></span></a></li>
+      <li><a href="#fb-7"><span class="n">7</span>Poster files<span class="rt new" title="New"></span></a></li>
+      <li class="grp">FB · Language and code</li>
+      <li><a href="#fb-8"><span class="n">8</span>Arabic and Urdu<span class="rt new" title="New"></span></a></li>
+      <li><a href="#fb-9"><span class="n">9</span>Strings<span class="rt new" title="New"></span></a></li>
+      <li><a href="#fb-10"><span class="n">10</span>Build it from a list<span class="rt new" title="New"></span></a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="doc">
+      <p class="eyebrow">For the Android team · Java + XML layouts</p>
+      <h1>Feedback screen — Burjeel</h1>
+      <p class="lede">Burjeel collects feedback through its own printed QR posters. The Feedback screen shows one card per poster, and a tap opens that poster so the patient can scan it with their phone. Today there are two posters. This guide also sets how the screen grows when Burjeel adds a third, fourth or more. Read it with the <a href="https://claude.ai/artifact/2d1HuwKq18gHWYrkiJ8B4z" target="_blank" rel="noopener">CareInn Bedside UI Build Guide</a> and <a href="https://claude.ai/artifact/HS2BMzYnU8ANYo93GaFfyn" target="_blank" rel="noopener">Revision 1</a>.</p>
+      <dl class="facts">
+        <div><dt>Device</dt><dd>AiMedik MT15 · 15.6″ IPS</dd></div>
+        <div><dt>Panel</dt><dd>1920 × 1080 · 141 ppi</dd></div>
+        <div><dt>Design canvas</dt><dd>1920 × 1080 dp</dd></div>
+        <div><dt>Hospital</dt><dd>Burjeel · #871C55</dd></div>
+        <div><dt>Date</dt><dd>14 Nov 2026</dd></div>
+        <div><dt>Build guide</dt><dd><a href="https://claude.ai/artifact/2d1HuwKq18gHWYrkiJ8B4z" target="_blank" rel="noopener">Open →</a></dd></div>
+      </dl>
+    </header>
+
+    <!-- ═══ SUMMARY ═══ -->
+    <section class="card rev-top" id="fb">
+      <div class="sec-head"><span class="sec-num">FB</span><h2>Feedback screen: all items</h2><span class="rev-date">14 Nov 2026</span></div>
+      <p class="sum">10 items. Each row opens its card. Each card ends with Previous · All · Next.</p>
+      <figure><img src="img2/fb-hub-en.jpg" alt="Burjeel Feedback screen: Share Your Experience header, white panel, two cards Rate Us and Patient Form in the centre" width="1600" height="900"><figcaption><span class="want-chip">Design</span> The Burjeel Feedback screen today: two QR cards in the middle of the white panel.</figcaption></figure>
+      <div class="finger-note">
+        <p><b>The rule in one line.</b> The card never changes size. When more posters come, more cards are added in rows of up to three, and the group stays centred in the panel.</p>
+        <div class="tbl"><table>
+          <thead><tr><th>Cards</th><th>In each row</th><th>Group (dp)</th></tr></thead>
+          <tbody>
+            <tr><td class="v">2 (today)</td><td class="v">2</td><td class="v">856 × 336</td></tr>
+            <tr><td class="v">3</td><td class="v">3</td><td class="v">1296 × 336</td></tr>
+            <tr><td class="v">4</td><td class="v">2 + 2</td><td class="v">856 × 696</td></tr>
+            <tr><td class="v">5 · 6</td><td class="v">3 + 2 · 3 + 3</td><td class="v">1296 × 696</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="legend">
+        <span><span class="tag new">New</span> not in the guides before</span>
+        <span><span class="tag open">Still open</span> in a guide already, not done yet</span>
+        <span><span class="tag chg">Changed</span> we changed an earlier spec</span>
+        <span><span class="tag issue">Issue</span> a bug in the current build to fix</span>
+      </div>
+      <div class="tbl">
+        <table class="revlist">
+          <thead><tr><th>#</th><th>Tag</th><th>Item</th><th>Do this</th><th></th></tr></thead>
+          <tbody>
+            <tr class="grp-row"><td colspan="5">The screen</td></tr>
+            <tr><td>FB.1</td><td><span class="tag new">New</span></td><td><b>Page and panel</b></td><td>Internal page top bar, then one white panel: 1824 × 918, 32 dp corners.</td><td><a href="#fb-1">→</a></td></tr>
+            <tr><td>FB.2</td><td><span class="tag new">New</span></td><td><b>Option card</b></td><td>416 × 336 dp, 40 dp corners, 112 dp icon circle, title 30 sp, one line 22 sp.</td><td><a href="#fb-2">→</a></td></tr>
+            <tr class="grp-row"><td colspan="5">How many cards</td></tr>
+            <tr><td>FB.3</td><td><span class="tag new">New</span></td><td><b>Two cards (today)</b></td><td>Rate Us | Patient Form, 24 dp apart, centred in the panel.</td><td><a href="#fb-3">→</a></td></tr>
+            <tr><td>FB.4</td><td><span class="tag new">New</span></td><td><b>More than two</b> ★</td><td>Same card. Rows of up to 3, rows balanced, group centred. 6 cards at most.</td><td><a href="#fb-4">→</a></td></tr>
+            <tr><td>FB.5</td><td><span class="tag new">New</span></td><td><b>Order and wording</b></td><td>Rate Us first. One icon, one title, one "… · Scan QR" line per card.</td><td><a href="#fb-5">→</a></td></tr>
+            <tr class="grp-row"><td colspan="5">QR poster</td></tr>
+            <tr><td>FB.6</td><td><span class="tag new">New</span></td><td><b>Poster view</b></td><td>Opens inside the panel, fitted with 24 dp around, 56 dp ✕, tap outside closes.</td><td><a href="#fb-6">→</a></td></tr>
+            <tr><td>FB.7</td><td><span class="tag new">New</span></td><td><b>Poster files</b></td><td>One bilingual image per card, all the same shape. The QR stays sharp.</td><td><a href="#fb-7">→</a></td></tr>
+            <tr class="grp-row"><td colspan="5">Language and code</td></tr>
+            <tr><td>FB.8</td><td><span class="tag new">New</span></td><td><b>Arabic and Urdu</b></td><td>The order mirrors: Rate Us on the right. The poster stays the same.</td><td><a href="#fb-8">→</a></td></tr>
+            <tr><td>FB.9</td><td><span class="tag new">New</span></td><td><b>Strings</b></td><td>Six keys in English, Arabic and Urdu.</td><td><a href="#fb-9">→</a></td></tr>
+            <tr><td>FB.10</td><td><span class="tag new">New</span></td><td><b>Build it from a list</b></td><td>One list of posters. The grid is worked out from its length.</td><td><a href="#fb-10">→</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="next-up">The cards below follow the list. Previous / Next follow the page.</p>
+    </section>
+
+    <!-- FB.1 PAGE -->
+    <section class="card rev-item" id="fb-1">
+      <div class="sec-head"><span class="sec-num">FB.1</span><h2>Page and panel</h2><span class="tag new">New</span></div>
+      <p class="sum">The same frame as Patient Services and Meal Ordering: the internal page top bar, then one big white panel that holds the cards.</p>
+      <div class="diagram">
+        <img src="img2/fb-hub-en.jpg" alt="Feedback screen with the top bar, the white panel and the card group outlined" width="1600" height="900">
+        <div class="zone z4" style="left:0;top:0;width:100%;height:11.3%"><span>Top bar · 122</span></div>
+        <div class="zone z2" style="left:2.5%;top:12.04%;width:95%;height:85%"><span>White panel · 1824 × 918</span></div>
+        <div class="zone z3" style="left:27.71%;top:38.98%;width:44.58%;height:31.11%"><span>Cards · 856 × 336</span></div>
+      </div>
+      <h4>Top bar</h4>
+      <p>Build it exactly as in the <a href="https://claude.ai/artifact/CJ1wW7Lqn7iTzyeohEpMTf" target="_blank" rel="noopener">Internal Page Top Bar guide</a>. Title "Share Your Experience", subtitle "Burjeel Hospital", the message-square-heart icon. 122 dp tall: 40 above, 24 below, 48 at the sides.</p>
+      <h4>White panel</h4>
+      <div class="tbl"><table>
+        <thead><tr><th>Part</th><th>Light</th><th>Dark</th></tr></thead>
+        <tbody>
+          <tr><td>Position</td><td class="v" colspan="2">8 below the top bar · 48 from each side · 32 from the bottom</td></tr>
+          <tr><td>Size at 1920 × 1080</td><td class="v" colspan="2">1824 × 918 dp</td></tr>
+          <tr><td>Corners</td><td class="v" colspan="2">32 dp · clip the children (the poster dim follows these corners)</td></tr>
+          <tr><td>Fill</td><td class="v">card_surface #FFFFFF</td><td class="v">#1B2227</td></tr>
+          <tr><td>Stroke</td><td class="v">none</td><td class="v">1 dp #1FFFFFFF (white 12%)</td></tr>
+          <tr><td>Shadow</td><td class="v" colspan="2">xl · elevation 12 dp (<a href="https://claude.ai/artifact/2d1HuwKq18gHWYrkiJ8B4z" target="_blank" rel="noopener">Build guide → 03 Card shadow</a>)</td></tr>
+          <tr><td>Inside</td><td class="v" colspan="2">64 dp at the sides · the card group centred both ways</td></tr>
+          <tr><td>Page behind</td><td class="v" colspan="2">brand page gradient + hospital photo at 8%, as on the other inner pages</td></tr>
+        </tbody>
+      </table></div>
+      <p>Burjeel shows only its QR cards here. The other hospitals' cards (Quick Survey, Raise a Concern, Send Appreciation) are not shown for Burjeel.</p>
+      <nav class="rev-nav" aria-label="Feedback"><span></span><a href="#fb">↑ All items</a><a href="#fb-2">Next: FB.2 Option card →</a></nav>
+    </section>
+
+    <!-- FB.2 CARD -->
+    <section class="card rev-item" id="fb-2">
+      <div class="sec-head"><span class="sec-num">FB.2</span><h2>Option card</h2><span class="tag new">New</span></div>
+      <p class="sum">One card layout for every poster. Only the icon, the title and the line change.</p>
+      <figure><img src="img2/fb-card.jpg" alt="Two option cards close up: a star in a pale circle, Rate Us, On Google Maps · Scan QR; a clipboard, Patient Form, Feedback &amp; ideas · Scan QR" width="904" height="384" loading="lazy" style="max-width:904px"><figcaption><span class="want-chip">Design</span> Icon circle, title, one line. Everything centred.</figcaption></figure>
+      <div class="tbl"><table>
+        <thead><tr><th>Part</th><th>Light</th><th>Dark</th></tr></thead>
+        <tbody>
+          <tr><td>Size</td><td class="v" colspan="2"><b>416 dp wide, fixed</b> · height wrap_content (336 with one-line text)</td></tr>
+          <tr><td>Padding</td><td class="v" colspan="2">56 top and bottom · 32 at the sides (352 dp left for text)</td></tr>
+          <tr><td>Corners</td><td class="v" colspan="2">40 dp (same as the home cards)</td></tr>
+          <tr><td>Fill</td><td class="v">card_surface #FFFFFF · no tint</td><td class="v">#1B2227</td></tr>
+          <tr><td>Stroke</td><td class="v">1 dp card_border #1A1B2A32</td><td class="v">1 dp #1FFFFFFF</td></tr>
+          <tr><td>Shadow</td><td class="v" colspan="2">sm · elevation 1 dp</td></tr>
+          <tr><td>Icon circle</td><td class="v">112 dp · brand_subtle #14871C55</td><td class="v">112 dp · #3DC12879</td></tr>
+          <tr><td>Icon</td><td class="v">56 dp line icon · stroke 2 · brand_text #871C55</td><td class="v">brand_text #E78CBB</td></tr>
+          <tr><td>Gap</td><td class="v" colspan="2">24 under the circle · 8 under the title</td></tr>
+          <tr><td>Title</td><td class="v">30 sp bold · line height 45 · text_heading #1B2A32</td><td class="v">#E7EBED</td></tr>
+          <tr><td>Line</td><td class="v">22 sp medium · line height 33 · text_muted #56646F</td><td class="v">#9DAAB2</td></tr>
+          <tr><td>Pressed</td><td class="v" colspan="2">scale 0.985 · 150 ms · nothing else changes</td></tr>
+          <tr><td>Tap</td><td class="v" colspan="2">opens this card's poster (<a href="#fb-6">FB.6</a>)</td></tr>
+        </tbody>
+      </table></div>
+      <figure><img src="img2/fb-hub-dark.jpg" alt="Feedback screen in dark mode: dark panel, dark cards, light text" width="1600" height="900" loading="lazy"><figcaption><span class="want-chip">Design</span> Dark mode. Use brand_text #E78CBB for the icons here: the brand fill colour is too dark on the dark card.</figcaption></figure>
+      <div class="code"><span class="lang">res/layout/item_feedback_card.xml</span><button type="button" data-copy>Copy</button><pre>&lt;com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="416dp"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="40dp"
+    app:cardElevation="1dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/card_border"
+    app:cardBackgroundColor="@color/card_surface"
+    android:outlineAmbientShadowColor="#1F292E"
+    android:outlineSpotShadowColor="#1F292E"
+    android:clickable="true"
+    android:focusable="true"&gt;
+
+    &lt;LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingHorizontal="32dp"
+        android:paddingVertical="56dp"&gt;
+
+        &lt;FrameLayout
+            android:layout_width="112dp"
+            android:layout_height="112dp"
+            android:background="@drawable/bg_circle_brand_subtle"&gt;
+            &lt;ImageView
+                android:id="@+id/fbIcon"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_gravity="center"
+                app:tint="@color/brand_text"
+                android:importantForAccessibility="no" /&gt;
+        &lt;/FrameLayout&gt;
+
+        &lt;TextView
+            android:id="@+id/fbTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:gravity="center"
+            android:textSize="30sp"
+            android:fontFamily="@font/brand_bold"
+            android:lineSpacingMultiplier="1.5"
+            android:textColor="@color/text_heading" /&gt;
+
+        &lt;TextView
+            android:id="@+id/fbLine"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:textSize="22sp"
+            android:fontFamily="@font/brand_medium"
+            android:lineSpacingMultiplier="1.5"
+            android:textColor="@color/text_muted" /&gt;
+    &lt;/LinearLayout&gt;
+&lt;/com.google.android.material.card.MaterialCardView&gt;</pre></div>
+      <p class="refs"><code>bg_circle_brand_subtle</code> is an oval filled with brand_subtle. Arabic line height: <a href="https://claude.ai/artifact/2d1HuwKq18gHWYrkiJ8B4z" target="_blank" rel="noopener">Build guide → 11 Arabic text cropping</a> (keep font padding, no fixed TextView heights).</p>
+      <nav class="rev-nav" aria-label="Feedback"><a href="#fb-1">← FB.1</a><a href="#fb">↑ All items</a><a href="#fb-3">Next: FB.3 Two cards →</a></nav>
+    </section>
+
+    <!-- FB.3 TWO CARDS -->
+    <section class="card rev-item" id="fb-3">
+      <div class="sec-head"><span class="sec-num">FB.3</span><h2>Two cards (today)</h2><span class="tag new">New</span></div>
+      <p class="sum">Rate Us and Patient Form, side by side, in the exact centre of the white panel.</p>
+      <figure><img src="img2/fb-n2.jpg" alt="White panel with two cards side by side in its centre" width="1400" height="705" loading="lazy"><figcaption><span class="want-chip">Design</span> Two cards: an 856 × 336 group in a 1824 × 918 panel.</figcaption></figure>
+      <div class="tbl"><table>
+        <thead><tr><th>Part</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Cards</td><td class="v">1 Rate Us · 2 Patient Form</td></tr>
+          <tr><td>Gap between cards</td><td class="v">24 dp</td></tr>
+          <tr><td>Group</td><td class="v">2 × 416 + 24 = 856 dp wide · 336 tall</td></tr>
+          <tr><td>Position</td><td class="v">centred both ways in the panel (484 dp free on each side, 291 above and below)</td></tr>
+          <tr><td>Card heights</td><td class="v">the same in a row: if one title or line wraps, both cards take the taller height</td></tr>
+        </tbody>
+      </table></div>
+      <nav class="rev-nav" aria-label="Feedback"><a href="#fb-2">← FB.2</a><a href="#fb">↑ All items</a><a href="#fb-4">Next: FB.4 More than two →</a></nav>
+    </section>
+
+    <!-- FB.4 MORE THAN TWO -->
+    <section class="card rev-item" id="fb-4">
+      <div class="sec-head"><span class="sec-num">FB.4</span><h2>More than two cards</h2><span class="tag new">New</span><span class="badge top">★ The rule</span></div>
+      <p class="sum">When Burjeel sends a new poster, add one more card. Don't make the cards smaller or bigger, and don't change the gaps. Fill rows of up to three, keep the rows as even as you can, and keep the whole group centred.</p>
+      <h4>The rule</h4>
+      <ol class="tight">
+        <li><b>Card size never changes:</b> 416 dp wide, 24 dp apart, in both directions.</li>
+        <li><b>Three cards at most in a row.</b> Rows = cards ÷ 3, rounded up.</li>
+        <li><b>Rows as even as possible:</b> cards per row = cards ÷ rows, rounded up. The top row gets the extra card.</li>
+        <li><b>A shorter last row is centred</b> under the row above.</li>
+        <li><b>The group is centred</b> in the panel, both ways.</li>
+        <li><b>Six cards at most.</b> Two rows fill the panel; a third row doesn't fit.</li>
+      </ol>
+      <div class="formula">rows    = ceil(n / 3)
+perRow  = ceil(n / rows)
+groupW  = perRow × 416 + (perRow − 1) × 24
+groupH  = rows × 336 + (rows − 1) × 24</div>
+      <h4>Every case at 1920 × 1080</h4>
+      <div class="gridset" role="img" aria-label="Small diagrams of the card group for 1 to 6 cards in the panel">
+        <div class="gcase"><div class="gpanel"><i></i></div><b>1</b><small>1 · 416</small></div>
+        <div class="gcase today"><div class="gpanel"><i></i><i></i></div><b>2 · today</b><small>2 · 856</small></div>
+        <div class="gcase"><div class="gpanel"><i></i><i></i><i></i></div><b>3</b><small>3 · 1296</small></div>
+        <div class="gcase"><div class="gpanel" style="padding-inline:26%"><i style="width:46%"></i><i style="width:46%"></i><i style="width:46%"></i><i style="width:46%"></i></div><b>4</b><small>2 + 2 · 856</small></div>
+        <div class="gcase"><div class="gpanel" style="padding-inline:14%"><i style="width:31%"></i><i style="width:31%"></i><i style="width:31%"></i><i style="width:31%"></i><i style="width:31%"></i></div><b>5</b><small>3 + 2 · 1296</small></div>
+        <div class="gcase"><div class="gpanel" style="padding-inline:14%"><i style="width:31%"></i><i style="width:31%"></i><i style="width:31%"></i><i style="width:31%"></i><i style="width:31%"></i><i style="width:31%"></i></div><b>6</b><small>3 + 3 · 1296</small></div>
+      </div>
+      <div class="tbl"><table>
+        <thead><tr><th>Cards</th><th>In each row</th><th>Group (dp)</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr class="hl"><td class="v">2</td><td class="v">2</td><td class="v">856 × 336</td><td>Today.</td></tr>
+          <tr><td class="v">3</td><td class="v">3</td><td class="v">1296 × 336</td><td>One row. The widest the group gets.</td></tr>
+          <tr><td class="v">4</td><td class="v">2 + 2</td><td class="v">856 × 696</td><td>Never 3 + 1: one card alone looks left over.</td></tr>
+          <tr><td class="v">5</td><td class="v">3 + 2</td><td class="v">1296 × 696</td><td>The second row centred.</td></tr>
+          <tr><td class="v">6</td><td class="v">3 + 3</td><td class="v">1296 × 696</td><td>The most the panel holds (111 dp above and below).</td></tr>
+        </tbody>
+      </table></div>
+      <h4>What it looks like</h4>
+      <p class="refs">The extra cards in these pictures are made-up examples. They all show the clipboard icon only because they were copied for the picture: each real card gets its own icon (<a href="#fb-5">FB.5</a>).</p>
+      <div class="pair" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))">
+        <figure><img src="img2/fb-n3.jpg" alt="Three cards in one row" width="1400" height="705" loading="lazy"><figcaption><span class="want-chip">3 cards</span> One row, 1296 wide.</figcaption></figure>
+        <figure><img src="img2/fb-n4.jpg" alt="Four cards in two rows of two" width="1400" height="705" loading="lazy"><figcaption><span class="want-chip">4 cards</span> 2 + 2, 856 wide.</figcaption></figure>
+        <figure><img src="img2/fb-n5.jpg" alt="Five cards: three on top, two centred below" width="1400" height="705" loading="lazy"><figcaption><span class="want-chip">5 cards</span> 3 + 2, the second row centred.</figcaption></figure>
+        <figure><img src="img2/fb-n6.jpg" alt="Six cards in two rows of three" width="1400" height="705" loading="lazy"><figcaption><span class="want-chip">6 cards</span> 3 + 3.</figcaption></figure>
+      </div>
+      <div class="pf">
+        <div class="want"><b>Do</b>
+          <ul class="tight">
+            <li>Keep every card 416 dp wide, at every count.</li>
+            <li>Work out the rows from the number of cards, with the rule above.</li>
+            <li>Give every card in a row the same height.</li>
+          </ul>
+        </div>
+        <div class="now"><b>Don't</b>
+          <ul class="tight">
+            <li>Don't stretch the cards to fill the panel width.</li>
+            <li>Don't shrink the cards, the icon or the text to fit more in a row.</li>
+            <li>Don't build a separate layout for 3, 4 or 5 cards. One rule covers every count.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="note">The other hospitals' Feedback screens use the same card and the same rule: three cards in one row, 1296 dp wide. One card and one grid serve every hospital.</div>
+      <nav class="rev-nav" aria-label="Feedback"><a href="#fb-3">← FB.3</a><a href="#fb">↑ All items</a><a href="#fb-5">Next: FB.5 Order and wording →</a></nav>
+    </section>
+
+    <!-- FB.5 ORDER & WORDING -->
+    <section class="card rev-item" id="fb-5">
+      <div class="sec-head"><span class="sec-num">FB.5</span><h2>Order and wording</h2><span class="tag new">New</span></div>
+      <p class="sum">Every card reads the same way: an icon, a short name, and one line that says where it goes, ending in "Scan QR".</p>
+      <h4>Order</h4>
+      <ol class="tight">
+        <li><b>Rate Us</b> (Google Maps review) is always first.</li>
+        <li><b>Patient Form</b> is second.</li>
+        <li>New posters follow in the order Burjeel sends them. Add each new one at the end, so the first cards never move.</li>
+      </ol>
+      <h4>Each card</h4>
+      <div class="tbl"><table>
+        <thead><tr><th>Part</th><th>Rule</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td>Icon</td><td>Its own line icon, 56 dp, stroke 2, same style as the other app icons. All the same colour: brand_text. No colour-coding per card.</td><td class="v">star · clipboard-list</td></tr>
+          <tr><td>Title</td><td>What it is, 1–3 words, one line. At most about 18 characters in English so it fits the 352 dp text width.</td><td class="v">Rate Us · Patient Form</td></tr>
+          <tr><td>Line</td><td>Where it goes or what it's for, then " · Scan QR". One line.</td><td class="v">On Google Maps · Scan QR</td></tr>
+          <tr><td>Poster</td><td>One poster per card (<a href="#fb-7">FB.7</a>).</td><td class="v">burjeel_google_review_qr</td></tr>
+        </tbody>
+      </table></div>
+      <div class="tbl"><table>
+        <thead><tr><th>#</th><th>Card</th><th>Icon (Lucide)</th><th>Line</th></tr></thead>
+        <tbody>
+          <tr><td class="v">1</td><td><b>Rate Us</b></td><td class="v">star</td><td>On Google Maps · Scan QR</td></tr>
+          <tr><td class="v">2</td><td><b>Patient Form</b></td><td class="v">clipboard-list</td><td>Feedback &amp; ideas · Scan QR</td></tr>
+          <tr><td class="v">3+</td><td><i>next poster</i></td><td class="v">pick one that isn't used yet</td><td>… · Scan QR</td></tr>
+        </tbody>
+      </table></div>
+      <p>We'll send the title, line, icon and poster for each new card. If a translation doesn't fit on one line, tell us and we'll shorten it. Don't make the text smaller.</p>
+      <nav class="rev-nav" aria-label="Feedback"><a href="#fb-4">← FB.4</a><a href="#fb">↑ All items</a><a href="#fb-6">Next: FB.6 Poster view →</a></nav>
+    </section>
+
+    <!-- FB.6 POSTER VIEW -->
+    <section class="card rev-item" id="fb-6">
+      <div class="sec-head"><span class="sec-num">FB.6</span><h2>Poster view</h2><span class="tag new">New</span></div>
+      <p class="sum">A tap on a card shows its poster inside the white panel, as large as the panel allows. The top bar stays visible and usable. A tap on ✕ or anywhere outside the poster closes it.</p>
+      <figure><img src="img2/fb-poster.jpg" alt="Rate Us poster open over the dimmed white panel, with a round close button at its top corner" width="1600" height="900" loading="lazy"><figcaption><span class="want-chip">Design</span> The poster is 612 × 870, fitted to the panel's height.</figcaption></figure>
+      <div class="tbl"><table>
+        <thead><tr><th>Part</th><th>Light</th><th>Dark</th></tr></thead>
+        <tbody>
+          <tr><td>Dim</td><td class="v">covers the white panel only, follows its 32 dp corners · #59000000 (black 35%)</td><td class="v">#99000000 (black 60%)</td></tr>
+          <tr><td>Poster size</td><td class="v" colspan="2">fit inside the panel minus 24 dp on every side, keep the image's shape (fitCenter). Never crop, never stretch.</td></tr>
+          <tr><td>Poster</td><td class="v" colspan="2">corners 24 dp (clip the image) · shadow xl, elevation 12 dp</td></tr>
+          <tr><td>✕ button</td><td class="v">56 dp circle · card_surface fill · 1 dp card_border · elevation 3 dp · ✕ icon 28 dp text_heading</td><td class="v">#1B2227 fill · #1FFFFFFF stroke · #E7EBED icon</td></tr>
+          <tr><td>✕ position</td><td class="v" colspan="2">on the poster, 16 dp from its top and its end edge (top-right in English, top-left in Arabic)</td></tr>
+          <tr><td>Open</td><td class="v" colspan="2">the dim fades in over 150 ms · the poster fades in over 200 ms once the image is ready</td></tr>
+          <tr><td>Loading</td><td class="v" colspan="2">a 40 dp white spinner in the centre of the dim until the image is ready · the ✕ appears with the poster</td></tr>
+          <tr><td>Close</td><td class="v" colspan="2">✕ · a tap on the dim · the Back button. A tap on the poster itself does nothing.</td></tr>
+          <tr><td>Screen</td><td class="v" colspan="2">keep the screen awake while the poster is open, so the patient has time to scan</td></tr>
+        </tbody>
+      </table></div>
+      <div class="code"><span class="lang">Java</span><button type="button" data-copy>Copy</button><pre>// panel: the white panel (FrameLayout, clipToOutline = true, 32dp corners)
+void showPoster(FeedbackPoster p) {
+    View dim = getLayoutInflater().inflate(R.layout.feedback_poster, panel, false);
+    ImageView img = dim.findViewById(R.id.posterImage);
+    View close = dim.findViewById(R.id.posterClose);
+    img.setContentDescription(getString(p.titleRes));
+    img.setImageResource(p.posterRes);                      // scaleType="fitCenter", adjustViewBounds="true"
+
+    dim.setOnClickListener(v -&gt; hidePoster(dim));          // tap outside closes
+    img.setOnClickListener(v -&gt; { /* tap on the poster: nothing */ });
+    close.setOnClickListener(v -&gt; hidePoster(dim));
+
+    dim.setAlpha(0f);
+    panel.addView(dim);
+    dim.animate().alpha(1f).setDuration(150).start();
+    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+}
+// onBackPressed: if a poster is open, hidePoster() first and stop.</pre></div>
+      <div class="code"><span class="lang">res/layout/feedback_poster.xml</span><button type="button" data-copy>Copy</button><pre>&lt;!-- poster_dim: #59000000 · values-night: #99000000 --&gt;
+&lt;FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/poster_dim"
+    android:padding="24dp"&gt;
+
+    &lt;FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:elevation="12dp"
+        android:outlineSpotShadowColor="#1F292E"
+        android:background="@drawable/bg_r24"
+        android:clipToOutline="true"&gt;
+
+        &lt;ImageView
+            android:id="@+id/posterImage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:scaleType="fitCenter" /&gt;
+
+        &lt;com.google.android.material.button.MaterialButton
+            android:id="@+id/posterClose"
+            style="@style/Widget.Material3.Button.IconButton.Outlined"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="16dp"
+            android:insetTop="0dp" android:insetBottom="0dp"
+            android:elevation="3dp"
+            android:contentDescription="@string/feedback_close_poster"
+            app:backgroundTint="@color/card_surface"
+            app:strokeColor="@color/card_border"
+            app:strokeWidth="1dp"
+            app:cornerRadius="28dp"
+            app:icon="@drawable/ic_x"
+            app:iconSize="28dp"
+            app:iconTint="@color/text_heading" /&gt;
+    &lt;/FrameLayout&gt;
+&lt;/FrameLayout&gt;</pre></div>
+      <div class="note"><code>adjustViewBounds</code> with <code>wrap_content</code> grows the image up to the space the parent allows and keeps its shape, so the poster fills the panel's height without any code.</div>
+      <nav class="rev-nav" aria-label="Feedback"><a href="#fb-5">← FB.5</a><a href="#fb">↑ All items</a><a href="#fb-7">Next: FB.7 Poster files →</a></nav>
+    </section>
+
+    <!-- FB.7 POSTER FILES -->
+    <section class="card rev-item" id="fb-7">
+      <div class="sec-head"><span class="sec-num">FB.7</span><h2>Poster files</h2><span class="tag new">New</span></div>
+      <p class="sum">Each poster is Burjeel's own print design. Show it as it is: no text on top, no crop, no recompression.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Part</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Files today</td><td class="v">burjeel_google_review_qr.jpg · burjeel_patient_form_qr.jpg · 901 × 1280 px each</td></tr>
+          <tr><td>Shape</td><td class="v">tall, about 1 : 1.42 (A4 / A3). <b>Every poster the same shape</b>, so they all open at the same size.</td></tr>
+          <tr><td>Size</td><td class="v">at least 900 px wide and 1280 px tall, so the QR stays sharp at 870 dp on screen.</td></tr>
+          <tr><td>Format</td><td class="v">PNG, or JPEG at quality 90 or higher. Put it in <code>res/drawable-nodpi/</code> so Android doesn't rescale it.</td></tr>
+          <tr><td>QR code</td><td class="v">must scan from about 30 cm on the screen. Test each new poster with two phones before release.</td></tr>
+          <tr><td>Languages</td><td class="v">the posters are already English + Arabic. One file for every app language.</td></tr>
+          <tr><td>Dark mode</td><td class="v">same file. The poster keeps its own white background.</td></tr>
+        </tbody>
+      </table></div>
+      <p>If a new poster comes in a different shape, send it back to us rather than fitting it. Mixed shapes make the poster view jump in size from card to card.</p>
+      <nav class="rev-nav" aria-label="Feedback"><a href="#fb-6">← FB.6</a><a href="#fb">↑ All items</a><a href="#fb-8">Next: FB.8 Arabic and Urdu →</a></nav>
+    </section>
+
+    <!-- FB.8 RTL -->
+    <section class="card rev-item" id="fb-8">
+      <div class="sec-head"><span class="sec-num">FB.8</span><h2>Arabic and Urdu</h2><span class="tag new">New</span></div>
+      <p class="sum">The whole screen mirrors. The order of the cards follows the reading direction, so Rate Us is on the right.</p>
+      <figure><img src="img2/fb-hub-ar.jpg" alt="Feedback screen in Arabic: header mirrored, قيّمنا card on the right, استبيان المرضى on the left" width="1600" height="900" loading="lazy"><figcaption><span class="want-chip">Design</span> Arabic: Rate Us (قيّمنا) first, on the right.</figcaption></figure>
+      <ul class="tight">
+        <li>Lay the grid out with start/end, so rows fill from right to left. A shorter last row stays centred.</li>
+        <li>The ✕ on the poster moves to the top-left corner (<code>top|end</code> does this for you).</li>
+        <li>The poster image does not mirror.</li>
+        <li>Arabic and Urdu text uses Almarai at the same sizes. Keep font padding and the 1.5 line height (<a href="https://claude.ai/artifact/2d1HuwKq18gHWYrkiJ8B4z" target="_blank" rel="noopener">Build guide → 11 Arabic text cropping</a>).</li>
+        <li>The star and clipboard icons don't mirror.</li>
+      </ul>
+      <nav class="rev-nav" aria-label="Feedback"><a href="#fb-7">← FB.7</a><a href="#fb">↑ All items</a><a href="#fb-9">Next: FB.9 Strings →</a></nav>
+    </section>
+
+    <!-- FB.9 STRINGS -->
+    <section class="card rev-item" id="fb-9">
+      <div class="sec-head"><span class="sec-num">FB.9</span><h2>Strings</h2><span class="tag new">New</span></div>
+      <p class="sum">Six keys. Each new poster adds two more: a title and a line.</p>
+      <div class="tbl"><table class="strings"><thead><tr><th>Key</th><th>English</th><th>Arabic</th><th>Urdu</th></tr></thead><tbody>
+        <tr><td class="v">feedback_title</td><td>Share Your Experience</td><td dir="rtl">شاركنا تجربتك</td><td dir="rtl">اپنا تجربہ شیئر کریں</td></tr>
+        <tr><td class="v">feedback_rate_us</td><td>Rate Us</td><td dir="rtl">قيّمنا</td><td dir="rtl">ہمیں ریٹ کریں</td></tr>
+        <tr><td class="v">feedback_rate_us_line</td><td>On Google Maps · Scan QR</td><td dir="rtl">على خرائط جوجل · امسح الرمز</td><td dir="rtl">گوگل میپس پر · QR اسکین کریں</td></tr>
+        <tr><td class="v">feedback_patient_form</td><td>Patient Form</td><td dir="rtl">استبيان المرضى</td><td dir="rtl">مریض فارم</td></tr>
+        <tr><td class="v">feedback_patient_form_line</td><td>Feedback &amp; ideas · Scan QR</td><td dir="rtl">ملاحظات واقتراحات · امسح الرمز</td><td dir="rtl">رائے اور تجاویز · QR اسکین کریں</td></tr>
+        <tr><td class="v">feedback_close_poster</td><td>Close</td><td dir="rtl">إغلاق</td><td dir="rtl">بند کریں</td></tr>
+      </tbody></table></div>
+      <p class="str-note">In <code>values/</code>, <code>values-ar/</code> and <code>values-ur/strings.xml</code>. The subtitle under the title is the hospital name you already have.</p>
+      <nav class="rev-nav" aria-label="Feedback"><a href="#fb-8">← FB.8</a><a href="#fb">↑ All items</a><a href="#fb-10">Next: FB.10 Build it from a list →</a></nav>
+    </section>
+
+    <!-- FB.10 LIST -->
+    <section class="card rev-item" id="fb-10">
+      <div class="sec-head"><span class="sec-num">FB.10</span><h2>Build it from a list</h2><span class="tag new">New</span></div>
+      <p class="sum">Keep the posters in one list. The screen reads the list, works out the grid from its length, and adds one card per entry. A new poster is one new line in the list, with no layout change.</p>
+      <div class="code"><span class="lang">Java · the list</span><button type="button" data-copy>Copy</button><pre>public final class FeedbackPoster {
+    @StringRes final int titleRes, lineRes;
+    @DrawableRes final int iconRes, posterRes;
+    FeedbackPoster(int titleRes, int lineRes, int iconRes, int posterRes) { … }
+}
+
+// Burjeel, in screen order. Add new posters at the end (6 at most).
+static final List&lt;FeedbackPoster&gt; BURJEEL_POSTERS = Arrays.asList(
+    new FeedbackPoster(R.string.feedback_rate_us,      R.string.feedback_rate_us_line,
+                       R.drawable.ic_star,             R.drawable.burjeel_google_review_qr),
+    new FeedbackPoster(R.string.feedback_patient_form, R.string.feedback_patient_form_line,
+                       R.drawable.ic_clipboard_list,   R.drawable.burjeel_patient_form_qr)
+);</pre></div>
+      <div class="code"><span class="lang">Java · the grid</span><button type="button" data-copy>Copy</button><pre>static final int CARD_W = 416, GAP = 24, MAX_PER_ROW = 3;   // dp
+
+/** Cards per row: rows of up to 3, rows balanced (4 → 2 + 2, 5 → 3 + 2). */
+static int columns(int n) {
+    int rows = (n + MAX_PER_ROW - 1) / MAX_PER_ROW;   // ceil(n / 3)
+    return (n + rows - 1) / rows;                     // ceil(n / rows)
+}
+
+/** Width of the card group, in dp: 416 · 856 · 1296. */
+static int groupWidth(int n) {
+    int cols = columns(n);
+    return cols * CARD_W + (cols - 1) * GAP;
+}</pre></div>
+      <div class="code"><span class="lang">XML · the group (FlexboxLayout)</span><button type="button" data-copy>Copy</button><pre>&lt;!-- inside the white panel, padding 0 64 --&gt;
+&lt;FrameLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"&gt;
+
+    &lt;!-- width: set from groupWidth() · justifyContent center: centres a shorter last row
+         alignItems stretch: same height in a row · space_24: a 24 × 24 transparent shape --&gt;
+    &lt;com.google.android.flexbox.FlexboxLayout
+        android:id="@+id/feedbackGroup"
+        android:layout_width="856dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        app:flexWrap="wrap"
+        app:justifyContent="center"
+        app:alignItems="stretch"
+        app:showDivider="middle"
+        app:dividerDrawable="@drawable/space_24" /&gt;
+&lt;/FrameLayout&gt;</pre></div>
+      <ol class="tight">
+        <li>Set the group's width from <code>groupWidth()</code>, then inflate one <code>item_feedback_card</code> per list entry.</li>
+        <li>The group sits in the centre of the panel. Up to six cards always fit, so the panel never scrolls.</li>
+      </ol>
+      <div class="note">FlexboxLayout comes from <code>com.google.android.flexbox:flexbox:3.0.0</code>. A <code>GridLayout</code> with a fixed column count also works, but it can't centre a shorter last row, so 5 cards would sit to one side.</div>
+      <nav class="rev-nav" aria-label="Feedback"><a href="#fb-9">← FB.9</a><a href="#fb">↑ All items</a><a href="https://claude.ai/artifact/2d1HuwKq18gHWYrkiJ8B4z" target="_blank" rel="noopener">Next: the build guide →</a></nav>
+    </section>
+
+    <footer>Feedback screen · Burjeel · 14 Nov 2026 · read with the <a href="https://claude.ai/artifact/2d1HuwKq18gHWYrkiJ8B4z" target="_blank" rel="noopener">CareInn Bedside UI Build Guide</a> and <a href="https://claude.ai/artifact/HS2BMzYnU8ANYo93GaFfyn" target="_blank" rel="noopener">Revision 1</a></footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  var setActive = function (id) {
+    links.forEach(function (a) { a.classList.toggle('active', a === byId[id]); });
+  };
+  var sections = Array.prototype.slice.call(document.querySelectorAll('main section[id]'));
+  var pick = function () {
+    var line = window.innerHeight * 0.3, current = sections[0] && sections[0].id;
+    sections.forEach(function (sec) { if (sec.getBoundingClientRect().top <= line) current = sec.id; });
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) current = sections[sections.length - 1].id;
+    setActive(current);
+  };
+  window.addEventListener('scroll', pick, { passive: true });
+  window.addEventListener('resize', pick);
+  links.forEach(function (a) { a.addEventListener('click', function () { setActive(a.getAttribute('href').slice(1)); }); });
+  pick();
+})();
+document.querySelectorAll('[data-copy]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var pre = btn.parentElement.querySelector('pre');
+    var text = pre.innerText;
+    var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1400); };
+    var fallback = function () {
+      var r = document.createRange(); r.selectNodeContents(pre);
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      btn.textContent = 'Selected';
+      setTimeout(function () { btn.textContent = 'Copy'; }, 1400);
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else { fallback(); }
+    } catch (e) { fallback(); }
+  });
+});
+</script>
+
