@@ -35,6 +35,16 @@ export const CHANGE_TYPES: { type: ChangeType; label: string }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: "1.18.0",
+    date: "2026-11-16",
+    changes: [
+      { type: "new", area: "Feedback", text: "Patients can tap \"Tap to speak\" inside the message box and talk instead of typing; their words are written into the box." },
+      { type: "improved", area: "Apps", text: "The category buttons at the bottom of Media, Games, Tools and the rest are all the same size; the open one has a white outline." },
+      { type: "fixed", area: "Feedback", text: "Raise a Concern and Send Appreciation sit in the middle of the screen instead of at the top." },
+      { type: "fixed", area: "Calls", text: "The \"Your Ext.\" button is the same height as the language, dark mode and full screen buttons beside it." },
+    ],
+  },
+  {
     version: "1.17.0",
     date: "2026-11-14",
     changes: [
