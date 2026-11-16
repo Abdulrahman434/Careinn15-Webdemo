@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { ApiImage } from "./ApiImage";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE, LEADING } from "./ThemeContext";
-import { useLocale } from "./i18n";
+import { useLocale, translateWithLocale } from "./i18n";
+import { recordLaunch } from "../lib/continueActivity";
 import { useCanvasSize } from "../lib/canvasSize";
 import { useRipple } from "./useRipple";
 import svgPaths from "../../imports/svg-ca68x68c4i";
@@ -151,6 +152,18 @@ const surveyItem = {
 };
 
 /* ─── Hub Icon (32px rendered inside viewBox for scale) ─── */
+function openShortcutUrl(item: { labelKey: string; url?: string; icon?: string }) {
+  if (!item.url) return;
+  recordLaunch({
+    kind: "url",
+    id: item.url,
+    name: translateWithLocale(item.labelKey, "en"),
+    nameAr: translateWithLocale(item.labelKey, "ar"),
+    icon: item.icon || undefined,
+  });
+  window.open(item.url, "_blank", "noopener,noreferrer");
+}
+
 function HubIcon({ label, color, size }: { label: string; color?: string; size?: number }) {
   const { theme } = useTheme();
   const iconColor = color || theme.primary;
@@ -1103,7 +1116,7 @@ export function ServicesGrid({
                   onTap={(e) => handleTileTap(e, item.labelKey, t(item.labelKey), undefined, lockedIds.has(item.labelKey), () => {
                     if (item.labelKey === "shortcut.mirror" && onLaunchTool) onLaunchTool("mirror");
                     else if ((item.url === "roomcontrol" || item.url === "patientguide") && onLaunchTool) onLaunchTool(item.url);
-                    else if (item.url) window.open(item.url, "_blank", "noopener,noreferrer");
+                    else if (item.url) openShortcutUrl(item);
                   })}
                   onLongPress={() => handleTileLongPress(item.labelKey, t(item.labelKey), lockedIds.has(item.labelKey))}
                   isLocked={lockedIds.has(item.labelKey)}
@@ -1154,7 +1167,7 @@ export function ServicesGrid({
                 if (sc) {
                   if (sc.labelKey === "shortcut.mirror" && onLaunchTool) onLaunchTool("mirror");
                   else if ((sc.url === "roomcontrol" || sc.url === "patientguide") && onLaunchTool) onLaunchTool(sc.url);
-                  else if (sc.url) window.open(sc.url, "_blank", "noopener,noreferrer");
+                  else if (sc.url) openShortcutUrl(sc);
                 }
               } 
             : undefined}
@@ -1216,7 +1229,7 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
   const launchShortcut = (item: ShortcutItem) => {
     if (item.labelKey === "shortcut.mirror" && onLaunchTool) onLaunchTool("mirror");
     else if ((item.url === "roomcontrol" || item.url === "patientguide") && onLaunchTool) onLaunchTool(item.url);
-    else if (item.url) window.open(item.url, "_blank", "noopener,noreferrer");
+    else if (item.url) openShortcutUrl(item);
   };
 
   const handleTileTap = (
@@ -1479,7 +1492,7 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
               if (sc) {
                 if (sc.labelKey === "shortcut.mirror" && onLaunchTool) onLaunchTool("mirror");
                 else if ((sc.url === "roomcontrol" || sc.url === "patientguide") && onLaunchTool) onLaunchTool(sc.url);
-                else if (sc.url) window.open(sc.url, "_blank", "noopener,noreferrer");
+                else if (sc.url) openShortcutUrl(sc);
               }
             }
           } : undefined}
