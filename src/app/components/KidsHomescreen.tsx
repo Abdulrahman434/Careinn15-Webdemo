@@ -2,6 +2,7 @@ import { CSSProperties, useEffect, useRef, useState, type TouchEvent as ReactTou
 import { TopBar } from "./TopBar";
 import { NewsTicker } from "./NewsTicker";
 import { useTheme } from "./ThemeContext";
+import { KIDS } from "./homeLayout";
 import { useLocale, translateWithLocale } from "./i18n";
 import { recordLaunch } from "../lib/continueActivity";
 import { useNurseStore } from "./NurseDataStore";
@@ -410,7 +411,7 @@ export default function KidsHomescreen({
       </div>
 
       {/* Main content */}
-      <div className="relative z-10 flex-1 min-h-0 flex flex-col gap-4 px-6 pt-4 pb-4">
+      <div className="relative z-10 flex-1 min-h-0 flex flex-col gap-4 px-6 pt-4" style={{ paddingBottom: KIDS.bottomEdge }}>
         {/* Body row */}
         <div className={`flex-1 min-h-0 flex gap-4 ${isRTL ? "flex-row-reverse" : ""}`}>
           {/* ── Left sidebar (210px) — unified white cards, top to bottom ── */}
@@ -697,9 +698,8 @@ export default function KidsHomescreen({
           </div>
         </div>
 
-        {/* ── Bottom action bar — two large finger-friendly buttons ──
-            (keep-clear: the popped Continue card sits above it) */}
-        <div data-continue-keep-clear="" className="shrink-0 flex gap-5" style={{ height: 76 }}>
+        {/* ── Bottom action bar — two large finger-friendly buttons ── */}
+        <div className="shrink-0 flex gap-5" style={{ height: KIDS.actionBar }}>
           {bottomActions.map((a) => (
             <button
               key={a.label}

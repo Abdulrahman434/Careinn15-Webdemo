@@ -148,6 +148,25 @@ New strings (en/ar/ur): "Continue", "Left {n} min ago" / "just now", "Dismiss" (
 
 **Same as before:** visibility rules (§3), hidden states (overlays, locks, guest, onboarding), patient wipe (§4), resume (§5).
 
+> **Docked place, dark mode and placement superseded by §6c** (2026-11-17). The pop itself, the dock timing/touch rules and the actions above still hold.
+
+### 6c. Rest at the bottom: compact pill (Sara, 2026-11-17)
+
+**Why:** after building §6b Sara saw that the top bar is far from the patient's hand. She compared whole-screen mock-ups of three bottom resting places (A pill at bottom centre, B side-edge bubble, C bottom-edge tab — `shots/bottomdock/`, report `bottomdock-report.md`) in light and dark, and chose **A**.
+
+**Docked = compact pill, bottom centre.** The popped card shrinks in place (≤ 400 ms, none under reduced motion) into a pill: icon + "Continue {name}" + small ×. Tap the pill = resume; × = dismiss. The top-bar slot is no longer used. Mock-up size on bedside screens: 64 tall, ~384 wide, `SPACE[3]` (24) above the bottom edge. It may cover tile labels while resting (Sara saw this in the mock-ups and accepted it).
+
+**Each item's own icon** (Sara: "can't keep in mind what icon for which open app"). The name is always shown in words; the icon must also match what the patient tapped:
+- outside apps / links: their real logo (as today);
+- tools: their own icon (as today);
+- **games: the game's own mark from its Games-folder tile** (the tile's background and its picture/emoji, e.g. 🧠 Brain Math, ❤️ card Memory Match) — not one shared controller icon. One source of truth for these marks so the tile and the card can't drift.
+
+**Dark mode: the card simply turns white** (Sara: "just turn it white"). Popped and pill: white fill, brand-coloured text (`primaryOnLight`), brand-filled Continue button with `brandOnPrimary` text. No tints, rings or glows. Light mode stays brand-filled with white text. The theme has no colour that is white in both modes, so one is added to `ThemeContext.tsx` (Sara was told and agreed).
+
+**Limits come from the layouts' fixed dimensions, not measurement** (Sara: "our dimensions are static… even if Call not there we can use its dimensions to know where to stop"). The card's max width / height and bottom offset per layout are computed from numbers the layouts already use (ideally exported from the layout files so they move together), never from DOM keep-clear markers or from whether Call / CareMe are present. Must still never cover Call / Call Nurse / I Need Something, CareMe or the top bar — in every layout (Classic v1/v2/v3, CI, Spotlight, Kids, portrait, tablet portrait, phone), EN and AR. Kids: pill and popped card sit above the action bar.
+
+**Responsive size and font** (Sara: "HAS to be responsive"). Text uses the shared type scale (which already steps down on phones); sizes step down one `SPACE` step on phones; Continue and × wrap to a second row only when they don't fit beside the name. On a phone the page's scroll area ends above the card so nothing — including Call — scrolls under it; that space changes smoothly (no jump) when the card shrinks.
+
 ### 7. Native follow-up (separate request to the Android team — not blocking)
 
 Ask native to include in `kiosk-resumed` a detail `{ lastPackage, reason: "home" | "back" | "crash" | "unknown" }`, and to type the `app-launched` payload. When available, the web side can show the card only for HOME/crash and skip it when the patient deliberately backed out. Until then the card shows for any return from an app.
@@ -159,6 +178,7 @@ Ask native to include in `kiosk-resumed` a detail `{ lastPackage, reason: "home"
 - Approach A (floating card, all layouts).
 - On patient change / discharge, wipe **everything**: the card and all saved game/tool progress (and scores).
 - Card look and place: **C — pop, then dock** (§6b), with Kids above the action bar and a lighter tint in dark mode (2026-11-16).
+- Resting place: **A — compact pill at the bottom centre** (§6c), each item with its own icon (games use their tile's mark), white card in dark mode, limits from the layouts' fixed sizes, responsive size and font (2026-11-17).
 
 ## Calls made by Claude (open to correction)
 

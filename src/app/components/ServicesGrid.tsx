@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ApiImage } from "./ApiImage";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE, LEADING } from "./ThemeContext";
+import { SERVICES_GRID } from "./homeLayout";
 import { useLocale, translateWithLocale } from "./i18n";
 import { recordLaunch } from "../lib/continueActivity";
 import { useCanvasSize } from "../lib/canvasSize";
@@ -311,8 +312,6 @@ function ServiceCard({ item, onTap, square, contained, compact, onLongPress, isL
   return (
     <button
       data-nav="true"
-      /* The popped Continue card never covers Call. */
-      data-continue-keep-clear={item.label === "Call" ? "" : undefined}
       onPointerDown={(e) => { onPointerDown(e); handlers.onPointerDown(); setPressed(true); }}
       onPointerUp={() => { handlers.onPointerUp(); setPressed(false); }}
       onPointerLeave={() => { handlers.onPointerLeave(); setPressed(false); }}
@@ -1000,8 +999,8 @@ export function ServicesGrid({
   const visibleServices = serviceItems;
   const [guestPrompt, setGuestPrompt] = useState(false);
   const guestLocked = (label: string) => !!guestMode && GUEST_LOCKED_SERVICES.has(label);
-  const gridGap = compact ? "gap-3" : "gap-6";
-  const bottomHeight = compact ? "140px" : "192px";
+  const gridGap = compact ? 12 : SERVICES_GRID.tileGap;
+  const bottomHeight = compact ? 140 : SERVICES_GRID.bottomRow;
 
   const isHubItemVisible = (label: string) => {
     if (label === "Media") return visibility.show_iptv;
@@ -1052,14 +1051,15 @@ export function ServicesGrid({
   return (
     <div className={`flex flex-col flex-1 min-h-0`}>
       {/* 4×2 hub grid (data-tour: the portrait tour spotlights it by name) */}
-      <div data-tour="hub" className={`grid grid-cols-4 ${gridGap} flex-1 min-h-0`}>
+      <div data-tour="hub" className="grid grid-cols-4 flex-1 min-h-0" style={{ gap: gridGap }}>
         {[0, 1, 2, 3].map((col) => {
           const top = hubItems[col];
           const bottom = hubItems[col + 4];
           return (
             <div
               key={col}
-              className={`flex flex-col ${gridGap}`}
+              className="flex flex-col"
+              style={{ gap: gridGap }}
             >
               <div className="flex-1 min-h-0">
                 {isHubItemVisible(top.label) ? (
@@ -1096,8 +1096,8 @@ export function ServicesGrid({
       {/* Bottom row — services (default) or shortcuts (swapped) */}
       <div
         data-tour="services"
-        className={`grid grid-cols-4 ${gridGap} shrink-0 items-center`}
-        style={{ height: bottomHeight }}
+        className="grid grid-cols-4 shrink-0 items-center"
+        style={{ gap: gridGap, height: bottomHeight }}
       >
         {swapped
           ? (
@@ -1287,8 +1287,8 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
           ))}
         </div>
 
-        {/* Share Feedback — fixed 192px to align with shortcuts row */}
-        <div className="shrink-0" style={{ height: "192px" }}>
+        {/* Share Feedback — the bottom row's height, to line up with the service cards */}
+        <div className="shrink-0" style={{ height: SERVICES_GRID.bottomRow }}>
           <SurveyCardFilled
             onOpen={(e) => guestMode ? setGuestPrompt(true) : handleTileTap(e, "service.shareFeedback", t("service.shareFeedback"), undefined, lockedIds.has("service.shareFeedback"), () => onOpenSurvey?.())}
             onLongPress={() => { if (!guestMode) handleTileLongPress("service.shareFeedback", t("service.shareFeedback"), lockedIds.has("service.shareFeedback")); }}
@@ -1469,7 +1469,7 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
 
       {/* Survey — separate card, same height as services row (190px). */}
       {!portrait && (
-        <div className="shrink-0" style={{ height: "192px" }}>
+        <div className="shrink-0" style={{ height: SERVICES_GRID.bottomRow }}>
           <SurveyCardFilled
             onOpen={(e) => guestMode ? setGuestPrompt(true) : handleTileTap(e, "service.shareFeedback", t("service.shareFeedback"), undefined, lockedIds.has("service.shareFeedback"), () => onOpenSurvey?.())}
             onLongPress={() => { if (!guestMode) handleTileLongPress("service.shareFeedback", t("service.shareFeedback"), lockedIds.has("service.shareFeedback")); }}
@@ -1673,7 +1673,7 @@ export function ServiceCardsRow({
   };
 
   return (
-    <div className="grid grid-cols-4 gap-6 shrink-0 items-center" style={{ height: "192px" }}>
+    <div className="grid grid-cols-4 shrink-0 items-center" style={{ gap: SERVICES_GRID.tileGap, height: SERVICES_GRID.bottomRow }}>
       {visibleServices.map((item) => (
         isServiceVisible(item.label) ? (
           <ServiceCard
