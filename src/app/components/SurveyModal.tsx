@@ -1,7 +1,7 @@
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, LEADING, TEXT_STYLE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, MessageSquareHeart, MessageSquareWarning, FileText, AlertTriangle, Heart, Mic, CheckCircle2, Play, Pause, Square, RotateCcw, Trash2, Star, ClipboardList, X, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageSquareHeart, MessageSquareWarning, FileText, AlertTriangle, Heart, Mic, MicOff, CheckCircle2, Star, ClipboardList, X, Loader2 } from "lucide-react";
 import { InternalPageHeader } from "./InternalPageHeader";
 import { ApiImage } from "./ApiImage";
 import thankYouImage from "../../assets/23db5e568918c9a319b272caa7a9e865d4fbd418.webp";
@@ -11,196 +11,150 @@ import { useReloadHold } from "../lib/reloadSafety";
 import { useCanvasSize } from "../lib/canvasSize";
 
 /* ═══════════════════════════════════════════════════════════════
- * REAL VOICE RECORDER (uses MediaRecorder API)
+ * DICTATION (speech-to-text into the text box, Web Speech API)
+ * Hidden where the browser has no speech recognition.
  * ═══════════════════════════════════════════════════════════════ */
-function VoiceRecorder({ color, label, onRecordingChange }: {
+const SPEECH_LANG: Record<string, string> = { en: "en-US", ar: "ar-SA", ur: "ur-PK" };
+
+function getSpeechRecognition(): (new () => any) | null {
+  const w = window as any;
+  return w.SpeechRecognition || w.webkitSpeechRecognition || null;
+}
+
+const METER_BARS = [0.55, 0.85, 1, 0.85, 0.55];
+const SILENCE_MS = 3000;
+
+function DictateButton({ color, value, onChange, maxLength }: {
   color: string;
-  label: string;
-  onRecordingChange?: (hasRecording: boolean) => void;
+  value: string;
+  onChange: (text: string) => void;
+  maxLength?: number;
 }) {
-  const { fontFamily } = useLocale();
-  const [state, setState] = useState<"idle" | "recording" | "recorded" | "playing">("idle");
-  const [duration, setDuration] = useState(0);
-  const [playbackProgress, setPlaybackProgress] = useState(0);
+  const { theme } = useTheme();
+  const { t, locale, fontFamily } = useLocale();
+  const [listening, setListening] = useState(false);
+  const [noSound, setNoSound] = useState(false);
+  const recRef = useRef<any>(null);
+  const baseRef = useRef("");
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const audioUrlRef = useRef<string | null>(null);
-  const audioElRef = useRef<HTMLAudioElement | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const playbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Live mic level for the bars. Runs alongside speech recognition on its own stream.
+  const barRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const meterRef = useRef<{ stream: MediaStream; ctx: AudioContext; raf: number } | null>(null);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (playbackTimerRef.current) clearInterval(playbackTimerRef.current);
-      if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
-      if (audioElRef.current) { audioElRef.current.pause(); audioElRef.current = null; }
-    };
+  const stopMeter = useCallback(() => {
+    const m = meterRef.current;
+    if (!m) return;
+    cancelAnimationFrame(m.raf);
+    m.stream.getTracks().forEach((tr) => tr.stop());
+    m.ctx.close().catch(() => {});
+    meterRef.current = null;
   }, []);
 
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, "0")}`;
-  };
-
-  const startRecording = useCallback(async () => {
+  const startMeter = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      chunksRef.current = [];
-      setDuration(0);
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
+      if (!recRef.current) { stream.getTracks().forEach((tr) => tr.stop()); return; }
+      const ctx = new AudioContext();
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 512;
+      ctx.createMediaStreamSource(stream).connect(analyser);
+      const data = new Uint8Array(analyser.fftSize);
+      let lastSound = performance.now();
+      let silent = false;
+      const tick = () => {
+        analyser.getByteTimeDomainData(data);
+        let sum = 0;
+        for (let i = 0; i < data.length; i++) { const v = (data[i] - 128) / 128; sum += v * v; }
+        const rms = Math.sqrt(sum / data.length);
+        const level = Math.min(1, rms * 8);
+        const now = performance.now();
+        if (rms > 0.02) lastSound = now;
+        const isSilent = now - lastSound > SILENCE_MS;
+        if (isSilent !== silent) { silent = isSilent; setNoSound(isSilent); }
+        barRefs.current.forEach((bar, i) => {
+          if (bar) bar.style.height = `${Math.max(3, Math.round(18 * level * METER_BARS[i]))}px`;
+        });
+        if (meterRef.current) meterRef.current.raf = requestAnimationFrame(tick);
       };
-
-      mediaRecorder.onstop = () => {
-        stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
-        audioUrlRef.current = URL.createObjectURL(blob);
-        setState("recorded");
-        onRecordingChange?.(true);
-      };
-
-      mediaRecorder.start();
-      setState("recording");
-
-      timerRef.current = setInterval(() => {
-        setDuration((d) => d + 1);
-      }, 1000);
+      meterRef.current = { stream, ctx, raf: requestAnimationFrame(tick) };
     } catch {
-      console.warn("Microphone access denied or unavailable");
+      setNoSound(true);
     }
-  }, [onRecordingChange]);
-
-  const stopRecording = useCallback(() => {
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    mediaRecorderRef.current?.stop();
   }, []);
 
-  const playRecording = useCallback(() => {
-    if (!audioUrlRef.current) return;
-    const audio = new Audio(audioUrlRef.current);
-    audioElRef.current = audio;
-    setPlaybackProgress(0);
-    setState("playing");
+  useEffect(() => () => { recRef.current?.abort(); stopMeter(); }, [stopMeter]);
 
-    audio.play();
-    playbackTimerRef.current = setInterval(() => {
-      if (audio.duration) {
-        setPlaybackProgress((audio.currentTime / audio.duration) * 100);
-      }
-    }, 100);
+  const Recognition = getSpeechRecognition();
+  if (!Recognition) return null;
 
-    audio.onended = () => {
-      if (playbackTimerRef.current) clearInterval(playbackTimerRef.current);
-      setPlaybackProgress(0);
-      setState("recorded");
+  const start = () => {
+    const rec = new Recognition();
+    rec.lang = SPEECH_LANG[locale] ?? "en-US";
+    rec.continuous = true;
+    rec.interimResults = true;
+    baseRef.current = valueRef.current.trim();
+    rec.onresult = (e: any) => {
+      let spoken = "";
+      for (let i = 0; i < e.results.length; i++) spoken += " " + e.results[i][0].transcript;
+      spoken = spoken.replace(/\s+/g, " ").trim();
+      const next = baseRef.current ? `${baseRef.current} ${spoken}` : spoken;
+      onChangeRef.current(maxLength ? next.slice(0, maxLength) : next);
     };
-  }, []);
+    const finish = () => { recRef.current = null; setListening(false); stopMeter(); };
+    rec.onend = finish;
+    rec.onerror = (e: any) => {
+      console.warn("[dictate] speech error:", e?.error, e?.message);
+      if (e?.error === "no-speech" || e?.error === "audio-capture") setNoSound(true);
+      finish();
+    };
+    recRef.current = rec;
+    setNoSound(false);
+    try {
+      rec.start();
+      setListening(true);
+      startMeter();
+    } catch {
+      finish();
+    }
+  };
 
-  const pausePlayback = useCallback(() => {
-    audioElRef.current?.pause();
-    if (playbackTimerRef.current) clearInterval(playbackTimerRef.current);
-    setState("recorded");
-  }, []);
+  const stop = () => { recRef.current?.stop(); };
 
-  const deleteRecording = useCallback(() => {
-    if (audioElRef.current) { audioElRef.current.pause(); audioElRef.current = null; }
-    if (playbackTimerRef.current) clearInterval(playbackTimerRef.current);
-    if (audioUrlRef.current) { URL.revokeObjectURL(audioUrlRef.current); audioUrlRef.current = null; }
-    chunksRef.current = [];
-    setDuration(0);
-    setPlaybackProgress(0);
-    setState("idle");
-    onRecordingChange?.(false);
-  }, [onRecordingChange]);
-
-  /* ── Idle: show "Record voice" button ── */
-  if (state === "idle") {
-    return (
-      <button
-        onClick={startRecording}
-        className="flex items-center gap-2 mt-4 cursor-pointer transition-transform duration-200 active:scale-[0.98]"
-        style={{ padding: "10px 20px", borderRadius: "100px", border: `1.5px solid ${color}`, backgroundColor: `${color}08`, width: "fit-content" }}
-      >
-        <Mic size={18} style={{ color }} />
-        <span style={{ fontFamily, fontSize: "14px", fontWeight: 700, color }}>{label}</span>
-      </button>
-    );
-  }
-
-  /* ── Recording in progress ── */
-  if (state === "recording") {
-    return (
-      <div className="flex items-center gap-3 mt-4" style={{ padding: "8px 20px", width: "fit-content", borderRadius: "100px", border: "1.5px solid #D10044", backgroundColor: "rgba(209,0,68,0.06)" }}>
-        <button
-          onClick={stopRecording}
-          className="cursor-pointer bg-white rounded flex items-center justify-center shadow-sm"
-          style={{ width: 28, height: 28, border: "none" }}
-        >
-          <Square size={12} style={{ color: "#D10044" }} fill="#D10044" />
-        </button>
-        <div className="animate-pulse" style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "#D10044" }} />
-        <span style={{ fontFamily, fontSize: "13px", fontWeight: 700, color: "#D10044", minWidth: "36px" }}>
-          {formatTime(duration)}
-        </span>
-      </div>
-    );
-  }
-
-  /* ── Recorded / Playing ── */
+  const tone = listening ? theme.error : color;
   return (
-    <div className="flex items-center gap-3 mt-4" style={{ padding: "8px 20px", width: "fit-content", borderRadius: "100px", border: `1.5px solid ${color}`, backgroundColor: `${color}08` }}>
-      {/* Play / Pause */}
+    <div className="flex flex-col gap-2 mt-4">
       <button
-        onClick={state === "playing" ? pausePlayback : playRecording}
-        className="cursor-pointer bg-white rounded-full flex items-center justify-center shadow-sm"
-        style={{ width: 32, height: 32, border: "none" }}
+        onClick={listening ? stop : start}
+        className="flex items-center gap-2 cursor-pointer transition-transform duration-200 active:scale-[0.98]"
+        style={{ padding: "10px 20px", borderRadius: "100px", border: `1.5px solid ${tone}`, backgroundColor: listening ? theme.errorSubtle : `${color}08`, width: "fit-content" }}
       >
-        {state === "playing"
-          ? <Pause size={14} style={{ color }} fill={color} />
-          : <Play size={14} style={{ color, marginLeft: 2 }} fill={color} />
-        }
+        {listening
+          ? (
+            <div className="flex items-center" style={{ gap: 2, height: 18 }}>
+              {METER_BARS.map((_, i) => (
+                <div
+                  key={i}
+                  ref={(el) => { barRefs.current[i] = el; }}
+                  style={{ width: 3, height: 3, borderRadius: 2, backgroundColor: tone, transition: "height 80ms linear" }}
+                />
+              ))}
+            </div>
+          )
+          : <Mic size={18} style={{ color: tone }} />}
+        <span style={{ fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.bold, color: tone }}>
+          {listening ? t("dictate.listening") : t("dictate.speak")}
+        </span>
       </button>
-
-      {/* Waveform / progress */}
-      <div style={{ position: "relative", width: "80px", height: "20px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "2px", height: "100%" }}>
-          {[30, 60, 45, 80, 55, 90, 40, 75, 35, 65, 50, 85].map((h, i) => (
-            <div
-              key={i}
-              style={{
-                width: "3px",
-                height: `${h}%`,
-                backgroundColor: color,
-                borderRadius: "2px",
-                opacity: state === "playing" && (i / 12) * 100 <= playbackProgress ? 1 : 0.35,
-                transition: "opacity 0.15s",
-              }}
-            />
-          ))}
+      {noSound && (
+        <div className="flex items-center gap-2" style={{ color: theme.textMuted }}>
+          <MicOff size={16} />
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.normal }}>{t("dictate.noSound")}</span>
         </div>
-      </div>
-
-      {/* Duration */}
-      <span style={{ fontFamily, fontSize: "12px", fontWeight: 700, color, minWidth: "32px" }}>
-        {formatTime(duration)}
-      </span>
-
-      {/* Delete / Redo */}
-      <button
-        onClick={deleteRecording}
-        className="cursor-pointer flex items-center justify-center transition-opacity hover:opacity-100"
-        style={{ width: 28, height: 28, border: "none", background: "none", opacity: 0.6 }}
-      >
-        <Trash2 size={16} style={{ color }} />
-      </button>
+      )}
     </div>
   );
 }
@@ -333,19 +287,16 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string | number>>({});
   const [feedbackText, setFeedbackText] = useState("");
-  const [feedbackHasRecording, setFeedbackHasRecording] = useState(false);
 
   // Concern state
   const [concernArea, setConcernArea] = useState<string | null>(null);
   const [concernText, setConcernText] = useState("");
   const [concernSubmitted, setConcernSubmitted] = useState(false);
-  const [concernHasRecording, setConcernHasRecording] = useState(false);
 
   // Appreciation state
   const [appreciationTarget, setAppreciationTarget] = useState<string | null>(null);
   const [appreciationText, setAppreciationText] = useState("");
   const [appreciationSubmitted, setAppreciationSubmitted] = useState(false);
-  const [appreciationHasRecording, setAppreciationHasRecording] = useState(false);
 
   /* ─── Survey Navigation ─── */
   const totalSlides = 9; // 7 questions + feedback + thank you (no intro, survey starts directly)
@@ -369,13 +320,13 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
 
   /* ─── Concern Submit ─── */
   const handleConcernSubmit = () => {
-    console.log("Concern submitted:", { area: concernArea, text: concernText, hasRecording: concernHasRecording });
+    console.log("Concern submitted:", { area: concernArea, text: concernText });
     setConcernSubmitted(true);
   };
 
   /* ─── Appreciation Submit ─── */
   const handleAppreciationSubmit = () => {
-    console.log("Appreciation submitted:", { target: appreciationTarget, text: appreciationText, hasRecording: appreciationHasRecording });
+    console.log("Appreciation submitted:", { target: appreciationTarget, text: appreciationText });
     setAppreciationSubmitted(true);
   };
 
@@ -713,9 +664,9 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
         {feedbackText.length} / 500 characters
       </p>
 
-      {/* Voice recorder */}
+      {/* Dictation */}
       <div style={{ maxWidth: "800px", width: "100%", marginTop: "16px" }}>
-        <VoiceRecorder color={BRAND} label={t("concern.recordVoice") || "Record voice"} onRecordingChange={setFeedbackHasRecording} />
+        <DictateButton color={BRAND} value={feedbackText} onChange={setFeedbackText} maxLength={500} />
       </div>
     </div>
   );
@@ -944,7 +895,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
                   onFocus={(e) => { e.target.style.borderColor = CONCERN_COLOR; }}
                   onBlur={(e) => { e.target.style.borderColor = theme.borderDefault; }}
                 />
-                <VoiceRecorder color={CONCERN_COLOR} label={t("concern.recordVoice") || "Record voice"} onRecordingChange={setConcernHasRecording} />
+                <DictateButton color={CONCERN_COLOR} value={concernText} onChange={setConcernText} />
               </div>
             </div>
           </div>
@@ -956,13 +907,13 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
             <>
               <button
                 onClick={handleConcernSubmit}
-                disabled={!concernArea || (!concernText.trim() && !concernHasRecording)}
+                disabled={!concernArea || !concernText.trim()}
                 className="flex items-center gap-2 transition-transform duration-200 active:scale-[0.96] cursor-pointer"
                 style={{
                   fontFamily, fontSize: "18px", fontWeight: WEIGHT.semibold, color: "#fff",
                   height: "52px", padding: "0 28px", borderRadius: "14px",
-                  backgroundColor: (!concernArea || (!concernText.trim() && !concernHasRecording)) ? theme.textDisabled : CONCERN_COLOR,
-                  border: `1px solid rgba(255,255,255,0.35)`, opacity: (!concernArea || (!concernText.trim() && !concernHasRecording)) ? 0.5 : 1,
+                  backgroundColor: (!concernArea || !concernText.trim()) ? theme.textDisabled : CONCERN_COLOR,
+                  border: `1px solid rgba(255,255,255,0.35)`, opacity: (!concernArea || !concernText.trim()) ? 0.5 : 1,
                   boxShadow: `0 4px 16px ${CONCERN_SUBTLE}`,
                 }}
               >
@@ -984,13 +935,13 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
               </button>
               <button
                 onClick={handleConcernSubmit}
-                disabled={!concernArea || (!concernText.trim() && !concernHasRecording)}
+                disabled={!concernArea || !concernText.trim()}
                 className="flex items-center gap-2 transition-transform duration-200 active:scale-[0.96] cursor-pointer"
                 style={{
                   fontFamily, fontSize: "18px", fontWeight: WEIGHT.semibold, color: "#fff",
                   height: "52px", padding: "0 28px", borderRadius: "14px",
-                  backgroundColor: (!concernArea || (!concernText.trim() && !concernHasRecording)) ? theme.textDisabled : CONCERN_COLOR,
-                  border: `1px solid rgba(255,255,255,0.35)`, opacity: (!concernArea || (!concernText.trim() && !concernHasRecording)) ? 0.5 : 1,
+                  backgroundColor: (!concernArea || !concernText.trim()) ? theme.textDisabled : CONCERN_COLOR,
+                  border: `1px solid rgba(255,255,255,0.35)`, opacity: (!concernArea || !concernText.trim()) ? 0.5 : 1,
                   boxShadow: `0 4px 16px ${CONCERN_SUBTLE}`,
                 }}
               >
@@ -1109,7 +1060,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
                   onFocus={(e) => { e.target.style.borderColor = APPRECIATION_COLOR; }}
                   onBlur={(e) => { e.target.style.borderColor = theme.borderDefault; }}
                 />
-                <VoiceRecorder color={APPRECIATION_COLOR} label={t("appreciation.recordVoice") || "Record voice"} onRecordingChange={setAppreciationHasRecording} />
+                <DictateButton color={APPRECIATION_COLOR} value={appreciationText} onChange={setAppreciationText} />
               </div>
             </div>
           </div>
@@ -1121,13 +1072,13 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
             <>
               <button
                 onClick={handleAppreciationSubmit}
-                disabled={!appreciationTarget || (!appreciationText.trim() && !appreciationHasRecording)}
+                disabled={!appreciationTarget || !appreciationText.trim()}
                 className="flex items-center gap-2 transition-transform duration-200 active:scale-[0.96] cursor-pointer"
                 style={{
                   fontFamily, fontSize: "18px", fontWeight: WEIGHT.semibold, color: "#fff",
                   height: "52px", padding: "0 28px", borderRadius: "14px",
-                  backgroundColor: (!appreciationTarget || (!appreciationText.trim() && !appreciationHasRecording)) ? theme.textDisabled : APPRECIATION_COLOR,
-                  border: `1px solid rgba(255,255,255,0.35)`, opacity: (!appreciationTarget || (!appreciationText.trim() && !appreciationHasRecording)) ? 0.5 : 1,
+                  backgroundColor: (!appreciationTarget || !appreciationText.trim()) ? theme.textDisabled : APPRECIATION_COLOR,
+                  border: `1px solid rgba(255,255,255,0.35)`, opacity: (!appreciationTarget || !appreciationText.trim()) ? 0.5 : 1,
                   boxShadow: `0 4px 16px ${APPRECIATION_SUBTLE}`,
                 }}
               >
@@ -1149,13 +1100,13 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
               </button>
               <button
                 onClick={handleAppreciationSubmit}
-                disabled={!appreciationTarget || (!appreciationText.trim() && !appreciationHasRecording)}
+                disabled={!appreciationTarget || !appreciationText.trim()}
                 className="flex items-center gap-2 transition-transform duration-200 active:scale-[0.96] cursor-pointer"
                 style={{
                   fontFamily, fontSize: "18px", fontWeight: WEIGHT.semibold, color: "#fff",
                   height: "52px", padding: "0 28px", borderRadius: "14px",
-                  backgroundColor: (!appreciationTarget || (!appreciationText.trim() && !appreciationHasRecording)) ? theme.textDisabled : APPRECIATION_COLOR,
-                  border: `1px solid rgba(255,255,255,0.35)`, opacity: (!appreciationTarget || (!appreciationText.trim() && !appreciationHasRecording)) ? 0.5 : 1,
+                  backgroundColor: (!appreciationTarget || !appreciationText.trim()) ? theme.textDisabled : APPRECIATION_COLOR,
+                  border: `1px solid rgba(255,255,255,0.35)`, opacity: (!appreciationTarget || !appreciationText.trim()) ? 0.5 : 1,
                   boxShadow: `0 4px 16px ${APPRECIATION_SUBTLE}`,
                 }}
               >
