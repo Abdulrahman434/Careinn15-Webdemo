@@ -6,6 +6,7 @@ import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose
 import { useLocale } from '../i18n';
 import GameLanguageToggle from './GameLanguageToggle';
 import { GAME_TRANSLATIONS } from './gameTranslations';
+import { usableSave } from "../../lib/continueActivity";
 
 type Category = 'animals' | 'countries' | 'foods';
 
@@ -122,7 +123,9 @@ export function WordChainGame({ onClose, onBackToGames, autoResume }: { onClose:
     const savedState = localStorage.getItem('wordchain-game-state');
     if (savedState) {
       if (autoResume) {
-        loadGameState(); // Continue card: open the saved game, no resume prompt
+        // Continue card: open the saved game, no resume prompt.
+        // A save it can't open is removed and the game starts as if there were none.
+        if (usableSave('wordchain-game-state', (s) => !!DICTIONARIES_EN[s.category as Category] && Array.isArray(s.chain) && s.chain.length > 0 && s.chain.every((w: unknown) => typeof w === 'string' && w.length > 0))) loadGameState();
       } else {
         setHasSavedGame(true);
         setShowResumeModal(true);

@@ -6,6 +6,7 @@ import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, Timer, ArrowLeft } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
+import { usableSave } from "../../lib/continueActivity";
 
 interface ColorOption {
   color: string;
@@ -61,7 +62,9 @@ export function ColorMatchGame({ onClose, onBackToGames, autoResume }: { onClose
     console.log('=== LOAD GAME STATE ===', 'color-match-game-state', savedState);
     if (savedState) {
       if (autoResume) {
-        loadGameState(); // Continue card: open the saved game, no resume prompt
+        // Continue card: open the saved game, no resume prompt.
+        // A save it can't open is removed and the game starts as if there were none.
+        if (usableSave('color-match-game-state', (s) => !!s.targetColor && typeof s.targetColor.color === 'string')) loadGameState();
       } else {
         setHasSavedGame(true);
         setShowResumeModal(true);
