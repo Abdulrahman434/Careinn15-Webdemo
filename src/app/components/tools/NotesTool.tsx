@@ -1,7 +1,8 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { useCanvasSize } from "../../lib/canvasSize";
+import { TOOL_SAVE_KEYS } from "../../lib/continueActivity";
 import { toolHeader, toolHeaderGroup, toolHeaderButton, toolTitle, toolBody, toolPanes, toolSidePanel } from "./toolLayout";
 import { ArrowLeft, ArrowRight, Plus, Trash2, FileText } from "lucide-react";
 
@@ -12,23 +13,52 @@ interface Note {
   timestamp: string;
 }
 
+const SEED_NOTES: Note[] = [
+  {
+    id: "1",
+    title: "Medication Schedule",
+    content: "Take morning pills at 8 AM\nEvening pills at 6 PM",
+    timestamp: "Today at 9:30 AM",
+  },
+];
+
+function loadSavedNotes(): { notes: Note[]; selectedId: string | null } | null {
+  try {
+    const raw = localStorage.getItem(TOOL_SAVE_KEYS.notes);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || !Array.isArray(data.notes)) return null;
+    return { notes: data.notes, selectedId: typeof data.selectedId === "string" ? data.selectedId : null };
+  } catch {
+    return null;
+  }
+}
+
 export function NotesTool({ onClose, onBackToTools }: { onClose: () => void; onBackToTools: () => void }) {
   const { theme } = useTheme();
   const { fontFamily, t, isRTL } = useLocale();
   const { portrait, compact } = useCanvasSize();
   /* "Back" is to the right in Arabic and Urdu. */
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
-  const [notes, setNotes] = useState<Note[]>([
-    {
-      id: "1",
-      title: "Medication Schedule",
-      content: "Take morning pills at 8 AM\nEvening pills at 6 PM",
-      timestamp: "Today at 9:30 AM",
-    },
-  ]);
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const [editingTitle, setEditingTitle] = useState("");
-  const [editingContent, setEditingContent] = useState("");
+  /* careinn-tool-notes = { notes, selectedId }. Written only while notes differ from SEED_NOTES
+     (that is what makes Notes resumable); removed when they are back to the seed. Wiped on patient change. */
+  const [saved] = useState(loadSavedNotes);
+  const [notes, setNotes] = useState<Note[]>(saved?.notes ?? SEED_NOTES);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(
+    () => saved?.notes.find((n) => n.id === saved.selectedId) ?? null,
+  );
+  const [editingTitle, setEditingTitle] = useState(selectedNote?.title ?? "");
+  const [editingContent, setEditingContent] = useState(selectedNote?.content ?? "");
+
+  useEffect(() => {
+    try {
+      if (JSON.stringify(notes) === JSON.stringify(SEED_NOTES)) {
+        localStorage.removeItem(TOOL_SAVE_KEYS.notes);
+      } else {
+        localStorage.setItem(TOOL_SAVE_KEYS.notes, JSON.stringify({ notes, selectedId: selectedNote?.id ?? null }));
+      }
+    } catch { /* storage unavailable or full: skip saving */ }
+  }, [notes, selectedNote]);
 
   const handleCreateNote = useCallback(() => {
     const newNote: Note = {

@@ -2,6 +2,7 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { useCanvasSize } from "../../lib/canvasSize";
+import { TOOL_SAVE_KEYS } from "../../lib/continueActivity";
 import { toolHeader, toolHeaderGroup, toolHeaderButton, toolTitle, toolBody, toolPanes, toolSidePanel } from "./toolLayout";
 import { ArrowLeft, ArrowRight, Trash2, Pencil, Eraser } from "lucide-react";
 
@@ -18,6 +19,7 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const movedRef = useRef(false);
   const [tool, setTool] = useState<Tool>("pen");
   const [color, setColor] = useState("#000000");
   const [size, setSize] = useState(8);
@@ -43,6 +45,15 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
     // Fill with white background
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    /* careinn-tool-whiteboard = PNG data URL of the board; exists only while something is drawn. */
+    let saved: string | null = null;
+    try { saved = localStorage.getItem(TOOL_SAVE_KEYS.whiteboard); } catch { /* ignore */ }
+    if (saved) {
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      img.src = saved;
+    }
   }, [portrait]);
 
   const startDrawing = useCallback(
@@ -58,6 +69,7 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
       if (!ctx) return;
 
       setIsDrawing(true);
+      movedRef.current = false;
       ctx.beginPath();
       ctx.moveTo(x, y);
     },
@@ -91,13 +103,21 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
 
       ctx.lineTo(x, y);
       ctx.stroke();
+      movedRef.current = true;
     },
     [isDrawing, tool, color, size]
   );
 
   const stopDrawing = useCallback(() => {
     setIsDrawing(false);
-  }, []);
+    if (!isDrawing || !movedRef.current) return;
+    movedRef.current = false;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    try {
+      localStorage.setItem(TOOL_SAVE_KEYS.whiteboard, canvas.toDataURL("image/png"));
+    } catch { /* quota or storage unavailable: skip saving */ }
+  }, [isDrawing]);
 
   const clearCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -108,6 +128,7 @@ export function WhiteboardTool({ onClose, onBackToTools }: { onClose: () => void
 
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    try { localStorage.removeItem(TOOL_SAVE_KEYS.whiteboard); } catch { /* ignore */ }
   }, []);
 
   return (
