@@ -1,5 +1,6 @@
 import { fetchDeviceLocation } from "./hospitalApi";
 import { clearEverything, clearUserData } from "./onboardingStore";
+import { applyLocation } from "./continueActivity";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * Data-lifecycle enforcement
@@ -37,6 +38,7 @@ export function startDataLifecycleWatchers(
 
   const checkAdmission = async () => {
     const loc = await fetchDeviceLocation(serial);
+    applyLocation(loc);
     // Network/API failure ≠ discharge — never wipe on a failed fetch.
     // A genuinely empty bed still returns a location with admit_data "".
     if (!loc) return;
