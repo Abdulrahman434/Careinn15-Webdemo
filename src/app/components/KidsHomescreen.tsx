@@ -697,8 +697,9 @@ export default function KidsHomescreen({
           </div>
         </div>
 
-        {/* ── Bottom action bar — two large finger-friendly buttons ── */}
-        <div className="shrink-0 flex gap-5" style={{ height: 76 }}>
+        {/* ── Bottom action bar — two large finger-friendly buttons ──
+            (keep-clear: the popped Continue card sits above it) */}
+        <div data-continue-keep-clear="" className="shrink-0 flex gap-5" style={{ height: 76 }}>
           {bottomActions.map((a) => (
             <button
               key={a.label}
