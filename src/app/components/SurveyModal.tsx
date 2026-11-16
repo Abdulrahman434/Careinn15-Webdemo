@@ -827,7 +827,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
     return (
       <div className="sm-path flex-1 flex flex-col overflow-hidden relative">
         <div className="sm-path flex-1 flex flex-col overflow-hidden items-center justify-center">
-          <div className="sm-form w-full max-w-[800px] flex flex-col h-full shrink-0">
+          <div className="sm-form w-full max-w-[800px] flex flex-col max-h-full min-h-0">
             {/* Header */}
             <div className="sm-form-head shrink-0 flex items-center gap-4 px-0 pt-10 pb-4">
               <div className="flex items-center justify-center"
@@ -845,7 +845,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
             </div>
 
             {/* Content */}
-            <div className="sm-scroll flex-1 overflow-y-auto px-0 pb-6 scrollbar-width-none">
+            <div className="sm-scroll min-h-0 overflow-y-auto px-0 pb-10 scrollbar-width-none">
               {/* Area question */}
               <h3 style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "20px", marginTop: "24px" }}>
                 {t("concern.areaQuestion")}
@@ -992,7 +992,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
     return (
       <div className="sm-path flex-1 flex flex-col overflow-hidden relative">
         <div className="sm-path flex-1 flex flex-col overflow-hidden items-center justify-center">
-          <div className="sm-form w-full max-w-[800px] flex flex-col h-full shrink-0">
+          <div className="sm-form w-full max-w-[800px] flex flex-col max-h-full min-h-0">
             {/* Header */}
             <div className="sm-form-head shrink-0 flex items-center gap-4 px-0 pt-10 pb-4">
               <div className="flex items-center justify-center"
@@ -1010,7 +1010,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
             </div>
 
             {/* Content */}
-            <div className="sm-scroll flex-1 overflow-y-auto px-0 pb-6 scrollbar-width-none">
+            <div className="sm-scroll min-h-0 overflow-y-auto px-0 pb-10 scrollbar-width-none">
               {/* Who to thank */}
               <h3 style={{ fontFamily, fontSize: TYPE_SCALE.lg, fontWeight: WEIGHT.bold, color: theme.textHeading, marginBottom: "20px", marginTop: "24px" }}>
                 {t("appreciation.whoQuestion")}
