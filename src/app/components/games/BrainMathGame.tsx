@@ -15,7 +15,7 @@ type Equation = {
   options: number[];
 };
 
-export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
+export function BrainMathGame({ onClose, onBackToGames, autoResume }: { onClose: () => void; onBackToGames: () => void; autoResume?: boolean }) {
   const { theme } = useTheme();
   const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
@@ -47,8 +47,12 @@ export function BrainMathGame({ onClose, onBackToGames }: { onClose: () => void;
 
     const savedState = localStorage.getItem('brain-math-game-state');
     if (savedState) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
+      if (autoResume) {
+        loadGameState(); // Continue card: open the saved game, no resume prompt
+      } else {
+        setHasSavedGame(true);
+        setShowResumeModal(true);
+      }
     }
   }, []);
 

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useCanvasSize } from "../../lib/canvasSize";
 import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose, gameBody, gameGroup, gamePanel, GameBoardArea, gameBoard, gameModal } from "./gameLayout";
@@ -24,7 +24,7 @@ function calculateWinner(squares: Player[]): Player {
   return null;
 }
 
-export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
+export function TicTacToeGame({ onClose, onBackToGames, autoResume }: { onClose: () => void; onBackToGames: () => void; autoResume?: boolean }) {
   const { theme } = useTheme();
   const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
@@ -94,7 +94,13 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
     localStorage.removeItem('tictactoe-game-state');
   };
 
+  const autoResumed = useRef(false);
   useEffect(() => {
+    if (autoResume && (autoResumed.current || localStorage.getItem('tictactoe-game-state'))) {
+      // Open the saved game directly (ref guards the StrictMode double mount)
+      if (!autoResumed.current) { autoResumed.current = true; loadGameState(); }
+      return;
+    }
     const saved = localStorage.getItem('tictactoe-game-state');
     if (saved) {
       const state = JSON.parse(saved);

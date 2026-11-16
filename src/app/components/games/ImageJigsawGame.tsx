@@ -8,6 +8,7 @@ import { Trophy, RotateCcw, ArrowLeft, Camera, Image as ImageIcon } from "lucide
 import { ApiImage } from "../ApiImage";
 import { proxyImageUrl } from "../../lib/imageProxy";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
+import { latestSaveKey } from "../../lib/continueActivity";
 
 type Difficulty = 3 | 4 | 5;
 type Category = 'Nature' | 'Animals';
@@ -35,7 +36,7 @@ const IMAGES: Record<Category, string[]> = {
   ]
 };
 
-export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
+export function ImageJigsawGame({ onClose, onBackToGames, autoResume }: { onClose: () => void; onBackToGames: () => void; autoResume?: boolean }) {
   const { theme } = useTheme();
   const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
@@ -127,8 +128,8 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
     localStorage.setItem(key, JSON.stringify(state));
   }, [gameState, pieces, difficulty, category, selectedImageIndex, imageUrl, timer, moves]);
 
-  const loadGameState = () => {
-    const key = `jigsaw-puzzle-${getDifficultyKey(difficulty)}-state`;
+  const loadGameState = (saveKey?: string) => {
+    const key = saveKey ?? `jigsaw-puzzle-${getDifficultyKey(difficulty)}-state`;
     const saved = localStorage.getItem(key);
     if (saved) {
       const state = JSON.parse(saved);
@@ -154,6 +155,14 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
       setShowResumeModal(false);
     }
   };
+
+  // Continue card: open the newest save (any difficulty) directly, no resume prompt.
+  // The saved state carries its own difficulty/category/image, so loading by key restores them.
+  useEffect(() => {
+    if (!autoResume) return;
+    const key = latestSaveKey("picturepuzzle");
+    if (key) loadGameState(key);
+  }, []);
 
   useEffect(() => {
     if (!imageUrl) return;
@@ -550,7 +559,7 @@ export function ImageJigsawGame({ onClose, onBackToGames }: { onClose: () => voi
 
             <div className="flex flex-col gap-4 w-full">
               <button
-                onClick={loadGameState}
+                onClick={() => loadGameState()}
                 className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
                 style={{ backgroundColor: theme.primary, color: theme.brandOnPrimary, fontSize: TYPE_SCALE.md }}
               >

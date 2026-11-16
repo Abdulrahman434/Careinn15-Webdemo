@@ -23,7 +23,7 @@ const COLORS: ColorOption[] = [
   { color: "#85C1E2", name: "Sky" },
 ];
 
-export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
+export function ColorMatchGame({ onClose, onBackToGames, autoResume }: { onClose: () => void; onBackToGames: () => void; autoResume?: boolean }) {
   const { theme } = useTheme();
   const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
@@ -60,8 +60,12 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
     const savedState = localStorage.getItem('color-match-game-state');
     console.log('=== LOAD GAME STATE ===', 'color-match-game-state', savedState);
     if (savedState) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
+      if (autoResume) {
+        loadGameState(); // Continue card: open the saved game, no resume prompt
+      } else {
+        setHasSavedGame(true);
+        setShowResumeModal(true);
+      }
     }
   }, []);
 

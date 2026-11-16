@@ -23,7 +23,7 @@ const CATEGORIES: Record<Category, string[]> = {
   sports: ["⚽", "🏀", "🎾", "⚾", "🏐", "🥊", "🥋", "⛸️", "⛳", "🏊", "🏄", "🏇"]
 };
 
-export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
+export function EmojiMatchGame({ onClose, onBackToGames, autoResume }: { onClose: () => void; onBackToGames: () => void; autoResume?: boolean }) {
   const { theme } = useTheme();
   const size = useCanvasSize();
   const emojiColumn = size.portrait ? { flex: "1 1 0", minWidth: 0, ...(size.compact ? { gap: 12 } : {}) } : undefined;
@@ -146,8 +146,12 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
     const savedState = localStorage.getItem('emoji-match-game-state');
     console.log('=== LOAD GAME STATE ===', 'emoji-match-game-state', savedState);
     if (savedState) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
+      if (autoResume) {
+        loadGameState(); // Continue card: open the saved game, no resume prompt
+      } else {
+        setHasSavedGame(true);
+        setShowResumeModal(true);
+      }
     }
     setIsBootstrapped(true);
   }, []);
@@ -156,8 +160,11 @@ export function EmojiMatchGame({ onClose, onBackToGames }: { onClose: () => void
   useEffect(() => {
     const saved = localStorage.getItem('emoji-match-game-state');
     if (saved) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
+      // autoResume: the effect above already loaded it
+      if (!autoResume) {
+        setHasSavedGame(true);
+        setShowResumeModal(true);
+      }
     } else {
       startGame();
     }
