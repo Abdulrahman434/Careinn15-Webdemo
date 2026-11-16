@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { latestSaveKey } from "../../lib/continueActivity";
+import { latestSaveKey, usableSave } from "../../lib/continueActivity";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useCanvasSize } from "../../lib/canvasSize";
 import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose, gameBody, gameGroup, gamePanel, GameBoardArea, gameBoard, gameCellFont, gameModal, gameControl } from "./gameLayout";
@@ -221,6 +221,11 @@ export function WordSearchGame({ onClose, onBackToGames, autoResume }: { onClose
   // Initial mount: Check for saved game or auto-start
   useEffect(() => {
     if (resume && gameLang !== resume.lang) resumeActive.current = false; // patient switched language: normal flow
+    // A save it can't open is removed and the game starts as if there were none.
+    if (resume && resumeActive.current && !resumeLoaded.current && !usableSave(resume.key, (s) =>
+      Array.isArray(s.grid) && s.grid.length > 0 && s.grid.every(Array.isArray)
+      && Array.isArray(s.foundWords) && Array.isArray(s.targetWords) && !!s.foundCellsMap && typeof s.foundCellsMap === 'object'
+    )) resumeActive.current = false;
     if (resume && resumeActive.current) {
       // Open the newest save directly (no resume prompt). Reruns of this effect caused by the loaded
       // category must not bring the prompt back, so the save is loaded only once.

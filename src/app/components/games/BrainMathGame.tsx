@@ -6,6 +6,7 @@ import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, ArrowLeft, Timer, Zap, Brain, Heart } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
+import { usableSave } from "../../lib/continueActivity";
 
 type Equation = {
   num1: number;
@@ -48,7 +49,9 @@ export function BrainMathGame({ onClose, onBackToGames, autoResume }: { onClose:
     const savedState = localStorage.getItem('brain-math-game-state');
     if (savedState) {
       if (autoResume) {
-        loadGameState(); // Continue card: open the saved game, no resume prompt
+        // Continue card: open the saved game, no resume prompt.
+        // A save it can't open is removed and the game starts as if there were none.
+        if (usableSave('brain-math-game-state', (s) => !!s.equation && Array.isArray(s.equation.options))) loadGameState();
       } else {
         setHasSavedGame(true);
         setShowResumeModal(true);

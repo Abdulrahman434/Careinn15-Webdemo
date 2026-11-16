@@ -6,6 +6,7 @@ import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, ArrowLeft, CheckCircle2, XCircle, ChevronRight, HelpCircle, RotateCcw } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
+import { usableSave } from "../../lib/continueActivity";
 
 type Question = {
   id: number;
@@ -347,7 +348,9 @@ export function TriviaQuizGame({ onClose, onBackToGames, autoResume }: { onClose
     const saved = localStorage.getItem('trivia-quiz-game-state');
     if (saved) {
       if (autoResume) {
-        loadGameState(); // Continue card: open the saved game, no resume prompt
+        // Continue card: open the saved game, no resume prompt.
+        // A save it can't open is removed and the game starts as if there were none.
+        if (usableSave('trivia-quiz-game-state', (s) => !!TRIVIA_DATA[s.selectedCategory as Category] && Array.isArray(s.userAnswers) && Number.isInteger(s.currentQuestionIdx) && s.currentQuestionIdx >= 0 && s.currentQuestionIdx < Math.min(10, TRIVIA_DATA[s.selectedCategory as Category].length))) loadGameState();
       } else {
         setHasSavedGame(true);
         setShowResumeModal(true);

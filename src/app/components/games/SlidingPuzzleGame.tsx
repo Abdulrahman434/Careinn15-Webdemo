@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { latestSaveKey } from "../../lib/continueActivity";
+import { latestSaveKey, usableSave } from "../../lib/continueActivity";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useCanvasSize } from "../../lib/canvasSize";
 import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose, gameBody, gameGroup, GameBoardArea, gameBoard, gameCellFont, gameModal, gameControl } from "./gameLayout";
@@ -140,9 +140,10 @@ export function SlidingPuzzleGame({ onClose, onBackToGames, autoResume }: { onCl
 
   // Initial mount: Check for saved game or auto-start
   useEffect(() => {
-    // Continue card: open the newest save (any difficulty) directly, no resume prompt
+    // Continue card: open the newest save (any difficulty) directly, no resume prompt.
+    // A save it can't open is removed and the game starts as if there were none.
     const autoKey = autoResume ? latestSaveKey("puzzle") : null;
-    if (autoKey) {
+    if (autoKey && usableSave(autoKey, (s) => Array.isArray(s.tiles) && s.tiles.length > 0 && !!DIFFICULTY_CONFIG[s.difficulty as Difficulty])) {
       loadGameState(autoKey);
       setIsBootstrapped(true);
       return;

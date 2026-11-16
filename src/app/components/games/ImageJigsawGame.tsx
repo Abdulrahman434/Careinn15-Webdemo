@@ -8,7 +8,7 @@ import { Trophy, RotateCcw, ArrowLeft, Camera, Image as ImageIcon } from "lucide
 import { ApiImage } from "../ApiImage";
 import { proxyImageUrl } from "../../lib/imageProxy";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
-import { latestSaveKey } from "../../lib/continueActivity";
+import { latestSaveKey, usableSave } from "../../lib/continueActivity";
 
 type Difficulty = 3 | 4 | 5;
 type Category = 'Nature' | 'Animals';
@@ -158,10 +158,14 @@ export function ImageJigsawGame({ onClose, onBackToGames, autoResume }: { onClos
 
   // Continue card: open the newest save (any difficulty) directly, no resume prompt.
   // The saved state carries its own difficulty/category/image, so loading by key restores them.
+  // A save it can't open is removed and the game starts as if there were none.
   useEffect(() => {
     if (!autoResume) return;
     const key = latestSaveKey("picturepuzzle");
-    if (key) loadGameState(key);
+    if (key && usableSave(key, (s) =>
+      [3, 4, 5].includes(s.difficulty) && !!IMAGES[s.category as Category] && Array.isArray(s.pieces)
+      && new Set(s.pieces.map((p: any) => typeof p === 'object' ? p.id : p)).size === s.difficulty * s.difficulty
+    )) loadGameState(key);
   }, []);
 
   useEffect(() => {

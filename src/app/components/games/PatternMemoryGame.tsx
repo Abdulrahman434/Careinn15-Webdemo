@@ -6,6 +6,7 @@ import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, ArrowLeft } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
+import { usableSave } from "../../lib/continueActivity";
 
 const COLORS = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E2"];
 
@@ -36,7 +37,9 @@ export function PatternMemoryGame({ onClose, onBackToGames, autoResume }: { onCl
     console.log('=== LOAD GAME STATE ===', 'pattern-memory-game-state', savedState);
     if (savedState) {
       if (autoResume) {
-        loadGameState(); // Continue card: open the saved game, no resume prompt
+        // Continue card: open the saved game, no resume prompt.
+        // A save it can't open is removed and the game starts as if there were none.
+        if (usableSave('pattern-memory-game-state', (s) => Array.isArray(s.pattern) && s.pattern.length > 0 && Array.isArray(s.playerPattern))) loadGameState();
       } else {
         setHasSavedGame(true);
         setShowResumeModal(true);

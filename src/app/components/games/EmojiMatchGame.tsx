@@ -6,6 +6,7 @@ import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, Timer, ArrowLeft } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
+import { usableSave } from "../../lib/continueActivity";
 
 interface EmojiPair {
   id: number;
@@ -147,7 +148,11 @@ export function EmojiMatchGame({ onClose, onBackToGames, autoResume }: { onClose
     console.log('=== LOAD GAME STATE ===', 'emoji-match-game-state', savedState);
     if (savedState) {
       if (autoResume) {
-        loadGameState(); // Continue card: open the saved game, no resume prompt
+        // Continue card: open the saved game, no resume prompt. A save it can't
+        // open is removed, and the effect below then starts a new game.
+        if (usableSave('emoji-match-game-state', (s) =>
+          Array.isArray(s.leftEmojis) && s.leftEmojis.length > 0 && Array.isArray(s.rightEmojis) && !!CATEGORIES[s.category as Category]
+        )) loadGameState();
       } else {
         setHasSavedGame(true);
         setShowResumeModal(true);
