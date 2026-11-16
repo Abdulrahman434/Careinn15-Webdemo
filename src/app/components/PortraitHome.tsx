@@ -10,7 +10,8 @@ import { useLocale } from "./i18n";
 import { localizeDigits } from "../utils/prayerUtils";
 import { useLongPress } from "../lib/useLongPress";
 import { ConnectionStatus } from "./ConnectionStatus";
-import { ContinueCardSlot } from "./ContinueCard";
+import { PORTRAIT } from "./homeLayout";
+import { useContinueLane } from "../lib/continueLane";
 import { useCurrentWeather, WEATHER_GLYPH } from "../lib/weather";
 
 /**
@@ -81,9 +82,12 @@ export default function PortraitHome({
   const compact = width < 700;
   /* The 1080×1920 bedside screen has far more height than the summary card
      needs, so there CareMe shows in full — the same card as landscape. */
-  const roomy = !compact && height >= 1600;
-  const pad = compact ? SPACE[2] : SPACE[4];
-  const gap = compact ? SPACE[2] : SPACE[3];
+  const roomy = !compact && height >= PORTRAIT.roomyMinHeight;
+  const pad = compact ? SPACE[2] : `${PORTRAIT.edge}px`;
+  const gap = compact ? SPACE[2] : `${PORTRAIT.gap}px`;
+  /* Phones: the page ends above the Continue card's lane, so nothing scrolls
+     under the card; the room grows and shrinks with the card. */
+  const lane = useContinueLane();
 
   const [now, setNow] = useState(new Date());
   useEffect(() => {
@@ -145,7 +149,7 @@ export default function PortraitHome({
             />
             {!connUnderClock && <ConnectionStatus />}
           </div>
-          <ContinueCardSlot />
+          <div className="flex-1" />
           {/* Clock and date — as landscape's top bar (Fakeeh: status under them). */}
           <div data-tour="controls" className="flex items-center shrink-0" style={{ gap: compact ? SPACE[1] : SPACE[2] }}>
           <div className="flex flex-col items-end shrink-0 select-none" style={{ marginInlineEnd: compact ? 0 : SPACE[1] }} {...clockHold.handlers}>
@@ -209,7 +213,10 @@ export default function PortraitHome({
       <div data-tour="ticker" className="shrink-0"><NewsTicker paused={tickerPaused} /></div>
 
       {/* ── Body ── (phones: the smaller radius scale comes from App.tsx) */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden" style={{ padding: pad, gap }}>
+      <div
+        className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden transition-[margin-bottom] duration-[350ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none"
+        style={{ padding: pad, gap, marginBottom: compact ? lane : 0 }}
+      >
         {/* Greeting and CareMe — the same two cards as landscape's left
             column, side by side (stacked on phones). */}
         <div
@@ -249,7 +256,7 @@ export default function PortraitHome({
           className="shrink-0 grid grid-cols-4"
           style={{
             gap: compact ? 12 : 24,
-            height: roomy ? 160 : compact ? 104 : 124,
+            height: roomy ? PORTRAIT.shortcutsRow.roomy : compact ? PORTRAIT.shortcutsRow.phone : PORTRAIT.shortcutsRow.tablet,
           }}
         >
           <div data-tour="shortcuts" className="col-span-3 flex flex-col min-w-0 min-h-0">

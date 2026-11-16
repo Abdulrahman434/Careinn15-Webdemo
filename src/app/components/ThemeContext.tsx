@@ -339,6 +339,10 @@ export interface ThemeConfig {
   background: string;
   surface: string;           // card / panel backgrounds
   surfaceElevated: string;
+  /** A surface that stays white in both modes: a card that is meant to read
+   *  as a light card even on the dark theme (the Continue card turns white in
+   *  dark mode). Pair it with the *OnLight foregrounds (primaryOnLight). */
+  surfaceLight: string;
   overlay: string;           // modal backdrop
   panelBg: string;           // frosted-glass panels
 
@@ -617,6 +621,7 @@ function buildTheme(core: {
       background: "#FFFFFF",
       surface: "#FFFFFF",
       surfaceElevated: "#FFFFFF",
+      surfaceLight: "#FFFFFF",
       overlay: "rgba(0,0,0,0.35)",
       panelBg: "rgba(255,255,255,0.97)",
 
@@ -729,6 +734,7 @@ function buildTheme(core: {
     background: DARK_BG,
     surface: DARK_SURFACE,
     surfaceElevated: DARK_ELEVATED,
+    surfaceLight: "#FFFFFF",
     overlay: "rgba(0,0,0,0.60)",
     panelBg: "rgba(18,22,27,0.97)",
 
