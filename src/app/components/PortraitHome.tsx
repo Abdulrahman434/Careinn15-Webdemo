@@ -10,6 +10,7 @@ import { useLocale } from "./i18n";
 import { localizeDigits } from "../utils/prayerUtils";
 import { useLongPress } from "../lib/useLongPress";
 import { ConnectionStatus } from "./ConnectionStatus";
+import { ContinueCardSlot } from "./ContinueCard";
 import { useCurrentWeather, WEATHER_GLYPH } from "../lib/weather";
 
 /**
@@ -144,7 +145,7 @@ export default function PortraitHome({
             />
             {!connUnderClock && <ConnectionStatus />}
           </div>
-          <div className="flex-1" />
+          <ContinueCardSlot />
           {/* Clock and date — as landscape's top bar (Fakeeh: status under them). */}
           <div data-tour="controls" className="flex items-center shrink-0" style={{ gap: compact ? SPACE[1] : SPACE[2] }}>
           <div className="flex flex-col items-end shrink-0 select-none" style={{ marginInlineEnd: compact ? 0 : SPACE[1] }} {...clockHold.handlers}>

@@ -2548,8 +2548,6 @@ function BedsideScreen() {
           hidden={anyOverlayOpen || showOnboarding || isLocked}
           onOpenGame={(id) => { setAutoResumeGame(id); setActiveGame(id); }}
           onOpenTool={(id) => setActiveTool(id)}
-          layout={layoutMode === 2 ? "ci" : layoutMode === 3 ? "kids" : layoutMode === 4 ? "spotlight"
-            : portrait ? "portrait" : layoutVersion === 2 ? "v2" : layoutVersion === 3 ? "v3" : "v1"}
         />
 
         {/* Survey Modal — inside the canvas so it scales with every other page */}
