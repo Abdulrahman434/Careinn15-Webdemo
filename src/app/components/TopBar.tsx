@@ -8,6 +8,7 @@ import { useLocale } from "./i18n";
 import { getPrayerTimes, PRAYER_KEYS, PRAYER_NAMES, getPrayerStatus, localizeDigits, prayerTimeParts } from "../utils/prayerUtils";
 import { Prayer } from "adhan";
 import { ConnectionStatus } from "./ConnectionStatus";
+import { ContinueCardSlot } from "./ContinueCard";
 import { LOCALE_NAME, LOCALE_CODE } from "./DemoControls";
 import { useLongPress } from "../lib/useLongPress";
 import { useNurseStore, nurseActions } from "./NurseDataStore";
@@ -221,6 +222,7 @@ export function TopBar({ showPrayer = true, onFajrTap, onDhuhrTap, onAsrTap, onM
           />
         </a>
         {SHOW_CONNECTION_STATUS && theme.id !== "dsfh" && <ConnectionStatus />}
+        <ContinueCardSlot />
       </div>
 
       {/* Center: Prayer Times — always dead-center on screen */}

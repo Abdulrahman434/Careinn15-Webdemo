@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { Gamepad2, PenTool, Play, StickyNote, Timer, X, type LucideIcon } from "lucide-react";
 import { useTheme, TEXT_STYLE, SHADOW, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
@@ -12,25 +13,6 @@ import {
   type ContinueActivity,
 } from "../lib/continueActivity";
 
-/** Which home layout is showing; each one has its own clear spot for the card. */
-export type ContinueLayout = "v1" | "v2" | "v3" | "ci" | "kids" | "spotlight" | "portrait";
-
-/* Where the card sits on each home layout, in canvas px (1920×1080; portrait
-   1080×1920). The bottom-start corner itself is taken in every layout but
-   Spotlight — CareMe, the hub tiles, Call Nurse, the shortcut row — so the
-   card sits on the nearest stretch of empty tile or photo, clear of icons,
-   labels and those controls. "start" mirrors in RTL with the layout; CI keeps
-   its tile grid on the same sides in Arabic, so its spot does not move. */
-const PLACEMENT: Record<ContinueLayout, { bottom: number; inset: number; side: "start" | "left" }> = {
-  v1: { bottom: 224, inset: 464, side: "start" },        // empty lower half of the 2nd hub row, above the service row
-  v2: { bottom: 224, inset: 464, side: "start" },        // same, above the shortcut strip
-  v3: { bottom: 381, inset: 497, side: "start" },        // over the greeting photo
-  ci: { bottom: 184, inset: 400, side: "left" },         // on the background photo, right of the tile grid, above the small tiles
-  kids: { bottom: 118, inset: 660, side: "start" },      // empty middle of the last activity row, above the Call Nurse bar
-  spotlight: { bottom: 160, inset: 212, side: "start" }, // beside the sidebar, above the Call bar
-  portrait: { bottom: 436, inset: 33, side: "start" },   // empty lower half of the 2nd hub row
-};
-
 const TOOL_ICON: Record<string, LucideIcon> = { notes: StickyNote, whiteboard: PenTool, stopwatch: Timer };
 
 const hostOf = (s?: string): string | null => {
@@ -41,12 +23,38 @@ const hostOf = (s?: string): string | null => {
   } catch { return null; }
 };
 
+/* Where the card goes: the empty stretch of the top bar after the hospital
+   logo, the same place in every layout. Each top bar marks it with
+   <ContinueCardSlot />. More than one can be mounted at once (Food Ordering
+   draws its own bar over the home one), so the newest wins. */
+const slots: HTMLElement[] = [];
+const slotListeners = new Set<() => void>();
+const subscribeSlots = (fn: () => void) => { slotListeners.add(fn); return () => { slotListeners.delete(fn); }; };
+const currentSlot = () => slots[slots.length - 1] ?? null;
+
+export function ContinueCardSlot() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    slots.push(el);
+    slotListeners.forEach((fn) => fn());
+    return () => {
+      const i = slots.indexOf(el);
+      if (i >= 0) slots.splice(i, 1);
+      slotListeners.forEach((fn) => fn());
+    };
+  }, []);
+  /* The card is absolutely positioned inside, so however wide it is it never
+     widens the top bar's columns or pushes the prayer times off centre. */
+  return <div ref={ref} className="relative flex-1 min-w-0 self-stretch flex items-center" />;
+}
+
 /**
  * "Continue where you left off": the patient's last unfinished app, link,
  * game or tool, one tap from the home screen.
  *
- * Floats in the bottom corner of the 1920×1080 canvas on the side away from
- * the toasts, rendered once for every layout like UpdateBanner. The record
+ * Rendered once by App and shown in the top bar's slot (above). The record
  * lives in continueActivity.ts; this only reads it and re-checks the patient
  * whenever the screen comes back to the front.
  */
@@ -54,17 +62,16 @@ export function ContinueCard({
   hidden,
   onOpenGame,
   onOpenTool,
-  layout = "v1",
 }: {
   hidden: boolean;
   onOpenGame: (id: string) => void;
   onOpenTool: (id: string) => void;
-  layout?: ContinueLayout;
 }) {
   const { theme } = useTheme();
   const { t, locale, isRTL, fontFamily, localizeNumber } = useLocale();
   const [activity, setActivity] = useState<ContinueActivity | null>(() => getVisibleActivity());
   const [now, setNow] = useState(() => Date.now());
+  const slot = useSyncExternalStore(subscribeSlots, currentSlot);
 
   const refresh = useCallback(() => {
     setActivity(getVisibleActivity());
@@ -126,8 +133,40 @@ export function ContinueCard({
     return () => { cancelled = true; };
   }, [rawIcon]);
 
-  if (hidden || !activity) return null;
-  const a = activity;
+  /* How much room the top bar leaves beside the logo depends on the hospital's
+     logo and the screen. The name gives way first (ellipsis, down to
+     SPACE[12] of it); then the icon goes; if Continue and × still do not fit
+     (a phone's header) the card stays out of sight rather than run into the
+     prayer times or off the canvas. Measured from the live elements, so a new
+     logo or language needs no new numbers. */
+  const cardRef = useRef<HTMLDivElement>(null);
+  const nameRef = useRef<HTMLSpanElement>(null);
+  const buttonsRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState<"full" | "noIcon" | "none">("full");
+  const shown = !hidden && !!activity && !!slot;
+  useLayoutEffect(() => {
+    const card = cardRef.current, nameEl = nameRef.current, buttons = buttonsRef.current;
+    if (!shown || !card || !nameEl || !buttons || !slot) return;
+    const check = () => {
+      const s = getComputedStyle(card);
+      const gap = parseFloat(s.columnGap) || 0;
+      const frame = parseFloat(s.paddingLeft) + parseFloat(s.paddingRight)
+        + parseFloat(s.borderLeftWidth) + parseFloat(s.borderRightWidth);
+      const rest = frame + gap + buttons.offsetWidth;
+      const name = Math.min(nameEl.scrollWidth, parseFloat(SPACE[12]));
+      const icon = parseFloat(SPACE[5]) + gap;
+      const room = slot.clientWidth - parseFloat(SPACE[2]);
+      setFit(room >= rest + icon + name ? "full" : room >= rest + name ? "noIcon" : "none");
+    };
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(slot);
+    ro.observe(buttons);
+    return () => ro.disconnect();
+  }, [shown, slot, activity, locale]);
+
+  if (!shown) return null;
+  const a = activity!;
 
   let name: string;
   if (a.kind === "game") name = t(`continue.game.${a.id}`);
@@ -159,38 +198,43 @@ export function ContinueCard({
     }
   };
 
-  const spot = PLACEMENT[layout];
-  const side = spot.side === "left" ? "left" : isRTL ? "right" : "left";
-  const iconBox = { width: SPACE[6], height: SPACE[6], borderRadius: theme.radiusMd, flexShrink: 0 } as const;
+  const iconBox = { width: SPACE[5], height: SPACE[5], borderRadius: theme.radiusMd, flexShrink: 0 } as const;
   const Glyph = a.kind === "game" ? Gamepad2 : a.kind === "tool" ? (TOOL_ICON[a.id] ?? Play) : Play;
   const showImage = (a.kind === "app" || a.kind === "url") && !!iconSrc && !iconFailed;
 
-  return (
+  return createPortal(
     <div
+      ref={cardRef}
       role="status"
+      aria-hidden={fit === "none" || undefined}
       data-continue-card=""
       className="absolute flex items-center"
       style={{
-        bottom: `${spot.bottom}px`,
-        [side]: `${spot.inset}px`,
-        /* Over the home layouts, under every dialog, panel and toast (60+). */
-        zIndex: 50,
-        maxWidth: `calc(100% - 2 * ${SPACE[3]})`,
-        gap: SPACE[2],
-        padding: SPACE[2],
+        /* No offsets: the slot's flex start + centre place it right after the
+           logo, vertically centred in the bar, on the start side in Arabic.
+           SPACE[2] of air before the prayer times. max-content + max-width
+           (rather than shrink-to-fit) is what lets the name, not the card,
+           give way. */
+        width: "max-content",
+        maxWidth: `calc(100% - ${SPACE[2]})`,
+        visibility: fit === "none" ? "hidden" : "visible",
+        /* Hidden content still has layout; keep it from widening a phone's page. */
+        overflow: fit === "none" ? "hidden" : undefined,
+        gap: SPACE[1],
+        padding: SPACE[1],
         borderRadius: theme.radiusLg,
         /* Elevated, not plain surface: in dark mode the plain surface is the
-           tone of the cards it floats over. */
+           top bar's own tone and the card would vanish into it. */
         backgroundColor: theme.surfaceElevated,
         border: theme.cardBorder,
-        boxShadow: SHADOW.xl,
+        boxShadow: SHADOW.md,
         direction: isRTL ? "rtl" : "ltr",
         fontFamily,
         animation: "continueCardIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      <style>{`@keyframes continueCardIn { from { opacity: 0; transform: translateY(${SPACE[2]}); } to { opacity: 1; transform: none; } }`}</style>
-      {showImage ? (
+      <style>{`@keyframes continueCardIn { from { opacity: 0; transform: translateY(-${SPACE[1]}); } to { opacity: 1; transform: none; } }`}</style>
+      {fit !== "full" ? null : showImage ? (
         <ImageWithFallback
           src={iconSrc!}
           alt=""
@@ -199,11 +243,12 @@ export function ContinueCard({
         />
       ) : (
         <div className="flex items-center justify-center" style={{ ...iconBox, backgroundColor: theme.primarySubtle }}>
-          <Glyph size={26} strokeWidth={2.2} style={{ color: theme.iconBrand }} />
+          <Glyph size={22} strokeWidth={2.2} style={{ color: theme.iconBrand }} />
         </div>
       )}
-      <div className="flex flex-col min-w-0" style={{ maxWidth: SPACE[24] }}>
+      <div className="flex flex-col min-w-0">
         <span
+          ref={nameRef}
           style={{
             ...TEXT_STYLE.subtitle, color: theme.textHeading,
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
@@ -211,15 +256,34 @@ export function ContinueCard({
         >
           {name}
         </span>
-        <span style={{ ...TEXT_STYLE.body, color: theme.textMuted, whiteSpace: "nowrap" }}>{ago}</span>
+        <span
+          style={{
+            ...TEXT_STYLE.caption, color: theme.textMuted,
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          }}
+        >
+          {ago}
+        </span>
       </div>
-      <TouchButton onClick={onContinue} style={{ fontFamily, gap: SPACE[1], flexShrink: 0, whiteSpace: "nowrap" }}>
-        <Play size={20} strokeWidth={2.5} fill="currentColor" />
-        {t("continue.action")}
-      </TouchButton>
-      <IconButton onClick={() => clearActivity()} aria-label={t("continue.dismiss")} style={{ flexShrink: 0 }}>
-        <X size={20} strokeWidth={2.5} style={{ color: theme.textMuted }} />
-      </IconButton>
-    </div>
+      <div ref={buttonsRef} className="flex items-center shrink-0" style={{ gap: SPACE[1] }}>
+        {/* Touch-sized (touchTargetMin) but no taller: the card has to sit
+            inside the top bar. */}
+        <TouchButton
+          small
+          onClick={onContinue}
+          style={{ height: theme.touchTargetMin, paddingLeft: SPACE[2], paddingRight: SPACE[2], fontFamily, whiteSpace: "nowrap" }}
+        >
+          {t("continue.action")}
+        </TouchButton>
+        <IconButton
+          onClick={() => clearActivity()}
+          aria-label={t("continue.dismiss")}
+          style={{ width: theme.touchTargetMin, height: theme.touchTargetMin }}
+        >
+          <X size={20} strokeWidth={2.5} style={{ color: theme.textMuted }} />
+        </IconButton>
+      </div>
+    </div>,
+    slot!,
   );
 }
