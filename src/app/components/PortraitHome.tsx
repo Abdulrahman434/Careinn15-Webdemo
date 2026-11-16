@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Bell, Settings } from "lucide-react";
 import { NewsTicker } from "./NewsTicker";
 import { ApiImage } from "./ApiImage";
@@ -11,7 +11,7 @@ import { localizeDigits } from "../utils/prayerUtils";
 import { useLongPress } from "../lib/useLongPress";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { PORTRAIT } from "./homeLayout";
-import { useContinueLane } from "../lib/continueLane";
+import { setPageLeavesLane, useContinueLane } from "../lib/continueLane";
 import { useCurrentWeather, WEATHER_GLYPH } from "../lib/weather";
 
 /**
@@ -83,11 +83,34 @@ export default function PortraitHome({
   /* The 1080×1920 bedside screen has far more height than the summary card
      needs, so there CareMe shows in full — the same card as landscape. */
   const roomy = !compact && height >= PORTRAIT.roomyMinHeight;
-  const pad = compact ? SPACE[2] : `${PORTRAIT.edge}px`;
-  const gap = compact ? SPACE[2] : `${PORTRAIT.gap}px`;
-  /* Phones: the page ends above the Continue card's lane, so nothing scrolls
-     under the card; the room grows and shrinks with the card. */
+  const pad = `${compact ? PORTRAIT.phoneEdge : PORTRAIT.edge}px`;
+  const gap = `${compact ? PORTRAIT.phoneGap : PORTRAIT.gap}px`;
+
+  /* A page that scrolls (a phone, a tablet, a browser window) ends above the
+     Continue card's lane, so nothing scrolls under the card; the room grows
+     and shrinks with the card. A page that fits (the bedside screen) keeps
+     its full height. "Scrolls" is read from the page: would its content
+     overflow without the lane? */
   const lane = useContinueLane();
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [scrolls, setScrolls] = useState(false);
+  useLayoutEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    const check = () => {
+      const leftForLane = parseFloat(getComputedStyle(el).marginBottom) || 0;
+      setScrolls(el.scrollHeight > el.clientHeight + leftForLane + 1);
+    };
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    Array.from(el.children).forEach((c) => ro.observe(c));
+    return () => ro.disconnect();
+  }, []);
+  useEffect(() => {
+    setPageLeavesLane(scrolls);
+    return () => setPageLeavesLane(false);
+  }, [scrolls]);
 
   const [now, setNow] = useState(new Date());
   useEffect(() => {
@@ -214,8 +237,9 @@ export default function PortraitHome({
 
       {/* ── Body ── (phones: the smaller radius scale comes from App.tsx) */}
       <div
+        ref={bodyRef}
         className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden transition-[margin-bottom] duration-[350ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none"
-        style={{ padding: pad, gap, marginBottom: compact ? lane : 0 }}
+        style={{ padding: pad, gap, marginBottom: scrolls ? lane : 0 }}
       >
         {/* Greeting and CareMe — the same two cards as landscape's left
             column, side by side (stacked on phones). */}

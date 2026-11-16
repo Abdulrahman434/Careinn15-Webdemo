@@ -4,6 +4,7 @@ import { useTheme, TEXT_STYLE, SHADOW, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { DIALOG, DialogActions, DialogButton } from "./dialogKit";
 import { setHasSeenAppLockTutorial } from "../lib/appLockTutorialStore";
+import { useCoversHome } from "../lib/coversHome";
 
 export interface TargetTileInfo {
   id: string;
@@ -31,6 +32,7 @@ export function AppLockTutorialOverlay({
 }: AppLockTutorialOverlayProps) {
   const { theme: t } = useTheme();
   const { t: tr, isRTL, fontFamily } = useLocale();
+  useCoversHome();
 
   const [holdProgress, setHoldProgress] = useState(0); // 0 to 100
   const [isHolding, setIsHolding] = useState(false);

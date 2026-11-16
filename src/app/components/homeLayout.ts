@@ -34,6 +34,9 @@ export const SERVICES_GRID = {
 export const PORTRAIT = {
   edge: px(SPACE[4]),
   gap: px(SPACE[3]),
+  /** Phones (a canvas under 700 wide). */
+  phoneEdge: px(SPACE[2]),
+  phoneGap: px(SPACE[2]),
   /** From this canvas height the page is "roomy" (the bedside screen). */
   roomyMinHeight: 1600,
   shortcutsRow: { roomy: 160, tablet: 124, phone: 104 },
