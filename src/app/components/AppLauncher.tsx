@@ -27,6 +27,7 @@ import {
 import { ApiImage } from "./ApiImage";
 
 import { useLockedApps } from "../lib/lockedApps";
+import { recordLaunch, clearActivity } from "../lib/continueActivity";
 import { useLongPress } from "../lib/useLongPress";
 import { AppLockMenu } from "./AppLockMenu";
 import { LockBadge } from "./LockBadge";
@@ -1737,6 +1738,7 @@ export function AppLauncher({
   useEffect(() => {
     const onLaunched = () => setOpeningApp(null);
     const onFailed = () => setOpeningApp(prev => {
+      clearActivity();
       if (prev) window.AndroidSystem?.showToast?.("Couldn't open the app.", false);
       return null;
     });
@@ -1858,10 +1860,16 @@ export function AppLauncher({
         finalUrl = `https://www.google.com/search?igu=1`;
       }
       
+      recordLaunch({ kind: "url", id: finalUrl, name: finalUrl });
       window.open(finalUrl, "_blank", "noopener,noreferrer");
     } else {
       setUrlError(t("launcher.invalidUrl") || "Please enter a valid URL");
     }
+  };
+
+  const recordAppLaunch = (kind: "app" | "url", id: string, app: any) => {
+    const bundled = app.id === "youtube" ? youtubeIcon : app.id === "netflix" ? netflixIcon : undefined;
+    recordLaunch({ kind, id, name: app.name, nameAr: app.nameAr, icon: app.imageUrl || bundled });
   };
 
   const handleAppTap = (app: any) => {
@@ -1883,6 +1891,7 @@ export function AppLauncher({
         const pkg = app.packageName;
         // Show an "Opening…" overlay while native whitelists (Lock Task) + launches.
         setOpeningApp({ packageName: pkg, name: app.nameKey ? t(app.nameKey) : app.name });
+        recordAppLaunch("app", pkg, app);
         window.AndroidSystem?.launchApp?.(pkg);
         // Backstop: clear the overlay if no app-launched/app-launch-failed event arrives.
         setTimeout(() => setOpeningApp(prev => (prev?.packageName === pkg ? null : prev)), 6000);
@@ -1910,6 +1919,7 @@ export function AppLauncher({
         return;
       }
       if (app.url) {
+        recordAppLaunch("url", app.url, app);
         if (onOpenUrl) onOpenUrl(app.url);
         else window.open(app.url, "_blank", "noopener,noreferrer");
         return;
@@ -1919,6 +1929,7 @@ export function AppLauncher({
 
     // 1b. URL fallback
     if (app.url) {
+      recordAppLaunch("url", app.url, app);
       if (isAndroidApp() && onOpenUrl) {
         onOpenUrl(app.url);
       } else {

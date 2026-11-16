@@ -99,6 +99,7 @@ import {
 } from "./lib/hospitalApi";
 import { nurseActions, useNurseStore } from "./components/NurseDataStore";
 import { getDeviceInfo } from "./utils/androidBridge";
+import { recordLaunch } from "./lib/continueActivity";
 import { OnboardingWizard } from "./components/OnboardingWizard";
 import { isOnboardingComplete } from "./lib/onboardingStore";
 import { startDataLifecycleWatchers } from "./lib/dataLifecycle";
@@ -1286,6 +1287,7 @@ function BedsideScreen() {
               setSurveyInitialPath(initialPath);
               setShowSurvey(true);
             } else if (action === "open-url" && url) {
+              recordLaunch({ kind: "url", id: url, name: titleText, nameAr: prev.title.ar || undefined });
               window.open(url, "_blank", "noopener,noreferrer");
             }
           }
