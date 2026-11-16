@@ -100,7 +100,7 @@ import {
 } from "./lib/hospitalApi";
 import { nurseActions, useNurseStore } from "./components/NurseDataStore";
 import { getDeviceInfo } from "./utils/androidBridge";
-import { recordLaunch, recordBuiltInLeft, clearActivity } from "./lib/continueActivity";
+import { recordLaunch, recordBuiltInLeft, clearActivity, RESUMABLE_GAMES, RESUMABLE_TOOLS } from "./lib/continueActivity";
 import { OnboardingWizard } from "./components/OnboardingWizard";
 import { isOnboardingComplete } from "./lib/onboardingStore";
 import { startDataLifecycleWatchers } from "./lib/dataLifecycle";
@@ -610,22 +610,25 @@ function BedsideScreen() {
   const [autoResumeGame, setAutoResumeGame] = useState<string | null>(null);
   /* Leaving a game or tool by any path (Home, Back, Escape, its own close)
      leaves the Continue card behind if it has progress saved; opening one
-     replaces whatever the card held. */
+     replaces whatever the card held. Only the resumable ones: a quick look at
+     Room Control or the Calculator leaves the card as it was. */
   const prevGameRef = useRef<string | null>(null);
   useEffect(() => {
     const prev = prevGameRef.current;
     prevGameRef.current = activeGame;
     if (prev === activeGame) return;
-    if (prev) { recordBuiltInLeft("game", prev); setAutoResumeGame(null); }
-    if (activeGame) clearActivity();
+    if (prev) setAutoResumeGame(null);
+    if (prev && RESUMABLE_GAMES.includes(prev)) recordBuiltInLeft("game", prev);
+    if (activeGame && RESUMABLE_GAMES.includes(activeGame)) clearActivity();
   }, [activeGame]);
   const prevToolRef = useRef<string | null>(null);
   useEffect(() => {
     const prev = prevToolRef.current;
     prevToolRef.current = activeTool;
     if (prev === activeTool) return;
-    if (prev) recordBuiltInLeft("tool", prev);
-    if (activeTool) clearActivity();
+    const tools: readonly string[] = RESUMABLE_TOOLS;
+    if (prev && tools.includes(prev)) recordBuiltInLeft("tool", prev);
+    if (activeTool && tools.includes(activeTool)) clearActivity();
   }, [activeTool]);
   const [showPreferenceForm, setShowPreferenceForm] = useState(false);
   const [showBlankPage, setShowBlankPage] = useState(false);
@@ -2544,8 +2547,10 @@ function BedsideScreen() {
           </div>
         )}
         <UpdateBanner screenKey={screenKey} idle={showTasbih} />
+        {/* Hidden from a guest (either kind): Continue opens the patient's
+            last app or game in one tap. */}
         <ContinueCard
-          hidden={anyOverlayOpen || showOnboarding || isLocked}
+          hidden={anyOverlayOpen || showOnboarding || isLocked || isGuest || guestSession}
           onOpenGame={(id) => { setAutoResumeGame(id); setActiveGame(id); }}
           onOpenTool={(id) => setActiveTool(id)}
         />

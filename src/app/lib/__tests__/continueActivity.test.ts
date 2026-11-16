@@ -15,9 +15,9 @@ const store = new Map<string, string>();
 };
 
 import {
-  CONTINUE_KEY, applyLocation, recordLaunch, markReturned, recordBuiltInLeft,
-  hasResumableSave, latestSaveKey, getVisibleActivity, clearActivity,
-  clearPatientActivity, currentPatientKey, subscribe,
+  CONTINUE_KEY, PATIENT_KEY, applyLocation, recordLaunch, markReturned, recordBuiltInLeft,
+  hasResumableSave, latestSaveKey, getVisibleActivity, clearActivity, clearPendingLaunch,
+  clearPatientActivity, currentPatientKey, subscribe, usableSave,
 } from "../continueActivity";
 
 let pass = 0, fail = 0;
@@ -46,6 +46,15 @@ ok("markReturned ignores records already returned",
 reset(); recordLaunch(YT); recordLaunch({ kind: "url", id: "https://www.netflix.com/" }); markReturned();
 ok("new launch replaces previous", getVisibleActivity()?.kind === "url");
 
+reset(); recordLaunch(YT); clearPendingLaunch();
+ok("clearPendingLaunch clears a pending app", !has(CONTINUE_KEY));
+reset(); recordLaunch({ kind: "url", id: "https://www.netflix.com/" }); clearPendingLaunch();
+ok("clearPendingLaunch clears a pending link", !has(CONTINUE_KEY));
+reset(); localStorage.setItem("brain-math-game-state", "{}"); recordBuiltInLeft("game", "brainmath"); clearPendingLaunch();
+ok("clearPendingLaunch leaves a returned game record", getVisibleActivity()?.kind === "game");
+reset(); recordLaunch(YT); markReturned(); clearPendingLaunch();
+ok("clearPendingLaunch leaves an app the patient came back from", getVisibleActivity()?.id === YT.id);
+
 console.log("\n— games and tools —");
 reset();
 recordBuiltInLeft("game", "brainmath");
@@ -66,6 +75,13 @@ const empty = hasResumableSave("game", "tictactoe");
 localStorage.setItem("tictactoe-game-state", JSON.stringify({ squares: ["X", ...Array(8).fill(null)] }));
 ok("tictactoe empty board not resumable, played board is", empty === false && hasResumableSave("game", "tictactoe") === true);
 
+reset(); localStorage.setItem("tictactoe-game-state", JSON.stringify({ squares: ["X", "X", "X", "O", "O", null, null, null, null] }));
+recordBuiltInLeft("game", "tictactoe");
+ok("tictactoe won board not resumable", hasResumableSave("game", "tictactoe") === false && getVisibleActivity() === null);
+reset(); localStorage.setItem("tictactoe-game-state", JSON.stringify({ squares: ["X", "O", "X", "X", "O", "O", "O", "X", "X"] }));
+recordBuiltInLeft("game", "tictactoe");
+ok("tictactoe full drawn board not resumable", hasResumableSave("game", "tictactoe") === false && getVisibleActivity() === null);
+
 reset(); localStorage.setItem("brain-math-game-state", "{}"); recordBuiltInLeft("game", "brainmath");
 localStorage.removeItem("brain-math-game-state");
 ok("finished game hides card", getVisibleActivity() === null);
@@ -79,15 +95,52 @@ ok("latestSaveKey unknown game is null", latestSaveKey("nope") === null);
 reset(); localStorage.setItem("careinn-tool-notes", "x");
 ok("tool resumable when key exists", hasResumableSave("tool", "notes") && !hasResumableSave("tool", "stopwatch"));
 
+console.log("\n— autoResume save guard —");
+const hasCards = (s: any) => Array.isArray(s.cards);
+reset(); localStorage.setItem("memory-match-hard-state", JSON.stringify({ cards: [] })); localStorage.setItem("memory-match-easy-state", "{oops");
+ok("usableSave keeps a good save", usableSave("memory-match-hard-state", hasCards) && has("memory-match-hard-state"));
+ok("usableSave removes a corrupt save, only that key", !usableSave("memory-match-easy-state", hasCards) && !has("memory-match-easy-state") && has("memory-match-hard-state"));
+reset(); localStorage.setItem("emoji-match-game-state", JSON.stringify({ score: 3 }));
+ok("usableSave removes a partial save", !usableSave("emoji-match-game-state", (s) => Array.isArray(s.leftEmojis)) && !has("emoji-match-game-state"));
+reset(); localStorage.setItem("brain-math-game-state", "null");
+let guardThrew = false, guardOk = true;
+try { guardOk = usableSave("brain-math-game-state", (s) => Array.isArray(s.equation.options)); } catch { guardThrew = true; }
+ok("usableSave survives a check that throws", !guardThrew && !guardOk && !has("brain-math-game-state"));
+reset();
+ok("usableSave with no save is false", !usableSave("wordchain-game-state", () => true));
+
+console.log("\n— app lock —");
+reset(); recordLaunch({ ...YT, lockId: "youtube" }); markReturned();
+ok("app lockId recorded and returned", getVisibleActivity()?.lockId === "youtube");
+reset(); recordLaunch({ kind: "url", id: "https://www.bbc.com/", lockId: "shortcut.news" }); markReturned();
+ok("url lockId recorded and returned", getVisibleActivity()?.lockId === "shortcut.news");
+reset(); recordLaunch(YT); markReturned();
+ok("no lockId when the launch has none", getVisibleActivity() !== null && getVisibleActivity()?.lockId === undefined);
+reset(); localStorage.setItem("careinn-tool-notes", "x"); recordBuiltInLeft("tool", "notes");
+ok("tool lock id is its own id", getVisibleActivity()?.lockId === "notes");
+reset(); localStorage.setItem("brain-math-game-state", "{}"); recordBuiltInLeft("game", "brainmath");
+ok("game lock id is its own id", getVisibleActivity()?.lockId === "brainmath");
+
 console.log("\n— patients —");
-reset(); applyLocation(A); localStorage.setItem("brain-math-game-state", "{}"); recordBuiltInLeft("game", "brainmath");
-for (const k of ["brain-math-high-score", "memory-best-scores", "game-lang-memory-match", "careinn-tool-notes", "wordchain-highscore", "careinn-api-config"])
-  localStorage.setItem(k, "1");
+/* One real key per wipe prefix, as the games and tools write them. */
+const PATIENT_DATA_KEYS = [
+  "memory-match-hard-state", "memory-best-scores", "tictactoe-game-state", "sliding-puzzle-easy-state",
+  "color-match-game-state", "color-match-high-score", "pattern-memory-game-state", "pattern-high-score",
+  "emoji-match-game-state", "simon-game-state", "simon-high-score", "word-search-hard-ar-state",
+  "reaction-speed-classic-state", "reaction-leaderboard", "brain-math-game-state", "brain-math-high-level",
+  "trivia-quiz-game-state", "jigsaw-puzzle-hard-state", "wordchain-game-state", "wordchain-highscore",
+  "game-lang-memory-match", "careinn-tool-notes", "careinn-tool-whiteboard", "careinn-tool-stopwatch",
+];
+reset(); applyLocation(A);
+for (const k of [...PATIENT_DATA_KEYS, "careinn-api-config"]) localStorage.setItem(k, "{}");
+recordBuiltInLeft("game", "brainmath");
+const seeded = getVisibleActivity() !== null && PATIENT_DATA_KEYS.every(has);
 applyLocation(B);
-ok("patient change wipes card", getVisibleActivity() === null);
-ok("patient change wipes game/tool keys",
-  !["brain-math-game-state", "brain-math-high-score", "memory-best-scores", "game-lang-memory-match", "careinn-tool-notes", "wordchain-highscore"].some(has));
-ok("patient change keeps unrelated keys and sets new patient", has("careinn-api-config") && currentPatientKey() === "P2|R2");
+ok("patient change wipes card", seeded && getVisibleActivity() === null && !has(CONTINUE_KEY));
+ok("patient change wipes every game/tool key",
+  PATIENT_DATA_KEYS.filter(has).length === 0);
+ok("patient change keeps unrelated keys and sets new patient",
+  has("careinn-api-config") && has(PATIENT_KEY) && currentPatientKey() === "P2|R2");
 
 reset(); applyLocation(A); localStorage.setItem("brain-math-game-state", "{}"); recordBuiltInLeft("game", "brainmath");
 applyLocation({ patient_id: "", admit_data: "" });
@@ -115,7 +168,7 @@ console.log("\n— subscribe —");
 reset(); let n = 0; const off = subscribe(() => { n++; });
 recordLaunch(YT); clearActivity(); clearPatientActivity();
 const counted = n; off(); recordLaunch(YT);
-ok("subscribe notifies on launch, clear, patient clear", counted >= 3);
+ok("subscribe notifies on launch, clear, patient clear", counted === 3);
 ok("unsubscribe stops notifications", n === counted);
 
 console.log(`\n${pass} passed, ${fail} failed`);

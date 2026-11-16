@@ -9,9 +9,10 @@ import { proxyImageUrl } from "../lib/imageProxy";
 import { fetchDeviceLocation } from "../lib/hospitalApi";
 import { apps, getDeviceInfo, useAndroidEvent } from "../utils/androidBridge";
 import {
-  applyLocation, clearActivity, getVisibleActivity, markReturned, recordLaunch, subscribe,
+  applyLocation, clearActivity, clearPendingLaunch, getVisibleActivity, markReturned, recordLaunch, subscribe,
   type ContinueActivity,
 } from "../lib/continueActivity";
+import { useLockedApps } from "../lib/lockedApps";
 
 const TOOL_ICON: Record<string, LucideIcon> = { notes: StickyNote, whiteboard: PenTool, stopwatch: Timer };
 
@@ -103,7 +104,6 @@ export function ContinueCard({
     applyLocation(await fetchDeviceLocation(serial));
     refresh();
   }, [refresh]);
-  useEffect(() => { void recheckPatient(); }, [recheckPatient]);
 
   /* Back from an outside app: kiosk-resumed on the kiosk, the tab becoming
      visible in a browser. Only now does an app/link record become a card. */
@@ -111,8 +111,17 @@ export function ContinueCard({
     markReturned();
     void recheckPatient();
   }, [recheckPatient]);
+  /* A low-RAM kiosk can reload the WebView while the outside app is in front,
+     and kiosk-resumed then fires before anything is listening. Being on
+     screen when the card mounts counts as the return. */
+  useEffect(() => {
+    if (document.visibilityState === "visible") onReturn();
+    else void recheckPatient();
+  }, [onReturn, recheckPatient]);
   useAndroidEvent("kiosk-resumed", onReturn);
-  useAndroidEvent("app-launch-failed", () => clearActivity());
+  /* Only the launch that failed: a game or an app the patient already came
+     back from stays. */
+  useAndroidEvent("app-launch-failed", () => clearPendingLaunch());
   useEffect(() => {
     const onVisible = () => { if (document.visibilityState === "visible") onReturn(); };
     document.addEventListener("visibilitychange", onVisible);
@@ -143,7 +152,11 @@ export function ContinueCard({
   const nameRef = useRef<HTMLSpanElement>(null);
   const buttonsRef = useRef<HTMLDivElement>(null);
   const [fit, setFit] = useState<"full" | "noIcon" | "none">("full");
-  const shown = !hidden && !!activity && !!slot;
+  /* Continue opens without the app-lock PIN, so a locked app, link, game or
+     tool gets no card until the patient unlocks it. */
+  const lockedIds = useLockedApps();
+  const locked = !!activity?.lockId && lockedIds.has(activity.lockId);
+  const shown = !hidden && !!activity && !locked && !!slot;
   useLayoutEffect(() => {
     const card = cardRef.current, nameEl = nameRef.current, buttons = buttonsRef.current;
     if (!shown || !card || !nameEl || !buttons || !slot) return;
@@ -186,10 +199,10 @@ export function ContinueCard({
 
   const onContinue = () => {
     if (a.kind === "app") {
-      recordLaunch({ kind: "app", id: a.id, name: a.name, nameAr: a.nameAr, icon: a.icon });
+      recordLaunch({ kind: "app", id: a.id, name: a.name, nameAr: a.nameAr, icon: a.icon, lockId: a.lockId });
       apps.launch(a.id);
     } else if (a.kind === "url") {
-      recordLaunch({ kind: "url", id: a.id, name: a.name, nameAr: a.nameAr, icon: a.icon });
+      recordLaunch({ kind: "url", id: a.id, name: a.name, nameAr: a.nameAr, icon: a.icon, lockId: a.lockId });
       window.open(a.id, "_blank", "noopener,noreferrer");
     } else if (a.kind === "game") {
       onOpenGame(a.id);

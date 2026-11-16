@@ -15,6 +15,10 @@ export interface ContinueActivity {
   name?: string;         // app/url display name as launched (en)
   nameAr?: string;
   icon?: string;         // app/url icon (bundled asset or API url, unproxied)
+  /* The id the app lock (lockedApps) knows this by: a launcher app's id, a
+     shortcut's labelKey, a game or tool's own id. While it is locked the card
+     stays hidden, so a locked app never opens without its PIN. */
+  lockId?: string;
   leftAt: number;        // ms
   patientKey: string;
   returned: boolean;     // false while an outside app is in front
@@ -93,16 +97,26 @@ function readRecord(): ContinueActivity | null {
   } catch { return null; }
 }
 
+const TICTACTOE_LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+
+/* TicTacToe keeps its board saved after a game ends, so its save alone says
+   nothing: only a board that is started, not full and not won is a game to
+   go back to. */
+function ticTacToeInPlay(sq: unknown): boolean {
+  if (!Array.isArray(sq) || sq.length !== 9) return false;
+  const marked = (i: number) => sq[i] !== null && sq[i] !== undefined;
+  const cells = sq.map((_, i) => marked(i));
+  if (!cells.some(Boolean) || cells.every(Boolean)) return false;
+  return !TICTACTOE_LINES.some(([a, b, c]) => marked(a) && sq[a] === sq[b] && sq[a] === sq[c]);
+}
+
 function saveKeys(gameId: string): string[] {
   const re = GAME_SAVE[gameId];
   if (!re) return [];
   return allKeys().filter(k => {
     if (!re.test(k)) return false;
     if (gameId !== "tictactoe") return true;
-    try {
-      const sq = JSON.parse(read(k) || "{}").squares;
-      return Array.isArray(sq) && sq.some(s => s !== null && s !== undefined);
-    } catch { return false; }
+    try { return ticTacToeInPlay(JSON.parse(read(k) || "{}").squares); } catch { return false; }
   });
 }
 
@@ -126,9 +140,33 @@ export function latestSaveKey(gameId: string): string | null {
   return best;
 }
 
+/**
+ * For a game's autoResume (opened from the card, so no resume prompt): is the
+ * save at `key` one the game can open? A save that does not parse, or lacks
+ * what `isUsable` checks for, would crash the game or leave a blank board
+ * every time the card opened it, so it is removed and the game starts as if
+ * there were none.
+ */
+export function usableSave(key: string, isUsable: (state: any) => boolean): boolean {
+  const raw = read(key);
+  if (raw === null) return false;
+  try {
+    const state = JSON.parse(raw);
+    if (state && typeof state === "object" && isUsable(state)) return true;
+  } catch { /* corrupt: removed below */ }
+  remove(key);
+  return false;
+}
+
 export function clearActivity(): void {
   remove(CONTINUE_KEY);
   notify();
+}
+
+/** app-launch-failed: drops an app/link launch the patient never left for, and nothing else. */
+export function clearPendingLaunch(): void {
+  const rec = readRecord();
+  if (rec && (rec.kind === "app" || rec.kind === "url") && rec.returned === false) clearActivity();
 }
 
 /** Removes the activity record and every game/tool save and score. Keeps the patient key. */
@@ -150,11 +188,11 @@ export function applyLocation(loc: { patient_id?: string; admit_data?: string } 
 }
 
 export function recordLaunch(
-  item: { kind: "app" | "url"; id: string; name?: string; nameAr?: string; icon?: string },
+  item: { kind: "app" | "url"; id: string; name?: string; nameAr?: string; icon?: string; lockId?: string },
   now: number = Date.now(),
 ): void {
   const rec: ContinueActivity = {
-    kind: item.kind, id: item.id, name: item.name, nameAr: item.nameAr, icon: item.icon,
+    kind: item.kind, id: item.id, name: item.name, nameAr: item.nameAr, icon: item.icon, lockId: item.lockId,
     leftAt: now, patientKey: currentPatientKey(), returned: false,
   };
   write(CONTINUE_KEY, JSON.stringify(rec));
@@ -170,7 +208,7 @@ export function markReturned(now: number = Date.now()): void {
 
 export function recordBuiltInLeft(kind: "game" | "tool", id: string, now: number = Date.now()): void {
   if (!hasResumableSave(kind, id)) { clearActivity(); return; }
-  const rec: ContinueActivity = { kind, id, leftAt: now, patientKey: currentPatientKey(), returned: true };
+  const rec: ContinueActivity = { kind, id, lockId: id, leftAt: now, patientKey: currentPatientKey(), returned: true };
   write(CONTINUE_KEY, JSON.stringify(rec));
   notify();
 }

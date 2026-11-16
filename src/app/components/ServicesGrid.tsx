@@ -164,6 +164,7 @@ function openShortcutUrl(item: { labelKey: string; url?: string; icon?: string }
     name: translateWithLocale(item.labelKey, "en"),
     nameAr: translateWithLocale(item.labelKey, "ar"),
     icon: item.icon || undefined,
+    lockId: item.labelKey,
   });
   window.open(item.url, "_blank", "noopener,noreferrer");
 }
