@@ -123,6 +123,31 @@ Gentle slide-in when it appears. Must be checked in Classic v1/v2/v3, CI, Spotli
 
 New strings (en/ar/ur): "Continue", "Left {n} min ago" / "just now", "Dismiss" (aria).
 
+> **Superseded by §6b.** The bottom corner covered home tiles in 4 layouts, so the card moved into a top-bar slot after the logo (white card). Sara tested that on 2026-11-16: "good but not clear at all, I barely noticed it… this is a floating item". She compared full-screen mock-ups (A brand-coloured top-bar card, B floating mini-player, C pop-then-dock) and chose **C**.
+
+### 6b. Pop, then dock (Sara, 2026-11-16)
+
+**Why:** the card must be noticed at the moment of frustration (just back on the home screen after leaving something by mistake), without permanently covering home controls.
+
+**Two states, one record:**
+- **Popped (floating mini-player):** large brand-coloured card floating at the bottom centre of the canvas, above content — big icon tile, title "Continue {name}", "Left … ago", large Continue button, ×. Strongest shadow token. Slides up when it appears.
+- **Docked (top bar):** the existing top-bar slot after the logo, but brand-coloured (filled `theme.primary`, `brandOnPrimary` text, inverted Continue button, soft ring) so it stands out from the header — mock-up A.
+
+**When it pops:** each time a new record becomes visible — the patient returns from an outside app/link, or closes a resumable game/tool. Once per record (per `leftAt`); a page reload with an existing record may pop again (acceptable). Records already docked stay docked.
+
+**When it docks:** after ~10 seconds, or immediately when the patient touches anywhere outside the popped card (that touch still does what it was meant to do — e.g. opens the tile under the finger if it wasn't under the card). Docking animates the card shrinking toward the top bar (short, ≤ 400 ms; respects reduced motion).
+
+**Actions:** Continue (either state) = resume as before. × (either state) = dismiss the record entirely.
+
+**Must never cover:** Call / Call Nurse / I Need Something, CareMe, or the top bar. Service tiles may be covered only while popped (≤10 s).
+- **Kids layout:** the popped card sits **above** the bottom action bar (Call Nurse / I Need Something), not over it.
+- **Portrait:** popped card at the bottom centre above any call/nurse controls; verify with screenshots.
+- **Phone-width canvases:** popped card fits the width (no overflow); docked state keeps today's fit rules (may hide).
+
+**Dark mode:** navy-on-dark disappears (mock-up A dark: 1.12:1). The docked card uses a lighter brand tint (e.g. `primaryLight` or another existing token) with ≥ 3:1 contrast against the dark top bar; the popped card likewise must stand out against dark content. If no existing token gives the contrast, flag it rather than inlining a colour.
+
+**Same as before:** visibility rules (§3), hidden states (overlays, locks, guest, onboarding), patient wipe (§4), resume (§5).
+
 ### 7. Native follow-up (separate request to the Android team — not blocking)
 
 Ask native to include in `kiosk-resumed` a detail `{ lastPackage, reason: "home" | "back" | "crash" | "unknown" }`, and to type the `app-launched` payload. When available, the web side can show the card only for HOME/crash and skip it when the patient deliberately backed out. Until then the card shows for any return from an app.
@@ -133,6 +158,7 @@ Ask native to include in `kiosk-resumed` a detail `{ lastPackage, reason: "home"
 - Must disappear on discharge and on patient change.
 - Approach A (floating card, all layouts).
 - On patient change / discharge, wipe **everything**: the card and all saved game/tool progress (and scores).
+- Card look and place: **C — pop, then dock** (§6b), with Kids above the action bar and a lighter tint in dark mode (2026-11-16).
 
 ## Calls made by Claude (open to correction)
 
@@ -145,7 +171,8 @@ Ask native to include in `kiosk-resumed` a detail `{ lastPackage, reason: "home"
 - Card shows after *any* exit from an app (we can't detect accidental HOME yet) — refined once native sends `reason`.
 - Excluded: Reaction Time, Simon Says, and tools without real progress.
 - `autoResume` prop to skip the games' own resume prompt.
-- Bottom corner opposite the toasts.
+- ~~Bottom corner opposite the toasts.~~ Replaced by §6b.
+- §6b details: pops once per record, docks after ~10 s or on any touch outside it (the touch still works), × dismisses in both states.
 
 ## Left to the builder
 
