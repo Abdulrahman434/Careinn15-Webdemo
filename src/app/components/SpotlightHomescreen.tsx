@@ -242,8 +242,9 @@ export default function SpotlightHomescreen({
           ))}
         </div>
 
-        {/* ── Quick actions bar ── */}
+        {/* ── Quick actions bar ── (keep-clear: the popped Continue card sits above it) */}
         <div
+          data-continue-keep-clear=""
           className="absolute flex items-center"
           style={{
             ...glass(78),

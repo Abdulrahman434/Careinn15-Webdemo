@@ -311,6 +311,8 @@ function ServiceCard({ item, onTap, square, contained, compact, onLongPress, isL
   return (
     <button
       data-nav="true"
+      /* The popped Continue card never covers Call. */
+      data-continue-keep-clear={item.label === "Call" ? "" : undefined}
       onPointerDown={(e) => { onPointerDown(e); handlers.onPointerDown(); setPressed(true); }}
       onPointerUp={() => { handlers.onPointerUp(); setPressed(false); }}
       onPointerLeave={() => { handlers.onPointerLeave(); setPressed(false); }}
