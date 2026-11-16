@@ -2079,28 +2079,31 @@ export function AppLauncher({
               data-active={isActive}
               className="flex flex-col items-center justify-center shrink-0 transition-transform duration-200 active:scale-90"
               style={{
-                width: isActive ? (compact ? 100 : 130) : (compact ? 76 : 90),
-                height: compact ? 64 : 72,
+                /* Every card is the same size; the open one is marked only
+                   by its white outline, so nothing grows or shifts. Same
+                   look as the app tiles above, a little wider than tall. */
+                width: 136,
+                height: 116,
                 borderRadius: theme.radiusLg,
-                background: isActive ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.06)",
-                border: isActive ? "2px solid rgba(255,255,255,0.4)" : "1.5px solid rgba(255,255,255,0.08)",
+                background: isActive ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.12)",
+                border: isActive ? "2px solid #fff" : "2px solid rgba(255,255,255,0.12)",
                 backdropFilter: "blur(12px)",
                 cursor: "pointer",
-                boxShadow: isActive ? "0 0 20px rgba(255,255,255,0.1)" : "none",
-                gap: 6,
+                gap: 10,
+                ...(compact ? { zoom: 0.6 } : {}),
               }}
             >
-              <Icon size={26} strokeWidth={isActive ? 2.2 : 1.8} color={isActive ? "#fff" : "rgba(255,255,255,0.4)"} />
+              <Icon size={36} strokeWidth={1.8} color="#fff" />
               <span
                 style={{
-                  color: isActive ? "#fff" : "rgba(255,255,255,0.4)",
-                  fontSize: isActive ? "12px" : "11px",
-                  fontWeight: isActive ? 700 : 500,
+                  color: "#fff",
+                  fontSize: "14px",
+                  fontWeight: 600,
                   whiteSpace: "nowrap",
                   letterSpacing: "0.3px",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
-                  maxWidth: isActive ? 110 : 80,
+                  maxWidth: 124,
                 }}
               >
                 {t(cat.labelKey)}
