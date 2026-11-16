@@ -1387,7 +1387,7 @@ const translations: Record<string, TranslationEntry> = {
   "concern.area.other": { en: "Other", ar: "أخرى", ur: "دیگر" },
   "concern.tellUs": { en: "Tell us what happened", ar: "اكتب ما حدث", ur: "ہمیں بتائیں کیا ہوا" },
   "concern.placeholder": { en: "Type here...", ar: "اكتب هنا...", ur: "یہاں لکھیں..." },
-  "dictate.speak": { en: "Speak instead of typing", ar: "تحدّث بدل الكتابة", ur: "لکھنے کے بجائے بولیں" },
+  "dictate.speak": { en: "Tap to speak", ar: "اضغط للتحدث", ur: "بولنے کے لیے ٹیپ کریں" },
   "dictate.listening": { en: "Listening… tap to stop", ar: "جارٍ الاستماع… اضغط للإيقاف", ur: "سن رہے ہیں… روکنے کے لیے ٹیپ کریں" },
   "dictate.noSound": { en: "We can't hear you. Check the microphone and speak closer.", ar: "لا نسمع صوتك. تأكد من الميكروفون وتحدّث بقرب أكثر.", ur: "آپ کی آواز نہیں آ رہی۔ مائیکروفون چیک کریں اور قریب سے بولیں۔" },
   "concern.received": { en: "We received your concern", ar: "تم استلام شكواك", ur: "ہمیں آپ کی شکایت موصول ہوئی" },
