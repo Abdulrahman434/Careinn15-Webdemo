@@ -1020,23 +1020,22 @@ export function CallScreen({ onClose }: { onClose: () => void }) {
 
   /* Your extension, and the demo's "simulate incoming call" trigger. */
   const extensionPill = (
+    /* Same height, corners, fill and border as the language / dark mode /
+       fullscreen buttons beside it in the header (DemoControls), so the row
+       reads as one set. */
     <button
       onClick={handleSimulateIncoming}
-      className="flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform hover:brightness-110"
+      className="flex items-center cursor-pointer active:scale-95 transition-transform"
       style={{
-        borderRadius: theme.radiusLg, backgroundColor: "rgba(255,255,255,0.1)",
-        border: "1px solid rgba(255,255,255,0.15)", padding: "10px 24px 10px 16px", boxShadow: SHADOW.sm,
-        outline: "none",
+        height: compact ? 38 : 44, padding: compact ? "0 10px" : "0 14px", gap: 8,
+        borderRadius: "12px", backgroundColor: "rgba(255,255,255,0.12)",
+        border: "1px solid rgba(255,255,255,0.15)", color: "#fff",
+        outline: "none", whiteSpace: "nowrap",
       }}
     >
-      <div className="w-10 h-10 flex items-center justify-center shrink-0"
-        style={{ backgroundColor: "rgba(255,255,255,0.12)", color: "#fff", borderRadius: theme.radiusMd }}>
-        <Phone size={20} />
-      </div>
-      <div className="text-left">
-        <p style={{ fontFamily, ...TEXT_STYLE.caption, fontSize: "14px", color: "rgba(255,255,255,0.7)" }}>{t("call.yourExtension")}</p>
-        <p style={{ fontFamily: theme.fontFamilyMono, fontSize: "20px", fontWeight: WEIGHT.bold, color: "#fff", letterSpacing: "1px", lineHeight: 1 }}>{localExtension || '—'}</p>
-      </div>
+      <Phone size={compact ? 18 : 20} style={{ flexShrink: 0 }} />
+      <span style={{ fontFamily, fontSize: "14px", fontWeight: WEIGHT.medium, color: "rgba(255,255,255,0.7)" }}>{t("call.yourExtension")}</span>
+      <span style={{ fontFamily: theme.fontFamilyMono, fontSize: "18px", fontWeight: WEIGHT.bold, letterSpacing: "1px" }}>{localExtension || '—'}</span>
     </button>
   );
 
