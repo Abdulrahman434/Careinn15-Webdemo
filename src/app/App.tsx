@@ -23,6 +23,7 @@ import { AppLauncher } from "./components/AppLauncher";
 import { SurveyModal } from "./components/SurveyModal";
 const PdfReaderModal = lazy(() => import("./components/PdfReaderModal").then((m) => ({ default: m.PdfReaderModal })));
 import { UpdateBanner } from "./components/UpdateBanner";
+import { ContinueCard } from "./components/ContinueCard";
 import { MediaViewerModal } from "./components/MediaViewerModal";
 import { AboutUs } from "./components/AboutUs";
 import { SettingsPanel } from "./components/SettingsPanel";
@@ -99,7 +100,7 @@ import {
 } from "./lib/hospitalApi";
 import { nurseActions, useNurseStore } from "./components/NurseDataStore";
 import { getDeviceInfo } from "./utils/androidBridge";
-import { recordLaunch } from "./lib/continueActivity";
+import { recordLaunch, recordBuiltInLeft, clearActivity } from "./lib/continueActivity";
 import { OnboardingWizard } from "./components/OnboardingWizard";
 import { isOnboardingComplete } from "./lib/onboardingStore";
 import { startDataLifecycleWatchers } from "./lib/dataLifecycle";
@@ -605,6 +606,27 @@ function BedsideScreen() {
   const [acknowledgedBroadcasts, setAcknowledgedBroadcasts] = useState<BroadcastNotification[]>([]);
   const [activeGame, setActiveGame] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<string | null>(null);
+  /* The game the Continue card opened, which loads its save without asking. */
+  const [autoResumeGame, setAutoResumeGame] = useState<string | null>(null);
+  /* Leaving a game or tool by any path (Home, Back, Escape, its own close)
+     leaves the Continue card behind if it has progress saved; opening one
+     replaces whatever the card held. */
+  const prevGameRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = prevGameRef.current;
+    prevGameRef.current = activeGame;
+    if (prev === activeGame) return;
+    if (prev) { recordBuiltInLeft("game", prev); setAutoResumeGame(null); }
+    if (activeGame) clearActivity();
+  }, [activeGame]);
+  const prevToolRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = prevToolRef.current;
+    prevToolRef.current = activeTool;
+    if (prev === activeTool) return;
+    if (prev) recordBuiltInLeft("tool", prev);
+    if (activeTool) clearActivity();
+  }, [activeTool]);
   const [showPreferenceForm, setShowPreferenceForm] = useState(false);
   const [showBlankPage, setShowBlankPage] = useState(false);
   const [showIptv, setShowIptv] = useState(false);
@@ -2474,19 +2496,19 @@ function BedsideScreen() {
             active, and when none is the block renders nothing, so a null
             fallback shows nothing rather than blanking the screen behind it. */}
         <Suspense fallback={<LazyScreenFallback />}>
-        {activeGame === "memory" && <MemoryGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "tictactoe" && <TicTacToeGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "puzzle" && <SlidingPuzzleGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "colormatch" && <ColorMatchGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "patternmemory" && <PatternMemoryGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "emojimatch" && <EmojiMatchGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "memory" && <MemoryGame autoResume={autoResumeGame === "memory"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "tictactoe" && <TicTacToeGame autoResume={autoResumeGame === "tictactoe"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "puzzle" && <SlidingPuzzleGame autoResume={autoResumeGame === "puzzle"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "colormatch" && <ColorMatchGame autoResume={autoResumeGame === "colormatch"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "patternmemory" && <PatternMemoryGame autoResume={autoResumeGame === "patternmemory"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "emojimatch" && <EmojiMatchGame autoResume={autoResumeGame === "emojimatch"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "simonsays" && <SimonSaysGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "wordsearch" && <WordSearchGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "wordsearch" && <WordSearchGame autoResume={autoResumeGame === "wordsearch"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "reactiontime" && <ReactionTimeGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "brainmath" && <BrainMathGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "triviaquiz" && <TriviaQuizGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "picturepuzzle" && <ImageJigsawGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "wordchain" && <WordChainGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "brainmath" && <BrainMathGame autoResume={autoResumeGame === "brainmath"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "triviaquiz" && <TriviaQuizGame autoResume={autoResumeGame === "triviaquiz"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "picturepuzzle" && <ImageJigsawGame autoResume={autoResumeGame === "picturepuzzle"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "wordchain" && <WordChainGame autoResume={autoResumeGame === "wordchain"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         </Suspense>
 
         {/* IPTV Channels Overlay */}
@@ -2522,6 +2544,13 @@ function BedsideScreen() {
           </div>
         )}
         <UpdateBanner screenKey={screenKey} idle={showTasbih} />
+        <ContinueCard
+          hidden={anyOverlayOpen || showOnboarding || isLocked}
+          onOpenGame={(id) => { setAutoResumeGame(id); setActiveGame(id); }}
+          onOpenTool={(id) => setActiveTool(id)}
+          layout={layoutMode === 2 ? "ci" : layoutMode === 3 ? "kids" : layoutMode === 4 ? "spotlight"
+            : portrait ? "portrait" : layoutVersion === 2 ? "v2" : layoutVersion === 3 ? "v3" : "v1"}
+        />
 
         {/* Survey Modal — inside the canvas so it scales with every other page */}
         {showSurvey && (
