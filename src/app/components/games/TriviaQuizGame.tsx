@@ -289,7 +289,7 @@ const TRIVIA_DATA_AR: Record<Category, Question[]> = {
 
 
 
-export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
+export function TriviaQuizGame({ onClose, onBackToGames, autoResume }: { onClose: () => void; onBackToGames: () => void; autoResume?: boolean }) {
   const { theme } = useTheme();
   const size = useCanvasSize();
   const { fontFamily, locale, isRTL, dir } = useLocale();
@@ -346,8 +346,12 @@ export function TriviaQuizGame({ onClose, onBackToGames }: { onClose: () => void
   useEffect(() => {
     const saved = localStorage.getItem('trivia-quiz-game-state');
     if (saved) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
+      if (autoResume) {
+        loadGameState(); // Continue card: open the saved game, no resume prompt
+      } else {
+        setHasSavedGame(true);
+        setShowResumeModal(true);
+      }
     }
   }, []);
 

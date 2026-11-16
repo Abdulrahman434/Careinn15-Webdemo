@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { latestSaveKey } from "../../lib/continueActivity";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useCanvasSize } from "../../lib/canvasSize";
 import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose, gameBody, gameGroup, GameBoardArea, gameBoard, gameCellFont, gameModal, gameControl } from "./gameLayout";
@@ -21,7 +22,7 @@ const DIFFICULTY_CONFIG: Record<Difficulty, number> = {
   hard: 5
 };
 
-export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
+export function SlidingPuzzleGame({ onClose, onBackToGames, autoResume }: { onClose: () => void; onBackToGames: () => void; autoResume?: boolean }) {
   const { theme } = useTheme();
   const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
@@ -139,6 +140,13 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
 
   // Initial mount: Check for saved game or auto-start
   useEffect(() => {
+    // Continue card: open the newest save (any difficulty) directly, no resume prompt
+    const autoKey = autoResume ? latestSaveKey("puzzle") : null;
+    if (autoKey) {
+      loadGameState(autoKey);
+      setIsBootstrapped(true);
+      return;
+    }
     const saved = localStorage.getItem(`sliding-puzzle-${difficulty}-state`);
     if (saved) {
       setHasSavedGame(true);
@@ -149,9 +157,9 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
     setIsBootstrapped(true);
   }, []);
 
-  const loadGameState = useCallback(() => {
+  const loadGameState = useCallback((saveKey?: string) => {
     try {
-      const saved = localStorage.getItem(`sliding-puzzle-${difficulty}-state`);
+      const saved = localStorage.getItem(saveKey ?? `sliding-puzzle-${difficulty}-state`);
       if (saved) {
         const state = JSON.parse(saved);
         if (state && state.tiles) {
@@ -585,7 +593,7 @@ export function SlidingPuzzleGame({ onClose, onBackToGames }: { onClose: () => v
 
             <div className="flex flex-col gap-4 w-full">
               <button
-                onClick={loadGameState}
+                onClick={() => loadGameState()}
                 className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
                 style={{ backgroundColor: theme.primary, color: theme.brandOnPrimary, fontSize: TYPE_SCALE.md }}
               >

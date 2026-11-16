@@ -11,7 +11,7 @@ const COLORS = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8", "#F7DC6F"
 
 type GameState = "idle" | "showing" | "playing" | "correct" | "wrong" | "gameover";
 
-export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
+export function PatternMemoryGame({ onClose, onBackToGames, autoResume }: { onClose: () => void; onBackToGames: () => void; autoResume?: boolean }) {
   const { theme } = useTheme();
   const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
@@ -35,8 +35,12 @@ export function PatternMemoryGame({ onClose, onBackToGames }: { onClose: () => v
     const savedState = localStorage.getItem('pattern-memory-game-state');
     console.log('=== LOAD GAME STATE ===', 'pattern-memory-game-state', savedState);
     if (savedState) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
+      if (autoResume) {
+        loadGameState(); // Continue card: open the saved game, no resume prompt
+      } else {
+        setHasSavedGame(true);
+        setShowResumeModal(true);
+      }
     }
   }, []);
 

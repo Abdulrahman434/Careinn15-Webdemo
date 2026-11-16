@@ -91,7 +91,7 @@ function normalizeWord(word: string, isArabic: boolean): string {
   return stripArabicDefiniteArticle(trimmed);
 }
 
-export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
+export function WordChainGame({ onClose, onBackToGames, autoResume }: { onClose: () => void; onBackToGames: () => void; autoResume?: boolean }) {
   const { theme } = useTheme();
   const size = useCanvasSize();
   const { isRTL, dir, locale } = useLocale();
@@ -121,8 +121,12 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
 
     const savedState = localStorage.getItem('wordchain-game-state');
     if (savedState) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
+      if (autoResume) {
+        loadGameState(); // Continue card: open the saved game, no resume prompt
+      } else {
+        setHasSavedGame(true);
+        setShowResumeModal(true);
+      }
     }
   }, []);
 
