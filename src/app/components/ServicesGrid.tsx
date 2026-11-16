@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ApiImage } from "./ApiImage";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE, LEADING } from "./ThemeContext";
 import { SERVICES_GRID } from "./homeLayout";
+import { useCoversHome } from "../lib/coversHome";
 import { useLocale, translateWithLocale } from "./i18n";
 import { recordLaunch } from "../lib/continueActivity";
 import { useCanvasSize } from "../lib/canvasSize";
@@ -1232,6 +1233,7 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
   const moreItem: ShortcutItem = { labelKey: "shortcut.more", icon: "", url: "__more", lucideIcon: LayoutGrid };
   const railItems = overflow ? [...shortcutItems.slice(0, RAIL_ROWS - 1), moreItem] : shortcutItems;
   const [showMore, setShowMore] = useState(false);
+  useCoversHome(showMore);
 
   const launchShortcut = (item: ShortcutItem) => {
     if (item.labelKey === "shortcut.mirror" && onLaunchTool) onLaunchTool("mirror");

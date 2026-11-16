@@ -2549,9 +2549,13 @@ function BedsideScreen() {
         )}
         <UpdateBanner screenKey={screenKey} idle={showTasbih} />
         {/* Hidden from a guest (either kind): Continue opens the patient's
-            last app or game in one tap. */}
+            last app or game in one tap. Hidden too under every overlay App
+            opens, so it never floats over one or takes its taps (overlays
+            inside the layouts register through useCoversHome). */}
         <ContinueCard
-          hidden={anyOverlayOpen || showOnboarding || isLocked || isGuest || guestSession}
+          hidden={anyOverlayOpen || showOnboarding || isLocked || isGuest || guestSession
+            || showWeather || !!activeImageAd || showThemeAppearance || showPreferenceForm
+            || showBlankPage || showWelcomeSlideshow}
           layout={layoutMode === 2 ? "ci" : layoutMode === 3 ? "kids" : layoutMode === 4 ? "spotlight"
             : portrait ? "portrait" : layoutVersion === 2 ? "classic-v2" : layoutVersion === 3 ? "classic-v3" : "classic"}
           onOpenGame={(id) => { setAutoResumeGame(id); setActiveGame(id); }}

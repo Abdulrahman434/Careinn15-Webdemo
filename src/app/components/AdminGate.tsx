@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { X, ShieldCheck, RotateCcw } from "lucide-react";
 import { nativeRemote, nativeRemoteStatus } from "../lib/remote/nativeRemote";
+import { useCoversHome } from "../lib/coversHome";
 import {
   verifyAdminCode,
   getContentStatus,
@@ -54,6 +55,7 @@ export function AdminGate({ open, onClose }: { open: boolean; onClose: () => voi
   const [status, setStatus] = useState<ContentStatus | null>(null);
   const [urlDraft, setUrlDraft] = useState("");
   const [savedFlash, setSavedFlash] = useState<string | null>(null);
+  useCoversHome(open);
 
   useEffect(() => {
     if (!open) return;

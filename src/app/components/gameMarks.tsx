@@ -11,7 +11,12 @@ import type { ReactNode } from "react";
  */
 export const GAME_TILE = 140;
 
-export const GAME_MARKS: Record<string, { bg: string; art: () => ReactNode }> = {
+/** The Games folder's games, by the id App and the launcher use. */
+export type GameMarkId =
+  | "memory" | "tictactoe" | "puzzle" | "colormatch" | "patternmemory" | "emojimatch" | "simonsays"
+  | "wordsearch" | "reactiontime" | "brainmath" | "triviaquiz" | "picturepuzzle" | "wordchain";
+
+export const GAME_MARKS = {
   memory: {
     bg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
     art: () => (
@@ -248,15 +253,16 @@ export const GAME_MARKS: Record<string, { bg: string; art: () => ReactNode }> = 
       </div>
     ),
   },
-};
+} satisfies Record<GameMarkId, { bg: string; art: () => ReactNode }>;
+
+export const isGameMark = (id: string): id is GameMarkId => Object.prototype.hasOwnProperty.call(GAME_MARKS, id);
 
 /**
  * A game's tile at any size: the same background and picture, scaled down
  * as a whole, so a 40 px mark is the 140 px tile in miniature.
  */
-export function GameMark({ id, size, radius }: { id: string; size: string; radius: string }) {
+export function GameMark({ id, size, radius }: { id: GameMarkId; size: string; radius: string }) {
   const mark = GAME_MARKS[id];
-  if (!mark) return null;
   return (
     <div
       className="relative overflow-hidden shrink-0"

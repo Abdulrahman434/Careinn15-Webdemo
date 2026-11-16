@@ -3,6 +3,7 @@ import { TopBar } from "./TopBar";
 import { NewsTicker } from "./NewsTicker";
 import { useTheme } from "./ThemeContext";
 import { KIDS } from "./homeLayout";
+import { useCoversHome } from "../lib/coversHome";
 import { useLocale, translateWithLocale } from "./i18n";
 import { recordLaunch } from "../lib/continueActivity";
 import { useNurseStore } from "./NurseDataStore";
@@ -132,6 +133,7 @@ export default function KidsHomescreen({
   const { t, isRTL, fontFamily: localeFont } = useLocale();
   const nurseStore = useNurseStore();
   const [moreOpen, setMoreOpen] = useState(false);
+  useCoversHome(moreOpen);
   const [mood, setMood] = useState<string | null>(null);
   const [moodToast, setMoodToast] = useState<string | null>(null);
   const [thanked, setThanked] = useState(false);

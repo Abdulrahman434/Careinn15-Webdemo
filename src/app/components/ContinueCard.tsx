@@ -4,7 +4,7 @@ import { useTheme, TEXT_STYLE, TYPE_SCALE, WEIGHT, LEADING, SHADOW, SPACE } from
 import { useLocale } from "./i18n";
 import { TouchButton, IconButton } from "./primitives";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { GameMark, GAME_MARKS } from "./gameMarks";
+import { GameMark, isGameMark } from "./gameMarks";
 import { CLASSIC, SERVICES_GRID, PORTRAIT, KIDS, SPOTLIGHT, CI } from "./homeLayout";
 import { proxyImageUrl } from "../lib/imageProxy";
 import { fetchDeviceLocation } from "../lib/hospitalApi";
@@ -15,7 +15,8 @@ import {
 } from "../lib/continueActivity";
 import { useLockedApps } from "../lib/lockedApps";
 import { useCanvasSize } from "../lib/canvasSize";
-import { setContinueLane } from "../lib/continueLane";
+import { setContinueLane, usePageLeavesLane } from "../lib/continueLane";
+import { useHomeCovered } from "../lib/coversHome";
 
 const TOOL_ICON: Record<string, LucideIcon> = { notes: StickyNote, whiteboard: PenTool, stopwatch: Timer };
 
@@ -53,7 +54,7 @@ type Area = { bottom: number; maxWidth: number; maxHeight: number };
  * and the action bars stay clear whether a hospital shows them or not.
  * Layouts mirror in Arabic around the centre, so the distances are the same.
  */
-function restArea(layout: ContinueLayout, W: number, H: number, compact: boolean): Area {
+function restArea(layout: ContinueLayout, W: number, H: number, compact: boolean, laned: boolean): Area {
   const edge = px(compact ? SPACE[2] : SPACE[3]);
   const air = px(SPACE[2]);
   const mid = W / 2;
@@ -76,9 +77,9 @@ function restArea(layout: ContinueLayout, W: number, H: number, compact: boolean
       return { bottom: edge, maxWidth: beside(reach), maxHeight: bottomRowBand };
     }
     case "portrait": {
-      /* Phones: the card has its own lane at the bottom (see continueLane). */
-      if (compact) return { bottom: edge, maxWidth: across, maxHeight: Infinity };
-      /* Call ends one gap above the shortcuts row. */
+      /* A page that scrolls ends above the card's own lane (continueLane). */
+      if (laned) return { bottom: edge, maxWidth: across, maxHeight: Infinity };
+      /* One that fits: Call ends one gap above the shortcuts row. */
       const row = H >= PORTRAIT.roomyMinHeight ? PORTRAIT.shortcutsRow.roomy : PORTRAIT.shortcutsRow.tablet;
       return { bottom: edge, maxWidth: across, maxHeight: PORTRAIT.edge + row + PORTRAIT.gap - edge - air };
     }
@@ -200,7 +201,9 @@ export function ContinueCard({
      tool gets no card until the patient unlocks it. */
   const lockedIds = useLockedApps();
   const locked = !!activity?.lockId && lockedIds.has(activity.lockId);
-  const shown = !hidden && !!activity && !locked;
+  /* Out of sight under any popup, drawer or panel a layout draws (coversHome). */
+  const covered = useHomeCovered();
+  const shown = !hidden && !covered && !!activity && !locked;
   const leftAt = activity?.leftAt ?? null;
 
   /* Pop once per record (per leftAt), the first time it can be seen. An
@@ -219,7 +222,9 @@ export function ContinueCard({
     }
   }, [shown, leftAt]);
 
-  const area = restArea(layout, canvas.width, canvas.height, canvas.compact);
+  const pageLeavesLane = usePageLeavesLane();
+  const laned = layout === "portrait" && pageLeavesLane;
+  const area = restArea(layout, canvas.width, canvas.height, canvas.compact, laned);
   /* The pill is one touch target high, with SPACE[1] around it. */
   const pillH = px(theme.touchTargetMin) + 2 * px(SPACE[1]);
 
@@ -293,10 +298,10 @@ export function ContinueCard({
     return () => ro.disconnect();
   }, [mode, area.maxWidth, area.maxHeight, pad, popIcon, twoRows, oneLine]);
 
-  /* Phones: the page ends above the card (PortraitHome reads the lane). While
-     docking it already holds the pill's height, so the page eases with the
-     card instead of jumping after it. */
-  const lane = layout === "portrait" && canvas.compact && shown
+  /* Portrait: a page that scrolls ends above the card (PortraitHome reads the
+     lane). While docking it already holds the pill's height, so the page
+     eases with the card instead of jumping after it. */
+  const lane = layout === "portrait" && shown
     ? (mode === "popped" ? popH : pillH) + area.bottom + px(SPACE[1])
     : 0;
   useEffect(() => { setContinueLane(lane); }, [lane]);
@@ -348,7 +353,7 @@ export function ContinueCard({
   const Glyph = a.kind === "tool" ? (TOOL_ICON[a.id] ?? Play) : a.kind === "game" ? Gamepad2 : Play;
   const showImage = (a.kind === "app" || a.kind === "url") && !!iconSrc && !iconFailed;
   const icon = (size: string, radius: string, glyph: number) => {
-    if (a.kind === "game" && GAME_MARKS[a.id]) return <GameMark id={a.id} size={size} radius={radius} />;
+    if (a.kind === "game" && isGameMark(a.id)) return <GameMark id={a.id} size={size} radius={radius} />;
     const box = { width: size, height: size, borderRadius: radius, flexShrink: 0 } as const;
     return showImage ? (
       <ImageWithFallback src={iconSrc!} alt="" style={{ ...box, objectFit: "cover" }} onError={() => setIconFailed(true)} />
@@ -377,7 +382,9 @@ export function ContinueCard({
       className="flex items-center pointer-events-auto"
       style={{
         height: pillH,
-        maxWidth: area.maxWidth,
+        /* No wider than twelve of its icons (480 on bedside screens, 384 on
+           phones); a longer name gives way. */
+        maxWidth: Math.min(area.maxWidth, 12 * px(pillIcon)),
         padding: SPACE[1],
         paddingInlineStart: `calc((${pillH}px - ${pillIcon}) / 2)`,
         borderRadius: theme.radiusFull,
@@ -417,7 +424,10 @@ export function ContinueCard({
       {atBottom(
         <div
           ref={popRef}
-          role="status"
+          /* One live region at a time: while it shrinks away, the pill under
+             it is the one that speaks. */
+          role={mode === "popped" ? "status" : undefined}
+          aria-hidden={mode === "docking" || undefined}
           data-continue-card="popped"
           className={twoRows ? "flex flex-col" : "flex items-center"}
           style={{
