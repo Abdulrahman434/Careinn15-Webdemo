@@ -1,5 +1,6 @@
 import { clearAccount } from "./accountAuth";
 import { lockedAppsStore } from "./lockedApps";
+import { PATIENT_KEY } from "./continueActivity";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * Onboarding preference store — three-tier localStorage model
@@ -73,6 +74,10 @@ const LIFECYCLE_KEYS = [
   // Which meal reminders the screen has already said today. Wiping it made
   // Clear My Data reload straight into "Meal ordering is open" again.
   "careinn-meal-reminders-fired",
+  // Whose bed this is (continueActivity). The admission check sets it and
+  // then calls clearEverything(); wiping it there (or in the daily clear)
+  // tagged new Continue records "demo", and they vanished once it was set again.
+  PATIENT_KEY,
 ] as const;
 
 /** Wipes everything except Device config and Setup answers. */
