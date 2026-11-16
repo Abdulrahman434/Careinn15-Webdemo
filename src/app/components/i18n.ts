@@ -1890,6 +1890,24 @@ const translations: Record<string, TranslationEntry> = {
   "update.body": { en: "Refresh to get the latest version.", ar: "حدّث للحصول على أحدث نسخة.", ur: "تازہ ترین ورژن حاصل کرنے کے لیے ریفریش کریں۔" },
   "update.reload": { en: "Update now", ar: "حدث الآن", ur: "ابھی اپ ڈیٹ کریں" },
 
+  /* ─── Continue where you left off (home card) ─── */
+  "continue.action": { en: "Continue", ar: "متابعة", ur: "جاری رکھیں" },
+  "continue.justNow": { en: "Left just now", ar: "غادرت للتو", ur: "ابھی ابھی چھوڑا" },
+  "continue.minAgo": { en: "Left {0} min ago", ar: "غادرت قبل {0} دقيقة", ur: "{0} منٹ پہلے چھوڑا" },
+  "continue.hoursAgo": { en: "Left {0} h ago", ar: "غادرت قبل {0} ساعة", ur: "{0} گھنٹے پہلے چھوڑا" },
+  "continue.dismiss": { en: "Dismiss", ar: "إخفاء", ur: "ہٹائیں" },
+  "continue.game.memory": { en: "Memory Match", ar: "لعبة الذاكرة", ur: "میموری میچ" },
+  "continue.game.tictactoe": { en: "Tic-Tac-Toe", ar: "إكس-أو", ur: "ٹک ٹیک ٹو" },
+  "continue.game.puzzle": { en: "Sliding Puzzle", ar: "لعبة الألغاز", ur: "سلائیڈنگ پزل" },
+  "continue.game.colormatch": { en: "Color Match", ar: "تطابق الألوان", ur: "رنگوں کا میچ" },
+  "continue.game.patternmemory": { en: "Pattern Memory", ar: "ذاكرة الأنماط", ur: "پیٹرن میموری" },
+  "continue.game.emojimatch": { en: "Emoji Match", ar: "تطابق الرموز", ur: "ایموجی میچ" },
+  "continue.game.wordsearch": { en: "Word Search", ar: "البحث عن الكلمات", ur: "الفاظ کی تلاش" },
+  "continue.game.brainmath": { en: "Brain Math", ar: "رياضيات العقل", ur: "دماغی ریاضی" },
+  "continue.game.triviaquiz": { en: "Trivia Quiz", ar: "مسابقة المعلومات", ur: "معلوماتی کوئز" },
+  "continue.game.picturepuzzle": { en: "Puzzle", ar: "لعبة الألغاز", ur: "پزل" },
+  "continue.game.wordchain": { en: "Word Chain", ar: "سلسلة الكلمات", ur: "الفاظ کی زنجیر" },
+
   /* ─── First-run Onboarding Wizard ─── */
   "onboarding.header.title": { en: "Setup your Preferences", ar: "إعداد تفضيلاتك", ur: "اپنی ترجیحات ترتیب دیں" },
   "onboarding.header.subtitle": { en: "Let's personalize your screen for your stay", ar: "لنخصّص شاشتك طوال فترة إقامتك", ur: "آئیے آپ کے قیام کے لیے اسکرین کو ذاتی بنائیں" },
