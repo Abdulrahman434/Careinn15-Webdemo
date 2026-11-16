@@ -30,7 +30,7 @@ function DictateButton({ color, value, onChange, maxLength }: {
   onChange: (text: string) => void;
   maxLength?: number;
 }) {
-  const { theme } = useTheme();
+  const { theme, darkMode } = useTheme();
   const { t, locale, fontFamily } = useLocale();
   const [listening, setListening] = useState(false);
   const [noSound, setNoSound] = useState(false);
@@ -125,12 +125,23 @@ function DictateButton({ color, value, onChange, maxLength }: {
   const stop = () => { recRef.current?.stop(); };
 
   const tone = listening ? theme.error : color;
+  /* Sits inside the bottom edge of its text box (the parent is `relative`,
+     the textarea reserves DICTATE_PAD at the bottom): the pill on the side
+     text ends, the "can't hear you" hint on the other. */
   return (
-    <div className="flex flex-col gap-2 mt-4">
+    <div
+      className="absolute flex items-center justify-between gap-3"
+      style={{ insetInline: 12, bottom: 12, pointerEvents: "none", flexDirection: "row-reverse" }}
+    >
       <button
+        type="button"
         onClick={listening ? stop : start}
-        className="flex items-center gap-2 cursor-pointer transition-transform duration-200 active:scale-[0.98]"
-        style={{ padding: "10px 20px", borderRadius: "100px", border: `1.5px solid ${tone}`, backgroundColor: listening ? theme.errorSubtle : `${color}08`, width: "fit-content" }}
+        className="flex items-center gap-2 shrink-0 cursor-pointer transition-transform duration-200 active:scale-[0.96]"
+        style={{
+          pointerEvents: "auto",
+          height: 40, padding: "0 16px", borderRadius: 100, border: "none",
+          backgroundColor: listening ? theme.errorSubtle : `${color}${darkMode ? "33" : "14"}`,
+        }}
       >
         {listening
           ? (
@@ -145,19 +156,22 @@ function DictateButton({ color, value, onChange, maxLength }: {
             </div>
           )
           : <Mic size={18} style={{ color: tone }} />}
-        <span style={{ fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.bold, color: tone }}>
+        <span style={{ fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.bold, color: darkMode && !listening ? theme.textHeading : tone, whiteSpace: "nowrap" }}>
           {listening ? t("dictate.listening") : t("dictate.speak")}
         </span>
       </button>
       {noSound && (
-        <div className="flex items-center gap-2" style={{ color: theme.textMuted }}>
-          <MicOff size={16} />
-          <span style={{ fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.normal }}>{t("dictate.noSound")}</span>
+        <div className="flex items-center gap-2 min-w-0" style={{ color: theme.textMuted }}>
+          <MicOff size={16} className="shrink-0" />
+          <span style={{ fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.normal, lineHeight: 1.3 }}>{t("dictate.noSound")}</span>
         </div>
       )}
     </div>
   );
 }
+
+/** Bottom padding a textarea keeps clear for the dictate bar inside it. */
+const DICTATE_PAD = 64;
 
 interface SurveyModalProps {
   onClose: () => void;
@@ -646,28 +660,26 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
         (Optional)
       </p>
 
-      <textarea
-        value={feedbackText}
-        onChange={(e) => { if (e.target.value.length <= 500) setFeedbackText(e.target.value); }}
-        placeholder={t("survey.feedbackPlaceholder")}
-        style={{
-          width: "100%", maxWidth: "800px", height: "220px", padding: "24px",
-          borderRadius: theme.radiusXl, border: `2px solid ${theme.borderDefault}`,
-          fontFamily, fontSize: TYPE_SCALE.base, color: theme.textHeading,
-          resize: "none", outline: "none",
-          direction: isRTL ? "rtl" : "ltr", textAlign: isRTL ? "right" : "left",
-        }}
-        onFocus={(e) => { e.target.style.borderColor = BRAND; }}
-        onBlur={(e) => { e.target.style.borderColor = theme.borderDefault; }}
-      />
+      <div className="relative" style={{ width: "100%", maxWidth: "800px" }}>
+        <textarea
+          value={feedbackText}
+          onChange={(e) => { if (e.target.value.length <= 500) setFeedbackText(e.target.value); }}
+          placeholder={t("survey.feedbackPlaceholder")}
+          style={{
+            width: "100%", height: "220px", padding: "24px", paddingBottom: DICTATE_PAD,
+            borderRadius: theme.radiusXl, border: `2px solid ${theme.borderDefault}`,
+            fontFamily, fontSize: TYPE_SCALE.base, color: theme.textHeading,
+            resize: "none", outline: "none",
+            direction: isRTL ? "rtl" : "ltr", textAlign: isRTL ? "right" : "left",
+          }}
+          onFocus={(e) => { e.target.style.borderColor = BRAND; }}
+          onBlur={(e) => { e.target.style.borderColor = theme.borderDefault; }}
+        />
+        <DictateButton color={BRAND} value={feedbackText} onChange={setFeedbackText} maxLength={500} />
+      </div>
       <p style={{ fontFamily, fontSize: TYPE_SCALE.sm, fontWeight: WEIGHT.normal, color: theme.textMuted, marginTop: "16px", maxWidth: "800px", width: "100%", textAlign: isRTL ? "right" : "left" }}>
         {feedbackText.length} / 500 characters
       </p>
-
-      {/* Dictation */}
-      <div style={{ maxWidth: "800px", width: "100%", marginTop: "16px" }}>
-        <DictateButton color={BRAND} value={feedbackText} onChange={setFeedbackText} maxLength={500} />
-      </div>
     </div>
   );
 
@@ -885,7 +897,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
                   onChange={(e) => setConcernText(e.target.value)}
                   placeholder={t("concern.placeholder")}
                   style={{
-                    width: "100%", height: "140px", padding: "20px",
+                    width: "100%", height: "180px", padding: "20px", paddingBottom: DICTATE_PAD,
                     borderRadius: theme.radiusLg,
                     border: `1.5px solid ${theme.borderCardColor}`,
                     fontFamily, fontSize: TYPE_SCALE.base, color: theme.textHeading,
@@ -1050,7 +1062,7 @@ export function SurveyModal({ onClose, initialPath = "hub" }: SurveyModalProps) 
                   onChange={(e) => setAppreciationText(e.target.value)}
                   placeholder={t("appreciation.placeholder")}
                   style={{
-                    width: "100%", height: "140px", padding: "20px",
+                    width: "100%", height: "180px", padding: "20px", paddingBottom: DICTATE_PAD,
                     borderRadius: theme.radiusLg,
                     border: `1.5px solid ${theme.borderCardColor}`,
                     fontFamily, fontSize: TYPE_SCALE.base, color: theme.textHeading,
