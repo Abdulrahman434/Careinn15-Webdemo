@@ -287,13 +287,41 @@ export function ContinueCard({
 
   /* Drag vs tap: a touch that moves less than SPACE[2] (canvas px) is a tap
      and resumes; past that the pill follows the finger, and letting go
-     neither resumes nor reaches the tile underneath (the pointer is
-     captured, and the click that follows is swallowed). Finger movement is
+     neither resumes nor reaches the tile underneath. Finger movement is
      divided by the canvas scale, so the pill tracks the finger exactly at any
-     screen size. */
-  const dragRef = useRef<{ id: number; sx: number; sy: number; cx: number; cy: number; scale: number; moved: boolean } | null>(null);
+     screen size. Only one pointer drives it; a second finger is ignored.
+     Pointer capture starts only once it is a drag, so a plain tap or mouse
+     click still lands on the button and resumes. */
+  type Drag = { id: number; sx: number; sy: number; lx: number; ly: number; cx: number; cy: number; scale: number; moved: boolean; el: HTMLElement };
+  const dragRef = useRef<Drag | null>(null);
+  const unlisten = useRef<(() => void) | null>(null);
   const swallowClick = useRef(false);
+  const live = useRef({ clampCentre, W, H });
+  live.current = { clampCentre, W, H };
+  const at = (d: Drag) => live.current.clampCentre(d.cx + (d.lx - d.sx) / d.scale, d.cy + (d.ly - d.sy) / d.scale);
+  /* Every way a drag ends comes here: release, cancel, lost capture, the
+     card being hidden, unmounting. `commit` saves where it was last moved
+     to (never a cancel's own coordinates, which some engines send as 0,0). */
+  const endDrag = useCallback((commit: boolean) => {
+    const d = dragRef.current;
+    dragRef.current = null;
+    unlisten.current?.();
+    unlisten.current = null;
+    setDrag(null);
+    if (!d || !d.moved) return;
+    try { if (d.el.hasPointerCapture(d.id)) d.el.releasePointerCapture(d.id); } catch { /* already gone */ }
+    if (!commit) return;
+    const c = at(d);
+    const next = { x: c.x / live.current.W, y: c.y / live.current.H };
+    savePillSpot(next);
+    setSpot(next);
+    swallowClick.current = true;
+    window.setTimeout(() => { swallowClick.current = false; }, 0);
+  }, []);
+  useEffect(() => { if (!shown) endDrag(false); }, [shown, endDrag]);
+  useEffect(() => () => endDrag(false), [endDrag]);
   const onPillDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (dragRef.current) return;
     if (e.pointerType === "mouse" && e.button !== 0) return;
     const el = pillRef.current;
     const canvasEl = el?.closest("#careinn-canvas") as HTMLElement | null;
@@ -301,32 +329,45 @@ export function ContinueCard({
     const cr = canvasEl.getBoundingClientRect();
     const scale = cr.width / canvasEl.offsetWidth || 1;
     const r = el.getBoundingClientRect();
-    dragRef.current = {
-      id: e.pointerId, sx: e.clientX, sy: e.clientY, scale, moved: false,
+    const d: Drag = {
+      id: e.pointerId, sx: e.clientX, sy: e.clientY, lx: e.clientX, ly: e.clientY, scale, moved: false, el,
       cx: (r.left + r.width / 2 - cr.left) / scale, cy: (r.top + r.height / 2 - cr.top) / scale,
     };
-    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current = d;
+    const onMove = (ev: PointerEvent) => {
+      if (ev.pointerId !== d.id || dragRef.current !== d) return;
+      d.lx = ev.clientX;
+      d.ly = ev.clientY;
+      if (!d.moved) {
+        if (Math.hypot((d.lx - d.sx) / d.scale, (d.ly - d.sy) / d.scale) < px(SPACE[2])) return;
+        d.moved = true;
+        try { d.el.setPointerCapture(d.id); } catch { /* pointer already gone */ }
+      }
+      setDrag(at(d));
+    };
+    const onUp = (ev: PointerEvent) => {
+      if (ev.pointerId !== d.id || dragRef.current !== d) return;
+      d.lx = ev.clientX;
+      d.ly = ev.clientY;
+      endDrag(true);
+    };
+    const onCancel = (ev: PointerEvent) => {
+      if (ev.pointerId === d.id && dragRef.current === d) endDrag(true);
+    };
+    window.addEventListener("pointermove", onMove, true);
+    window.addEventListener("pointerup", onUp, true);
+    window.addEventListener("pointercancel", onCancel, true);
+    unlisten.current = () => {
+      window.removeEventListener("pointermove", onMove, true);
+      window.removeEventListener("pointerup", onUp, true);
+      window.removeEventListener("pointercancel", onCancel, true);
+    };
   };
-  const onPillMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+  /* Only the pill's own capture: a touch is first captured by the element
+     under the finger, and that loss (when the pill takes over) bubbles here. */
+  const onPillLostCapture = (e: ReactPointerEvent<HTMLDivElement>) => {
     const d = dragRef.current;
-    if (!d || e.pointerId !== d.id) return;
-    const dx = (e.clientX - d.sx) / d.scale, dy = (e.clientY - d.sy) / d.scale;
-    if (!d.moved && Math.hypot(dx, dy) < px(SPACE[2])) return;
-    d.moved = true;
-    setDrag(clampCentre(d.cx + dx, d.cy + dy));
-  };
-  const onPillUp = (e: ReactPointerEvent<HTMLDivElement>) => {
-    const d = dragRef.current;
-    if (!d || e.pointerId !== d.id) return;
-    dragRef.current = null;
-    if (!d.moved) return;
-    const c = clampCentre(d.cx + (e.clientX - d.sx) / d.scale, d.cy + (e.clientY - d.sy) / d.scale);
-    const next = { x: c.x / W, y: c.y / H };
-    savePillSpot(next);
-    setSpot(next);
-    setDrag(null);
-    swallowClick.current = true;
-    window.setTimeout(() => { swallowClick.current = false; }, 0);
+    if (d && d.moved && e.pointerId === d.id && e.target === e.currentTarget) endDrag(true);
   };
 
   /* Popped: dock after POP_MS, or on a touch anywhere else. Capture phase and
@@ -439,7 +480,7 @@ export function ContinueCard({
     if (a.kind === "game" && isGameMark(a.id)) return <GameMark id={a.id} size={size} radius={radius} />;
     const box = { width: size, height: size, borderRadius: radius, flexShrink: 0 } as const;
     return showImage ? (
-      <ImageWithFallback src={iconSrc!} alt="" style={{ ...box, objectFit: "cover" }} onError={() => setIconFailed(true)} />
+      <ImageWithFallback src={iconSrc!} alt="" draggable={false} style={{ ...box, objectFit: "cover" }} onError={() => setIconFailed(true)} />
     ) : (
       <div className="flex items-center justify-center" style={{ ...box, backgroundColor: buttonBg }}>
         <Glyph size={glyph} strokeWidth={2.2} style={{ color: buttonInk }} />
@@ -476,12 +517,17 @@ export function ContinueCard({
       data-continue-card="pill"
       className={`flex items-center pointer-events-auto transition-transform duration-150 ${dragging ? "motion-safe:scale-[1.04]" : ""}`}
       onPointerDown={onPillDown}
-      onPointerMove={onPillMove}
-      onPointerUp={onPillUp}
-      onPointerCancel={onPillUp}
+      onLostPointerCapture={onPillLostCapture}
       onClickCapture={(e) => { if (swallowClick.current) { e.stopPropagation(); e.preventDefault(); swallowClick.current = false; } }}
+      onContextMenu={(e) => e.preventDefault()}
+      onDragStart={(e) => e.preventDefault()}
       style={{
+        /* No native pan, long-press menu, text selection or image drag: on
+           Android these cancel the pointer mid-drag. */
         touchAction: "none",
+        WebkitTouchCallout: "none",
+        userSelect: "none",
+        WebkitUserSelect: "none",
         cursor: dragging ? "grabbing" : undefined,
         height: pillH,
         /* No wider than twelve of its icons (480 on bedside screens, 384 on
