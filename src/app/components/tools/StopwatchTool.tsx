@@ -1,9 +1,35 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useLocale } from "../i18n";
 import { useCanvasSize } from "../../lib/canvasSize";
+import { TOOL_SAVE_KEYS } from "../../lib/continueActivity";
 import { toolHeader, toolHeaderGroup, toolHeaderButton, toolTitle, toolBody, toolPanes, toolSidePanel } from "./toolLayout";
 import { ArrowLeft, ArrowRight, Play, Pause, RotateCcw, Timer } from "lucide-react";
+
+interface StopwatchSave {
+  startedAt: number | null;
+  elapsedBefore: number;
+  laps: number[];
+}
+
+function loadSavedStopwatch(): StopwatchSave {
+  try {
+    const raw = localStorage.getItem(TOOL_SAVE_KEYS.stopwatch);
+    if (raw) {
+      const d = JSON.parse(raw);
+      if (
+        d &&
+        (d.startedAt === null || typeof d.startedAt === "number") &&
+        typeof d.elapsedBefore === "number" &&
+        Array.isArray(d.laps) &&
+        d.laps.every((l: unknown) => typeof l === "number")
+      ) {
+        return { startedAt: d.startedAt, elapsedBefore: d.elapsedBefore, laps: d.laps };
+      }
+    }
+  } catch { /* corrupt or unavailable: start fresh */ }
+  return { startedAt: null, elapsedBefore: 0, laps: [] };
+}
 
 export function StopwatchTool({ onClose, onBackToTools }: { onClose: () => void; onBackToTools: () => void }) {
   const { theme } = useTheme();
@@ -11,43 +37,49 @@ export function StopwatchTool({ onClose, onBackToTools }: { onClose: () => void;
   const { portrait, compact } = useCanvasSize();
   /* "Back" is to the right in Arabic and Urdu. */
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
-  const [time, setTime] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const [laps, setLaps] = useState<number[]>([]);
-  const intervalRef = useRef<number | null>(null);
+  /* careinn-tool-stopwatch = { startedAt: number | null, elapsedBefore: number, laps: number[] }.
+     Exists only while running or elapsed > 0; removed on reset. startedAt lets it keep running while closed. */
+  const [sw, setSw] = useState<StopwatchSave>(loadSavedStopwatch);
+  const [now, setNow] = useState(() => Date.now());
+  const isRunning = sw.startedAt !== null;
+  const laps = sw.laps;
+  const time = sw.elapsedBefore + (sw.startedAt !== null ? Math.max(0, now - sw.startedAt) : 0);
 
   useEffect(() => {
-    if (isRunning) {
-      intervalRef.current = window.setInterval(() => {
-        setTime((prevTime) => prevTime + 10);
-      }, 10);
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
+    if (!isRunning) return;
+    const id = window.setInterval(() => setNow(Date.now()), 10);
+    return () => clearInterval(id);
   }, [isRunning]);
+
+  useEffect(() => {
+    try {
+      if (sw.startedAt === null && sw.elapsedBefore === 0) {
+        localStorage.removeItem(TOOL_SAVE_KEYS.stopwatch);
+      } else {
+        localStorage.setItem(TOOL_SAVE_KEYS.stopwatch, JSON.stringify(sw));
+      }
+    } catch { /* storage unavailable: skip saving */ }
+  }, [sw]);
 
   const handleStartPause = useCallback(() => {
-    setIsRunning(!isRunning);
-  }, [isRunning]);
+    const t = Date.now();
+    setNow(t);
+    setSw((s) =>
+      s.startedAt === null
+        ? { ...s, startedAt: t }
+        : { ...s, startedAt: null, elapsedBefore: s.elapsedBefore + (t - s.startedAt) },
+    );
+  }, []);
 
   const handleReset = useCallback(() => {
-    setIsRunning(false);
-    setTime(0);
-    setLaps([]);
+    setSw({ startedAt: null, elapsedBefore: 0, laps: [] });
   }, []);
 
   const handleLap = useCallback(() => {
     if (isRunning) {
-      setLaps([time, ...laps]);
+      setSw((s) => ({ ...s, laps: [time, ...s.laps] }));
     }
-  }, [isRunning, time, laps]);
+  }, [isRunning, time]);
 
   const formatTime = (milliseconds: number) => {
     const totalSeconds = Math.floor(milliseconds / 1000);

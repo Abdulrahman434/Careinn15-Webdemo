@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { latestSaveKey, usableSave } from "../../lib/continueActivity";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, SPACE } from "../ThemeContext";
 import { useCanvasSize } from "../../lib/canvasSize";
 import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderGroup, gameHeaderClose, gameBody, GameBoardArea, gameBoard, gameCellFont, gameModal, gameControl } from "./gameLayout";
@@ -30,7 +31,7 @@ const DIFFICULTY_CONFIG: Record<Difficulty, { grid: number; pairs: number }> = {
   hard: { grid: 8, pairs: 32 }
 };
 
-export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
+export function MemoryGame({ onClose, onBackToGames, autoResume }: { onClose: () => void; onBackToGames: () => void; autoResume?: boolean }) {
   const { theme } = useTheme();
   const size = useCanvasSize();
   const { t, fontFamily, isRTL, dir, locale } = useLocale();
@@ -132,9 +133,9 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
     initializeGame();
   }, [clearGameState, initializeGame]);
 
-  const loadGameState = useCallback(() => {
+  const loadGameState = useCallback((saveKey?: string) => {
     try {
-      const saved = localStorage.getItem(`memory-match-${difficulty}-state`);
+      const saved = localStorage.getItem(saveKey ?? `memory-match-${difficulty}-state`);
       if (saved) {
         const state = JSON.parse(saved);
         if (state && state.cards) {
@@ -168,6 +169,14 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
 
   // Initial mount: Check for saved game or auto-start
   useEffect(() => {
+    // Continue card: open the newest save (any difficulty) directly, no resume prompt.
+    // A save it can't open is removed and the game starts as if there were none.
+    const autoKey = autoResume ? latestSaveKey("memory") : null;
+    if (autoKey && usableSave(autoKey, (s) => Array.isArray(s.cards) && s.cards.length > 0 && !!DIFFICULTY_CONFIG[s.difficulty as Difficulty])) {
+      loadGameState(autoKey);
+      setIsBootstrapped(true);
+      return;
+    }
     const saved = localStorage.getItem(`memory-match-${difficulty}-state`);
     if (saved) {
       setHasSavedGame(true);
@@ -488,7 +497,7 @@ export function MemoryGame({ onClose, onBackToGames }: { onClose: () => void; on
 
             <div className="flex flex-col gap-4 w-full">
               <button
-                onClick={loadGameState}
+                onClick={() => loadGameState()}
                 className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
                 style={{ backgroundColor: theme.primary, color: theme.brandOnPrimary, fontSize: TYPE_SCALE.md }}
               >

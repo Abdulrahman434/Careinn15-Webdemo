@@ -34,6 +34,7 @@ import { createPortal } from "react-dom";
 import { X, ChevronLeft } from "lucide-react";
 import { useTheme, SHADOW, TEXT_STYLE } from "./ThemeContext";
 import { useLocale } from "./i18n";
+import { useCoversHome } from "../lib/coversHome";
 
 export const DIALOG = {
   small: 400,
@@ -91,6 +92,7 @@ export function DialogFrame({
 }) {
   const { theme: t } = useTheme();
   const { dir } = useLocale();
+  useCoversHome();
   /* A title bar first in line stays fixed at the top; the rest scrolls
      under it once the popup reaches its height limit. */
   const all = React.Children.toArray(children);

@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { ApiImage } from "./ApiImage";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW, TEXT_STYLE, SPACE, LEADING } from "./ThemeContext";
-import { useLocale } from "./i18n";
+import { SERVICES_GRID } from "./homeLayout";
+import { useCoversHome } from "../lib/coversHome";
+import { useLocale, translateWithLocale } from "./i18n";
+import { recordLaunch } from "../lib/continueActivity";
 import { useCanvasSize } from "../lib/canvasSize";
 import { useRipple } from "./useRipple";
 import svgPaths from "../../imports/svg-ca68x68c4i";
@@ -151,6 +154,19 @@ const surveyItem = {
 };
 
 /* ─── Hub Icon (32px rendered inside viewBox for scale) ─── */
+function openShortcutUrl(item: { labelKey: string; url?: string; icon?: string }) {
+  if (!item.url) return;
+  recordLaunch({
+    kind: "url",
+    id: item.url,
+    name: translateWithLocale(item.labelKey, "en"),
+    nameAr: translateWithLocale(item.labelKey, "ar"),
+    icon: item.icon || undefined,
+    lockId: item.labelKey,
+  });
+  window.open(item.url, "_blank", "noopener,noreferrer");
+}
+
 function HubIcon({ label, color, size }: { label: string; color?: string; size?: number }) {
   const { theme } = useTheme();
   const iconColor = color || theme.primary;
@@ -984,8 +1000,8 @@ export function ServicesGrid({
   const visibleServices = serviceItems;
   const [guestPrompt, setGuestPrompt] = useState(false);
   const guestLocked = (label: string) => !!guestMode && GUEST_LOCKED_SERVICES.has(label);
-  const gridGap = compact ? "gap-3" : "gap-6";
-  const bottomHeight = compact ? "140px" : "192px";
+  const gridGap = compact ? 12 : SERVICES_GRID.tileGap;
+  const bottomHeight = compact ? 140 : SERVICES_GRID.bottomRow;
 
   const isHubItemVisible = (label: string) => {
     if (label === "Media") return visibility.show_iptv;
@@ -1036,14 +1052,15 @@ export function ServicesGrid({
   return (
     <div className={`flex flex-col flex-1 min-h-0`}>
       {/* 4×2 hub grid (data-tour: the portrait tour spotlights it by name) */}
-      <div data-tour="hub" className={`grid grid-cols-4 ${gridGap} flex-1 min-h-0`}>
+      <div data-tour="hub" className="grid grid-cols-4 flex-1 min-h-0" style={{ gap: gridGap }}>
         {[0, 1, 2, 3].map((col) => {
           const top = hubItems[col];
           const bottom = hubItems[col + 4];
           return (
             <div
               key={col}
-              className={`flex flex-col ${gridGap}`}
+              className="flex flex-col"
+              style={{ gap: gridGap }}
             >
               <div className="flex-1 min-h-0">
                 {isHubItemVisible(top.label) ? (
@@ -1080,8 +1097,8 @@ export function ServicesGrid({
       {/* Bottom row — services (default) or shortcuts (swapped) */}
       <div
         data-tour="services"
-        className={`grid grid-cols-4 ${gridGap} shrink-0 items-center`}
-        style={{ height: bottomHeight }}
+        className="grid grid-cols-4 shrink-0 items-center"
+        style={{ gap: gridGap, height: bottomHeight }}
       >
         {swapped
           ? (
@@ -1103,7 +1120,7 @@ export function ServicesGrid({
                   onTap={(e) => handleTileTap(e, item.labelKey, t(item.labelKey), undefined, lockedIds.has(item.labelKey), () => {
                     if (item.labelKey === "shortcut.mirror" && onLaunchTool) onLaunchTool("mirror");
                     else if ((item.url === "roomcontrol" || item.url === "patientguide") && onLaunchTool) onLaunchTool(item.url);
-                    else if (item.url) window.open(item.url, "_blank", "noopener,noreferrer");
+                    else if (item.url) openShortcutUrl(item);
                   })}
                   onLongPress={() => handleTileLongPress(item.labelKey, t(item.labelKey), lockedIds.has(item.labelKey))}
                   isLocked={lockedIds.has(item.labelKey)}
@@ -1154,7 +1171,7 @@ export function ServicesGrid({
                 if (sc) {
                   if (sc.labelKey === "shortcut.mirror" && onLaunchTool) onLaunchTool("mirror");
                   else if ((sc.url === "roomcontrol" || sc.url === "patientguide") && onLaunchTool) onLaunchTool(sc.url);
-                  else if (sc.url) window.open(sc.url, "_blank", "noopener,noreferrer");
+                  else if (sc.url) openShortcutUrl(sc);
                 }
               } 
             : undefined}
@@ -1212,11 +1229,12 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
   const moreItem: ShortcutItem = { labelKey: "shortcut.more", icon: "", url: "__more", lucideIcon: LayoutGrid };
   const railItems = overflow ? [...shortcutItems.slice(0, RAIL_ROWS - 1), moreItem] : shortcutItems;
   const [showMore, setShowMore] = useState(false);
+  useCoversHome(showMore);
 
   const launchShortcut = (item: ShortcutItem) => {
     if (item.labelKey === "shortcut.mirror" && onLaunchTool) onLaunchTool("mirror");
     else if ((item.url === "roomcontrol" || item.url === "patientguide") && onLaunchTool) onLaunchTool(item.url);
-    else if (item.url) window.open(item.url, "_blank", "noopener,noreferrer");
+    else if (item.url) openShortcutUrl(item);
   };
 
   const handleTileTap = (
@@ -1271,8 +1289,8 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
           ))}
         </div>
 
-        {/* Share Feedback — fixed 192px to align with shortcuts row */}
-        <div className="shrink-0" style={{ height: "192px" }}>
+        {/* Share Feedback — the bottom row's height, to line up with the service cards */}
+        <div className="shrink-0" style={{ height: SERVICES_GRID.bottomRow }}>
           <SurveyCardFilled
             onOpen={(e) => guestMode ? setGuestPrompt(true) : handleTileTap(e, "service.shareFeedback", t("service.shareFeedback"), undefined, lockedIds.has("service.shareFeedback"), () => onOpenSurvey?.())}
             onLongPress={() => { if (!guestMode) handleTileLongPress("service.shareFeedback", t("service.shareFeedback"), lockedIds.has("service.shareFeedback")); }}
@@ -1453,7 +1471,7 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
 
       {/* Survey — separate card, same height as services row (190px). */}
       {!portrait && (
-        <div className="shrink-0" style={{ height: "192px" }}>
+        <div className="shrink-0" style={{ height: SERVICES_GRID.bottomRow }}>
           <SurveyCardFilled
             onOpen={(e) => guestMode ? setGuestPrompt(true) : handleTileTap(e, "service.shareFeedback", t("service.shareFeedback"), undefined, lockedIds.has("service.shareFeedback"), () => onOpenSurvey?.())}
             onLongPress={() => { if (!guestMode) handleTileLongPress("service.shareFeedback", t("service.shareFeedback"), lockedIds.has("service.shareFeedback")); }}
@@ -1479,7 +1497,7 @@ export function ShortcutsColumn({ contained, onOpenSurvey, onLaunchTool, swapped
               if (sc) {
                 if (sc.labelKey === "shortcut.mirror" && onLaunchTool) onLaunchTool("mirror");
                 else if ((sc.url === "roomcontrol" || sc.url === "patientguide") && onLaunchTool) onLaunchTool(sc.url);
-                else if (sc.url) window.open(sc.url, "_blank", "noopener,noreferrer");
+                else if (sc.url) openShortcutUrl(sc);
               }
             }
           } : undefined}
@@ -1657,7 +1675,7 @@ export function ServiceCardsRow({
   };
 
   return (
-    <div className="grid grid-cols-4 gap-6 shrink-0 items-center" style={{ height: "192px" }}>
+    <div className="grid grid-cols-4 shrink-0 items-center" style={{ gap: SERVICES_GRID.tileGap, height: SERVICES_GRID.bottomRow }}>
       {visibleServices.map((item) => (
         isServiceVisible(item.label) ? (
           <ServiceCard

@@ -2,7 +2,10 @@ import { CSSProperties, useEffect, useRef, useState, type TouchEvent as ReactTou
 import { TopBar } from "./TopBar";
 import { NewsTicker } from "./NewsTicker";
 import { useTheme } from "./ThemeContext";
-import { useLocale } from "./i18n";
+import { KIDS } from "./homeLayout";
+import { useCoversHome } from "../lib/coversHome";
+import { useLocale, translateWithLocale } from "./i18n";
+import { recordLaunch } from "../lib/continueActivity";
 import { useNurseStore } from "./NurseDataStore";
 import { usePatientInfo } from "../lib/usePatientInfo";
 
@@ -130,6 +133,7 @@ export default function KidsHomescreen({
   const { t, isRTL, fontFamily: localeFont } = useLocale();
   const nurseStore = useNurseStore();
   const [moreOpen, setMoreOpen] = useState(false);
+  useCoversHome(moreOpen);
   const [mood, setMood] = useState<string | null>(null);
   const [moodToast, setMoodToast] = useState<string | null>(null);
   const [thanked, setThanked] = useState(false);
@@ -264,7 +268,7 @@ export default function KidsHomescreen({
 
   /* ── Right sidebar — exactly four quick-access tiles (same colour language) ── */
   const sideItems: { emoji: string; label: string; s: Swatch; onClick: () => void }[] = [
-    { emoji: "📖", label: "kids.side.quran", s: tMint, onClick: () => window.open(QURAN_URL, "_blank", "noopener,noreferrer") },
+    { emoji: "📖", label: "kids.side.quran", s: tMint, onClick: () => { recordLaunch({ kind: "url", id: QURAN_URL, name: translateWithLocale("kids.side.quran", "en"), nameAr: translateWithLocale("kids.side.quran", "ar") }); window.open(QURAN_URL, "_blank", "noopener,noreferrer"); } },
     { emoji: "💬", label: "kids.tile.social", s: tLav, onClick: () => onOpenCategory("Social") },
     { emoji: "👩‍⚕️", label: "kids.tile.consultation", s: tRose, onClick: () => onOpenCategory("Consultation") },
     { emoji: "🔔", label: "kids.tile.housekeeping", s: tAmber, onClick: () => onOpenCategory("Housekeeping") },
@@ -289,7 +293,7 @@ export default function KidsHomescreen({
     { key: "Feedback", emoji: "💬", label: "kids.tile.feedback", onClick: () => onOpenSurvey?.() },
     { key: "roomcontrol", emoji: "🕹️", label: "kids.tile.roomcontrol", onClick: () => onLaunchTool("roomcontrol") },
     { key: "Patient Portal", emoji: "📱", label: "kids.tile.portal", onClick: () => onOpenCategory("Patient Portal") },
-    { key: "podcast", emoji: "🎙️", label: "kids.side.podcast", onClick: () => window.open(PODCAST_URL, "_blank", "noopener,noreferrer") },
+    { key: "podcast", emoji: "🎙️", label: "kids.side.podcast", onClick: () => { recordLaunch({ kind: "url", id: PODCAST_URL, name: translateWithLocale("kids.side.podcast", "en"), nameAr: translateWithLocale("kids.side.podcast", "ar") }); window.open(PODCAST_URL, "_blank", "noopener,noreferrer"); } },
   ];
 
   const runMore = (fn: () => void) => {
@@ -409,7 +413,7 @@ export default function KidsHomescreen({
       </div>
 
       {/* Main content */}
-      <div className="relative z-10 flex-1 min-h-0 flex flex-col gap-4 px-6 pt-4 pb-4">
+      <div className="relative z-10 flex-1 min-h-0 flex flex-col gap-4 px-6 pt-4" style={{ paddingBottom: KIDS.bottomEdge }}>
         {/* Body row */}
         <div className={`flex-1 min-h-0 flex gap-4 ${isRTL ? "flex-row-reverse" : ""}`}>
           {/* ── Left sidebar (210px) — unified white cards, top to bottom ── */}
@@ -697,7 +701,7 @@ export default function KidsHomescreen({
         </div>
 
         {/* ── Bottom action bar — two large finger-friendly buttons ── */}
-        <div className="shrink-0 flex gap-5" style={{ height: 76 }}>
+        <div className="shrink-0 flex gap-5" style={{ height: KIDS.actionBar }}>
           {bottomActions.map((a) => (
             <button
               key={a.label}

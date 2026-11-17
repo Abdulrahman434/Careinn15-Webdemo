@@ -6,6 +6,7 @@ import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose
 import { useLocale } from '../i18n';
 import GameLanguageToggle from './GameLanguageToggle';
 import { GAME_TRANSLATIONS } from './gameTranslations';
+import { usableSave } from "../../lib/continueActivity";
 
 type Category = 'animals' | 'countries' | 'foods';
 
@@ -91,7 +92,7 @@ function normalizeWord(word: string, isArabic: boolean): string {
   return stripArabicDefiniteArticle(trimmed);
 }
 
-export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
+export function WordChainGame({ onClose, onBackToGames, autoResume }: { onClose: () => void; onBackToGames: () => void; autoResume?: boolean }) {
   const { theme } = useTheme();
   const size = useCanvasSize();
   const { isRTL, dir, locale } = useLocale();
@@ -121,8 +122,14 @@ export function WordChainGame({ onClose, onBackToGames }: { onClose: () => void;
 
     const savedState = localStorage.getItem('wordchain-game-state');
     if (savedState) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
+      if (autoResume) {
+        // Continue card: open the saved game, no resume prompt.
+        // A save it can't open is removed and the game starts as if there were none.
+        if (usableSave('wordchain-game-state', (s) => !!DICTIONARIES_EN[s.category as Category] && Array.isArray(s.chain) && s.chain.length > 0 && s.chain.every((w: unknown) => typeof w === 'string' && w.length > 0))) loadGameState();
+      } else {
+        setHasSavedGame(true);
+        setShowResumeModal(true);
+      }
     }
   }, []);
 

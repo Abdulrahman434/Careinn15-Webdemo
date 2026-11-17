@@ -9,6 +9,7 @@ import { TopBar } from "./TopBar";
 import { NewsTicker } from "./NewsTicker";
 import { AutoCarousel } from "./AutoCarousel";
 import { useTheme, TYPE_SCALE, WEIGHT, LEADING, SHADOW, SPACE } from "./ThemeContext";
+import { SPOTLIGHT } from "./homeLayout";
 import { useLocale } from "./i18n";
 import { usePatientInfo } from "../lib/usePatientInfo";
 import { useRipple } from "./useRipple";
@@ -38,7 +39,7 @@ interface SpotlightHomescreenProps {
 
 /* Fixed positions on the 1920×1080 canvas, measured from the reference design. */
 const RAIL_W = 148;
-const CARD_W = 232;
+const CARD_W = SPOTLIGHT.cards.width;
 const CARD_H = 254;
 const GRID_GAP = 16;
 
@@ -191,7 +192,7 @@ export default function SpotlightHomescreen({
         <div
           className="absolute grid"
           style={{
-            insetInlineEnd: 92,
+            insetInlineEnd: SPOTLIGHT.cards.insetEnd,
             top: 90,
             gridTemplateColumns: `repeat(3, ${CARD_W}px)`,
             gridAutoRows: `${CARD_H}px`,
@@ -248,9 +249,9 @@ export default function SpotlightHomescreen({
           style={{
             ...glass(78),
             insetInlineEnd: 150,
-            bottom: SPACE[5],
+            bottom: SPOTLIGHT.actionBar.bottom,
             width: 1140,
-            height: 104,
+            height: SPOTLIGHT.actionBar.height,
             borderRadius: theme.radiusLg,
             padding: `${SPACE[1]}`,
           }}

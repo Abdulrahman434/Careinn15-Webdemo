@@ -6,6 +6,7 @@ import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, Timer, ArrowLeft } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
+import { usableSave } from "../../lib/continueActivity";
 
 interface ColorOption {
   color: string;
@@ -23,7 +24,7 @@ const COLORS: ColorOption[] = [
   { color: "#85C1E2", name: "Sky" },
 ];
 
-export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
+export function ColorMatchGame({ onClose, onBackToGames, autoResume }: { onClose: () => void; onBackToGames: () => void; autoResume?: boolean }) {
   const { theme } = useTheme();
   const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
@@ -60,8 +61,14 @@ export function ColorMatchGame({ onClose, onBackToGames }: { onClose: () => void
     const savedState = localStorage.getItem('color-match-game-state');
     console.log('=== LOAD GAME STATE ===', 'color-match-game-state', savedState);
     if (savedState) {
-      setHasSavedGame(true);
-      setShowResumeModal(true);
+      if (autoResume) {
+        // Continue card: open the saved game, no resume prompt.
+        // A save it can't open is removed and the game starts as if there were none.
+        if (usableSave('color-match-game-state', (s) => !!s.targetColor && typeof s.targetColor.color === 'string')) loadGameState();
+      } else {
+        setHasSavedGame(true);
+        setShowResumeModal(true);
+      }
     }
   }, []);
 

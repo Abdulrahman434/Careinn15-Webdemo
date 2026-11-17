@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useCanvasSize } from "../../lib/canvasSize";
 import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose, gameBody, gameGroup, gamePanel, GameBoardArea, gameBoard, gameModal } from "./gameLayout";
@@ -6,6 +6,7 @@ import { useLocale } from "../i18n";
 import GameLanguageToggle from "./GameLanguageToggle";
 import { Trophy, RotateCcw, Circle, X, ArrowLeft } from "lucide-react";
 import { GAME_TRANSLATIONS } from "./gameTranslations";
+import { usableSave } from "../../lib/continueActivity";
 
 type Player = "X" | "O" | null;
 type GameMode = "friend" | "computer";
@@ -24,7 +25,7 @@ function calculateWinner(squares: Player[]): Player {
   return null;
 }
 
-export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
+export function TicTacToeGame({ onClose, onBackToGames, autoResume }: { onClose: () => void; onBackToGames: () => void; autoResume?: boolean }) {
   const { theme } = useTheme();
   const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
@@ -94,7 +95,17 @@ export function TicTacToeGame({ onClose, onBackToGames }: { onClose: () => void;
     localStorage.removeItem('tictactoe-game-state');
   };
 
+  const autoResumed = useRef(false);
   useEffect(() => {
+    // Continue card: a save it can't open is removed first, so the game starts as if there were none.
+    if (autoResume && !autoResumed.current) {
+      usableSave('tictactoe-game-state', (s) => Array.isArray(s.squares) && s.squares.length === 9 && !!s.scores && typeof s.scores === 'object');
+    }
+    if (autoResume && (autoResumed.current || localStorage.getItem('tictactoe-game-state'))) {
+      // Open the saved game directly (ref guards the StrictMode double mount)
+      if (!autoResumed.current) { autoResumed.current = true; loadGameState(); }
+      return;
+    }
     const saved = localStorage.getItem('tictactoe-game-state');
     if (saved) {
       const state = JSON.parse(saved);

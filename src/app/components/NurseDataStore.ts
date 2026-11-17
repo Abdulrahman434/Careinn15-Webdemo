@@ -12,6 +12,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { clearPatientActivity } from "@/app/lib/continueActivity";
 
 /* ═══════════════════════════════════════════════════════════════
  * OVERRIDE TRACKING LOGIC
@@ -762,6 +763,7 @@ const nurseStore = (() => {
         localStorage.removeItem('careinn-feedback');
         localStorage.removeItem('careinn-cart');
         localStorage.removeItem('careinn-onboarding-complete');
+        clearPatientActivity();
       } catch {}
 
       const cleanState = createDefaultState();

@@ -23,6 +23,8 @@ import { AppLauncher } from "./components/AppLauncher";
 import { SurveyModal } from "./components/SurveyModal";
 const PdfReaderModal = lazy(() => import("./components/PdfReaderModal").then((m) => ({ default: m.PdfReaderModal })));
 import { UpdateBanner } from "./components/UpdateBanner";
+import { ContinueCard } from "./components/ContinueCard";
+import { CLASSIC } from "./components/homeLayout";
 import { MediaViewerModal } from "./components/MediaViewerModal";
 import { AboutUs } from "./components/AboutUs";
 import { SettingsPanel } from "./components/SettingsPanel";
@@ -99,6 +101,7 @@ import {
 } from "./lib/hospitalApi";
 import { nurseActions, useNurseStore } from "./components/NurseDataStore";
 import { getDeviceInfo } from "./utils/androidBridge";
+import { recordLaunch, recordBuiltInLeft, clearActivity, RESUMABLE_GAMES, RESUMABLE_TOOLS } from "./lib/continueActivity";
 import { OnboardingWizard } from "./components/OnboardingWizard";
 import { isOnboardingComplete } from "./lib/onboardingStore";
 import { startDataLifecycleWatchers } from "./lib/dataLifecycle";
@@ -604,6 +607,30 @@ function BedsideScreen() {
   const [acknowledgedBroadcasts, setAcknowledgedBroadcasts] = useState<BroadcastNotification[]>([]);
   const [activeGame, setActiveGame] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<string | null>(null);
+  /* The game the Continue card opened, which loads its save without asking. */
+  const [autoResumeGame, setAutoResumeGame] = useState<string | null>(null);
+  /* Leaving a game or tool by any path (Home, Back, Escape, its own close)
+     leaves the Continue card behind if it has progress saved; opening one
+     replaces whatever the card held. Only the resumable ones: a quick look at
+     Room Control or the Calculator leaves the card as it was. */
+  const prevGameRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = prevGameRef.current;
+    prevGameRef.current = activeGame;
+    if (prev === activeGame) return;
+    if (prev) setAutoResumeGame(null);
+    if (prev && RESUMABLE_GAMES.includes(prev)) recordBuiltInLeft("game", prev);
+    if (activeGame && RESUMABLE_GAMES.includes(activeGame)) clearActivity();
+  }, [activeGame]);
+  const prevToolRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = prevToolRef.current;
+    prevToolRef.current = activeTool;
+    if (prev === activeTool) return;
+    const tools: readonly string[] = RESUMABLE_TOOLS;
+    if (prev && tools.includes(prev)) recordBuiltInLeft("tool", prev);
+    if (activeTool && tools.includes(activeTool)) clearActivity();
+  }, [activeTool]);
   const [showPreferenceForm, setShowPreferenceForm] = useState(false);
   const [showBlankPage, setShowBlankPage] = useState(false);
   const [showIptv, setShowIptv] = useState(false);
@@ -1286,6 +1313,7 @@ function BedsideScreen() {
               setSurveyInitialPath(initialPath);
               setShowSurvey(true);
             } else if (action === "open-url" && url) {
+              recordLaunch({ kind: "url", id: url, name: titleText, nameAr: prev.title.ar || undefined });
               window.open(url, "_blank", "noopener,noreferrer");
             }
           }
@@ -2007,13 +2035,13 @@ function BedsideScreen() {
                 screen edges and between columns, 24 between cards inside a
                 column. Shortcuts (264) is exactly one hub card wide, and the
                 greeting column (400) one and a half. */}
-            <div className="flex-1 flex flex-row gap-[32px] px-8 pt-8 pb-6 min-h-0" style={{ position: "relative", zIndex: 1 }}>
+            <div className="flex-1 flex flex-row pt-8 min-h-0" style={{ position: "relative", zIndex: 1, gap: CLASSIC.columnGap, paddingInline: CLASSIC.edge, paddingBottom: CLASSIC.bottomEdge }}>
               {patientAdmitted ? (
                 layoutVersion === 3 ? (
                   /* ─── V3 Layout: HubCards left, Greeting+CareMe center, Shortcuts right ─── */
-                  <div className="flex-1 flex flex-row gap-[32px] min-w-0 min-h-0">
+                  <div className="flex-1 flex flex-row min-w-0 min-h-0" style={{ gap: CLASSIC.columnGap }}>
                     {/* Left — 2×4 Hub Grid */}
-                    <div className="flex flex-col shrink-0 min-h-0" style={{ width: "400px" }}>
+                    <div className="flex flex-col shrink-0 min-h-0" style={{ width: CLASSIC.startColumn }}>
                       <HubGridCompact
                         onOpenCategory={handleOpenCategory}
                         visibility={v}
@@ -2064,7 +2092,7 @@ function BedsideScreen() {
                     </div>
 
                     {/* Right — Shortcuts */}
-                    <div className="flex flex-col shrink-0 min-h-0" style={{ width: "264px" }}>
+                    <div className="flex flex-col shrink-0 min-h-0" style={{ width: CLASSIC.rail }}>
                       <ShortcutsColumn
                         onOpenSurvey={() => setShowSurvey(true)}
                         onLaunchTool={(id) => setActiveTool(id as any)}
@@ -2079,7 +2107,7 @@ function BedsideScreen() {
                 ) : layoutVersion === 1 ? (
                   <>
                     {/* Left Column — PatientGreeting + CareMe (guest: welcome + locked services) */}
-                    <div className="flex flex-col gap-6 shrink-0 min-h-0 h-full" style={{ width: "400px" }}>
+                    <div className="flex flex-col gap-6 shrink-0 min-h-0 h-full" style={{ width: CLASSIC.startColumn }}>
                       {/* Guest: the same two cards, in their guest form */}
                       {(
                         <>
@@ -2108,7 +2136,7 @@ function BedsideScreen() {
                     </div>
 
                     {/* Center + Right Column */}
-                    <div className="flex-1 flex flex-row gap-[32px] min-w-0 min-h-0">
+                    <div className="flex-1 flex flex-row min-w-0 min-h-0" style={{ gap: CLASSIC.columnGap }}>
                       {/* Center — Engagement Grid */}
                       <div className="flex-1 min-w-0 flex flex-col gap-5 min-h-0">
                         <ServicesGrid
@@ -2127,7 +2155,7 @@ function BedsideScreen() {
                       </div>
 
                       {/* Right — Shortcuts */}
-                      <div className="flex flex-col shrink-0 min-h-0" style={{ width: "264px" }}>
+                      <div className="flex flex-col shrink-0 min-h-0" style={{ width: CLASSIC.rail }}>
                         <ShortcutsColumn
                           onOpenSurvey={() => setShowSurvey(true)}
                           onLaunchTool={(id) => setActiveTool(id as any)}
@@ -2144,7 +2172,7 @@ function BedsideScreen() {
                   /* ─── V2 Layout: Shortcuts in container ─── */
                   <>
                     {/* Left Column — PatientGreeting + CareMe (guest: welcome + locked services) */}
-                    <div className="flex flex-col gap-6 shrink-0 min-h-0 h-full" style={{ width: "400px" }}>
+                    <div className="flex flex-col gap-6 shrink-0 min-h-0 h-full" style={{ width: CLASSIC.startColumn }}>
                       {(
                         <>
                           <div className="flex-1 min-h-0 flex flex-col">
@@ -2169,7 +2197,7 @@ function BedsideScreen() {
                       )}
                     </div>
 
-                    <div className="flex-1 flex flex-row gap-[32px] min-w-0 min-h-0">
+                    <div className="flex-1 flex flex-row min-w-0 min-h-0" style={{ gap: CLASSIC.columnGap }}>
                       {/* Center — Hub grid with shortcuts at bottom */}
                       <div className="flex-1 min-w-0 flex flex-col gap-5 min-h-0">
                         <ServicesGrid
@@ -2189,7 +2217,7 @@ function BedsideScreen() {
                       </div>
 
                       {/* Right — Services stacked vertically */}
-                      <div className="flex flex-col shrink-0 min-h-0" style={{ width: "264px" }}>
+                      <div className="flex flex-col shrink-0 min-h-0" style={{ width: CLASSIC.rail }}>
                         <ShortcutsColumn
                           contained
                           onOpenSurvey={() => setShowSurvey(true)}
@@ -2208,7 +2236,7 @@ function BedsideScreen() {
               ) : (
                 <>
                   {/* Left Column — Awaiting */}
-                  <div className="flex flex-col gap-5 shrink-0 min-h-0" style={{ width: "400px" }}>
+                  <div className="flex flex-col gap-5 shrink-0 min-h-0" style={{ width: CLASSIC.startColumn }}>
                     <div
                       className="flex-1 flex flex-col items-center justify-center relative overflow-hidden"
                       style={{
@@ -2472,19 +2500,19 @@ function BedsideScreen() {
             active, and when none is the block renders nothing, so a null
             fallback shows nothing rather than blanking the screen behind it. */}
         <Suspense fallback={<LazyScreenFallback />}>
-        {activeGame === "memory" && <MemoryGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "tictactoe" && <TicTacToeGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "puzzle" && <SlidingPuzzleGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "colormatch" && <ColorMatchGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "patternmemory" && <PatternMemoryGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "emojimatch" && <EmojiMatchGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "memory" && <MemoryGame autoResume={autoResumeGame === "memory"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "tictactoe" && <TicTacToeGame autoResume={autoResumeGame === "tictactoe"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "puzzle" && <SlidingPuzzleGame autoResume={autoResumeGame === "puzzle"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "colormatch" && <ColorMatchGame autoResume={autoResumeGame === "colormatch"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "patternmemory" && <PatternMemoryGame autoResume={autoResumeGame === "patternmemory"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "emojimatch" && <EmojiMatchGame autoResume={autoResumeGame === "emojimatch"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "simonsays" && <SimonSaysGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "wordsearch" && <WordSearchGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "wordsearch" && <WordSearchGame autoResume={autoResumeGame === "wordsearch"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         {activeGame === "reactiontime" && <ReactionTimeGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "brainmath" && <BrainMathGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "triviaquiz" && <TriviaQuizGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "picturepuzzle" && <ImageJigsawGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
-        {activeGame === "wordchain" && <WordChainGame onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "brainmath" && <BrainMathGame autoResume={autoResumeGame === "brainmath"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "triviaquiz" && <TriviaQuizGame autoResume={autoResumeGame === "triviaquiz"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "picturepuzzle" && <ImageJigsawGame autoResume={autoResumeGame === "picturepuzzle"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
+        {activeGame === "wordchain" && <WordChainGame autoResume={autoResumeGame === "wordchain"} onClose={() => setActiveGame(null)} onBackToGames={() => { setActiveGame(null); setOpenCategory("Games"); }} />}
         </Suspense>
 
         {/* IPTV Channels Overlay */}
@@ -2520,6 +2548,19 @@ function BedsideScreen() {
           </div>
         )}
         <UpdateBanner screenKey={screenKey} idle={showTasbih} />
+        {/* Hidden from a guest (either kind): Continue opens the patient's
+            last app or game in one tap. Hidden too under every overlay App
+            opens, so it never floats over one or takes its taps (overlays
+            inside the layouts register through useCoversHome). */}
+        <ContinueCard
+          hidden={anyOverlayOpen || showOnboarding || isLocked || isGuest || guestSession
+            || showWeather || !!activeImageAd || showThemeAppearance || showPreferenceForm
+            || showBlankPage || showWelcomeSlideshow}
+          layout={layoutMode === 2 ? "ci" : layoutMode === 3 ? "kids" : layoutMode === 4 ? "spotlight"
+            : portrait ? "portrait" : layoutVersion === 2 ? "classic-v2" : layoutVersion === 3 ? "classic-v3" : "classic"}
+          onOpenGame={(id) => { setAutoResumeGame(id); setActiveGame(id); }}
+          onOpenTool={(id) => setActiveTool(id)}
+        />
 
         {/* Survey Modal — inside the canvas so it scales with every other page */}
         {showSurvey && (

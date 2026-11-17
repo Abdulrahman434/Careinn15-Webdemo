@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { latestSaveKey, usableSave } from "../../lib/continueActivity";
 import { useTheme, TYPE_SCALE, WEIGHT, SHADOW } from "../ThemeContext";
 import { useCanvasSize } from "../../lib/canvasSize";
 import { gameHeader, gameHeaderLead, gameTitle, gameHeaderTools, gameHeaderClose, gameBody, gameGroup, gamePanel, GameBoardArea, gameBoard, gameCellFont, gameModal, gameControl } from "./gameLayout";
@@ -42,13 +43,19 @@ const DIFFICULTY_CONFIG: Record<Difficulty, { size: number; count: number }> = {
 
 const HIGHLIGHT_COLORS = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E2", "#F06292", "#AED581"];
 
-export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void; onBackToGames: () => void }) {
+export function WordSearchGame({ onClose, onBackToGames, autoResume }: { onClose: () => void; onBackToGames: () => void; autoResume?: boolean }) {
   const { theme } = useTheme();
   const size = useCanvasSize();
   const { fontFamily, isRTL, dir, locale } = useLocale();
-  const [gameLang, setGameLang] = useState<string>(localStorage.getItem('game-lang-word-search') ?? (locale === 'ar' ? 'ar' : 'en'));
+  // Continue card: newest save (any difficulty/language) and the difficulty + language its key encodes
+  const [resume] = useState(() => {
+    const key = autoResume ? latestSaveKey("wordsearch") : null;
+    const m = key?.match(/^word-search-(easy|medium|hard)-(en|ar)-state$/);
+    return key && m ? { key, difficulty: m[1] as Difficulty, lang: m[2] } : null;
+  });
+  const [gameLang, setGameLang] = useState<string>(resume?.lang ?? localStorage.getItem('game-lang-word-search') ?? (locale === 'ar' ? 'ar' : 'en'));
   const gt = GAME_TRANSLATIONS[gameLang === 'ar' ? 'ar' : 'en'];
-  const [difficulty, setDifficulty] = useState<Difficulty>('easy');
+  const [difficulty, setDifficulty] = useState<Difficulty>(resume?.difficulty ?? 'easy');
   const [grid, setGrid] = useState<string[][]>([]);
   const [foundWords, setFoundWords] = useState<string[]>([]);
   const [selectedCells, setSelectedCells] = useState<{ r: number; c: number }[]>([]);
@@ -182,10 +189,10 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
     initializeGame();
   }, [clearGameState, initializeGame]);
 
-  const loadGameState = useCallback(() => {
+  const loadGameState = useCallback((saveKey?: string) => {
     try {
       const localeSuffix = gameLang === 'ar' ? 'ar' : 'en';
-      const saved = localStorage.getItem(`word-search-${difficulty}-${localeSuffix}-state`);
+      const saved = localStorage.getItem(saveKey ?? `word-search-${difficulty}-${localeSuffix}-state`);
       if (saved) {
         const state = JSON.parse(saved);
         if (state && state.grid) {
@@ -209,8 +216,23 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
   }, [difficulty, clearGameState, handleNewGame]);
 
 
+  const resumeActive = useRef(true);
+  const resumeLoaded = useRef(false);
   // Initial mount: Check for saved game or auto-start
   useEffect(() => {
+    if (resume && gameLang !== resume.lang) resumeActive.current = false; // patient switched language: normal flow
+    // A save it can't open is removed and the game starts as if there were none.
+    if (resume && resumeActive.current && !resumeLoaded.current && !usableSave(resume.key, (s) =>
+      Array.isArray(s.grid) && s.grid.length > 0 && s.grid.every(Array.isArray)
+      && Array.isArray(s.foundWords) && Array.isArray(s.targetWords) && !!s.foundCellsMap && typeof s.foundCellsMap === 'object'
+    )) resumeActive.current = false;
+    if (resume && resumeActive.current) {
+      // Open the newest save directly (no resume prompt). Reruns of this effect caused by the loaded
+      // category must not bring the prompt back, so the save is loaded only once.
+      if (!resumeLoaded.current) { resumeLoaded.current = true; loadGameState(resume.key); }
+      setIsBootstrapped(true);
+      return;
+    }
     const localeSuffix = gameLang === 'ar' ? 'ar' : 'en';
     const saved = localStorage.getItem(`word-search-${difficulty}-${localeSuffix}-state`);
     if (saved) {
@@ -346,7 +368,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
             <RotateCcw size={20} color={theme.textInverse} />
             <span style={{ fontFamily: fontFamily, fontSize: TYPE_SCALE.base, fontWeight: WEIGHT.semibold, color: theme.textInverse }}>{gt.reset}</span>
           </button>
-          <GameLanguageToggle gameKey="word-search" initial={locale === 'ar' ? 'ar' : 'en'} onChange={(l) => setGameLang(l)} />
+          <GameLanguageToggle gameKey="word-search" initial={resume?.lang ?? (locale === 'ar' ? 'ar' : 'en')} onChange={(l) => setGameLang(l)} />
           <button onClick={onClose} className="flex items-center justify-center cursor-pointer active:scale-95 transition-transform" style={{ width: "56px", height: "56px", backgroundColor: theme.surfaceElevated, borderRadius: theme.radiusMd, border: "none", outline: "none", ...gameHeaderClose(size) }}>
             <span style={{ fontSize: "24px", color: theme.textHeading }}>×</span>
           </button>
@@ -484,7 +506,7 @@ export function WordSearchGame({ onClose, onBackToGames }: { onClose: () => void
 
             <div className="flex flex-col gap-4 w-full">
               <button
-                onClick={loadGameState}
+                onClick={() => loadGameState()}
                 className="w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-95"
                 style={{ backgroundColor: theme.primary, color: theme.brandOnPrimary, fontSize: TYPE_SCALE.md }}
               >
