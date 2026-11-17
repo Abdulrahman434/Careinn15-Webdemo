@@ -5,6 +5,8 @@
  *
  * localStorage keys:
  *  - careinn-continue-activity  the last-activity record (JSON ContinueActivity)
+ *  - careinn-continue-pill-spot where the patient dragged the resting pill:
+ *                               {x, y} = its centre as fractions of the canvas
  *  - careinn-continue-patient   "patient_id|admit_data" of the patient whose
  *                               activity and game/tool saves are on this screen
  */
@@ -26,6 +28,7 @@ export interface ContinueActivity {
 
 export const CONTINUE_KEY = "careinn-continue-activity";
 export const PATIENT_KEY = "careinn-continue-patient";
+export const PILL_SPOT_KEY = "careinn-continue-pill-spot";
 export const DEMO_PATIENT = "demo";
 
 export const RESUMABLE_GAMES: readonly string[] = [
@@ -169,9 +172,11 @@ export function clearPendingLaunch(): void {
   if (rec && (rec.kind === "app" || rec.kind === "url") && rec.returned === false) clearActivity();
 }
 
-/** Removes the activity record and every game/tool save and score. Keeps the patient key. */
+/** Removes the activity record, the pill's spot and every game/tool save and
+ *  score. Keeps the patient key. */
 export function clearPatientActivity(): void {
   remove(CONTINUE_KEY);
+  remove(PILL_SPOT_KEY);
   allKeys()
     .filter(k => PATIENT_KEY_PREFIXES.some(p => k.startsWith(p)))
     .forEach(remove);
@@ -218,4 +223,17 @@ export function getVisibleActivity(): ContinueActivity | null {
   if (!rec || !rec.returned || rec.patientKey !== currentPatientKey()) return null;
   if ((rec.kind === "game" || rec.kind === "tool") && !hasResumableSave(rec.kind, rec.id)) return null;
   return rec;
+}
+
+/** Where the patient left the resting pill (its centre, as fractions of the
+ *  canvas), or null for the default spot. */
+export function readPillSpot(): { x: number; y: number } | null {
+  try {
+    const v = JSON.parse(read(PILL_SPOT_KEY) || "null");
+    return v && Number.isFinite(v.x) && Number.isFinite(v.y) ? { x: v.x, y: v.y } : null;
+  } catch { return null; }
+}
+
+export function savePillSpot(spot: { x: number; y: number }): void {
+  write(PILL_SPOT_KEY, JSON.stringify(spot));
 }

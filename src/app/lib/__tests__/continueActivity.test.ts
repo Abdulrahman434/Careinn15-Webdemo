@@ -18,6 +18,7 @@ import {
   CONTINUE_KEY, PATIENT_KEY, applyLocation, recordLaunch, markReturned, recordBuiltInLeft,
   hasResumableSave, latestSaveKey, getVisibleActivity, clearActivity, clearPendingLaunch,
   clearPatientActivity, currentPatientKey, subscribe, usableSave,
+  PILL_SPOT_KEY, readPillSpot, savePillSpot,
 } from "../continueActivity";
 
 let pass = 0, fail = 0;
@@ -170,6 +171,20 @@ recordLaunch(YT); clearActivity(); clearPatientActivity();
 const counted = n; off(); recordLaunch(YT);
 ok("subscribe notifies on launch, clear, patient clear", counted === 3);
 ok("unsubscribe stops notifications", n === counted);
+
+console.log("\n— pill spot —");
+reset(); applyLocation(A);
+ok("no spot by default", readPillSpot() === null);
+savePillSpot({ x: 0.8, y: 0.2 });
+ok("spot saved and read back", readPillSpot()?.x === 0.8 && readPillSpot()?.y === 0.2);
+recordLaunch(YT); markReturned(); clearActivity();
+ok("spot survives a new activity and its dismissal", readPillSpot()?.x === 0.8);
+clearPatientActivity();
+ok("clearPatientActivity wipes the spot", readPillSpot() === null && !has(PILL_SPOT_KEY));
+reset(); applyLocation(A); savePillSpot({ x: 0.1, y: 0.9 }); applyLocation(B);
+ok("a new patient wipes the spot", readPillSpot() === null);
+reset(); localStorage.setItem(PILL_SPOT_KEY, "{bad");
+ok("corrupt spot ignored", readPillSpot() === null);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);
