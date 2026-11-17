@@ -35,6 +35,17 @@ export const CHANGE_TYPES: { type: ChangeType; label: string }[] = [
 
 export const RELEASES: Release[] = [
   {
+    version: "1.19.0",
+    date: "2026-11-17",
+    changes: [
+      { type: "new", area: "Home screen", text: "When a patient comes back to the home screen from an app, game or tool, a \"Continue\" card pops up so they can go straight back to where they were, then shrinks to a small pill at the bottom." },
+      { type: "new", area: "Home screen", text: "Patients can drag the Continue pill anywhere on the screen; it stays where they put it, and the first time it shows a short \"Drag to move it anywhere\" hint." },
+      { type: "new", area: "Games", text: "Games and the Notes, Whiteboard and Stopwatch tools keep the patient's progress, so Continue opens them exactly where they left off." },
+      { type: "improved", area: "Home screen", text: "The Continue card shows each game's own picture, the app's own logo, and turns white in dark mode." },
+      { type: "improved", area: "Privacy", text: "The Continue card and all saved game and tool progress are wiped when the patient is discharged or changes." },
+    ],
+  },
+  {
     version: "1.18.0",
     date: "2026-11-16",
     changes: [
