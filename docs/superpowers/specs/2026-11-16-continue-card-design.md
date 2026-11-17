@@ -167,6 +167,16 @@ New strings (en/ar/ur): "Continue", "Left {n} min ago" / "just now", "Dismiss" (
 
 **Responsive size and font** (Sara: "HAS to be responsive"). Text uses the shared type scale (which already steps down on phones); sizes step down one `SPACE` step on phones; Continue and × wrap to a second row only when they don't fit beside the name. On a phone the page's scroll area ends above the card so nothing — including Call — scrolls under it; that space changes smoothly (no jump) when the card shrinks.
 
+### 6d. The pill can be dragged anywhere (Sara, 2026-11-17)
+
+**Why:** a patient wants the pill out of the way of a tile it is covering.
+
+- **Free drag:** the patient can press the resting pill and drag it anywhere on the screen. The only limit is that it can't go off the screen's edges. It may sit over anything, including Call, Call Nurse, CareMe or the top bar. Sara: "he's free to drag it anywhere". The "never cover" rule now applies only to where the card appears **by default**: the pop spot and the first resting spot.
+- **Drag vs tap:** a touch that moves less than a small threshold is still a tap and resumes; past the threshold it becomes a drag, and letting go doesn't resume. × still dismisses. No long-press is needed. *(Claude's call.)*
+- **It stays where it's left.** The spot is remembered for the current patient across new activities, reloads and size changes (stored relative to the canvas). It is wiped on patient change like everything else. A new activity still pops at the default spot, then rests at the patient's chosen spot. *(Claude's call.)*
+- **Only the pill moves.** The popped card does not; any touch docks it, as before. *(Claude's call.)*
+- **Phone:** the page keeps its bottom lane only while the card sits at its default place. Once the patient moves the pill, the lane goes away. *(Claude's call.)*
+
 ### 7. Native follow-up (separate request to the Android team — not blocking)
 
 Ask native to include in `kiosk-resumed` a detail `{ lastPackage, reason: "home" | "back" | "crash" | "unknown" }`, and to type the `app-launched` payload. When available, the web side can show the card only for HOME/crash and skip it when the patient deliberately backed out. Until then the card shows for any return from an app.

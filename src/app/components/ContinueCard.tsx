@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
 import { Gamepad2, PenTool, Play, StickyNote, Timer, X, type LucideIcon } from "lucide-react";
 import { useTheme, TEXT_STYLE, TYPE_SCALE, WEIGHT, LEADING, SHADOW, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
@@ -11,6 +11,7 @@ import { fetchDeviceLocation } from "../lib/hospitalApi";
 import { apps, getDeviceInfo, useAndroidEvent } from "../utils/androidBridge";
 import {
   applyLocation, clearActivity, clearPendingLaunch, getVisibleActivity, markReturned, recordLaunch, subscribe,
+  readPillSpot, savePillSpot,
   type ContinueActivity,
 } from "../lib/continueActivity";
 import { useLockedApps } from "../lib/lockedApps";
@@ -128,9 +129,12 @@ export function ContinueCard({
   const canvas = useCanvasSize();
   const [activity, setActivity] = useState<ContinueActivity | null>(() => getVisibleActivity());
   const [now, setNow] = useState(() => Date.now());
+  /* Where the patient dragged the pill (fractions of the canvas), or null. */
+  const [spot, setSpot] = useState(() => readPillSpot());
 
   const refresh = useCallback(() => {
     setActivity(getVisibleActivity());
+    setSpot(readPillSpot());
     setNow(Date.now());
   }, []);
 
@@ -228,24 +232,102 @@ export function ContinueCard({
   /* The pill is one touch target high, with SPACE[1] around it. */
   const pillH = px(theme.touchTargetMin) + 2 * px(SPACE[1]);
 
+  /* The pill can be dragged anywhere (spec §6d); the canvas edges are the
+     only limit. Its centre: the live drag, else the patient's saved spot
+     (re-clamped to the canvas as it is now), else null = the default spot at
+     the bottom centre. */
+  const W = canvas.width, H = canvas.height;
+  const pillRef = useRef<HTMLDivElement>(null);
+  const [pillSize, setPillSize] = useState({ w: 0, h: 0 });
+  const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
+  const clampCentre = (x: number, y: number) => {
+    const hw = (pillSize.w || pillH) / 2, hh = (pillSize.h || pillH) / 2;
+    return { x: Math.min(Math.max(x, hw), W - hw), y: Math.min(Math.max(y, hh), H - hh) };
+  };
+  const pillAt = drag ?? (spot ? clampCentre(spot.x * W, spot.y * H) : null);
+  /* Where the pill comes to rest, for the dock animation to aim at. */
+  const restCentre = pillAt ?? { x: W / 2, y: H - area.bottom - pillH / 2 };
+  const restRef = useRef(restCentre);
+  restRef.current = restCentre;
+
   const popRef = useRef<HTMLDivElement>(null);
-  const [dockScale, setDockScale] = useState(1);
-  /* Shrinks the popped card in place, toward the pill under it. Straight to
-     the pill under reduced motion. */
+  const [dockTo, setDockTo] = useState("none");
+  /* Shrinks the popped card toward where the pill rests: in place at the
+     default spot, or across to the patient's spot. Straight to the pill under
+     reduced motion. */
   const dock = useCallback(() => {
-    const h = popRef.current?.offsetHeight;
-    if (reducedMotion() || !h) {
+    const el = popRef.current;
+    const h = el?.offsetHeight;
+    if (reducedMotion() || !el || !h) {
       setMode("docked");
       return;
     }
-    setDockScale(Math.min(1, pillH / h));
+    const k = Math.min(1, pillH / h);
+    const from = { x: W / 2, y: H - area.bottom - h / 2 };
+    const to = restRef.current;
+    setDockTo(`translate(${to.x - from.x}px, ${to.y - from.y}px) scale(${k})`);
     setMode("docking");
-  }, [pillH]);
+  }, [pillH, W, H, area.bottom]);
   useEffect(() => {
     if (mode !== "docking") return;
     const id = window.setTimeout(() => setMode("docked"), DOCK_MS);
     return () => window.clearTimeout(id);
   }, [mode]);
+
+  /* The pill measures only itself, to stay whole inside the canvas. */
+  useLayoutEffect(() => {
+    const el = pillRef.current;
+    if (!el) return;
+    const measure = () => setPillSize((p) => (p.w === el.offsetWidth && p.h === el.offsetHeight ? p : { w: el.offsetWidth, h: el.offsetHeight }));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [mode, shown]);
+
+  /* Drag vs tap: a touch that moves less than SPACE[2] (canvas px) is a tap
+     and resumes; past that the pill follows the finger, and letting go
+     neither resumes nor reaches the tile underneath (the pointer is
+     captured, and the click that follows is swallowed). Finger movement is
+     divided by the canvas scale, so the pill tracks the finger exactly at any
+     screen size. */
+  const dragRef = useRef<{ id: number; sx: number; sy: number; cx: number; cy: number; scale: number; moved: boolean } | null>(null);
+  const swallowClick = useRef(false);
+  const onPillDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const el = pillRef.current;
+    const canvasEl = el?.closest("#careinn-canvas") as HTMLElement | null;
+    if (!el || !canvasEl) return;
+    const cr = canvasEl.getBoundingClientRect();
+    const scale = cr.width / canvasEl.offsetWidth || 1;
+    const r = el.getBoundingClientRect();
+    dragRef.current = {
+      id: e.pointerId, sx: e.clientX, sy: e.clientY, scale, moved: false,
+      cx: (r.left + r.width / 2 - cr.left) / scale, cy: (r.top + r.height / 2 - cr.top) / scale,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onPillMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = dragRef.current;
+    if (!d || e.pointerId !== d.id) return;
+    const dx = (e.clientX - d.sx) / d.scale, dy = (e.clientY - d.sy) / d.scale;
+    if (!d.moved && Math.hypot(dx, dy) < px(SPACE[2])) return;
+    d.moved = true;
+    setDrag(clampCentre(d.cx + dx, d.cy + dy));
+  };
+  const onPillUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = dragRef.current;
+    if (!d || e.pointerId !== d.id) return;
+    dragRef.current = null;
+    if (!d.moved) return;
+    const c = clampCentre(d.cx + (e.clientX - d.sx) / d.scale, d.cy + (e.clientY - d.sy) / d.scale);
+    const next = { x: c.x / W, y: c.y / H };
+    savePillSpot(next);
+    setSpot(next);
+    setDrag(null);
+    swallowClick.current = true;
+    window.setTimeout(() => { swallowClick.current = false; }, 0);
+  };
 
   /* Popped: dock after POP_MS, or on a touch anywhere else. Capture phase and
      no preventDefault, so that touch still opens whatever is under it. */
@@ -300,8 +382,9 @@ export function ContinueCard({
 
   /* Portrait: a page that scrolls ends above the card (PortraitHome reads the
      lane). While docking it already holds the pill's height, so the page
-     eases with the card instead of jumping after it. */
-  const lane = layout === "portrait" && shown
+     eases with the card instead of jumping after it. A pill the patient has
+     moved keeps no lane. */
+  const lane = layout === "portrait" && shown && (mode === "popped" || !spot)
     ? (mode === "popped" ? popH : pillH) + area.bottom + px(SPACE[1])
     : 0;
   useEffect(() => { setContinueLane(lane); }, [lane]);
@@ -369,18 +452,37 @@ export function ContinueCard({
     @keyframes continuePillIn { from { opacity: 0; transform: scale(1.15); } to { opacity: 1; transform: none; } }
     @media (prefers-reduced-motion: reduce) { [data-continue-card] { animation: none !important; transition: none !important; } }`;
   /* Above the home tiles, under the toasts (80). */
+  const restingAt = (children: ReactNode) => (
+    <div
+      className="absolute flex justify-center pointer-events-none"
+      style={pillAt
+        ? { left: pillAt.x - (pillSize.w || pillH) / 2, top: pillAt.y - (pillSize.h || pillH) / 2, zIndex: 60 }
+        : { left: 0, right: 0, bottom: area.bottom, zIndex: 60 }}
+    >
+      {children}
+    </div>
+  );
   const atBottom = (children: ReactNode) => (
     <div className="absolute flex justify-center pointer-events-none" style={{ left: 0, right: 0, bottom: area.bottom, zIndex: 60 }}>
       {children}
     </div>
   );
 
-  const pill = mode !== "popped" && atBottom(
+  const dragging = !!drag;
+  const pill = mode !== "popped" && restingAt(
     <div
+      ref={pillRef}
       role="status"
       data-continue-card="pill"
-      className="flex items-center pointer-events-auto"
+      className={`flex items-center pointer-events-auto transition-transform duration-150 ${dragging ? "motion-safe:scale-[1.04]" : ""}`}
+      onPointerDown={onPillDown}
+      onPointerMove={onPillMove}
+      onPointerUp={onPillUp}
+      onPointerCancel={onPillUp}
+      onClickCapture={(e) => { if (swallowClick.current) { e.stopPropagation(); e.preventDefault(); swallowClick.current = false; } }}
       style={{
+        touchAction: "none",
+        cursor: dragging ? "grabbing" : undefined,
         height: pillH,
         /* No wider than twelve of its icons (480 on bedside screens, 384 on
            phones); a longer name gives way. */
@@ -389,7 +491,8 @@ export function ContinueCard({
         paddingInlineStart: `calc((${pillH}px - ${pillIcon}) / 2)`,
         borderRadius: theme.radiusFull,
         backgroundColor: fill,
-        boxShadow: SHADOW.xl,
+        /* Lifted while it is being dragged. */
+        boxShadow: dragging ? SHADOW["2xl"] : SHADOW.xl,
         direction: isRTL ? "rtl" : "ltr",
         fontFamily,
         animation: `continuePillIn ${DOCK_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
@@ -406,13 +509,16 @@ export function ContinueCard({
           {title}
         </span>
       </button>
-      <IconButton
-        onClick={() => clearActivity()}
-        aria-label={t("continue.dismiss")}
-        style={{ width: theme.touchTargetMin, height: theme.touchTargetMin, backgroundColor: "transparent", flexShrink: 0 }}
-      >
-        <X size={20} strokeWidth={2.5} style={{ color: ink }} />
-      </IconButton>
+      {/* × dismisses and never starts a drag. */}
+      <span className="contents" onPointerDown={(e) => e.stopPropagation()}>
+        <IconButton
+          onClick={() => clearActivity()}
+          aria-label={t("continue.dismiss")}
+          style={{ width: theme.touchTargetMin, height: theme.touchTargetMin, backgroundColor: "transparent", flexShrink: 0 }}
+        >
+          <X size={20} strokeWidth={2.5} style={{ color: ink }} />
+        </IconButton>
+      </span>
     </div>,
   );
 
@@ -440,11 +546,11 @@ export function ContinueCard({
             boxShadow: SHADOW.xl,
             direction: isRTL ? "rtl" : "ltr",
             fontFamily,
-            transformOrigin: "bottom center",
+            transformOrigin: "center",
             pointerEvents: mode === "popped" ? "auto" : "none",
             ...(mode === "docking"
               ? {
-                  transform: `scale(${dockScale})`,
+                  transform: dockTo,
                   opacity: 0,
                   transition: `transform ${DOCK_MS}ms cubic-bezier(0.4, 0, 0.2, 1), opacity ${DOCK_MS}ms ease-in`,
                 }
