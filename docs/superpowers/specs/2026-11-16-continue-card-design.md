@@ -177,6 +177,13 @@ New strings (en/ar/ur): "Continue", "Left {n} min ago" / "just now", "Dismiss" (
 - **Only the pill moves.** The popped card does not; any touch docks it, as before. *(Claude's call.)*
 - **Phone:** the page keeps its bottom lane only while the card sits at its default place. Once the patient moves the pill, the lane goes away. *(Claude's call.)*
 
+- **Showing it can be dragged (Sara chose "both", 2026-11-17):**
+  - **Grip dots (⋮⋮)** always sit at the start of the pill (mirrored in RTL).
+  - **A one-time nudge:** the first time the pill settles for a patient, it gives a small wiggle and a short bubble beside it says "Drag to move it anywhere". It lasts about 4 s, or until any touch.
+    - It is shown once per patient and wiped on patient change.
+    - It is skipped if the patient has already moved the pill.
+    - Under reduced motion it shows the bubble only, with no wiggle.
+
 ### 7. Native follow-up (separate request to the Android team — not blocking)
 
 Ask native to include in `kiosk-resumed` a detail `{ lastPackage, reason: "home" | "back" | "crash" | "unknown" }`, and to type the `app-launched` payload. When available, the web side can show the card only for HOME/crash and skip it when the patient deliberately backed out. Until then the card shows for any return from an app.

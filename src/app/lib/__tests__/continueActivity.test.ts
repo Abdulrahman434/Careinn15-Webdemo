@@ -18,7 +18,7 @@ import {
   CONTINUE_KEY, PATIENT_KEY, applyLocation, recordLaunch, markReturned, recordBuiltInLeft,
   hasResumableSave, latestSaveKey, getVisibleActivity, clearActivity, clearPendingLaunch,
   clearPatientActivity, currentPatientKey, subscribe, usableSave,
-  PILL_SPOT_KEY, readPillSpot, savePillSpot,
+  PILL_SPOT_KEY, readPillSpot, savePillSpot, DRAG_HINT_KEY, dragHintSeen, markDragHintSeen,
 } from "../continueActivity";
 
 let pass = 0, fail = 0;
@@ -185,6 +185,18 @@ reset(); applyLocation(A); savePillSpot({ x: 0.1, y: 0.9 }); applyLocation(B);
 ok("a new patient wipes the spot", readPillSpot() === null);
 reset(); localStorage.setItem(PILL_SPOT_KEY, "{bad");
 ok("corrupt spot ignored", readPillSpot() === null);
+
+console.log("\n— drag hint —");
+reset(); applyLocation(A);
+ok("hint not seen by default", dragHintSeen() === false);
+markDragHintSeen();
+ok("hint seen once marked", dragHintSeen() === true);
+recordLaunch(YT); markReturned(); clearActivity();
+ok("hint stays seen across activities", dragHintSeen() === true);
+clearPatientActivity();
+ok("clearPatientActivity wipes the hint flag", dragHintSeen() === false && !has(DRAG_HINT_KEY));
+reset(); applyLocation(A); markDragHintSeen(); applyLocation(B);
+ok("a new patient sees the hint again", dragHintSeen() === false);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

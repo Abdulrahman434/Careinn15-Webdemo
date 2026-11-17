@@ -1883,6 +1883,7 @@ const translations: Record<string, TranslationEntry> = {
   "continue.hoursAgo": { en: "Left {0} h ago", ar: "غادرت قبل {0} ساعة", ur: "{0} گھنٹے پہلے چھوڑا" },
   "continue.dismiss": { en: "Dismiss", ar: "إخفاء", ur: "ہٹائیں" },
   "continue.titleWithName": { en: "Continue {0}", ar: "تابع {0}", ur: "{0} جاری رکھیں" },
+  "continue.dragHint": { en: "Drag to move it anywhere", ar: "اسحبه لنقله إلى أي مكان", ur: "اسے کہیں بھی لے جانے کے لیے گھسیٹیں" },
   "continue.game.memory": { en: "Memory Match", ar: "لعبة الذاكرة", ur: "میموری میچ" },
   "continue.game.tictactoe": { en: "Tic-Tac-Toe", ar: "إكس-أو", ur: "ٹک ٹیک ٹو" },
   "continue.game.puzzle": { en: "Sliding Puzzle", ar: "لعبة الألغاز", ur: "سلائیڈنگ پزل" },

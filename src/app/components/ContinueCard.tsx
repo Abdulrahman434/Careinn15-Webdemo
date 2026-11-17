@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
-import { Gamepad2, PenTool, Play, StickyNote, Timer, X, type LucideIcon } from "lucide-react";
+import { Gamepad2, GripVertical, PenTool, Play, StickyNote, Timer, X, type LucideIcon } from "lucide-react";
 import { useTheme, TEXT_STYLE, TYPE_SCALE, WEIGHT, LEADING, SHADOW, SPACE } from "./ThemeContext";
 import { useLocale } from "./i18n";
 import { TouchButton, IconButton } from "./primitives";
@@ -11,7 +11,7 @@ import { fetchDeviceLocation } from "../lib/hospitalApi";
 import { apps, getDeviceInfo, useAndroidEvent } from "../utils/androidBridge";
 import {
   applyLocation, clearActivity, clearPendingLaunch, getVisibleActivity, markReturned, recordLaunch, subscribe,
-  readPillSpot, savePillSpot,
+  readPillSpot, savePillSpot, dragHintSeen, markDragHintSeen,
   type ContinueActivity,
 } from "../lib/continueActivity";
 import { useLockedApps } from "../lib/lockedApps";
@@ -35,6 +35,9 @@ export type ContinueLayout = "classic" | "classic-v2" | "classic-v3" | "ci" | "k
 /* How long a popped card stays before it docks, and how long docking takes. */
 const POP_MS = 10_000;
 const DOCK_MS = 350;
+/* How long the one-time "drag me" hint stays, and its wiggle. */
+const HINT_MS = 4_000;
+const WIGGLE_MS = 600;
 const reducedMotion = () => {
   try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; }
 };
@@ -370,6 +373,51 @@ export function ContinueCard({
     if (d && d.moved && e.pointerId === d.id && e.target === e.currentTarget) endDrag(true);
   };
 
+  /* Showing it can be dragged (§6d): the first time the pill settles for a
+     patient it wiggles once and a bubble beside it says so, for HINT_MS or
+     until any touch (capture phase, no preventDefault: that touch still
+     reaches its target). Once per patient (dragHintSeen, wiped with the
+     patient); skipped if the patient already moved the pill, and ended
+     cleanly if the card is hidden or covered meanwhile. */
+  const [nudge, setNudge] = useState(false);
+  const [wiggled, setWiggled] = useState(false);
+  /* Decided a frame later against the live mode: on mount the first render
+     says "docked" for an instant before a new record pops. */
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
+  useEffect(() => {
+    if (mode !== "docked" || !shown || spot) {
+      setNudge(false);
+      if (mode !== "docked" || !shown) setWiggled(false);
+      return;
+    }
+    const id = window.requestAnimationFrame(() => {
+      if (modeRef.current !== "docked" || dragHintSeen()) return;
+      markDragHintSeen();
+      setNudge(true);
+      setWiggled(true);
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [mode, shown, spot]);
+  useEffect(() => {
+    if (!nudge) return;
+    const id = window.setTimeout(() => setNudge(false), HINT_MS);
+    const onDown = () => setNudge(false);
+    window.addEventListener("pointerdown", onDown, true);
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener("pointerdown", onDown, true);
+    };
+  }, [nudge]);
+  /* The bubble measures only itself, to sit beside the pill inside the canvas. */
+  const bubbleRef = useRef<HTMLDivElement>(null);
+  const [bubbleSize, setBubbleSize] = useState({ w: 0, h: 0 });
+  useLayoutEffect(() => {
+    const el = bubbleRef.current;
+    if (!nudge || !el) return;
+    setBubbleSize((b) => (b.w === el.offsetWidth && b.h === el.offsetHeight ? b : { w: el.offsetWidth, h: el.offsetHeight }));
+  }, [nudge, locale]);
+
   /* Popped: dock after POP_MS, or on a touch anywhere else. Capture phase and
      no preventDefault, so that touch still opens whatever is under it. */
   useEffect(() => {
@@ -491,7 +539,9 @@ export function ContinueCard({
   const motion = `
     @keyframes continuePopIn { from { opacity: 0; transform: translateY(${SPACE[6]}); } to { opacity: 1; transform: none; } }
     @keyframes continuePillIn { from { opacity: 0; transform: scale(1.15); } to { opacity: 1; transform: none; } }
-    @media (prefers-reduced-motion: reduce) { [data-continue-card] { animation: none !important; transition: none !important; } }`;
+    @keyframes continueWiggle { 0%, 100% { transform: none; } 20% { transform: translateY(calc(${SPACE[1]} / -2)) rotate(-3deg); } 40% { transform: rotate(3deg); } 60% { transform: rotate(-2deg); } 80% { transform: rotate(1deg); } }
+    @keyframes continueHintIn { from { opacity: 0; } to { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { [data-continue-card], [data-continue-hint] { animation: none !important; transition: none !important; } }`;
   /* Above the home tiles, under the toasts (80). */
   const restingAt = (children: ReactNode) => (
     <div
@@ -541,7 +591,10 @@ export function ContinueCard({
         boxShadow: dragging ? SHADOW["2xl"] : SHADOW.xl,
         direction: isRTL ? "rtl" : "ltr",
         fontFamily,
-        animation: `continuePillIn ${DOCK_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
+        /* Kept as the wiggle once it has played, so it never replays the fade-in. */
+        animation: wiggled
+          ? `continueWiggle ${WIGGLE_MS}ms ease-in-out`
+          : `continuePillIn ${DOCK_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
       }}
     >
       <style>{motion}</style>
@@ -550,6 +603,15 @@ export function ContinueCard({
         className="flex items-center min-w-0 cursor-pointer active:scale-[0.97] transition-transform"
         style={{ height: theme.touchTargetMin, gap: SPACE[2], background: "none", border: "none", outline: "none", padding: 0, fontFamily }}
       >
+        {/* Grip dots: says the pill can be dragged. At the start, so on the
+            right in Arabic; a tap on it resumes like the rest of the pill. */}
+        <span
+          aria-hidden="true"
+          className="flex items-center justify-center shrink-0"
+          style={{ width: compact ? SPACE[1] : SPACE[2], marginInlineEnd: `calc(-1 * ${SPACE[1]})`, color: ink, opacity: 0.6 }}
+        >
+          <GripVertical size={compact ? 16 : 20} strokeWidth={2.5} />
+        </span>
         {icon(pillIcon, theme.radiusSm, compact ? 18 : 22)}
         <span style={{ fontSize: TYPE_SCALE.md, fontWeight: WEIGHT.bold, lineHeight: LEADING.tight, color: ink, ...ellipsis }}>
           {title}
@@ -568,7 +630,54 @@ export function ContinueCard({
     </div>,
   );
 
-  if (mode === "docked") return pill;
+  /* The hint bubble: above the pill, or below if there is no room; inside
+     the canvas; its pointer aimed at the pill. */
+  const hintGap = px(SPACE[2]);
+  const ph = pillSize.h || pillH;
+  const bw = bubbleSize.w, bh = bubbleSize.h;
+  const above = restCentre.y - ph / 2 - hintGap - bh >= hintGap;
+  const hintTop = above ? restCentre.y - ph / 2 - hintGap - bh : restCentre.y + ph / 2 + hintGap;
+  const hintLeft = Math.min(Math.max(restCentre.x - bw / 2, hintGap), W - hintGap - bw);
+  const arrow = px(SPACE[2]);
+  const arrowX = Math.min(Math.max(restCentre.x - hintLeft, arrow), bw - arrow);
+  const bubble = nudge && (
+    <div
+      ref={bubbleRef}
+      data-continue-hint=""
+      className="absolute pointer-events-none"
+      style={{
+        left: hintLeft,
+        top: hintTop,
+        zIndex: 60,
+        padding: `${SPACE[1]} ${SPACE[2]}`,
+        borderRadius: theme.radiusMd,
+        backgroundColor: fill,
+        color: ink,
+        boxShadow: SHADOW.xl,
+        ...TEXT_STYLE.bodyEmphasis,
+        fontFamily,
+        whiteSpace: "nowrap",
+        direction: isRTL ? "rtl" : "ltr",
+        animation: "continueHintIn 0.25s ease-out",
+      }}
+    >
+      {t("continue.dragHint")}
+      <span
+        aria-hidden="true"
+        className="absolute"
+        style={{
+          left: arrowX - arrow / 2,
+          [above ? "bottom" : "top"]: -arrow / 2,
+          width: arrow,
+          height: arrow,
+          backgroundColor: fill,
+          transform: "rotate(45deg)",
+        }}
+      />
+    </div>
+  );
+
+  if (mode === "docked") return <>{pill}{bubble}</>;
 
   return (
     <>
