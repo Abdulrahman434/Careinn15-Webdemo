@@ -7,6 +7,8 @@
  *  - careinn-continue-activity  the last-activity record (JSON ContinueActivity)
  *  - careinn-continue-pill-spot where the patient dragged the resting pill:
  *                               {x, y} = its centre as fractions of the canvas
+ *  - careinn-continue-drag-hint-seen  "1" once this patient has been shown
+ *                               that the pill can be dragged
  *  - careinn-continue-patient   "patient_id|admit_data" of the patient whose
  *                               activity and game/tool saves are on this screen
  */
@@ -29,6 +31,7 @@ export interface ContinueActivity {
 export const CONTINUE_KEY = "careinn-continue-activity";
 export const PATIENT_KEY = "careinn-continue-patient";
 export const PILL_SPOT_KEY = "careinn-continue-pill-spot";
+export const DRAG_HINT_KEY = "careinn-continue-drag-hint-seen";
 export const DEMO_PATIENT = "demo";
 
 export const RESUMABLE_GAMES: readonly string[] = [
@@ -172,11 +175,12 @@ export function clearPendingLaunch(): void {
   if (rec && (rec.kind === "app" || rec.kind === "url") && rec.returned === false) clearActivity();
 }
 
-/** Removes the activity record, the pill's spot and every game/tool save and
- *  score. Keeps the patient key. */
+/** Removes the activity record, the pill's spot and drag hint, and every
+ *  game/tool save and score. Keeps the patient key. */
 export function clearPatientActivity(): void {
   remove(CONTINUE_KEY);
   remove(PILL_SPOT_KEY);
+  remove(DRAG_HINT_KEY);
   allKeys()
     .filter(k => PATIENT_KEY_PREFIXES.some(p => k.startsWith(p)))
     .forEach(remove);
@@ -236,4 +240,13 @@ export function readPillSpot(): { x: number; y: number } | null {
 
 export function savePillSpot(spot: { x: number; y: number }): void {
   write(PILL_SPOT_KEY, JSON.stringify(spot));
+}
+
+/** Whether this patient has already been shown that the pill can be dragged. */
+export function dragHintSeen(): boolean {
+  return read(DRAG_HINT_KEY) === "1";
+}
+
+export function markDragHintSeen(): void {
+  write(DRAG_HINT_KEY, "1");
 }
